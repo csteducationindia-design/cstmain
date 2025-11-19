@@ -848,10 +848,13 @@
                     document.getElementById('student-photo-preview').src = 'https://placehold.co/100x100/f6f7f8/666?text=Preview';
                     document.getElementById('student-photo-file-input').value = ''; 
                 } else {
-                    // Fallback for teacher/parent forms (which were already working)
-                    form.querySelector('button[type="submit"]').textContent = `Save ${role.charAt(0).toUpperCase() + role.slice(1)}`;
-                    document.querySelector(`#content-${role} h3`).textContent = `Add/Edit ${role.charAt(0).toUpperCase() + role.slice(1)}`;
-                }
+    // FIXED: Use the specific IDs (teacher-form-btn, parent-form-title) instead of generic selectors
+    const btn = document.getElementById(`${role}-form-btn`);
+    const title = document.getElementById(`${role}-form-title`);
+    
+    if (btn) btn.textContent = `Save ${role.charAt(0).toUpperCase() + role.slice(1)}`;
+    if (title) title.textContent = `Add/Edit ${role.charAt(0).toUpperCase() + role.slice(1)}`;
+}
                 // --- END FIX ---
             }
         }
