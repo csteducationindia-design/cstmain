@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parent Portal</title>
+    <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
+    <link as="style" href="https://fonts.googleapis.com/css2?display=swap&family=Inter:wght@400;500;700;900" onload="this.rel='stylesheet'" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1173d4",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-800 dark:text-slate-200">
+
+<div class="flex min-h-screen">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col shadow-lg">
+        <div class="p-6">
+            <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Institute Parent</h1>
+            <p class="text-sm text-slate-500 dark:text-slate-400">Parent Portal</p>
+        </div>
+        <nav class="flex-1 px-4 py-2 space-y-1">
+            <a href="#dashboard" class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg bg-primary/10 dark:bg-primary/20 text-primary">
+                <span class="material-symbols-outlined">dashboard</span>
+                <span class="text-sm font-medium">Child Dashboard</span>
+            </a>
+            <a href="#messages" class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-primary/10 dark:hover:bg-primary/20">
+                <span class="material-symbols-outlined">mail</span>
+                <span class="text-sm font-medium">Messages</span>
+            </a>
+            <a href="#announcements" class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-primary/10 dark:hover:bg-primary/20">
+                <span class="material-symbols-outlined">campaign</span>
+                <span class="text-sm font-medium">Announcements</span>
+            </a>
+        </nav>
+        <div class="p-6 border-t border-slate-200 dark:border-slate-800">
+            <button id="logout-btn" class="w-full bg-red-600 text-white font-medium py-2 px-4 rounded-lg text-sm hover:bg-red-700 transition duration-150">
+                Logout
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 p-8">
+        <div class="max-w-7xl mx-auto">
+            <header class="mb-8">
+                <h1 id="parent-welcome" class="text-4xl font-bold text-slate-900 dark:text-white">Parent Dashboard</h1>
+                <p class="text-slate-500 dark:text-slate-400 mt-2">Oversee your child's academic and financial status.</p>
+            </header>
+
+            <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6 mb-8 child-selector">
+                <label for="child-select" class="text-lg font-bold mr-4">Select Child:</label>
+                <select id="child-select" class="p-2 border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800">
+                    <option value="">Select your child...</option>
+                </select>
+            </div>
+
+            <!-- DASHBOARD SECTION -->
+            <div id="content-dashboard" class="content-section hidden">
+                <h2 id="child-dashboard-title" class="text-3xl font-bold text-slate-900 dark:text-white mb-6"></h2>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                    <!-- Profile Card -->
+                    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6 lg:col-span-1">
+                        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><span class="material-symbols-outlined">person</span> Child's Profile</h2>
+                        <p class="text-sm"><strong class="font-medium">Name:</strong> <span id="profile-name" class="text-slate-600 dark:text-slate-400"></span></p>
+                        <p class="text-sm"><strong class="font-medium">Email:</strong> <span id="profile-email" class="text-slate-600 dark:text-slate-400"></span></p>
+                        <p class="text-sm"><strong class="font-medium">Phone:</strong> <span id="profile-phone" class="text-slate-600 dark:text-slate-400"></span></p>
+                    </div>
+
+                    <!-- Fee Status Card -->
+                    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6 lg:col-span-2">
+                        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><span class="material-symbols-outlined">payments</span> Fee Status</h2>
+                        <div class="grid grid-cols-3 gap-4 text-center">
+                            <div class="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg"><p class="text-sm text-slate-500">Total Due</p><p id="fee-due" class="text-xl font-bold text-slate-900 dark:text-white">₹0.00</p></div>
+                            <div class="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg"><p class="text-sm text-slate-500">Total Paid</p><p id="fee-paid" class="text-xl font-bold text-green-600">₹0.00</p></div>
+                            <div class="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg"><p class="text-sm text-slate-500">Balance</p><p id="fee-balance" class="text-xl font-bold text-red-600">₹0.00</p></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Attendance Card -->
+                    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6">
+                        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><span class="material-symbols-outlined">how_to_reg</span> Recent Attendance</h2>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                                <thead>
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Time</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="attendance-body" class="divide-y divide-slate-200 dark:divide-slate-700">
+                                    <tr><td colspan="3" class="px-6 py-4 text-center">Select a child to view data.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Grades Card -->
+                    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6">
+                        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><span class="material-symbols-outlined">assessment</span> Recent Results</h2>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                                <thead>
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Course</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Assessment</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Score</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="grades-body" class="divide-y divide-slate-200 dark:divide-slate-700">
+                                    <tr><td colspan="3" class="px-6 py-4 text-center">Select a child to view data.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MESSAGES SECTION -->
+            <div id="content-messages" class="content-section hidden">
+                <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">Messages from Teachers/Admin</h2>
+                <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                            <thead>
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">From</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Message</th>
+                                </tr>
+                            </thead>
+                            <tbody id="messages-body" class="divide-y divide-slate-200 dark:divide-slate-700">
+                                <tr><td colspan="3" class="px-6 py-4 text-center">Loading messages...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ANNOUNCEMENTS SECTION -->
+            <div id="content-announcements" class="content-section hidden">
+                <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">Institute Announcements</h2>
+                <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                            <thead>
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Title</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Content</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="announcements-table-body" class="divide-y divide-slate-200 dark:divide-slate-700">
+                            <!-- Announcements loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<script>
+    // FIX: Define the base URL explicitly using the current location origin 
+    const API_ORIGIN = window.location.origin;
+    const API_BASE_URL = API_ORIGIN + '/api';
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- GLOBAL UI & NAVIGATION ---
+        const logoutBtn = document.getElementById('logout-btn');
+        const contentSections = document.querySelectorAll('.content-section');
+        const navLinks = document.querySelectorAll('.nav-link');
+        const childSelect = document.getElementById('child-select');
+        const dashboardContent = document.getElementById('content-dashboard');
+
+
+        function showSection(hash) {
+            contentSections.forEach(section => {
+                section.classList.add('hidden');
+            });
+            navLinks.forEach(link => {
+                link.classList.remove('bg-primary/10', 'dark:bg-primary/20', 'text-primary');
+                link.classList.add('text-slate-700', 'dark:text-slate-300', 'hover:bg-primary/10', 'dark:hover:bg-primary/20');
+            });
+
+            let targetId = hash.substring(1) || 'dashboard';
+            let targetSection = document.getElementById(`content-${targetId}`);
+            let targetLink = document.querySelector(`.nav-link[href="#${targetId}"]`);
+
+            if (targetSection) {
+                targetSection.classList.remove('hidden');
+                targetLink.classList.add('bg-primary/10', 'dark:bg-primary/20', 'text-primary');
+                targetLink.classList.remove('text-slate-700', 'dark:text-slate-300', 'hover:bg-primary/10', 'dark:hover:bg-primary/20');
+            }
+        }
+
+        window.addEventListener('hashchange', () => {
+            showSection(window.location.hash);
+            const currentHash = window.location.hash.substring(1) || 'dashboard';
+            if (currentHash === 'messages') loadMessages();
+            if (currentHash === 'announcements') fetchAnnouncements();
+        });
+        
+        // Initial load based on hash or default to dashboard
+        showSection(window.location.hash);
+
+
+        // --- AUTHENTICATION ---
+        async function checkParentSession() {
+            try {
+                // FIX: Use absolute URL constructed from API_ORIGIN
+                const response = await fetch(`${API_ORIGIN}/api/check_session`, {credentials: 'include'});
+                // We check status explicitly to ensure robust error handling outside of Flask-Login defaults.
+                if (response.status === 401 || !response.ok) throw new Error('Session check failed');
+
+                const result = await response.json();
+                if (!result.logged_in || result.user.role !== 'parent') {
+                    // FIX: Use absolute URL for navigation
+                    window.location.href = API_ORIGIN + '/';
+                } else {
+                    document.getElementById('parent-welcome').textContent = `Welcome, ${result.user.name}!`;
+                    loadChildren();
+                    loadMessages();
+                }
+            } catch (error) { 
+                console.error("Could not verify session. Redirecting to login.", error);
+                // FIX: Use absolute URL for navigation
+                window.location.href = API_ORIGIN + '/';
+            }
+        }
+        logoutBtn.addEventListener('click', async () => {
+            await fetch(`${API_BASE_URL}/logout`, { method: 'POST', credentials: 'include' });
+            // FIX: Use absolute URL for navigation
+            window.location.href = API_ORIGIN + '/';
+        });
+
+        // --- DATA FETCHING & DISPLAY ---
+        
+        // Function to load the list of children for the dropdown
+        async function loadChildren() {
+            try {
+                // FIX: Use API_BASE_URL
+                const response = await fetch(`${API_BASE_URL}/parent/children`, {credentials: 'include'});
+                if (!response.ok) throw new Error("Failed to fetch children list.");
+                
+                const children = await response.json();
+                
+                // Clear and repopulate dropdown
+                childSelect.innerHTML = '<option value="">Select your child...</option>';
+                children.forEach(child => {
+                    childSelect.innerHTML += `<option value="${child.id}">${child.name}</option>`;
+                });
+
+                // Auto-select first child if only one exists
+                if (children.length === 1) {
+                    childSelect.value = children[0].id;
+                    fetchChildData(children[0].id); // Immediately load data for the single child
+                } else {
+                    dashboardContent.classList.add('hidden');
+                }
+            } catch(error) {
+                console.error("Error loading children:", error);
+                childSelect.innerHTML = '<option value="">Error loading children</option>';
+            }
+        }
+
+        // Function to fetch and display child's dashboard data
+        async function fetchChildData(studentId) {
+            dashboardContent.classList.remove('hidden');
+            const profileNameElement = document.getElementById('profile-name');
+            profileNameElement.textContent = 'Loading...'; 
+
+            try {
+                // FIX: Use API_BASE_URL
+                const response = await fetch(`${API_BASE_URL}/parent/child_data/${studentId}`, {credentials: 'include'});
+                // FIX: Check for the HTML content in case of unexpected 401/302 redirect (JSON parsing fails)
+                if (response.status === 401) {
+                    alert("Session expired or unauthorized. Redirecting to login.");
+                    window.location.href = API_ORIGIN + '/';
+                    return;
+                }
+                if (!response.ok) throw new Error("Failed to load child data. Access denied or server error.");
+                
+                const data = await response.json();
+
+                // Populate Profile
+                document.getElementById('child-dashboard-title').textContent = `${data.profile.name}'s Dashboard`;
+                profileNameElement.textContent = data.profile.name;
+                document.getElementById('profile-email').textContent = data.profile.email;
+                document.getElementById('profile-phone').textContent = data.profile.phone_number || 'N/A';
+                
+                // Populate Fees
+                document.getElementById('fee-due').textContent = `₹${data.fees.total_due.toFixed(2)}`;
+                document.getElementById('fee-paid').textContent = `₹${data.fees.total_paid.toFixed(2)}`;
+                document.getElementById('fee-balance').textContent = `₹${data.fees.balance.toFixed(2)}`;
+                document.getElementById('fee-balance').classList.toggle('text-red-600', data.fees.balance > 0);
+                document.getElementById('fee-balance').classList.toggle('text-green-600', data.fees.balance <= 0);
+
+
+                // Populate Attendance
+                const attendanceBody = document.getElementById('attendance-body');
+                attendanceBody.innerHTML = '';
+                if (data.attendance.length > 0) {
+                    data.attendance.forEach(r => { 
+                        const statusClass = r.status === 'Present' || r.status === 'Checked-In' ? 'text-green-600' : 'text-red-600';
+                        attendanceBody.innerHTML += `
+                            <tr class="even:bg-slate-50 dark:even:bg-slate-800">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">${r.date}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">${r.time}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium ${statusClass}">${r.status}</td>
+                            </tr>`;
+                    });
+                } else {
+                    attendanceBody.innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-center">No recent attendance records.</td></tr>`;
+                }
+
+                // Populate Grades
+                const gradesBody = document.getElementById('grades-body');
+                gradesBody.innerHTML = '';
+                if (data.grades.length > 0) {
+                    data.grades.forEach(g => { 
+                        const percentage = ((g.marks_obtained / g.total_marks) * 100).toFixed(0);
+                        const scoreClass = percentage >= 70 ? 'text-green-600' : percentage >= 50 ? 'text-yellow-600' : 'text-red-600';
+                        gradesBody.innerHTML += `
+                            <tr class="even:bg-slate-50 dark:even:bg-slate-800">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">${g.course_name}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">${g.assessment_name}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium ${scoreClass}">${g.marks_obtained} / ${g.total_marks} (${percentage}%)</td>
+                            </tr>`;
+                    });
+                } else {
+                    gradesBody.innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-center">No results found.</td></tr>`;
+                }
+
+            } catch(error) {
+                console.error("Error fetching child data:", error);
+                alert(`Error loading child data: ${error.message}. Ensure the student is linked to a parent and data exists.`);
+                dashboardContent.classList.add('hidden');
+            }
+        }
+
+        // Event listener for dropdown change
+        childSelect.addEventListener('change', () => {
+            const studentId = childSelect.value;
+            if (studentId) {
+                fetchChildData(studentId);
+            } else {
+                dashboardContent.classList.add('hidden');
+                document.getElementById('child-dashboard-title').textContent = '';
+            }
+        });
+
+        async function loadMessages() {
+            const messagesBody = document.getElementById('messages-body');
+            messagesBody.innerHTML = '<tr><td colspan="3" class="px-6 py-4 text-center">Loading messages...</td></tr>';
+            
+            try {
+                // FIX: Use API_BASE_URL
+                const response = await fetch(`${API_BASE_URL}/parent/messages`, {credentials: 'include'});
+                const messages = await response.json();
+                messagesBody.innerHTML = '';
+
+                if (messages.length === 0) {
+                    messagesBody.innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-center">No messages found.</td></tr>`;
+                    return;
+                }
+                
+                messages.forEach(msg => {
+                    messagesBody.innerHTML += `
+                        <tr class="even:bg-slate-50 dark:even:bg-slate-800">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">${msg.sent_at.split(' ')[0]}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${msg.sender_name}</td>
+                            <td class="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">${msg.content}</td>
+                        </tr>`;
+                });
+            } catch(e) {
+                messagesBody.innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-center text-red-500">Error loading messages.</td></tr>`;
+                console.error("Error loading messages:", e);
+            }
+        }
+        
+        async function fetchAnnouncements() {
+            const tableBody = document.getElementById('announcements-table-body');
+            tableBody.innerHTML = '<tr><td colspan="3" class="px-6 py-4 text-center">Loading announcements...</td></tr>';
+
+            try {
+                // FIX: Use API_BASE_URL
+                const response = await fetch(`${API_BASE_URL}/announcements`, {credentials: 'include'});
+                const announcements = await response.json();
+                tableBody.innerHTML = '';
+                
+                const relevantAnnouncements = announcements.filter(a => a.target_group === 'all' || a.target_group === 'parents');
+
+                if (relevantAnnouncements.length === 0) {
+                    tableBody.innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-center">No announcements for parents.</td></tr>`;
+                    return;
+                }
+
+                relevantAnnouncements.forEach(announcement => {
+                    tableBody.innerHTML += `
+                        <tr class="even:bg-slate-50 dark:even:bg-slate-800">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${announcement.title}</td>
+                            <td class="px-6 py-4 text-sm text-slate-500 dark:text-slate-400 max-w-lg truncate">${announcement.content}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${announcement.created_at.split(' ')[0]}</td>
+                        </tr>`;
+                });
+            } catch(e) {
+                tableBody.innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-center text-red-500">Error loading announcements.</td></tr>`;
+                console.error("Error loading announcements:", e);
+            }
+        }
+
+
+        // --- INITIAL PAGE LOAD ---
+        checkParentSession();
+    });
+</script>
+</body>
+</html>
