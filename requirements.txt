@@ -3,3 +3,5 @@ gunicorn
 pandas
 openpyxl
 Flask-Cors
+Flask-SQLAlchemy
+Flask-Login
