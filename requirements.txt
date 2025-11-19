@@ -5,3 +5,5 @@ openpyxl
 Flask-Cors
 Flask-SQLAlchemy
 Flask-Login
+Flask-Bcrypt
+email_validator
