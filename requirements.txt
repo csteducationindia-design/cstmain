@@ -9,3 +9,4 @@ Flask-Bcrypt
 email_validator
 Flask-Mail
 requests
+firebase-admin
