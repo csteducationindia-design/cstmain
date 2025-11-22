@@ -5,6 +5,7 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, login_
 from flask_bcrypt import Bcrypt
 from flask_mail import Mail, Message as MailMessage
 import os
+import json
 from datetime import datetime, timedelta, date
 import csv
 from io import StringIO
@@ -16,23 +17,32 @@ from sqlalchemy import or_ # For search queries
 import firebase_admin
 from firebase_admin import credentials, messaging
 
+
 # Initialize Firebase (only once)
-import json # Make sure to add this import if not present
+ # Make sure to add this import if not present
 
 # Initialize Firebase (only once)
 if not firebase_admin._apps:
-    # Try to get the JSON from Coolify Environment Variable first
     firebase_env = os.environ.get('FIREBASE_CREDENTIALS_JSON')
     
     if firebase_env:
-        # Use the environment variable (Server mode)
-        cred_dict = json.loads(firebase_env)
-        cred = credentials.Certificate(cred_dict)
-    else:
-        # Fallback to local file (Local testing mode)
+        try:
+            # Clean string just in case (remove potential surrounding quotes)
+            firebase_env = firebase_env.strip("'").strip('"')
+            cred_dict = json.loads(firebase_env)
+            cred = credentials.Certificate(cred_dict)
+            firebase_admin.initialize_app(cred)
+            print("--- Firebase Initialized from Env Var ---")
+        except json.JSONDecodeError as e:
+            print(f"--- FIREBASE JSON ERROR: {e} ---")
+            # Print the first 20 chars to see what went wrong (don't print the whole key for security)
+            print(f"--- Bad Content Start: {firebase_env[:20]}... ---")
+    elif os.path.exists("firebase_credentials.json"):
         cred = credentials.Certificate("firebase_credentials.json")
-        
-    firebase_admin.initialize_app(cred)
+        firebase_admin.initialize_app(cred)
+        print("--- Firebase Initialized from Local File ---")
+    else:
+        print("--- WARNING: No Firebase Credentials Found (App will run but Notifications will fail) ---")
 # --- Basic Setup ---
 app = Flask(__name__, template_folder='templates')
 app.config['SECRET_KEY'] = 'a_very_secret_key_that_should_be_changed'
