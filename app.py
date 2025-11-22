@@ -1871,8 +1871,10 @@ def serve_student_page():
 @app.route('/parent')
 @login_required
 def serve_parent_page():
-    if current_user.role == 'parent': return render_template('parent.html')
-    else: return redirect(url_for('serve_login_page'))
+    if current_user.role == 'parent':
+        return render_template('parent.html')
+    else:
+        return redirect(url_for('serve_login_page'))
 @app.route('/api/save_fcm_token', methods=['POST'])
 @login_required
 def save_fcm_token():
