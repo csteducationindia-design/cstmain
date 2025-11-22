@@ -17,10 +17,22 @@ import firebase_admin
 from firebase_admin import credentials, messaging
 
 # Initialize Firebase (only once)
-if not firebase_admin._apps:
-    cred = credentials.Certificate("firebase_credentials.json")
-    firebase_admin.initialize_app(cred)
+import json # Make sure to add this import if not present
 
+# Initialize Firebase (only once)
+if not firebase_admin._apps:
+    # Try to get the JSON from Coolify Environment Variable first
+    firebase_env = os.environ.get('FIREBASE_CREDENTIALS_JSON')
+    
+    if firebase_env:
+        # Use the environment variable (Server mode)
+        cred_dict = json.loads(firebase_env)
+        cred = credentials.Certificate(cred_dict)
+    else:
+        # Fallback to local file (Local testing mode)
+        cred = credentials.Certificate("firebase_credentials.json")
+        
+    firebase_admin.initialize_app(cred)
 # --- Basic Setup ---
 app = Flask(__name__, template_folder='templates')
 app.config['SECRET_KEY'] = 'a_very_secret_key_that_should_be_changed'
