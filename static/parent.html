@@ -377,19 +377,18 @@
         checkParentSession();
     });
 
-    // --- FIREBASE LOGIC (Identical to Student) ---
+    // --- FIREBASE LOGIC ---
     function initFirebase() {
-        // ============================================================
-        // 1. PASTE YOUR COPIED "const firebaseConfig = { ... }" HERE
-        // ============================================================
+        // -------------------------------------------------------
+        // I HAVE PRE-FILLED THIS FROM YOUR SCREENSHOT
+        // -------------------------------------------------------
         const firebaseConfig = {
-            // EXAMPLE - REPLACE WITH YOURS:
-            apiKey: "AIzaSyXXXX...", 
+            apiKey: "AIzaSyBkZEHM9fXRoCYSgEW-hk_lN7sL_nSLDfU",
             authDomain: "cst-institute-app.firebaseapp.com",
             projectId: "cst-institute-app",
             storageBucket: "cst-institute-app.firebasestorage.app",
             messagingSenderId: "485166460200",
-            appId: "1:485166460200:web:..." 
+            appId: "1:485166460200:web:4eae20e2010ab92baeb41d"
         };
 
         if (!firebase.apps.length) {
@@ -403,11 +402,11 @@
             .then((registration) => {
                 Notification.requestPermission().then((permission) => {
                     if (permission === 'granted') {
-                        // ========================================================
-                        // 2. PASTE YOUR "VAPID KEY" HERE (from Cloud Messaging tab)
-                        // ========================================================
+                        // ======================================================
+                        // IMPORTANT: REPLACE THIS LINE WITH YOUR REAL VAPID KEY
+                        // ======================================================
                         return messaging.getToken({ 
-                            vapidKey: 'YOUR_LONG_VAPID_KEY_HERE_FROM_CONSOLE', 
+                            vapidKey: 'BBOMxvKvbEs_t9ykKBa2zIewzCzD6FCbm9rxc8a9eWl2kjjH5vyTSH6TeQMksZ_OGl5jZyQpU2wBcf-KsZN1uko', 
                             serviceWorkerRegistration: registration 
                         });
                     }
