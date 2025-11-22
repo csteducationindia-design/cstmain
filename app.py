@@ -62,6 +62,38 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'institute.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+# ... existing code ...
+
+# --- PASTE THIS MIGRATION CODE HERE ---
+def check_and_upgrade_db():
+    with app.app_context():
+        try:
+            from sqlalchemy import inspect, text # Import here to avoid circular issues
+            inspector = inspect(db.engine)
+            if inspector.has_table("user"):
+                columns = [col['name'] for col in inspector.get_columns('user')]
+                
+                # Check and Add fcm_token
+                if 'fcm_token' not in columns:
+                    print("--- MIGRATING DB: Adding fcm_token column... ---")
+                    with db.engine.connect() as conn:
+                        conn.execute(text("ALTER TABLE user ADD COLUMN fcm_token VARCHAR(500)"))
+                        conn.commit()
+                        
+                # Check and Add pincode
+                if 'pincode' not in columns:
+                    print("--- MIGRATING DB: Adding pincode column... ---")
+                    with db.engine.connect() as conn:
+                        conn.execute(text("ALTER TABLE user ADD COLUMN pincode VARCHAR(20)"))
+                        conn.commit()
+        except Exception as e:
+            print(f"--- MIGRATION WARNING: {e} ---")
+
+# Run this function immediately so it fixes the DB when the server starts
+check_and_upgrade_db()
+# --------------------------------------
+
+# ... continue with: class User(db.Model, UserMixin): ...
 
 # --- File Upload Configuration ---
 UPLOAD_FOLDER = os.path.join(basedir, 'uploads')
@@ -1904,6 +1936,8 @@ def send_push_notification(user_id, title, body):
             print(f"Push Error: {e}")
             return False
     return False
+
+
 
 # --- Run Application ---
 if __name__ == '__main__':
