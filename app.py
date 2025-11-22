@@ -13,6 +13,13 @@ import uuid
 from werkzeug.utils import secure_filename 
 import urllib.parse 
 from sqlalchemy import or_ # For search queries
+import firebase_admin
+from firebase_admin import credentials, messaging
+
+# Initialize Firebase (only once)
+if not firebase_admin._apps:
+    cred = credentials.Certificate("firebase_credentials.json")
+    firebase_admin.initialize_app(cred)
 
 # --- Basic Setup ---
 app = Flask(__name__, template_folder='templates')
@@ -98,6 +105,7 @@ class User(db.Model, UserMixin):
     city = db.Column(db.String(100), nullable=True)
     state = db.Column(db.String(100), nullable=True)
     pincode = db.Column(db.String(20), nullable=True)
+    fcm_token = db.Column(db.String(500), nullable=True)
     # --- END EXPANDED FIELDS ---
     
     # This relationship now works because parent_id is a ForeignKey
@@ -279,47 +287,63 @@ def allowed_file(filename, extension_set):
            filename.rsplit('.', 1)[1].lower() in extension_set
 
 def send_fee_alert_sms(user, balance, due_date):
-    """Sends an actual SMS notification for fee pending using a third-party API."""
     if user and user.phone_number:
-        message = f"ALERT: Dear {user.name}, your tuition fee of INR {balance:.2f} is pending. Due date: {due_date}. Please pay immediately."
-        return send_actual_sms(user.phone_number, message)
+        # IMPORTANT: This text must EXACTLY match your approved DLT template
+        # Example Template: "Dear {#var#}, your fee of Rs {#var#} is pending. Due: {#var#}."
+        message = f"Dear {user.name}, your fee of Rs {balance:.2f} is pending. Due: {due_date}."
+        
+        # Pass the specific Template ID for fees here
+        fee_template_id = "1007XXXXXXXXXXXXXX" # <--- REPLACE WITH YOUR ACTUAL FEE TEMPLATE ID
+        
+        return send_actual_sms(user.phone_number, message, template_id=fee_template_id)
     return False
 
-def send_actual_sms(phone_number, message_body):
-    """Sends an SMS using the configured third-party API."""
-    if not phone_number: # Basic check
-        print("--- [SMS FAILED] No phone number provided. ---")
+# In app.py, replace the existing send_actual_sms function with this:
+
+def send_actual_sms(phone_number, message_body, template_id=None):
+    """
+    Sends an SMS using ServerMSG API (Indian DLT Compliant).
+    """
+    # 1. Get Credentials from Environment Variables
+    base_url = os.environ.get('SMS_API_URL', 'http://servermsg.com/api/SmsApi/SendSingleApi')
+    user_id = os.environ.get('SMS_API_USER_ID')
+    password = os.environ.get('SMS_API_PASSWORD')
+    sender_id = os.environ.get('SMS_API_SENDER_ID')
+    entity_id = os.environ.get('SMS_API_ENTITY_ID')
+    
+    # If no specific template ID is passed, try to use a default one (mostly for testing)
+    if not template_id:
+        template_id = os.environ.get('SMS_API_DEFAULT_TEMPLATE_ID')
+
+    if not all([user_id, password, sender_id, entity_id, template_id, phone_number]):
+        print(f"--- [SMS ERROR] Missing Config. Checked: UserID={bool(user_id)}, Pass={bool(password)}, Sender={bool(sender_id)}, Entity={bool(entity_id)}, Template={bool(template_id)} ---")
         return False
 
-    if not SMS_API_URL or not SMS_API_USER_ID or not SMS_API_PASSWORD or \
-       SMS_API_URL == 'YOUR_THIRD_PARTY_SMS_API_ENDPOINT_URL': # Check if placeholders are still used
-        print("--- [SMS ERROR] API Credentials/URL not configured or using placeholders. Cannot send actual SMS. ---")
-        return False # Indicate failure if not configured
-
+    # 2. Prepare Parameters exactly as shown in your PHP screenshot
     payload = {
-        'userid': SMS_API_USER_ID,
-        'password': SMS_API_PASSWORD,
-        'mobile': phone_number,
-        'msg': message_body,
-        # 'senderid': SMS_API_SENDER_ID, 
+        'UserID': user_id,
+        'Password': password,
+        'SenderID': sender_id,
+        'Phno': phone_number,
+        'Msg': message_body,
+        'EntityID': entity_id,
+        'TemplateID': template_id
     }
 
     try:
-        print(f"--- [SMS] Attempting to send to {phone_number} via {SMS_API_URL} ---")
-        response = requests.get(SMS_API_URL, params=payload, timeout=10) 
-        response.raise_for_status() 
-
+        print(f"--- [SMS] Sending to {phone_number} via ServerMSG ---")
+        # The image shows a GET request
+        response = requests.get(base_url, params=payload, timeout=10)
+        
+        # Check response
         if response.status_code == 200:
-            print(f"--- [SMS SUCCESS] API Response: {response.text[:100]}... ---")
+            print(f"--- [SMS SUCCESS] Response: {response.text} ---")
             return True
         else:
-            print(f"--- [SMS FAILED] API returned status {response.status_code}: {response.text[:100]}... ---")
+            print(f"--- [SMS FAILED] Status {response.status_code}: {response.text} ---")
             return False
-    except requests.exceptions.RequestException as e:
-        print(f"--- [SMS FAILED] Network/API Error for {phone_number}: {e} ---")
-        return False
     except Exception as e:
-        print(f"--- [SMS FAILED] General Error for {phone_number}: {e} ---")
+        print(f"--- [SMS EXCEPTION] {e} ---")
         return False
 
 def send_mock_whatsapp(user, subject, body):
@@ -1252,12 +1276,23 @@ def get_teacher_students():
 @app.route('/api/teacher/attendance', methods=['POST'])
 @login_required
 def record_attendance():
-    if current_user.role != 'teacher': return jsonify({"message": "Access denied"}), 403
+    if current_user.role != 'teacher': 
+        return jsonify({"message": "Access denied"}), 403
+        
     data = request.get_json()
-    attendance_date = datetime.strptime(data['date'], '%Y-%m-%d').date()
+    attendance_date_str = data['date'] # Date as string YYYY-MM-DD
     attendance_data = data['attendance_data']
 
+    # Convert string date to Python date object
+    attendance_date = datetime.strptime(attendance_date_str, '%Y-%m-%d').date()
+
+    # Get the Attendance Template ID from environment
+    attendance_template_id = os.environ.get('SMS_TEMPLATE_ID_ATTENDANCE')
+
+    sms_count = 0
+
     for record in attendance_data:
+        # 1. Save/Update Database Record
         existing_record = Attendance.query.filter_by(student_id=record['student_id']).filter(
             db.func.date(Attendance.check_in_time) == attendance_date
         ).first()
@@ -1271,19 +1306,55 @@ def record_attendance():
                 status=record['status']
             )
             db.session.add(new_record)
-
+        
+        # 2. Send SMS Alert (Only if Absent)
+        # We typically only alert for 'Absent' to save SMS credits and avoid spamming 'Present'
+        if record['status'] == 'Absent':
+            student = db.session.get(User, record['student_id'])
+            
+            if student and student.phone_number and attendance_template_id:
+                # IMPORTANT: This text must match your DLT Template content exactly.
+                # Example DLT Template: "Dear {#var#}, your attendance is marked Absent for date {#var#}. Please contact CST Institute."
+                message_body = f"Dear {student.name}, your attendance is marked Absent for date {attendance_date_str}. Please contact institute."
+                
+                # Send to Student
+                if send_actual_sms(student.phone_number, message_body, template_id=attendance_template_id):
+                    sms_count += 1
+                
+                # Optional: Send to Parent as well
+                if student.parent_id:
+                    parent = db.session.get(User, student.parent_id)
+                    if parent and parent.phone_number:
+                        send_actual_sms(parent.phone_number, message_body, template_id=attendance_template_id)
+# --- NEW: Send Push Notification for Absence ---
+            # This runs immediately after the SMS logic
+                    if student:
+                        push_title = "Attendance Alert"
+                        push_body = f"Dear {student.name}, you are marked Absent for {attendance_date_str}."
+                
+                # Send to Student
+                        send_push_notification(student.id, push_title, push_body)
+                
+                # Optional: Send to Parent
+                        if student.parent_id:
+                            send_push_notification(student.parent_id, f"Child Alert: {push_title}", push_body)
+            # -----------------------------------------------
     db.session.commit()
-    return jsonify({"message": f"Attendance recorded for {len(attendance_data)} students on {data['date']}."}), 201
+    
+    return jsonify({
+        "message": f"Attendance recorded. Sent {sms_count} Absent alerts."
+    }), 201
 
 @app.route('/api/teacher/notify', methods=['POST'])
 @login_required
 def send_notification_to_student():
     if current_user.role not in ['teacher', 'admin']: return jsonify({"message": "Access denied"}), 403
+    
     data = request.get_json()
     student_id = data.get('student_id')
     subject = data.get('subject')
     body = data.get('body')
-    notify_type = data.get('type')
+    notify_type = data.get('type') # 'email', 'sms', 'whatsapp', 'push'
 
     student = db.session.get(User, student_id)
     if not student or student.role != 'student':
@@ -1293,7 +1364,7 @@ def send_notification_to_student():
 
     result_messages = []
 
-    # 1. Store as a Message (Database Record)
+    # 1. Store as a Message (Database Record - Always happens)
     message_content = f"Subject: {subject}\n\n{body}"
     new_message_student = Message(sender_id=current_user.id, recipient_id=student_id, content=message_content)
     db.session.add(new_message_student)
@@ -1307,7 +1378,9 @@ def send_notification_to_student():
 
     db.session.commit()
 
-    # 2. External Notification (Actual/Mock)
+    # 2. External Notification Logic (The Switch Case)
+    
+    # --- CASE A: EMAIL ---
     if notify_type == 'email':
         try:
             msg = MailMessage(subject=subject,
@@ -1316,42 +1389,63 @@ def send_notification_to_student():
             if parent and parent.email:
                 msg.recipients.append(parent.email)
             msg.body = body
-            # mail.send(msg) # Uncomment to send real emails
-            print(f"--- [MOCK EMAIL SENT] to {student.email} and Parent ---\nSubject: {subject}\nBody:\n{body}\n--------------------------------")
+            # mail.send(msg) # Uncomment this line when SMTP settings in app.py are real
+            print(f"--- [MOCK EMAIL SENT] to {student.email} ---\nSubject: {subject}\nBody: {body}\n----------------")
             result_messages.append("Email sent successfully (mocked).")
         except Exception as e:
-            print(f"Flask-Mail Error (Ignored for DB entry): {e}")
-            result_messages.append(f"Email failed to send: {str(e)}.")
+            print(f"Flask-Mail Error: {e}")
+            result_messages.append(f"Email failed: {str(e)}.")
 
+    # --- CASE B: SMS ---
     elif notify_type == 'sms':
+        # Send to Student
         if send_actual_sms(student.phone_number, f"{subject}: {body}"):
              result_messages.append(f"SMS sent to Student ({student.phone_number}).")
         else:
-             result_messages.append(f"SMS to Student failed (No Phone/API Error).")
+             result_messages.append(f"SMS to Student failed.")
+        
+        # Send to Parent
         if parent:
             if send_actual_sms(parent.phone_number, f"Re: {student.name} - {subject}: {body}"):
                  result_messages.append(f"SMS sent to Parent ({parent.phone_number}).")
             else:
-                 result_messages.append(f"SMS to Parent failed (No Phone/API Error).")
+                 result_messages.append(f"SMS to Parent failed.")
 
-
+    # --- CASE C: WHATSAPP ---
     elif notify_type == 'whatsapp':
+        # Send to Student
         if send_mock_whatsapp(student, subject, body):
             result_messages.append(f"WhatsApp sent to Student ({student.phone_number}).")
         else:
-            result_messages.append(f"WhatsApp to Student failed (No phone).")
-        if parent and send_mock_whatsapp(parent, subject, body):
-            result_messages.append(f"WhatsApp sent to Parent ({parent.phone_number}).")
-        elif parent:
-            result_messages.append(f"WhatsApp to Parent failed (No phone).")
+            result_messages.append(f"WhatsApp to Student failed.")
+        
+        # Send to Parent
+        if parent: 
+            if send_mock_whatsapp(parent, subject, body):
+                result_messages.append(f"WhatsApp sent to Parent ({parent.phone_number}).")
+            else:
+                result_messages.append(f"WhatsApp to Parent failed.")
+
+    # --- CASE D: FIREBASE PUSH NOTIFICATION (NEW) ---
+    elif notify_type == 'push':
+        # Send to Student
+        if send_push_notification(student.id, subject, body):
+            result_messages.append("Push Notification sent to Student.")
+        else:
+            result_messages.append("Push to Student failed (App not installed/No Internet).")
+        
+        # Send to Parent
+        if parent:
+            if send_push_notification(parent.id, f"Child Alert: {subject}", body):
+                result_messages.append("Push Notification sent to Parent.")
+            else:
+                # We don't treat parent push failure as a major error, so just log it or ignore
+                pass
 
     else:
-        result_messages.append("No external notification type specified/valid.")
+        result_messages.append("No valid external notification type selected.")
 
-
-    return jsonify({"message": " | ".join(result_messages)}), 200
-
-@app.route('/api/teacher/email', methods=['POST'])
+    return jsonify({"message": " | ".join(result_messages)}), 200@app.route('/api/teacher/email', methods=['POST'])
 @login_required
 def send_email_wrapper():
     if current_user.role != 'teacher': return jsonify({"message": "Access denied"}), 403
@@ -1757,7 +1851,35 @@ def serve_student_page():
 def serve_parent_page():
     if current_user.role == 'parent': return render_template('parent.html')
     else: return redirect(url_for('serve_login_page'))
+@app.route('/api/save_fcm_token', methods=['POST'])
+@login_required
+def save_fcm_token():
+    token = request.json.get('token')
+    if token:
+        current_user.fcm_token = token
+        db.session.commit()
+        return jsonify({"message": "Token saved"}), 200
+    return jsonify({"message": "No token provided"}), 400
 
+@app.route('/firebase-messaging-sw.js')
+def service_worker():
+    return send_from_directory(app.static_folder, 'firebase-messaging-sw.js')
+
+# Helper function to use later
+def send_push_notification(user_id, title, body):
+    user = db.session.get(User, user_id)
+    if user and user.fcm_token:
+        try:
+            message = messaging.Message(
+                notification=messaging.Notification(title=title, body=body),
+                token=user.fcm_token,
+            )
+            messaging.send(message)
+            return True
+        except Exception as e:
+            print(f"Push Error: {e}")
+            return False
+    return False
 
 # --- Run Application ---
 if __name__ == '__main__':
