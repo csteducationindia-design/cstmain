@@ -1031,7 +1031,6 @@ def manage_announcements():
         if current_user.role != 'admin': return jsonify({"message": "Access denied"}), 403
         data = request.get_json()
         
-        # 1. Save Announcement to DB
         new_announcement = Announcement(
             title=data['title'],
             content=data['content'],
@@ -1040,7 +1039,7 @@ def manage_announcements():
         db.session.add(new_announcement)
         db.session.commit()
 
-        # --- NEW: Send Push Notification Logic ---
+        # --- NEW: SEND PUSH NOTIFICATION FOR ANNOUNCEMENT ---
         try:
             target = data['target_group']
             recipients = []
@@ -1048,30 +1047,29 @@ def manage_announcements():
             if target == 'all':
                 recipients = User.query.all()
             else:
-                # Map frontend values (plural) to database roles (singular)
+                # Map the plural dropdown values to singular DB roles
                 role_map = {'teachers': 'teacher', 'students': 'student', 'parents': 'parent', 'admin': 'admin'}
                 db_role = role_map.get(target, target) 
                 recipients = User.query.filter_by(role=db_role).all()
 
             count = 0
             for user in recipients:
-                # Don't send notification to the admin who created it
-                if user.id != current_user.id:
-                    # Send the push notification
+                # Don't send the notification to the admin who just posted it
+                if user.id != current_user.id and user.fcm_token:
                     send_push_notification(
                         user.id, 
-                        f"New Announcement: {data['title']}", 
-                        data['content']
+                        f"📢 New Announcement", 
+                        f"{data['title']}: {data['content'][:50]}..." # Show first 50 chars
                     )
                     count += 1
-            print(f"--- Sent Announcement Push to {count} users ---")
+            print(f"--- Announcement Push Sent to {count} users ---")
         except Exception as e:
             print(f"--- Announcement Push Error: {e} ---")
-        # -----------------------------------------
+        # ----------------------------------------------------
 
         return jsonify(new_announcement.to_dict()), 201
         
-    # GET Request handling remains the same
+    # GET Request logic stays the same
     return jsonify([a.to_dict() for a in Announcement.query.order_by(Announcement.created_at.desc()).all()])
 
 @app.route('/api/announcements/<int:announcement_id>', methods=['DELETE'])
@@ -1699,18 +1697,26 @@ def upload_note():
             )
             db.session.add(new_note)
             db.session.commit()
-            # --- NEW: Notify Students about New Note ---
-            course = db.session.get(Course, int(course_id))
-            if course and course.students:
-                for student in course.students:
-                    send_push_notification(
-                        student.id, 
-                        "New Study Material", 
-                        f"New note added in {course.name}: {title}"
-                    )
-            # -------------------------------------------
-            
 
+            # --- NEW: SEND PUSH NOTIFICATION TO STUDENTS ---
+            try:
+                # 1. Get the course object
+                course = db.session.get(Course, int(course_id))
+                if course:
+                    # 2. Loop through enrolled students
+                    # (This works because of the 'students' relationship in your Course model)
+                    for student in course.students:
+                        if student.fcm_token:
+                            send_push_notification(
+                                student.id, 
+                                "New Study Material", 
+                                f"New note uploaded in {course.name}: {title}"
+                            )
+                    print(f"--- Notes Push Sent to {len(course.students)} students ---")
+            except Exception as e:
+                print(f"--- Notes Push Error: {e} ---")
+            # -----------------------------------------------
+            
             return jsonify({"message": "File uploaded and shared successfully!", "note": new_note.to_dict()}), 201
             
         except Exception as e:
