@@ -59,9 +59,23 @@ mail = Mail(app)
 
 # --- Database Configuration ---
 basedir = os.path.abspath(os.path.dirname(__file__))
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'institute.db')
+
+# Define the persistent data directory
+data_dir = os.path.join(basedir, 'data')
+
+# Create the directory if it doesn't exist
+if not os.path.exists(data_dir):
+    try:
+        os.makedirs(data_dir)
+        print(f"--- Created persistent data directory: {data_dir} ---")
+    except OSError as e:
+        print(f"--- Error creating data directory: {e} ---")
+
+# Save the DB inside the persistent 'data' folder
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(data_dir, 'institute.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+
 # ... existing code ...
 
 # --- PASTE THIS MIGRATION CODE HERE ---
