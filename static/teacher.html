@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Teacher Portal</title>
+    
+    <link rel="manifest" href="/static/manifest.json">
+
     <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
     <link as="style" href="https://fonts.googleapis.com/css2?display=swap&family=Inter:wght@400;500;700;900" onload="this.rel='stylesheet'" rel="stylesheet"/>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
@@ -41,7 +44,6 @@
 <body class="bg-background-light dark:bg-background-dark font-display text-slate-800 dark:text-slate-200">
 
 <div class="flex min-h-screen">
-    <!-- Sidebar -->
     <aside class="w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col shadow-lg">
         <div class="p-6">
             <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Institute Teacher</h1>
@@ -60,7 +62,6 @@
                 <span class="material-symbols-outlined">notifications_active</span>
                 <span class="text-sm font-medium">Notifications</span>
             </a>
-            <!-- NEW: Share Notes Link -->
             <a href="#share-notes" class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-primary/10 dark:hover:bg-primary/20">
                 <span class="material-symbols-outlined">upload_file</span>
                 <span class="text-sm font-medium">Share Notes</span>
@@ -73,6 +74,11 @@
                 <span class="material-symbols-outlined">campaign</span>
                 <span class="text-sm font-medium">Announcements</span>
             </a>
+            
+            <button id="install-app-btn" class="hidden w-full flex items-center gap-3 px-4 py-2 rounded-lg text-green-600 hover:bg-green-50 font-medium mt-4">
+                <span class="material-symbols-outlined">download</span>
+                <span class="text-sm">Install Mobile App</span>
+            </button>
         </nav>
         <div class="p-6 border-t border-slate-200 dark:border-slate-800">
             <button id="logout-btn" class="w-full bg-red-600 text-white font-medium py-2 px-4 rounded-lg text-sm hover:bg-red-700 transition duration-150">
@@ -81,7 +87,6 @@
         </div>
     </aside>
 
-    <!-- Main Content Area -->
     <main class="flex-1 p-8">
         <div class="max-w-7xl mx-auto">
             <header class="mb-8">
@@ -89,18 +94,15 @@
                 <p class="text-slate-500 dark:text-slate-400 mt-2">Manage your courses, students, and communication.</p>
             </header>
 
-            <!-- COURSES SECTION -->
             <div id="content-courses" class="content-section">
                 <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">My Courses</h2>
                 <div id="courses-list" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <!-- Dynamic course cards will be inserted here -->
                     <div id="no-courses" class="col-span-2 bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6">
                         <p class="text-slate-500">You are not currently assigned to any courses.</p>
                     </div>
                 </div>
             </div>
 
-            <!-- ATTENDANCE SECTION -->
             <div id="content-attendance" class="content-section hidden">
                 <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">Mark Attendance</h2>
                 <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6 mb-8">
@@ -131,8 +133,7 @@
                                 </tr>
                             </thead>
                             <tbody id="student-list-body" class="divide-y divide-slate-200 dark:divide-slate-700">
-                                <!-- Dynamic student rows go here -->
-                            </tbody>
+                                </tbody>
                         </table>
                     </div>
                     <button type="submit" id="submit-attendance-btn" class="mt-4 w-full bg-green-600 text-white font-medium py-2.5 px-4 rounded-lg text-sm hover:bg-green-700 transition duration-150">
@@ -141,7 +142,6 @@
                 </form>
             </div>
 
-            <!-- NOTIFICATIONS SECTION -->
             <div id="content-notifications" class="content-section hidden">
                 <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">Send Notification to Student(s)</h2>
                 <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6">
@@ -160,7 +160,7 @@
                             <label for="notification-body" class="block text-sm font-medium mb-1">Message</label>
                             <textarea id="notification-body" rows="5" required class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800"></textarea>
                         </div>
-                        <div class="grid grid-cols-3 gap-4">
+                        <div class="grid grid-cols-4 gap-4">
                             <button type="button" data-type="email" class="send-notification-btn w-full bg-primary text-white font-medium py-2.5 px-4 rounded-lg text-sm hover:bg-opacity-90 transition duration-150">
                                 Send Email
                             </button>
@@ -168,7 +168,10 @@
                                 Send SMS
                             </button>
                             <button type="button" data-type="whatsapp" class="send-notification-btn w-full bg-green-600 text-white font-medium py-2.5 px-4 rounded-lg text-sm hover:bg-green-700 transition duration-150">
-                                Send WhatsApp (Mock)
+                                WhatsApp
+                            </button>
+                            <button type="button" data-type="push" class="send-notification-btn w-full bg-purple-600 text-white font-medium py-2.5 px-4 rounded-lg text-sm hover:bg-purple-700 transition duration-150">
+                                Send App Push
                             </button>
                         </div>
                         <p id="notification-status" class="mt-4 text-sm font-medium text-center text-slate-500 dark:text-slate-400 hidden"></p>
@@ -176,7 +179,6 @@
                 </div>
             </div>
             
-            <!-- SHARE NOTES SECTION (NEW) -->
             <div id="content-share-notes" class="content-section hidden">
                 <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">Share Course Notes</h2>
                 <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6 mb-8">
@@ -217,14 +219,10 @@
                             </tr>
                         </thead>
                         <tbody id="my-notes-table-body" class="divide-y divide-slate-200 dark:divide-slate-700">
-                            <!-- My uploaded notes will appear here -->
-                        </tbody>
+                            </tbody>
                     </table>
                 </div>
             </div>
-            <!-- END SHARE NOTES SECTION -->
-
-            <!-- REPORTS SECTION -->
             <div id="content-reports" class="content-section hidden">
                 <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">Student Attendance Report</h2>
                 <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm overflow-hidden">
@@ -246,9 +244,6 @@
                     <p id="report-status" class="p-4 text-sm text-red-500 hidden">Error loading attendance data.</p>
                 </div>
             </div>
-            <!-- END REPORTS SECTION -->
-
-            <!-- ANNOUNCEMENTS SECTION -->
             <div id="content-announcements" class="content-section hidden">
                 <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">Institute Announcements</h2>
                 <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm overflow-hidden">
@@ -261,8 +256,7 @@
                             </tr>
                         </thead>
                         <tbody id="announcements-table-body" class="divide-y divide-slate-200 dark:divide-slate-700">
-                            <!-- Announcements loaded here -->
-                        </tbody>
+                            </tbody>
                     </table>
                 </div>
             </div>
@@ -271,11 +265,31 @@
     </main>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
+
 <script>
     // Define the base URL explicitly using the current location origin 
     const API_ORIGIN = window.location.origin;
     const API_BASE_URL = API_ORIGIN + '/api';
     let allStudents = []; // Global variable to store all students
+
+    // --- PWA INSTALL LOGIC ---
+    let deferredPrompt;
+    const installBtn = document.getElementById('install-app-btn');
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        installBtn.classList.remove('hidden'); 
+    });
+    installBtn.addEventListener('click', async () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') installBtn.classList.add('hidden');
+            deferredPrompt = null;
+        }
+    });
 
     document.addEventListener('DOMContentLoaded', () => {
         
@@ -357,6 +371,9 @@
                     document.getElementById('teacher-welcome').textContent = `Welcome, ${result.user.name}!`;
                     loadTeacherCourses();
                     populateStudentDropdown(); 
+                    
+                    // !!! INITIALIZE FIREBASE AFTER LOGIN !!!
+                    setTimeout(initFirebase, 2000);
                 }
             } catch (error) { 
                 console.error("Session check failed:", error);
@@ -719,13 +736,11 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600">${data.present}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600">${data.absent}</td>
                             
-                            <!-- SMS Button (Calls API) -->
                             <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
                                 <button onclick="sendQuickReportNotification(${data.student_id}, '${data.student_name}', '${quickStatusText}', 'sms')" class="text-yellow-600 hover:text-yellow-700 disabled:text-slate-400" ${isPhoneAvailable ? '' : 'disabled'}>
                                     <span class="material-symbols-outlined align-middle text-lg">sms</span>
                                 </button>
                             </td>
-                            <!-- WhatsApp Button (Calls deep link) -->
                             <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
                                 <button onclick="sendQuickReportNotification(${data.student_id}, '${data.student_name}', '${quickStatusText}', 'whatsapp')" class="text-green-600 hover:text-green-700 disabled:text-slate-400" ${isPhoneAvailable ? '' : 'disabled'}>
                                     <span class="material-symbols-outlined align-middle text-lg">call</span>
@@ -867,7 +882,56 @@
         checkTeacherSession();
         attendanceDate.valueAsDate = new Date();
     });
+
+    // --- FIREBASE LOGIC ---
+    function initFirebase() {
+        // ============================================================
+        // 1. PASTE YOUR COPIED "const firebaseConfig = { ... }" HERE
+        // ============================================================
+        const firebaseConfig = {
+            // EXAMPLE - REPLACE WITH YOURS:
+            apiKey: "AIzaSyXXXX...", 
+            authDomain: "cst-institute-app.firebaseapp.com",
+            projectId: "cst-institute-app",
+            storageBucket: "cst-institute-app.firebasestorage.app",
+            messagingSenderId: "485166460200",
+            appId: "1:485166460200:web:..." 
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+
+        const messaging = firebase.messaging();
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/firebase-messaging-sw.js')
+            .then((registration) => {
+                Notification.requestPermission().then((permission) => {
+                    if (permission === 'granted') {
+                        console.log('Notification permission granted.');
+                        
+                        // ========================================================
+                        // 2. PASTE YOUR "VAPID KEY" HERE (from Cloud Messaging tab)
+                        // ========================================================
+                        return messaging.getToken({ 
+                            vapidKey: 'BBOMxvKvbEs_t9ykKBa2zIewzCzD6FCbm9rxc8a9eWl2kjjH5vyTSH6TeQMksZ_OGl5jZyQpU2wBcf-KsZN1uko', 
+                            serviceWorkerRegistration: registration 
+                        });
+                    }
+                }).then((token) => {
+                    if (token) {
+                        console.log('FCM Token:', token);
+                        fetch('/api/save_fcm_token', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({ token: token })
+                        });
+                    }
+                });
+            });
+        }
+    }
 </script>
 </body>
 </html>
-
