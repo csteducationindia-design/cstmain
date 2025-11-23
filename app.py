@@ -1030,6 +1030,8 @@ def manage_announcements():
     if request.method == 'POST':
         if current_user.role != 'admin': return jsonify({"message": "Access denied"}), 403
         data = request.get_json()
+        
+        # 1. Save Announcement to DB
         new_announcement = Announcement(
             title=data['title'],
             content=data['content'],
@@ -1037,7 +1039,39 @@ def manage_announcements():
         )
         db.session.add(new_announcement)
         db.session.commit()
+
+        # --- NEW: Send Push Notification Logic ---
+        try:
+            target = data['target_group']
+            recipients = []
+            
+            if target == 'all':
+                recipients = User.query.all()
+            else:
+                # Map frontend values (plural) to database roles (singular)
+                role_map = {'teachers': 'teacher', 'students': 'student', 'parents': 'parent', 'admin': 'admin'}
+                db_role = role_map.get(target, target) 
+                recipients = User.query.filter_by(role=db_role).all()
+
+            count = 0
+            for user in recipients:
+                # Don't send notification to the admin who created it
+                if user.id != current_user.id:
+                    # Send the push notification
+                    send_push_notification(
+                        user.id, 
+                        f"New Announcement: {data['title']}", 
+                        data['content']
+                    )
+                    count += 1
+            print(f"--- Sent Announcement Push to {count} users ---")
+        except Exception as e:
+            print(f"--- Announcement Push Error: {e} ---")
+        # -----------------------------------------
+
         return jsonify(new_announcement.to_dict()), 201
+        
+    # GET Request handling remains the same
     return jsonify([a.to_dict() for a in Announcement.query.order_by(Announcement.created_at.desc()).all()])
 
 @app.route('/api/announcements/<int:announcement_id>', methods=['DELETE'])
@@ -1172,6 +1206,26 @@ def send_fee_alert():
     if parent:
         message += f" Alert sent to Parent ({'Yes' if parent_alerted else 'No Phone/Error'})."
 
+    # ============================================================
+    # PASTE THE NEW PUSH NOTIFICATION CODE HERE
+    # ============================================================
+    
+    # Format date and amount for the Push Message
+    formatted_date_push = status['due_date'] # Or use the %d-%b-%Y format if you prefer
+    clean_balance_push = int(status['balance'])
+
+    push_title = "Fee Reminder"
+    push_body = f"Dear {student.name}, your fee of Rs {clean_balance_push} is pending. Due: {formatted_date_push}."
+
+    # Send to Student
+    send_push_notification(student_id, push_title, push_body)
+
+    # Send to Parent
+    if parent:
+        send_push_notification(parent.id, f"Child Alert: {push_title}", push_body)
+    # ============================================================
+
+   
     return jsonify({"message": message}), 200
 
 
@@ -1351,18 +1405,19 @@ def record_attendance():
         return jsonify({"message": "Access denied"}), 403
         
     data = request.get_json()
-    attendance_date_str = data['date'] 
+    attendance_date_str = data['date'] # Date as string YYYY-MM-DD
     attendance_data = data['attendance_data']
 
+    # Convert string date to Python date object
     attendance_date = datetime.strptime(attendance_date_str, '%Y-%m-%d').date()
 
-    # --- UPDATE 1: YOUR APPROVED ATTENDANCE TEMPLATE ID ---
+    # YOUR APPROVED ATTENDANCE TEMPLATE ID
     attendance_template_id = "1707176388022694296"
 
     sms_count = 0
 
     for record in attendance_data:
-        # ... (Keep existing database logic here for saving attendance) ...
+        # 1. Save/Update Database Record
         existing_record = Attendance.query.filter_by(student_id=record['student_id']).filter(
             db.func.date(Attendance.check_in_time) == attendance_date
         ).first()
@@ -1377,39 +1432,51 @@ def record_attendance():
             )
             db.session.add(new_record)
         
-        # 2. Send SMS Alert (Only if Absent)
+        # 2. NOTIFICATION LOGIC
+        student = db.session.get(User, record['student_id'])
+        parent = db.session.get(User, student.parent_id) if student and student.parent_id else None
+        
+        # --- CASE A: STUDENT IS ABSENT ---
         if record['status'] == 'Absent':
-            student = db.session.get(User, record['student_id'])
-            
+            # 1. Send SMS (Your working DLT Logic)
             if student and student.phone_number and attendance_template_id:
-                # --- UPDATE 2: YOUR EXACT MESSAGE TEXT ---
-                message_body = f"Dear {student.name}, your attendance is marked Absent for date {attendance_date_str}. Please contact CST Institute."
+                # Format date for DLT (e.g., 25-Nov-2025)
+                try:
+                    d_obj = datetime.strptime(attendance_date_str, '%Y-%m-%d')
+                    formatted_date = d_obj.strftime('%d-%b-%Y')
+                except:
+                    formatted_date = attendance_date_str
+
+                # Exact DLT Text
+                message_body = f"Dear {student.name}, your attendance is marked Absent for date {formatted_date}. Please contact CST Institute."
                 
-                # Send to Student
+                # SMS to Student
                 if send_actual_sms(student.phone_number, message_body, template_id=attendance_template_id):
                     sms_count += 1
                 
-                # Send to Parent
-                if student.parent_id:
-                    parent = db.session.get(User, student.parent_id)
-                    if parent and parent.phone_number:
-                        send_actual_sms(parent.phone_number, message_body, template_id=attendance_template_id)
+                # SMS to Parent
+                if parent and parent.phone_number:
+                    send_actual_sms(parent.phone_number, message_body, template_id=attendance_template_id)
 
-            # ... (Keep Push Notification logic here) ...
+            # 2. Send Push Notification (New)
             if student:
-                push_title = "Attendance Alert"
-                # Push notification content doesn't need to match DLT, so this is fine:
-                push_body = f"Dear {student.name}, you are marked Absent for {attendance_date_str}."
-                send_push_notification(student.id, push_title, push_body)
-                if student.parent_id:
-                    send_push_notification(student.parent_id, f"Child Alert: {push_title}", push_body)
+                send_push_notification(student.id, "Attendance Alert", f"Marked ABSENT for {formatted_date}.")
+            if parent:
+                send_push_notification(parent.id, "Attendance Alert", f"{student.name} is marked ABSENT for {formatted_date}.")
+
+        # --- CASE B: STUDENT IS PRESENT ---
+        elif record['status'] == 'Present':
+            # We usually don't send SMS for 'Present' to save money, but we send FREE Push Notifications
+            if student:
+                send_push_notification(student.id, "Attendance", f"Marked PRESENT for {attendance_date_str}.")
+            if parent:
+                send_push_notification(parent.id, "Attendance", f"{student.name} has arrived/marked PRESENT for {attendance_date_str}.")
 
     db.session.commit()
     
     return jsonify({
         "message": f"Attendance recorded. Sent {sms_count} Absent alerts."
     }), 201
-
 @app.route('/api/teacher/notify', methods=['POST'])
 @login_required
 def send_notification_to_student():
@@ -1632,7 +1699,18 @@ def upload_note():
             )
             db.session.add(new_note)
             db.session.commit()
+            # --- NEW: Notify Students about New Note ---
+            course = db.session.get(Course, int(course_id))
+            if course and course.students:
+                for student in course.students:
+                    send_push_notification(
+                        student.id, 
+                        "New Study Material", 
+                        f"New note added in {course.name}: {title}"
+                    )
+            # -------------------------------------------
             
+
             return jsonify({"message": "File uploaded and shared successfully!", "note": new_note.to_dict()}), 201
             
         except Exception as e:
