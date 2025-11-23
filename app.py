@@ -347,7 +347,7 @@ def send_fee_alert_sms(user, balance, due_date):
         message = f"Dear {user.name}, your fee of Rs {balance:.2f} is pending. Due: {due_date}."
         
         # Pass the specific Template ID for fees here
-        fee_template_id = "1007XXXXXXXXXXXXXX" # <--- REPLACE WITH YOUR ACTUAL FEE TEMPLATE ID
+        fee_template_id = "1707176388002841408" # <--- REPLACE WITH YOUR ACTUAL FEE TEMPLATE ID
         
         return send_actual_sms(user.phone_number, message, template_id=fee_template_id)
     return False
@@ -1341,8 +1341,7 @@ def record_attendance():
     attendance_date = datetime.strptime(attendance_date_str, '%Y-%m-%d').date()
 
     # Get the Attendance Template ID from environment
-    attendance_template_id = os.environ.get('SMS_TEMPLATE_ID_ATTENDANCE')
-
+    attendance_template_id = "1707176388022694296"
     sms_count = 0
 
     for record in attendance_data:
@@ -1369,7 +1368,7 @@ def record_attendance():
             if student and student.phone_number and attendance_template_id:
                 # IMPORTANT: This text must match your DLT Template content exactly.
                 # Example DLT Template: "Dear {#var#}, your attendance is marked Absent for date {#var#}. Please contact CST Institute."
-                message_body = f"Dear {student.name}, your attendance is marked Absent for date {attendance_date_str}. Please contact institute."
+                message_body = f"Dear {student.name}, your attendance is marked Absent for date {attendance_date_str}. Please contact CST Institute."
                 
                 # Send to Student
                 if send_actual_sms(student.phone_number, message_body, template_id=attendance_template_id):
