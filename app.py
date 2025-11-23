@@ -1030,6 +1030,7 @@ def manage_announcements():
     if request.method == 'POST':
         if current_user.role != 'admin': return jsonify({"message": "Access denied"}), 403
         data = request.get_json()
+        
         new_announcement = Announcement(
             title=data['title'],
             content=data['content'],
@@ -1038,32 +1039,28 @@ def manage_announcements():
         db.session.add(new_announcement)
         db.session.commit()
 
-        # --- NEW: Send Push Notification for Announcement ---
+        # --- FIX: Send Push Notification ---
         try:
             target = data['target_group']
             recipients = []
-            
             if target == 'all':
                 recipients = User.query.all()
             else:
-                # Map dropdown values to DB roles
                 role_map = {'teachers': 'teacher', 'students': 'student', 'parents': 'parent', 'admin': 'admin'}
                 db_role = role_map.get(target, target) 
                 recipients = User.query.filter_by(role=db_role).all()
 
-            count = 0
             for user in recipients:
-                if user.id != current_user.id: # Don't notify self
-                    if send_push_notification(user.id, f"📢 {data['title']}", data['content']):
-                        count += 1
-            print(f"--- Announcement Push Sent to {count} users ---")
+                if user.id != current_user.id:
+                    send_push_notification(user.id, f"📢 {data['title']}", data['content'][:100])
         except Exception as e:
-            print(f"--- Announcement Push Error: {e} ---")
-        # ----------------------------------------------------
+            print(f"Push Error: {e}")
+        # -----------------------------------
 
         return jsonify(new_announcement.to_dict()), 201
+    
+    # GET request logic...
     return jsonify([a.to_dict() for a in Announcement.query.order_by(Announcement.created_at.desc()).all()])
-
 @app.route('/api/announcements/<int:announcement_id>', methods=['DELETE'])
 @login_required
 def delete_announcement(announcement_id):
@@ -1656,9 +1653,11 @@ def upload_note():
                 course_id=int(course_id),
                 teacher_id=current_user.id
             )
+# ... (file saving logic) ...
             db.session.add(new_note)
-            db.session.commit()
+            db.session.commit()  # <--- 1. Save to DB
 
+            # <--- 2. THIS CODE MUST BE HERE FOR NOTIFICATIONS TO WORK
             # --- NEW: Notify Students about New Note ---
             try:
                 course = db.session.get(Course, int(course_id))
@@ -1671,8 +1670,8 @@ def upload_note():
             except Exception as e:
                 print(f"--- Notes Push Error: {e} ---")
             # -------------------------------------------
-            
-            return jsonify({"message": "File uploaded and shared successfully!", "note": new_note.to_dict()}), 201
+
+            return jsonify({"message": "File uploaded...", "note": new_note.to_dict()}), 201
             
         except Exception as e:
             db.session.rollback()
