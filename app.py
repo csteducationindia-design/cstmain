@@ -2003,7 +2003,16 @@ def send_push_notification(user_id, title, body):
 
 
 # --- Run Application ---
+# --- Initialize Database Tables ---
+# This must run globally so Gunicorn executes it on startup
+with app.app_context():
+    # Create tables if they don't exist
+    db.create_all()
+    print("--- Database Tables Created/Verified ---")
+    
+    # Run migration check just in case
+    check_and_upgrade_db()
+
+# --- Run Application ---
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all() # Ensure tables are created (including new/modified User and SharedNote tables)
     app.run(debug=True, host='0.0.0.0', port=5000)
