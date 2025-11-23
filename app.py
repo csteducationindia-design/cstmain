@@ -342,12 +342,12 @@ def allowed_file(filename, extension_set):
 
 def send_fee_alert_sms(user, balance, due_date):
     if user and user.phone_number:
-        # IMPORTANT: This text must EXACTLY match your approved DLT template
-        # Example Template: "Dear {#var#}, your fee of Rs {#var#} is pending. Due: {#var#}."
+        # DLT Template: "Dear {#var#}, your fee of Rs {#var#} is pending. Due: {#var#}."
+        # We format the balance to 2 decimal places (e.g., 2000.00)
         message = f"Dear {user.name}, your fee of Rs {balance:.2f} is pending. Due: {due_date}."
         
-        # Pass the specific Template ID for fees here
-        fee_template_id = "1707176388002841408" # <--- REPLACE WITH YOUR ACTUAL FEE TEMPLATE ID
+        # YOUR APPROVED FEE TEMPLATE ID
+        fee_template_id = "1707176388002841408"
         
         return send_actual_sms(user.phone_number, message, template_id=fee_template_id)
     return False
@@ -1334,18 +1334,18 @@ def record_attendance():
         return jsonify({"message": "Access denied"}), 403
         
     data = request.get_json()
-    attendance_date_str = data['date'] # Date as string YYYY-MM-DD
+    attendance_date_str = data['date'] 
     attendance_data = data['attendance_data']
 
-    # Convert string date to Python date object
     attendance_date = datetime.strptime(attendance_date_str, '%Y-%m-%d').date()
 
-    # Get the Attendance Template ID from environment
+    # --- UPDATE 1: YOUR APPROVED ATTENDANCE TEMPLATE ID ---
     attendance_template_id = "1707176388022694296"
+
     sms_count = 0
 
     for record in attendance_data:
-        # 1. Save/Update Database Record
+        # ... (Keep existing database logic here for saving attendance) ...
         existing_record = Attendance.query.filter_by(student_id=record['student_id']).filter(
             db.func.date(Attendance.check_in_time) == attendance_date
         ).first()
@@ -1361,37 +1361,32 @@ def record_attendance():
             db.session.add(new_record)
         
         # 2. Send SMS Alert (Only if Absent)
-        # We typically only alert for 'Absent' to save SMS credits and avoid spamming 'Present'
         if record['status'] == 'Absent':
             student = db.session.get(User, record['student_id'])
             
             if student and student.phone_number and attendance_template_id:
-                # IMPORTANT: This text must match your DLT Template content exactly.
-                # Example DLT Template: "Dear {#var#}, your attendance is marked Absent for date {#var#}. Please contact CST Institute."
+                # --- UPDATE 2: YOUR EXACT MESSAGE TEXT ---
                 message_body = f"Dear {student.name}, your attendance is marked Absent for date {attendance_date_str}. Please contact CST Institute."
                 
                 # Send to Student
                 if send_actual_sms(student.phone_number, message_body, template_id=attendance_template_id):
                     sms_count += 1
                 
-                # Optional: Send to Parent as well
+                # Send to Parent
                 if student.parent_id:
                     parent = db.session.get(User, student.parent_id)
                     if parent and parent.phone_number:
                         send_actual_sms(parent.phone_number, message_body, template_id=attendance_template_id)
-# --- NEW: Send Push Notification for Absence ---
-            # This runs immediately after the SMS logic
-                    if student:
-                        push_title = "Attendance Alert"
-                        push_body = f"Dear {student.name}, you are marked Absent for {attendance_date_str}."
-                
-                # Send to Student
-                        send_push_notification(student.id, push_title, push_body)
-                
-                # Optional: Send to Parent
-                        if student.parent_id:
-                            send_push_notification(student.parent_id, f"Child Alert: {push_title}", push_body)
-            # -----------------------------------------------
+
+            # ... (Keep Push Notification logic here) ...
+            if student:
+                push_title = "Attendance Alert"
+                # Push notification content doesn't need to match DLT, so this is fine:
+                push_body = f"Dear {student.name}, you are marked Absent for {attendance_date_str}."
+                send_push_notification(student.id, push_title, push_body)
+                if student.parent_id:
+                    send_push_notification(student.parent_id, f"Child Alert: {push_title}", push_body)
+
     db.session.commit()
     
     return jsonify({
