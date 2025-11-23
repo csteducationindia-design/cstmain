@@ -1917,11 +1917,31 @@
             }
         }
         
-        window.sendFeeReminderSms = function(studentId, studentName, balance, dueDate) {
-            const subject = "Fee Reminder";
-            const body = `Dear ${studentName}, your fee payment of INR ${balance.toFixed(2)} is pending. The due date is ${dueDate}. Please pay soon.`;
+       // CORRECTED FUNCTION: Uses the dedicated backend route for Fee Alerts
+        window.sendFeeReminderSms = async function(studentId, studentName, balance, dueDate) {
+            // We do NOT define the body here. The backend does it to match DLT.
+            
             if (confirm(`Send SMS fee reminder to ${studentName}?`)) {
-                sendQuickNotification(studentId, subject, body, 'sms');
+                try {
+                    // Call the specific SMS Alert endpoint
+                    const response = await fetch(`${API_BASE_URL}/send_sms_alert`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        credentials: 'include',
+                        body: JSON.stringify({ student_id: studentId })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        alert(result.message);
+                    } else {
+                        alert(`Failed: ${result.message}`);
+                    }
+                } catch(error) {
+                    console.error('SMS Alert Error:', error);
+                    alert('Failed to send alert. Check console for details.');
+                }
             }
         }
 
