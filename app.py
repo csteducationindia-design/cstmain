@@ -342,11 +342,28 @@ def allowed_file(filename, extension_set):
 
 def send_fee_alert_sms(user, balance, due_date):
     if user and user.phone_number:
-        # DLT Template: "Dear {#var#}, your fee of Rs {#var#} is pending. Due: {#var#}."
-        # We format the balance to 2 decimal places (e.g., 2000.00)
-        message = f"Dear {user.name}, your fee of Rs {balance:.2f} is pending. Due: {due_date}."
+        # 1. Format Date to match DLT Sample (e.g., 25-Nov-2025)
+        if isinstance(due_date, str):
+            try:
+                d_obj = datetime.strptime(due_date, '%Y-%m-%d')
+                formatted_date = d_obj.strftime('%d-%b-%Y') # Result: 25-Nov-2025
+            except:
+                formatted_date = due_date
+        else:
+            formatted_date = due_date.strftime('%d-%b-%Y')
+
+        # 2. Format Amount (Integer, no decimals)
+        clean_balance = int(balance) 
+
+        # 3. Variable 4: Institute Phone Number
+        # UPDATE THIS: Put your actual support number here
+        institute_phone = "9822826307" 
+
+        # 4. Construct Message matching the DLT Screenshot EXACTLY
+        # Template: "Dear {#var#}, your fee of Rs {#var#} is pending. Due: {#var#}. CST Institute {#var#}"
+        message = f"Dear {user.name}, your fee of Rs {clean_balance} is pending. Due: {formatted_date}. CST Institute {institute_phone}"
         
-        # YOUR APPROVED FEE TEMPLATE ID
+        # Fee Template ID
         fee_template_id = "1707176388002841408"
         
         return send_actual_sms(user.phone_number, message, template_id=fee_template_id)
