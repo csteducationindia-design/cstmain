@@ -420,6 +420,7 @@ def record_attendance():
             if parent: send_push_notification(parent.id, "Attendance Alert", f"{student.name} marked ABSENT for {fmt_date}")
             
         elif record['status'] == 'Present':
+             # Push Only
              send_push_notification(student.id, "Attendance", "Marked PRESENT")
              if parent: send_push_notification(parent.id, "Attendance", f"{student.name} marked PRESENT")
 
@@ -546,8 +547,6 @@ def record_payment():
     new_payment = Payment(student_id=data['student_id'], fee_structure_id=data['fee_structure_id'], amount_paid=data['amount_paid'], payment_method=data['payment_method'])
     db.session.add(new_payment)
     db.session.commit()
-    
-    # IMPORTANT: Return payment_id for receipt generation
     return jsonify({"message": "Payment recorded", "payment_id": new_payment.id}), 201
 
 @app.route('/api/receipt/<int:payment_id>', methods=['GET'])
@@ -556,39 +555,7 @@ def serve_receipt(payment_id):
     if not payment: return "Not Found", 404
     student = db.session.get(User, payment.student_id)
     fee_struct = db.session.get(FeeStructure, payment.fee_structure_id)
-    
-    # Simple HTML Receipt
-    html = f"""
-    <html>
-    <head>
-        <title>Receipt #{payment.id}</title>
-        <style>
-            body {{ font-family: sans-serif; padding: 20px; }}
-            .receipt {{ border: 1px solid #ddd; padding: 20px; max-width: 500px; margin: auto; }}
-            h1 {{ text-align: center; color: #333; }}
-            table {{ width: 100%; margin-top: 20px; }}
-            td {{ padding: 8px; border-bottom: 1px solid #eee; }}
-            .print-btn {{ display: block; margin: 20px auto; padding: 10px 20px; background: #007bff; color: white; text-decoration: none; text-align: center; border-radius: 5px; width: fit-content; cursor: pointer; border: none; }}
-            @media print {{ .print-btn {{ display: none; }} }}
-        </style>
-    </head>
-    <body>
-        <div class="receipt">
-            <h1>CST Institute</h1>
-            <p style="text-align: center;">Payment Receipt</p>
-            <table>
-                <tr><td><strong>Receipt No:</strong></td><td>#{payment.id}</td></tr>
-                <tr><td><strong>Date:</strong></td><td>{payment.payment_date.strftime('%d-%b-%Y')}</td></tr>
-                <tr><td><strong>Student:</strong></td><td>{student.name}</td></tr>
-                <tr><td><strong>Fee Type:</strong></td><td>{fee_struct.name if fee_struct else 'N/A'}</td></tr>
-                <tr><td><strong>Method:</strong></td><td>{payment.payment_method}</td></tr>
-                <tr><td><strong>Amount:</strong></td><td><strong>Rs. {payment.amount_paid}</strong></td></tr>
-            </table>
-            <button class="print-btn" onclick="window.print()">Print Receipt</button>
-        </div>
-    </body>
-    </html>
-    """
+    html = f"""<html><head><title>Receipt #{payment.id}</title><style>body {{ font-family: sans-serif; padding: 20px; }} .receipt {{ border: 1px solid #ddd; padding: 20px; max-width: 500px; margin: auto; }} table {{ width: 100%; margin-top: 20px; }} td {{ padding: 8px; border-bottom: 1px solid #eee; }} .print-btn {{ display: block; margin: 20px auto; padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer; }} @media print {{ .print-btn {{ display: none; }} }}</style></head><body><div class="receipt"><h1>CST Institute</h1><p style="text-align: center;">Payment Receipt</p><table><tr><td>Receipt No:</td><td>#{payment.id}</td></tr><tr><td>Date:</td><td>{payment.payment_date.strftime('%d-%b-%Y')}</td></tr><tr><td>Student:</td><td>{student.name}</td></tr><tr><td>Fee Type:</td><td>{fee_struct.name if fee_struct else 'N/A'}</td></tr><tr><td>Amount:</td><td><strong>Rs. {payment.amount_paid}</strong></td></tr></table><button class="print-btn" onclick="window.print()">Print Receipt</button></div></body></html>"""
     return html
 
 @app.route('/api/reports/fee_pending', methods=['GET'])
@@ -634,7 +601,6 @@ def get_child_data(student_id):
     student = db.session.get(User, student_id)
     if not student or student.parent_id != current_user.id: return jsonify({"message": "Not authorized"}), 403
     
-    # Fetch basic data for child
     attendance = Attendance.query.filter_by(student_id=student.id).order_by(Attendance.check_in_time.desc()).limit(5).all()
     att_data = [{"date": a.check_in_time.strftime('%Y-%m-%d'), "time": a.check_in_time.strftime('%H:%M'), "status": a.status} for a in attendance]
     
@@ -652,34 +618,6 @@ def get_child_data(student_id):
         "grades": grade_data,
         "fees": fees
     })
-
-# --- Serving Static Files ---
-@app.route('/')
-def serve_login_page():
-    if current_user.is_authenticated: return redirect(url_for(f'serve_{current_user.role}_page'))
-    return render_template('login.html')
-
-@app.route('/admin')
-@login_required
-def serve_admin_page(): return render_template('admin.html') if current_user.role == 'admin' else redirect('/')
-
-@app.route('/teacher')
-@login_required
-def serve_teacher_page(): return render_template('teacher.html') if current_user.role == 'teacher' else redirect('/')
-
-@app.route('/student')
-@login_required
-def serve_student_page(): return render_template('student.html') if current_user.role == 'student' else redirect('/')
-
-@app.route('/parent')
-@login_required
-def serve_parent_page(): return render_template('parent.html') if current_user.role == 'parent' else redirect('/')
-
-@app.route('/uploads/<filename>')
-def serve_file(filename): return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
-
-@app.route('/firebase-messaging-sw.js')
-def sw(): return send_from_directory(app.static_folder, 'firebase-messaging-sw.js')
 
 @app.route('/api/teacher/courses', methods=['GET'])
 @login_required
@@ -708,7 +646,6 @@ def send_notification_to_student():
     subject = data.get('subject')
     body = data.get('body')
     
-    # Save message history
     db.session.add(Message(sender_id=current_user.id, recipient_id=student.id, content=f"{subject}: {body}"))
     db.session.commit()
     
@@ -718,7 +655,6 @@ def send_notification_to_student():
     
     return jsonify({"message": "Notification sent"}), 200
 
-# --- Upload Profile Photo (Missing Route Added) ---
 @app.route('/api/user/upload_photo/<int:user_id>', methods=['POST'])
 @login_required
 def upload_profile_photo(user_id):
@@ -732,6 +668,34 @@ def upload_profile_photo(user_id):
         db.session.commit()
         return jsonify({"message": "Uploaded", "user": user.to_dict()}), 200
     return jsonify({"message": "Invalid file"}), 400
+
+# --- Serving Static Files ---
+@app.route('/')
+def serve_login_page():
+    if current_user.is_authenticated: return redirect(url_for(f'serve_{current_user.role}_page'))
+    return render_template('login.html')
+
+@app.route('/admin')
+@login_required
+def serve_admin_page(): return render_template('admin.html') if current_user.role == 'admin' else redirect('/')
+
+@app.route('/teacher')
+@login_required
+def serve_teacher_page(): return render_template('teacher.html') if current_user.role == 'teacher' else redirect('/')
+
+@app.route('/student')
+@login_required
+def serve_student_page(): return render_template('student.html') if current_user.role == 'student' else redirect('/')
+
+@app.route('/parent')
+@login_required
+def serve_parent_page(): return render_template('parent.html') if current_user.role == 'parent' else redirect('/')
+
+@app.route('/uploads/<filename>')
+def serve_file(filename): return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
+@app.route('/firebase-messaging-sw.js')
+def sw(): return send_from_directory(app.static_folder, 'firebase-messaging-sw.js')
 
 if __name__ == '__main__':
     with app.app_context(): db.create_all()
