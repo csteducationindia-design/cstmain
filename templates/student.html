@@ -4,422 +4,100 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Portal</title>
-    
     <link rel="manifest" href="/static/manifest.json">
-
     <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
     <link as="style" href="https://fonts.googleapis.com/css2?display=swap&family=Inter:wght@400;500;700;900" onload="this.rel='stylesheet'" rel="stylesheet"/>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <script>
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        "primary": "#1173d4",
-                        "background-light": "#f6f7f8",
-                        "background-dark": "#101922",
-                    },
-                    fontFamily: {
-                        "display": ["Inter"]
-                    },
-                    borderRadius: {
-                        "DEFAULT": "0.25rem",
-                        "lg": "0.5rem",
-                        "xl": "0.75rem",
-                        "full": "9999px"
-                    },
-                },
-            },
-        }
-    </script>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+    <script>tailwind.config = { darkMode: "class", theme: { extend: { colors: { "primary": "#1173d4" }, fontFamily: { "display": ["Inter"] } } } }</script>
 </head>
-<body class="bg-background-light dark:bg-background-dark font-display text-slate-800 dark:text-slate-200">
-
+<body class="bg-slate-50 font-display">
 <div class="flex min-h-screen">
-    <aside class="w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col shadow-lg">
-        <div class="p-6">
-            <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Institute Student</h1>
-            <p class="text-sm text-slate-500 dark:text-slate-400">Student Portal</p>
-        </div>
-        <nav class="flex-1 px-4 py-2 space-y-1">
-            <a href="#dashboard" class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg bg-primary/10 dark:bg-primary/20 text-primary">
-                <span class="material-symbols-outlined">dashboard</span>
-                <span class="text-sm font-medium">Dashboard</span>
-            </a>
-            <a href="#fees" class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-primary/10 dark:hover:bg-primary/20">
-                <span class="material-symbols-outlined">payments</span>
-                <span class="text-sm font-medium">Fees</span>
-            </a>
-            <a href="#notes" class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-primary/10 dark:hover:bg-primary/20">
-                <span class="material-symbols-outlined">note_stack</span>
-                <span class="text-sm font-medium">Shared Notes</span>
-            </a>
-            <a href="#announcements" class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-primary/10 dark:hover:bg-primary/20">
-                <span class="material-symbols-outlined">campaign</span>
-                <span class="text-sm font-medium">Announcements</span>
-            </a>
+    <aside class="w-64 bg-white border-r p-4">
+        <h1 class="text-2xl font-bold mb-6">Student Portal</h1>
+        <nav>
+            <a href="#dashboard" class="block py-2 px-4 rounded hover:bg-gray-100">Dashboard</a>
+            <a href="#fees" class="block py-2 px-4 rounded hover:bg-gray-100">Fees</a>
+            <a href="#notes" class="block py-2 px-4 rounded hover:bg-gray-100">Notes</a>
+            <button id="install-app-btn" class="hidden w-full text-left py-2 px-4 text-green-600 font-bold mt-4">Install App</button>
         </nav>
-        <div class="p-6 border-t border-slate-200 dark:border-slate-800">
-            <button id="logout-btn" class="w-full bg-red-600 text-white font-medium py-2 px-4 rounded-lg text-sm hover:bg-red-700 transition duration-150">
-                Logout
-            </button>
-        </div>
+        <button id="logout-btn" class="w-full mt-8 bg-red-600 text-white py-2 rounded">Logout</button>
     </aside>
-
     <main class="flex-1 p-8">
-        <div class="max-w-7xl mx-auto">
-            <header class="mb-8">
-                <h1 id="student-welcome" class="text-4xl font-bold text-slate-900 dark:text-white">Welcome, Student!</h1>
-                <p class="text-slate-500 dark:text-slate-400 mt-2">Your personalized dashboard and academic overview.</p>
-            </header>
-
-            <div id="content-dashboard" class="content-section">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                    
-                    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6 lg:col-span-1">
-                        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><span class="material-symbols-outlined">person</span> My Profile</h2>
-                        <div class="flex flex-col items-center gap-4">
-                            <img id="profile-photo" 
-                                 src="https://placehold.co/128x128/f6f7f8/666?text=Loading..." 
-                                 alt="Profile Photo" 
-                                 class="w-32 h-32 rounded-full object-cover border-4 border-primary/20 shadow-md"
-                                 onerror="this.src='https://placehold.co/128x128/1173d4/FFFFFF?text=USER'">
-                            
-                            <div class="w-full text-left space-y-1">
-                                <p class="text-sm"><strong class="font-medium text-slate-900 dark:text-white w-24 inline-block">Name:</strong> <span id="profile-name" class="text-slate-600 dark:text-slate-400"></span></p>
-                                <p class="text-sm"><strong class="font-medium text-slate-900 dark:text-white w-24 inline-block">Email:</strong> <span id="profile-email" class="text-slate-600 dark:text-slate-400"></span></p>
-                                <p class="text-sm"><strong class="font-medium text-slate-900 dark:text-white w-24 inline-block">Phone:</strong> <span id="profile-phone" class="text-slate-600 dark:text-slate-400"></span></p>
-                                <p class="text-sm"><strong class="font-medium text-slate-900 dark:text-white w-24 inline-block">D.O.B:</strong> <span id="profile-dob" class="text-slate-600 dark:text-slate-400"></span></p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6 lg:col-span-2">
-                        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><span class="material-symbols-outlined">payments</span> Fee Status</h2>
-                        <div class="grid grid-cols-3 gap-4 text-center">
-                            <div class="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg"><p class="text-sm text-slate-500">Total Due</p><p id="fee-due" class="text-xl font-bold text-slate-900 dark:text-white">₹0.00</p></div>
-                            <div class="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg"><p class="text-sm text-slate-500">Total Paid</p><p id="fee-paid" class="text-xl font-bold text-green-600">₹0.00</p></div>
-                            <div class="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg"><p class="text-sm text-slate-500">Balance</p><p id="fee-balance" class="text-xl font-bold text-red-600">₹0.00</p></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6">
-                        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><span class="material-symbols-outlined">how_to_reg</span> Recent Attendance</h2>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                                <thead>
-                                    <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Time</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="attendance-body" class="divide-y divide-slate-200 dark:divide-slate-700">
-                                    <tr><td colspan="3" class="px-6 py-4 text-center">Loading...</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6">
-                        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><span class="material-symbols-outlined">assessment</span> My Results</h2>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                                <thead>
-                                    <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Course</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Assessment</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Score</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="grades-body" class="divide-y divide-slate-200 dark:divide-slate-700">
-                                    <tr><td colspan="3" class="px-6 py-4 text-center">Loading...</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+        <h1 class="text-3xl font-bold mb-6" id="student-welcome">Welcome</h1>
+        <div id="dashboard-content">
+            <div class="bg-white p-6 rounded shadow mb-6">
+                <h2 class="text-xl font-bold mb-4">Fee Status</h2>
+                <p>Total Due: <span id="fee-due">...</span></p>
+                <p>Paid: <span id="fee-paid">...</span></p>
+                <p>Balance: <span id="fee-balance" class="font-bold text-red-600">...</span></p>
             </div>
-
-            <div id="content-fees" class="content-section hidden">
-                <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">Payment History</h2>
-                <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6">
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                            <thead>
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Amount Paid</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Method</th>
-                                </tr>
-                            </thead>
-                            <tbody id="fee-history-body" class="divide-y divide-slate-200 dark:divide-slate-700">
-                                <tr><td colspan="3" class="px-6 py-4 text-center">Loading...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            
-            <div id="content-notes" class="content-section hidden">
-                <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">Shared Course Notes</h2>
-                <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6">
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                            <thead>
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Title</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Course</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Teacher</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Download</th>
-                                </tr>
-                            </thead>
-                            <tbody id="notes-table-body" class="divide-y divide-slate-200 dark:divide-slate-700">
-                                <tr><td colspan="5" class="px-6 py-4 text-center">Loading...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <div id="content-announcements" class="content-section hidden">
-                <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">Institute Announcements</h2>
-                <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6">
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                            <thead>
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Title</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Content</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
-                            </tr>
-                        </thead>
-                        <tbody id="announcements-table-body" class="divide-y divide-slate-200 dark:divide-slate-700">
-                        </tbody>
-                    </table>
-                </div>
+            <div class="bg-white p-6 rounded shadow mb-6">
+                <h2 class="text-xl font-bold mb-4">Recent Notes</h2>
+                <div id="notes-list"></div>
             </div>
         </div>
     </main>
 </div>
-
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
-
 <script>
-    const API_ORIGIN = window.location.origin;
-    const API_BASE_URL = API_ORIGIN + '/api';
+    const API_BASE_URL = window.location.origin + '/api';
 
-    document.addEventListener('DOMContentLoaded', () => {
-        const logoutBtn = document.getElementById('logout-btn');
-        const contentSections = document.querySelectorAll('.content-section');
-        const navLinks = document.querySelectorAll('.nav-link');
+    // PWA
+    let deferredPrompt;
+    const installBtn = document.getElementById('install-app-btn');
+    window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; installBtn.classList.remove('hidden'); });
+    installBtn.addEventListener('click', async () => { if(deferredPrompt){ deferredPrompt.prompt(); deferredPrompt = null; } });
 
-        function showSection(hash) {
-            contentSections.forEach(section => { section.classList.add('hidden'); });
-            navLinks.forEach(link => {
-                link.classList.remove('bg-primary/10', 'dark:bg-primary/20', 'text-primary');
-                link.classList.add('text-slate-700', 'dark:text-slate-300', 'hover:bg-primary/10', 'dark:hover:bg-primary/20');
-            });
-            let targetId = hash.substring(1) || 'dashboard';
-            let targetSection = document.getElementById(`content-${targetId}`);
-            let targetLink = document.querySelector(`.nav-link[href="#${targetId}"]`);
-            if (targetSection) {
-                targetSection.classList.remove('hidden');
-                if (targetLink) {
-                    targetLink.classList.add('bg-primary/10', 'dark:bg-primary/20', 'text-primary');
-                    targetLink.classList.remove('text-slate-700', 'dark:text-slate-300', 'hover:bg-primary/10', 'dark:hover:bg-primary/20');
-                }
-            }
-        }
-
-        window.addEventListener('hashchange', () => {
-            showSection(window.location.hash);
-            const currentHash = window.location.hash.substring(1) || 'dashboard';
-            if (currentHash === 'fees') fetchFees();
-            if (currentHash === 'announcements') fetchAnnouncements();
-            if (currentHash === 'notes') fetchSharedNotes(); 
-        });
-        showSection(window.location.hash);
-
-        async function checkStudentSession() {
-            try {
-                const response = await fetch(`${API_ORIGIN}/api/check_session`, {credentials: 'include'});
-                if (!response.ok) throw new Error('Session check failed');
-                const result = await response.json();
-                if (!result.logged_in || result.user.role !== 'student') {
-                    window.location.href = API_ORIGIN + '/';
-                } else {
-                    document.getElementById('student-welcome').textContent = `Welcome, ${result.user.name}!`;
-                    const user = result.user;
-                    const defaultAvatar = `https://placehold.co/128x128/1173d4/FFFFFF?text=${user.name.charAt(0) || 'U'}`;
-                    const imgElement = document.getElementById('profile-photo');
-                    const photoUrl = user.profile_photo_url ? `${API_ORIGIN}${user.profile_photo_url}?t=${new Date().getTime()}` : defaultAvatar;
-                    imgElement.src = photoUrl;
-                    imgElement.onerror = () => { imgElement.src = defaultAvatar; }; 
-                    document.getElementById('profile-name').textContent = user.name;
-                    document.getElementById('profile-email').textContent = user.email;
-                    document.getElementById('profile-phone').textContent = user.phone_number || 'Not provided';
-                    document.getElementById('profile-dob').textContent = user.dob || 'Not provided';
-                    
-                    fetchFees();
-                    fetchAttendance();
-                    fetchGrades();
-                    
-                    // !!! INITIALIZE FIREBASE AFTER LOGIN !!!
-                    initFirebase(); 
-                }
-            } catch (error) { 
-                console.error("Session check failed:", error);
-                window.location.href = API_ORIGIN + '/'; 
-            }
-        }
-
-        logoutBtn.addEventListener('click', async () => {
-            await fetch(`${API_BASE_URL}/logout`, { method: 'POST', credentials: 'include' });
-            window.location.href = API_ORIGIN + '/';
-        });
-
-        async function fetchAttendance() {
-            const tableBody = document.getElementById('attendance-body');
-            try {
-                const response = await fetch(`${API_BASE_URL}/student/attendance`, {credentials: 'include'});
-                const records = await response.json();
-                tableBody.innerHTML = '';
-                if (records.length === 0) tableBody.innerHTML = '<tr><td colspan="3" class="px-6 py-4 text-center">No attendance records found.</td></tr>';
-                else records.forEach(r => {
-                    const statusClass = r.status === 'Present' || r.status === 'Checked-In' ? 'text-green-600' : 'text-red-600';
-                    tableBody.innerHTML += `<tr class="even:bg-slate-50 dark:even:bg-slate-800"><td class="px-6 py-4 whitespace-nowrap text-sm">${r.date}</td><td class="px-6 py-4 whitespace-nowrap text-sm">${r.time}</td><td class="px-6 py-4 whitespace-nowrap text-sm font-medium ${statusClass}">${r.status}</td></tr>`;
-                });
-            } catch(e) { tableBody.innerHTML = '<tr><td colspan="3" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>'; }
-        }
+    document.addEventListener('DOMContentLoaded', async () => {
+        const res = await fetch(`${API_BASE_URL}/check_session`, {credentials:'include'});
+        const session = await res.json();
+        if(!session.logged_in || session.user.role !== 'student') window.location.href='/';
         
-        async function fetchGrades() {
-             const tableBody = document.getElementById('grades-body');
-             try {
-                const response = await fetch(`${API_BASE_URL}/student/grades`, {credentials: 'include'});
-                const grades = await response.json();
-                tableBody.innerHTML = '';
-                if (grades.length === 0) tableBody.innerHTML = '<tr><td colspan="3" class="px-6 py-4 text-center">No grades found.</td></tr>';
-                else grades.forEach(g => {
-                    const percentage = ((g.marks_obtained / g.total_marks) * 100).toFixed(0);
-                    const scoreClass = percentage >= 70 ? 'text-green-600' : percentage >= 50 ? 'text-yellow-600' : 'text-red-600';
-                    tableBody.innerHTML += `<tr class="even:bg-slate-50 dark:even:bg-slate-800"><td class="px-6 py-4 whitespace-nowrap text-sm">${g.course_name}</td><td class="px-6 py-4 whitespace-nowrap text-sm">${g.assessment_name}</td><td class="px-6 py-4 whitespace-nowrap text-sm font-medium ${scoreClass}">${g.marks_obtained} / ${g.total_marks} (${percentage}%)</td></tr>`;
-                });
-            } catch(e) { tableBody.innerHTML = '<tr><td colspan="3" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>'; }
-        }
+        document.getElementById('student-welcome').innerText = `Welcome, ${session.user.name}`;
+        
+        // Fees
+        const feeRes = await fetch(`${API_BASE_URL}/student/fees`, {credentials:'include'});
+        const feeData = await feeRes.json();
+        document.getElementById('fee-due').innerText = feeData.total_due;
+        document.getElementById('fee-paid').innerText = feeData.total_paid;
+        document.getElementById('fee-balance').innerText = feeData.balance;
+        
+        // Notes
+        const noteRes = await fetch(`${API_BASE_URL}/student/notes`, {credentials:'include'});
+        const notes = await noteRes.json();
+        document.getElementById('notes-list').innerHTML = notes.map(n => `<div class="border-b p-2"><a href="/uploads/${n.filename}" class="text-blue-600">${n.title}</a> (${n.course_name})</div>`).join('');
 
-        async function fetchFees() {
-            const historyBody = document.getElementById('fee-history-body');
-            try {
-                const response = await fetch(`${API_BASE_URL}/student/fees`, {credentials: 'include'});
-                const fees = await response.json();
-                document.getElementById('fee-due').textContent = `₹${fees.total_due.toFixed(2)}`;
-                document.getElementById('fee-paid').textContent = `₹${fees.total_paid.toFixed(2)}`;
-                document.getElementById('fee-balance').textContent = `₹${fees.balance.toFixed(2)}`;
-                document.getElementById('fee-balance').classList.toggle('text-red-600', fees.balance > 0);
-                document.getElementById('fee-balance').classList.toggle('text-green-600', fees.balance <= 0);
-                historyBody.innerHTML = '';
-                if (fees.history.length === 0) historyBody.innerHTML = '<tr><td colspan="3" class="px-6 py-4 text-center">No payment history found.</td></tr>';
-                else fees.history.forEach(p => {
-                    historyBody.innerHTML += `<tr class="even:bg-slate-50 dark:even:bg-slate-800"><td class="px-6 py-4 whitespace-nowrap text-sm">${p.date}</td><td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">₹${p.amount.toFixed(2)}</td><td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${p.method}</td></tr>`;
-                });
-            } catch(e) { historyBody.innerHTML = '<tr><td colspan="3" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>'; }
-        }
-
-        async function fetchAnnouncements() {
-            const tableBody = document.getElementById('announcements-table-body');
-            try {
-                const response = await fetch(`${API_BASE_URL}/announcements`, {credentials: 'include'});
-                const announcements = await response.json();
-                tableBody.innerHTML = '';
-                const relevant = announcements.filter(a => a.target_group === 'all' || a.target_group === 'students');
-                if (relevant.length === 0) { tableBody.innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-center">No announcements.</td></tr>`; return; }
-                relevant.forEach(a => {
-                    tableBody.innerHTML += `<tr class="even:bg-slate-50 dark:even:bg-slate-800"><td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${a.title}</td><td class="px-6 py-4 text-sm text-slate-500 max-w-lg truncate">${a.content}</td><td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${a.created_at.split(' ')[0]}</td></tr>`;
-                });
-            } catch(e) { tableBody.innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-center text-red-500">Error loading announcements.</td></tr>`; }
-        }
-
-        async function fetchSharedNotes() {
-             const tableBody = document.getElementById('notes-table-body');
-             try {
-                const response = await fetch(`${API_BASE_URL}/student/notes`, {credentials: 'include'});
-                const notes = await response.json();
-                tableBody.innerHTML = '';
-                if (notes.length === 0) { tableBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center">No notes shared.</td></tr>`; return; }
-                notes.forEach(note => {
-                    tableBody.innerHTML += `<tr class="even:bg-slate-50 dark:even:bg-slate-800"><td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${note.title}</td><td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${note.course_name}</td><td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${note.teacher_name}</td><td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${note.created_at.split(' ')[0]}</td><td class="px-6 py-4 whitespace-nowrap text-sm font-medium"><a href="${API_ORIGIN}/uploads/${note.filename}" class="text-primary hover:text-blue-700" download="${note.original_filename}">Download</a></td></tr>`;
-                });
-            } catch(e) { tableBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-red-500">Error loading notes.</td></tr>`; }
-        }
-
-        checkStudentSession();
+        setTimeout(initFirebase, 1000);
     });
 
-    // --- FIREBASE LOGIC ---
+    document.getElementById('logout-btn').onclick = async () => {
+        await fetch(`${API_BASE_URL}/logout`, {method:'POST', credentials:'include'});
+        window.location.href = '/';
+    };
+
     function initFirebase() {
-        // ============================================================
-        // 1. PASTE YOUR COPIED "const firebaseConfig = { ... }" HERE
-        // ============================================================
-        const firebaseConfig = {
-            // EXAMPLE - REPLACE WITH YOURS:
-            apiKey: "AIzaSyXXXX...", 
-            authDomain: "cst-institute-app.firebaseapp.com",
-            projectId: "cst-institute-app",
-            storageBucket: "cst-institute-app.firebasestorage.app",
-            messagingSenderId: "485166460200",
-            appId: "1:485166460200:web:..." 
-        };
-
-        // Initialize
-        if (!firebase.apps.length) {
+        try {
+            const firebaseConfig = {
+                apiKey: "AIzaSyBkZEHM9fXRoCYSgEW-hk_lN7sL_nSLDfU",
+                authDomain: "cst-institute-app.firebaseapp.com",
+                projectId: "cst-institute-app",
+                storageBucket: "cst-institute-app.firebasestorage.app",
+                messagingSenderId: "485166460200",
+                appId: "1:485166460200:web:4eae20e2010ab92baeb41d"
+            };
             firebase.initializeApp(firebaseConfig);
-        }
-
-        const messaging = firebase.messaging();
-
-        // Register Service Worker
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/firebase-messaging-sw.js')
-            .then((registration) => {
-                console.log('Service Worker registered:', registration);
-                
-                // Request Permission & Get Token
-                Notification.requestPermission().then((permission) => {
-                    if (permission === 'granted') {
-                        console.log('Notification permission granted.');
-                        
-                        // ========================================================
-                        // 2. PASTE YOUR "VAPID KEY" HERE (from Cloud Messaging tab)
-                        // ========================================================
-                        return messaging.getToken({ 
-                            vapidKey: 'BBOMxvKvbEs_t9ykKBa2zIewzCzD6FCbm9rxc8a9eWl2kjjH5vyTSH6TeQMksZ_OGl5jZyQpU2wBcf-KsZN1uko', 
-                            serviceWorkerRegistration: registration 
+            const messaging = firebase.messaging();
+            if('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/firebase-messaging-sw.js').then(reg => {
+                    Notification.requestPermission().then(perm => {
+                        if(perm==='granted') messaging.getToken({vapidKey: "BBOMxvKvbEs_t9ykKBa2zIewzCzD6FCbm9rxc8a9eWl2kjjH5vyTSH6TeQMksZ_OGl5jZyQpU2wBcf-KsZN1uko", serviceWorkerRegistration: reg}).then(token => {
+                            fetch('/api/save_fcm_token', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({token}), credentials:'include'});
                         });
-                    } else {
-                        console.log('Unable to get permission to notify.');
-                    }
-                }).then((token) => {
-                    if (token) {
-                        console.log('FCM Token:', token);
-                        // Send to backend
-                        fetch('/api/save_fcm_token', {
-                            method: 'POST',
-                            headers: {'Content-Type': 'application/json'},
-                            body: JSON.stringify({ token: token })
-                        });
-                    }
-                }).catch((err) => {
-                    console.log('An error occurred while retrieving token. ', err);
+                    });
                 });
-            });
-        }
+            }
+        } catch(e) {}
     }
 </script>
 </body>
