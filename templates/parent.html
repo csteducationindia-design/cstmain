@@ -4,112 +4,391 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Parent Portal</title>
+    
     <link rel="manifest" href="/static/manifest.json">
+
     <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
     <link as="style" href="https://fonts.googleapis.com/css2?display=swap&family=Inter:wght@400;500;700;900" onload="this.rel='stylesheet'" rel="stylesheet"/>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <script>tailwind.config = { darkMode: "class", theme: { extend: { colors: { "primary": "#1173d4" }, fontFamily: { "display": ["Inter"] } } } }</script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1173d4",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                },
+            },
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
 </head>
-<body class="bg-slate-50 font-display">
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-800 dark:text-slate-200">
+
 <div class="flex min-h-screen">
-    <aside class="w-64 bg-white border-r p-4">
-        <h1 class="text-2xl font-bold mb-6">Parent Portal</h1>
-        <nav>
-            <a href="#dashboard" class="block py-2 px-4 rounded hover:bg-gray-100">Dashboard</a>
-            <a href="#messages" class="block py-2 px-4 rounded hover:bg-gray-100">Messages</a>
-            <a href="#announcements" class="block py-2 px-4 rounded hover:bg-gray-100">Announcements</a>
-            <button id="install-app-btn" class="hidden w-full text-left py-2 px-4 text-green-600 font-bold mt-4">Install App</button>
-        </nav>
-        <button id="logout-btn" class="w-full mt-8 bg-red-600 text-white py-2 rounded">Logout</button>
-    </aside>
-    <main class="flex-1 p-8">
-        <h2 id="welcome-msg" class="text-3xl font-bold mb-6">Welcome</h2>
-        <div class="mb-6"><label>Select Child: </label><select id="child-select" class="border p-2 rounded"><option value="">Loading...</option></select></div>
-        
-        <div id="dashboard-view">
-            <div class="grid grid-cols-3 gap-4 mb-6">
-                <div class="bg-white p-4 rounded shadow"><h3>Fees Due</h3><p class="text-2xl font-bold" id="fee-due">...</p></div>
-                <div class="bg-white p-4 rounded shadow"><h3>Attendance</h3><div id="att-list"></div></div>
-                <div class="bg-white p-4 rounded shadow"><h3>Results</h3><div id="grade-list"></div></div>
-            </div>
+    <aside class="w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col shadow-lg">
+        <div class="p-6">
+            <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Institute Parent</h1>
+            <p class="text-sm text-slate-500 dark:text-slate-400">Parent Portal</p>
         </div>
-        <div id="announcements-view" class="hidden">
-            <h3 class="text-xl font-bold mb-4">Announcements</h3>
-            <div id="ann-list" class="bg-white p-4 rounded shadow"></div>
+        <nav class="flex-1 px-4 py-2 space-y-1">
+            <a href="#dashboard" class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg bg-primary/10 dark:bg-primary/20 text-primary">
+                <span class="material-symbols-outlined">dashboard</span>
+                <span class="text-sm font-medium">Child Dashboard</span>
+            </a>
+            <a href="#messages" class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-primary/10 dark:hover:bg-primary/20">
+                <span class="material-symbols-outlined">mail</span>
+                <span class="text-sm font-medium">Messages</span>
+            </a>
+            <a href="#announcements" class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-primary/10 dark:hover:bg-primary/20">
+                <span class="material-symbols-outlined">campaign</span>
+                <span class="text-sm font-medium">Announcements</span>
+            </a>
+            <button id="install-app-btn" class="hidden w-full flex items-center gap-3 px-4 py-2 rounded-lg text-green-600 hover:bg-green-50 font-medium mt-4">
+                <span class="material-symbols-outlined">download</span>
+                <span class="text-sm">Install Mobile App</span>
+            </button>
+        </nav>
+        <div class="p-6 border-t border-slate-200 dark:border-slate-800">
+            <button id="logout-btn" class="w-full bg-red-600 text-white font-medium py-2 px-4 rounded-lg text-sm hover:bg-red-700 transition duration-150">
+                Logout
+            </button>
+        </div>
+    </aside>
+
+    <main class="flex-1 p-8">
+        <div class="max-w-7xl mx-auto">
+            <header class="mb-8">
+                <h1 id="parent-welcome" class="text-4xl font-bold text-slate-900 dark:text-white">Welcome!</h1>
+                <p class="text-slate-500 dark:text-slate-400 mt-2">Oversee your child's academic and financial status.</p>
+            </header>
+
+            <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6 mb-8 child-selector">
+                <label for="child-select" class="text-lg font-bold mr-4">Select Child:</label>
+                <select id="child-select" class="p-2 border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800">
+                    <option value="">Loading children...</option>
+                </select>
+            </div>
+
+            <div id="content-dashboard" class="content-section">
+                <h2 id="child-dashboard-title" class="text-3xl font-bold text-slate-900 dark:text-white mb-6"></h2>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6 lg:col-span-1">
+                        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><span class="material-symbols-outlined">person</span> Profile</h2>
+                        <p class="text-sm mb-2"><strong class="font-medium">Name:</strong> <span id="profile-name">...</span></p>
+                        <p class="text-sm mb-2"><strong class="font-medium">Email:</strong> <span id="profile-email">...</span></p>
+                        <p class="text-sm"><strong class="font-medium">Phone:</strong> <span id="profile-phone">...</span></p>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6 lg:col-span-2">
+                        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><span class="material-symbols-outlined">payments</span> Fees</h2>
+                        <div class="grid grid-cols-3 gap-4 text-center">
+                            <div class="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg">
+                                <p class="text-sm text-slate-500">Total Due</p>
+                                <p id="fee-due" class="text-xl font-bold text-slate-900 dark:text-white">₹0.00</p>
+                            </div>
+                            <div class="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg">
+                                <p class="text-sm text-slate-500">Total Paid</p>
+                                <p id="fee-paid" class="text-xl font-bold text-green-600">₹0.00</p>
+                            </div>
+                            <div class="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg">
+                                <p class="text-sm text-slate-500">Balance</p>
+                                <p id="fee-balance" class="text-xl font-bold text-red-600">₹0.00</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6">
+                        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><span class="material-symbols-outlined">how_to_reg</span> Recent Attendance</h2>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                                <thead>
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Time</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="attendance-body" class="divide-y divide-slate-200 dark:divide-slate-700">
+                                    <tr><td colspan="3" class="px-6 py-4 text-center">Loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6">
+                        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><span class="material-symbols-outlined">assessment</span> Recent Results</h2>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                                <thead>
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Course</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Exam</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Score</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="grades-body" class="divide-y divide-slate-200 dark:divide-slate-700">
+                                    <tr><td colspan="3" class="px-6 py-4 text-center">Loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="content-messages" class="content-section hidden">
+                <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">Messages</h2>
+                <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                            <thead>
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">From</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Message</th>
+                                </tr>
+                            </thead>
+                            <tbody id="messages-body" class="divide-y divide-slate-200 dark:divide-slate-700">
+                                <tr><td colspan="3" class="px-6 py-4 text-center">Loading messages...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="content-announcements" class="content-section hidden">
+                <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">Announcements</h2>
+                <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                            <thead>
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Title</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Content</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="announcements-table-body" class="divide-y divide-slate-200 dark:divide-slate-700">
+                            <tr><td colspan="3" class="px-6 py-4 text-center">Loading announcements...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
         </div>
     </main>
 </div>
+
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
+
 <script>
     const API_ORIGIN = window.location.origin;
     const API_BASE_URL = API_ORIGIN + '/api';
     
-    // PWA
+    // PWA INSTALL LOGIC
     let deferredPrompt;
     const installBtn = document.getElementById('install-app-btn');
-    window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; installBtn.classList.remove('hidden'); });
-    installBtn.addEventListener('click', async () => { if(deferredPrompt){ deferredPrompt.prompt(); deferredPrompt = null; } });
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        installBtn.classList.remove('hidden'); 
+    });
+    installBtn.addEventListener('click', async () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') installBtn.classList.add('hidden');
+            deferredPrompt = null;
+        }
+    });
 
-    // Logic
-    document.addEventListener('DOMContentLoaded', async () => {
-        const res = await fetch(`${API_BASE_URL}/check_session`, {credentials:'include'});
-        const session = await res.json();
-        if(!session.logged_in || session.user.role !== 'parent') window.location.href='/';
-        
-        document.getElementById('welcome-msg').innerText = `Welcome, ${session.user.name}`;
-        
-        // Load Children
-        const childRes = await fetch(`${API_BASE_URL}/parent/children`, {credentials:'include'});
-        const children = await childRes.json();
-        const select = document.getElementById('child-select');
-        select.innerHTML = '';
-        
-        if(children.length === 0) {
-            alert("No child linked. Please ask Admin to link your account.");
-        } else {
-            children.forEach(c => {
-                const opt = document.createElement('option');
-                opt.value = c.id;
-                opt.innerText = c.name;
-                select.appendChild(opt);
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- NAVIGATION LOGIC ---
+        const contentSections = document.querySelectorAll('.content-section');
+        const navLinks = document.querySelectorAll('.nav-link');
+        const childSelect = document.getElementById('child-select');
+        const dashboardContent = document.getElementById('content-dashboard');
+
+        function showSection(hash) {
+            contentSections.forEach(section => section.classList.add('hidden'));
+            navLinks.forEach(link => {
+                link.classList.remove('bg-primary/10', 'dark:bg-primary/20', 'text-primary');
+                link.classList.add('text-slate-700', 'dark:text-slate-300', 'hover:bg-primary/10', 'dark:hover:bg-primary/20');
             });
-            loadChildData(children[0].id);
-            select.addEventListener('change', (e) => loadChildData(e.target.value));
+
+            let targetId = hash.substring(1) || 'dashboard';
+            let targetSection = document.getElementById(`content-${targetId}`);
+            let targetLink = document.querySelector(`.nav-link[href="#${targetId}"]`);
+
+            if (targetSection) {
+                targetSection.classList.remove('hidden');
+                if (targetLink) {
+                    targetLink.classList.add('bg-primary/10', 'dark:bg-primary/20', 'text-primary');
+                    targetLink.classList.remove('text-slate-700', 'dark:text-slate-300', 'hover:bg-primary/10', 'dark:hover:bg-primary/20');
+                }
+            }
+        }
+
+        window.addEventListener('hashchange', () => {
+            showSection(window.location.hash);
+            if (window.location.hash === '#messages') loadMessages();
+            if (window.location.hash === '#announcements') fetchAnnouncements();
+        });
+        showSection(window.location.hash);
+
+        // --- AUTH & DATA LOADING ---
+        async function checkParentSession() {
+            try {
+                const response = await fetch(`${API_ORIGIN}/api/check_session`, {credentials: 'include'});
+                const result = await response.json();
+                
+                if (!result.logged_in || result.user.role !== 'parent') {
+                    window.location.href = API_ORIGIN + '/';
+                } else {
+                    document.getElementById('parent-welcome').textContent = `Welcome, ${result.user.name}!`;
+                    await loadChildren();
+                    loadMessages();
+                    
+                    // INITIALIZE FIREBASE
+                    setTimeout(initFirebase, 2000);
+                }
+            } catch (error) { 
+                console.error("Session check failed:", error);
+                window.location.href = API_ORIGIN + '/';
+            }
+        }
+
+        async function loadChildren() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/parent/children`, {credentials: 'include'});
+                const children = await response.json();
+                childSelect.innerHTML = '';
+
+                if (children.length === 0) {
+                    childSelect.innerHTML = '<option value="">No children linked</option>';
+                    alert("No children found. Please contact Admin to link your account to your child.");
+                    dashboardContent.classList.add('hidden');
+                    return;
+                }
+
+                children.forEach(child => {
+                    childSelect.innerHTML += `<option value="${child.id}">${child.name}</option>`;
+                });
+
+                // Auto-load first child
+                childSelect.value = children[0].id;
+                fetchChildData(children[0].id); 
+                
+                childSelect.addEventListener('change', () => {
+                    if(childSelect.value) fetchChildData(childSelect.value);
+                });
+
+            } catch(error) {
+                console.error("Error loading children:", error);
+                childSelect.innerHTML = '<option value="">Error</option>';
+            }
+        }
+
+        async function fetchChildData(studentId) {
+            dashboardContent.classList.remove('hidden');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/parent/child_data/${studentId}`, {credentials: 'include'});
+                if (!response.ok) throw new Error("Failed to load data");
+                
+                const data = await response.json();
+
+                document.getElementById('child-dashboard-title').textContent = `${data.profile.name}'s Dashboard`;
+                document.getElementById('profile-name').textContent = data.profile.name;
+                document.getElementById('profile-email').textContent = data.profile.email;
+                document.getElementById('profile-phone').textContent = data.profile.phone_number || 'N/A';
+                
+                document.getElementById('fee-due').textContent = `₹${data.fees.total_due.toFixed(2)}`;
+                document.getElementById('fee-paid').textContent = `₹${data.fees.total_paid.toFixed(2)}`;
+                document.getElementById('fee-balance').textContent = `₹${data.fees.balance.toFixed(2)}`;
+                
+                // Color code balance
+                const balEl = document.getElementById('fee-balance');
+                if(data.fees.balance > 0) { balEl.className = "text-xl font-bold text-red-600"; }
+                else { balEl.className = "text-xl font-bold text-green-600"; }
+
+                // Attendance
+                const attBody = document.getElementById('attendance-body');
+                attBody.innerHTML = '';
+                if (data.attendance.length > 0) {
+                    data.attendance.forEach(r => { 
+                        const color = r.status === 'Present' ? 'text-green-600' : 'text-red-600';
+                        attBody.innerHTML += `<tr class="even:bg-slate-50 dark:even:bg-slate-800"><td class="px-6 py-4">${r.date}</td><td class="px-6 py-4">${r.time}</td><td class="px-6 py-4 font-medium ${color}">${r.status}</td></tr>`;
+                    });
+                } else {
+                    attBody.innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-center">No recent attendance.</td></tr>`;
+                }
+
+                // Grades
+                const gradeBody = document.getElementById('grades-body');
+                gradeBody.innerHTML = '';
+                if (data.grades.length > 0) {
+                    data.grades.forEach(g => { 
+                        gradeBody.innerHTML += `<tr class="even:bg-slate-50 dark:even:bg-slate-800"><td class="px-6 py-4">${g.course_name}</td><td class="px-6 py-4">${g.assessment_name}</td><td class="px-6 py-4">${g.marks_obtained} / ${g.total_marks}</td></tr>`;
+                    });
+                } else {
+                    gradeBody.innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-center">No results found.</td></tr>`;
+                }
+
+            } catch(error) {
+                console.error("Error fetching child data:", error);
+            }
+        }
+
+        async function loadMessages() {
+            const msgBody = document.getElementById('messages-body');
+            try {
+                const response = await fetch(`${API_BASE_URL}/parent/messages`, {credentials: 'include'});
+                const messages = await response.json();
+                msgBody.innerHTML = '';
+                if (messages.length === 0) { msgBody.innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-center">No messages.</td></tr>`; return; }
+                messages.forEach(m => {
+                    msgBody.innerHTML += `<tr class="even:bg-slate-50 dark:even:bg-slate-800"><td class="px-6 py-4">${m.sent_at.split(' ')[0]}</td><td class="px-6 py-4 font-medium">${m.sender_name}</td><td class="px-6 py-4 text-slate-500">${m.content}</td></tr>`;
+                });
+            } catch(e) { msgBody.innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-center text-red-500">Error loading messages.</td></tr>`; }
         }
         
-        // Load Announcements
-        const annRes = await fetch(`${API_BASE_URL}/announcements`, {credentials:'include'});
-        const anns = await annRes.json();
-        const annList = document.getElementById('ann-list');
-        anns.filter(a => a.target_group === 'parents' || a.target_group === 'all').forEach(a => {
-            annList.innerHTML += `<div class="border-b p-2"><strong>${a.title}</strong><p>${a.content}</p></div>`;
+        async function fetchAnnouncements() {
+            const annBody = document.getElementById('announcements-table-body');
+            try {
+                const response = await fetch(`${API_BASE_URL}/announcements`, {credentials: 'include'});
+                const announcements = await response.json();
+                annBody.innerHTML = '';
+                const relevant = announcements.filter(a => a.target_group === 'all' || a.target_group === 'parents');
+                if (relevant.length === 0) { annBody.innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-center">No announcements.</td></tr>`; return; }
+                relevant.forEach(a => {
+                    annBody.innerHTML += `<tr class="even:bg-slate-50 dark:even:bg-slate-800"><td class="px-6 py-4 font-medium">${a.title}</td><td class="px-6 py-4 truncate max-w-lg">${a.content}</td><td class="px-6 py-4">${a.created_at.split(' ')[0]}</td></tr>`;
+                });
+            } catch(e) { annBody.innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`; }
+        }
+
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            await fetch(`${API_BASE_URL}/logout`, { method: 'POST', credentials: 'include' });
+            window.location.href = API_ORIGIN + '/';
         });
-        
-        // Firebase
-        setTimeout(initFirebase, 1000);
+
+        checkParentSession();
     });
-    
-    async function loadChildData(id) {
-        const res = await fetch(`${API_BASE_URL}/parent/child_data/${id}`, {credentials:'include'});
-        const data = await res.json();
-        document.getElementById('fee-due').innerText = `Rs. ${data.fees.balance}`;
-        
-        const attList = document.getElementById('att-list');
-        attList.innerHTML = data.attendance.map(a => `<p>${a.date}: ${a.status}</p>`).join('');
-        
-        const gradeList = document.getElementById('grade-list');
-        gradeList.innerHTML = data.grades.map(g => `<p>${g.course_name}: ${g.marks_obtained}/${g.total_marks}</p>`).join('');
-    }
 
-    document.getElementById('logout-btn').onclick = async () => {
-        await fetch(`${API_BASE_URL}/logout`, {method:'POST', credentials:'include'});
-        window.location.href = '/';
-    };
-
+    // --- FIREBASE INIT ---
     function initFirebase() {
         try {
-             const firebaseConfig = {
+            const firebaseConfig = {
                 apiKey: "AIzaSyBkZEHM9fXRoCYSgEW-hk_lN7sL_nSLDfU",
                 authDomain: "cst-institute-app.firebaseapp.com",
                 projectId: "cst-institute-app",
@@ -119,16 +398,19 @@
             };
             firebase.initializeApp(firebaseConfig);
             const messaging = firebase.messaging();
-            if('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/firebase-messaging-sw.js').then(reg => {
-                    Notification.requestPermission().then(perm => {
-                        if(perm==='granted') messaging.getToken({vapidKey: "BBOMxvKvbEs_t9ykKBa2zIewzCzD6FCbm9rxc8a9eWl2kjjH5vyTSH6TeQMksZ_OGl5jZyQpU2wBcf-KsZN1uko", serviceWorkerRegistration: reg}).then(token => {
-                            fetch('/api/save_fcm_token', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({token}), credentials:'include'});
-                        });
+
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/firebase-messaging-sw.js').then((reg) => {
+                    Notification.requestPermission().then((perm) => {
+                        if (perm === 'granted') {
+                            // YOUR REAL VAPID KEY IS PRE-FILLED HERE
+                            messaging.getToken({ vapidKey: 'BBOMxvKvbEs_t9ykKBa2zIewzCzD6FCbm9rxc8a9eWl2kjjH5vyTSH6TeQMksZ_OGl5jZyQpU2wBcf-KsZN1uko', serviceWorkerRegistration: reg })
+                            .then((token) => { if(token) fetch('/api/save_fcm_token', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({token})}); });
+                        }
                     });
                 });
             }
-        } catch(e) {}
+        } catch(e) { console.log(e); }
     }
 </script>
 </body>
