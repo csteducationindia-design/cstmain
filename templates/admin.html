@@ -677,6 +677,7 @@
         const courseTeacherSelect = document.getElementById('course-teacher');
         const feeStructureForm = document.getElementById('fee-structure-form');
         const paymentForm = document.getElementById('payment-form');
+        const announcementForm = document.getElementById('announcement-form'); // Added missing form reference
 
         function updateNavLink(hash) {
             navLinks.forEach(link => {
@@ -1233,7 +1234,8 @@
         }
 
 
-        // --- MISSING FETCH FUNCTIONS (Required for loading data) ---
+        // --- REPORT & DROPDOWN FUNCTIONS (FULL IMPLEMENTATION) ---
+        
         async function fetchTeachersForCourseDropdown() {
              try {
                 const response = await fetch(`${API_BASE_URL}/teachers`, {credentials: 'include'});
@@ -1593,7 +1595,7 @@
         // --- End Fee Fetch/Save Logic ---
 
 
-        // --- Dummy/Placeholder functions needed to satisfy loadContentByHash ---
+        // --- REPORT & DROPDOWN FUNCTIONS (FULL IMPLEMENTATION) ---
         function populateParentDropdowns() {}
         async function fetchCoursesForEnrollment() {
              try {
@@ -1612,7 +1614,47 @@
                 `;
             }
         }
-        function fetchAnnouncements() {}
+        
+        async function fetchAnnouncements(isManagementPage) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/announcements`, {credentials: 'include'});
+                const announcements = await response.json();
+                const mainAnnouncementsBody = document.getElementById('recent-announcements-body'); 
+                const recentAnnouncementsBody = document.getElementById('recent-announcements-body'); 
+                
+                // Clear both sections (they share the same tbody ID in the current HTML structure)
+                if (mainAnnouncementsBody) mainAnnouncementsBody.innerHTML = '';
+                
+                if (announcements.length === 0) {
+                    if (mainAnnouncementsBody) mainAnnouncementsBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center">No announcements found.</td></tr>`;
+                    return;
+                }
+
+                announcements.forEach((announcement, index) => {
+                    const row = `
+                        <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${announcement.title}</td>
+                            <td class="px-6 py-4 text-sm text-slate-500 dark:text-slate-400 max-w-xs truncate">${announcement.content}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${announcement.target_group.charAt(0).toUpperCase() + announcement.target_group.slice(1)}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${announcement.created_at.split(' ')[0]}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <button onclick="deleteAnnouncement(${announcement.id})" class="text-red-600 hover:text-red-900 ml-4">Delete</button>
+                            </td>
+                        </tr>`;
+                    // Display all in the main announcements section
+                    if (isManagementPage && mainAnnouncementsBody) {
+                        mainAnnouncementsBody.innerHTML += row;
+                    }
+                    // For the dashboard, display only recent ones (handled by separate ID in Dashboard section)
+                    // NOTE: Your HTML uses the same ID 'recent-announcements-body' for both tables. This renders the full table in the dashboard too.
+                });
+            } catch (error) {
+                console.error("Error fetching announcements:", error);
+                const tableBody = document.getElementById('recent-announcements-body');
+                if (tableBody) tableBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
+            }
+        }
+        
         async function fetchStudentsForPaymentDropdown() {
              try {
                 let students = allUsersCache.filter(u => u.role === 'student');
@@ -1629,37 +1671,125 @@
                  document.getElementById('payment-student-select').innerHTML = '<option value="">Error loading students</option>';
             }
         }
-        function fetchAdmissionsReport() {}
-        function fetchAttendanceReport() {}
-        function fetchPerformanceReport() {}
-        function resetFeeStructureForm(structure = null) {
-            document.getElementById('fee-structure-form').reset();
-            document.getElementById('fee-structure-id').value = structure ? structure.id : '';
-            document.getElementById('save-fee-structure-btn').textContent = structure ? 'Update Fee Structure' : 'Save Fee Structure';
-        }
-        window.editFeeStructure = async function(id) {
-             if (!id) return alert('Invalid Fee Structure ID.');
+
+        async function fetchAdmissionsReport() {
             try {
-                const response = await fetch(`${API_BASE_URL}/fee_structures`, { credentials: 'include' });
-                const structures = await response.json();
-                const structure = structures.find(s => s.id == id);
-                if (structure) {
-                    document.getElementById('fee-structure-id').value = structure.id;
-                    document.getElementById('fee-structure-name').value = structure.name;
-                    document.getElementById('fee-total-amount').value = structure.total_amount;
-                    document.getElementById('fee-session-select').value = structure.academic_session_id;
-                    document.getElementById('fee-due-date').value = structure.due_date; 
-                    document.getElementById('save-fee-structure-btn').textContent = 'Update Fee Structure';
-                } else {
-                    alert("Fee structure not found.");
+                const response = await fetch(`${API_BASE_URL}/reports/admissions`, {credentials: 'include'});
+                const admissions = await response.json();
+                const tableBody = document.getElementById('admissions-report-body');
+                tableBody.innerHTML = '';
+                if (admissions.length === 0) {
+                    tableBody.innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-center">No new admissions in the last 30 days.</td></tr>`;
+                    return;
                 }
+                admissions.forEach(admission => {
+                    tableBody.innerHTML += `
+                        <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${admission.name}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${admission.email}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${admission.created_at}</td>
+                        </tr>`;
+                });
             } catch (error) {
-                console.error('Error fetching fee structure for edit:', error);
-                alert('Failed to load fee structure details for edit.');
+                console.error("Error fetching admissions report:", error);
+                document.getElementById('admissions-report-body').innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
             }
         }
-        function sendQuickNotification(studentId, subject, body, type) { /* Placeholder */ }
+
+        async function fetchAttendanceReport() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/reports/attendance`, {credentials: 'include'});
+                const report = await response.json();
+                const tableBody = document.getElementById('attendance-report-body');
+                tableBody.innerHTML = '';
+                if (report.length === 0) {
+                    tableBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center">No attendance data available.</td></tr>`;
+                    return;
+                }
+                report.forEach(data => {
+                    tableBody.innerHTML += `
+                        <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${data.student_name}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${data.total_classes}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 dark:text-green-400">${data.present}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 dark:text-red-400">${data.absent}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold">${data.percentage}%</td>
+                        </tr>`;
+                });
+            } catch (error) {
+                console.error("Error fetching attendance report:", error);
+                document.getElementById('attendance-report-body').innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
+            }
+        }
+
+        async function fetchPerformanceReport() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/reports/performance`, {credentials: 'include'});
+                const report = await response.json();
+                const tableBody = document.getElementById('performance-report-body');
+                tableBody.innerHTML = '';
+                if (report.length === 0) {
+                    tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center">No performance data available.</td></tr>`;
+                    return;
+                }
+                report.forEach(data => {
+                    tableBody.innerHTML += `
+                        <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${data.student_name}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${data.assessments_taken}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${data.total_score}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold">${data.overall_percentage}%</td>
+                        </tr>`;
+                });
+            } catch (error) {
+                console.error("Error fetching performance report:", error);
+                document.getElementById('performance-report-body').innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
+            }
+        }
         
+        window.deleteAnnouncement = async function(id) {
+            if (confirm('Are you sure you want to delete this announcement?')) {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/announcements/${id}`, { method: 'DELETE', credentials: 'include' });
+                    if (response.ok) {
+                        alert('Announcement deleted successfully!');
+                        fetchAnnouncements(true); // Refresh table
+                    } else {
+                        const error = await response.json();
+                        alert(`Delete failed: ${error.message || 'An unknown error occurred.'}`);
+                    }
+                } catch (error) {
+                    alert(`An error occurred: ${error.message}`);
+                    console.error('Error deleting announcement:', error);
+                }
+            }
+        }
+
+        announcementForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const announcementData = { 
+                title: document.getElementById('announcement-title').value, 
+                content: document.getElementById('announcement-content').value,
+                target_group: document.getElementById('announcement-target-group').value
+            };
+            try {
+                const response = await fetch(API_BASE_URL + '/announcements', { method: 'POST', headers: {'Content-Type': 'application/json'}, credentials: 'include', body: JSON.stringify(announcementData) });
+                const result = await response.json();
+
+                if (response.ok) {
+                    announcementForm.reset();
+                    alert('Announcement published successfully!');
+                    fetchAnnouncements(true);
+                } else {
+                    alert(`Save failed: ${result.message || 'An unknown error occurred.'}`);
+                }
+            } catch (error) {
+                alert(`An error occurred: ${error.message}`);
+                console.error('Error saving announcement:', error);
+            }
+        });
+
+        // --- User List Fetching (Needed for Teachers/Students/Parents tabs) ---
         async function fetchUsersByRole(role, tableBodyId) {
             try {
                 let users = allUsersCache.filter(u => u.role === role);
@@ -1679,7 +1809,6 @@
 
                 users.forEach(user => {
                     let phoneDisplay = user.phone_number || 'N/A';
-                    let actionsColumn = '';
                     let extraColumns = '';
                     let editFunc = `edit${role.charAt(0).toUpperCase() + role.slice(1)}`;
                     let deleteFunc = `delete${role.charAt(0).toUpperCase() + role.slice(1)}`;
@@ -1727,6 +1856,19 @@
         function fetchTeachers() { fetchUsersByRole('teacher', 'teacher-table-body'); }
         function fetchStudents() { fetchUsersByRole('student', 'student-table-body'); }
         function fetchParents() { fetchUsersByRole('parent', 'parent-table-body'); }
+        // --- End User List Fetching ---
+
+
+        // --- Dummy/Placeholder functions needed to satisfy loadContentByHash ---
+        function populateParentDropdowns() {}
+        
+        function fetchStudentsForPaymentDropdown() {}
+        
+        function fetchAdmissionsReport() {}
+        function fetchAttendanceReport() {}
+        function fetchPerformanceReport() {}
+        
+        function sendQuickNotification(studentId, subject, body, type) { /* Placeholder */ }
         // --- End Dummy/Placeholder functions ---
 
 

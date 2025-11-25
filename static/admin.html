@@ -675,6 +675,9 @@
         const sessionForm = document.getElementById('session-form');
         const courseForm = document.getElementById('course-form');
         const courseTeacherSelect = document.getElementById('course-teacher');
+        const feeStructureForm = document.getElementById('fee-structure-form');
+        const paymentForm = document.getElementById('payment-form');
+        const announcementForm = document.getElementById('announcement-form'); // Added missing form reference
 
         function updateNavLink(hash) {
             navLinks.forEach(link => {
@@ -1196,8 +1199,13 @@
                 const sessions = await response.json();
                 const session = sessions.find(s => s.id == id);
                 if (session) {
-                    resetSessionForm(session);
-                    window.location.hash = 'sessions'; 
+                    // FIX: Check if date values are valid before populating form
+                    if (session.start_date && session.end_date) {
+                        resetSessionForm(session);
+                        window.location.hash = 'sessions'; 
+                    } else {
+                        alert("Session dates are invalid in the database. Cannot edit.");
+                    }
                 }
             } catch (error) {
                 console.error('Error fetching session for edit:', error);
@@ -1226,7 +1234,8 @@
         }
 
 
-        // --- MISSING FETCH FUNCTIONS (Required for loading data) ---
+        // --- REPORT & DROPDOWN FUNCTIONS (FULL IMPLEMENTATION) ---
+        
         async function fetchTeachersForCourseDropdown() {
              try {
                 const response = await fetch(`${API_BASE_URL}/teachers`, {credentials: 'include'});
@@ -1299,6 +1308,486 @@
                 document.getElementById('session-table-body').innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
             }
         }
+        
+        async function fetchFeeSessionDropdowns() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/sessions`, {credentials: 'include'});
+                const sessions = await response.json();
+                const feeSessionSelect = document.getElementById('fee-session-select');
+                feeSessionSelect.innerHTML = '<option value="">Select a session...</option>';
+                sessions.forEach(session => { feeSessionSelect.innerHTML += `<option value="${session.id}">${session.name}</option>`; });
+            } catch (error) {
+                 console.error("Error fetching sessions for fee dropdown:", error);
+                 document.getElementById('fee-session-select').innerHTML = '<option value="">Error loading sessions</option>';
+            }
+        }
+        
+        async function fetchFeeStructures() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/fee_structures`, {credentials: 'include'});
+                const structures = await response.json();
+                const tableBody = document.getElementById('fee-structure-table-body');
+                const paymentFeeStructureSelect = document.getElementById('payment-fee-structure-select');
+                
+                tableBody.innerHTML = '';
+
+                if (structures.length === 0) {
+                    tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center">No fee structures found.</td></tr>`;
+                    paymentFeeStructureSelect.innerHTML = '<option value="">No fee structures available</option>';
+                    return;
+                }
+
+                paymentFeeStructureSelect.innerHTML = '<option value="">Select a fee structure...</option>';
+                structures.forEach(s => {
+                    tableBody.innerHTML += `
+                        <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${s.name}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">₹${s.total_amount.toFixed(2)}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${s.due_date}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <button onclick="editFeeStructure(${s.id})" class="text-primary hover:text-blue-700 mr-2">Edit</button>
+                            </td>
+                        </tr>`;
+                    paymentFeeStructureSelect.innerHTML += `<option value="${s.id}">${s.name} (Due: ${s.due_date})</option>`;
+                });
+            } catch (error) {
+                console.error("Error fetching fee structures:", error);
+                document.getElementById('fee-structure-table-body').innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
+            }
+        }
+
+        async function fetchFeeStatus() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/fee_status`, {credentials: 'include'});
+                const statusList = await response.json();
+                const tableBody = document.getElementById('fee-status-table-body');
+                tableBody.innerHTML = '';
+
+                if (statusList.length === 0) {
+                    tableBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center">No student fee status found.</td></tr>`;
+                    return;
+                }
+
+                statusList.forEach(status => {
+                    const isOverdue = status.pending_days < 0;
+                    const isPaid = status.balance <= 0;
+                    const balanceClass = isPaid ? 'paid' : (isOverdue ? 'overdue' : 'pending');
+                    const balanceText = status.balance.toFixed(2);
+                    
+                    let dueText;
+                    if (isPaid) {
+                        dueText = 'PAID';
+                    } else if (isOverdue) {
+                        dueText = `${Math.abs(status.pending_days)} Days OVERDUE`;
+                    } else {
+                        dueText = `${status.pending_days} Days Left`;
+                    }
+
+                    tableBody.innerHTML += `
+                        <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${status.student_name}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold ${balanceClass}">₹${balanceText}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm ${isOverdue ? 'text-red-600' : 'text-slate-500'}">${dueText}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                                <button onclick="sendFeeAlert(${status.student_id})" class="text-amber-500 hover:text-amber-700 disabled:text-slate-400" ${status.balance > 0 ? '' : 'disabled'}>
+                                    <span class="material-symbols-outlined align-middle text-lg">sms</span>
+                                </button>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <button onclick="printReceipt(${status.latest_payment_id})" class="text-primary hover:text-blue-700 disabled:text-slate-400" ${status.latest_payment_id ? '' : 'disabled'}>
+                                    <span class="material-symbols-outlined align-middle text-lg">print</span>
+                                </button>
+                            </td>
+                        </tr>`;
+                });
+            } catch (error) {
+                console.error("Error fetching fee status:", error);
+                document.getElementById('fee-status-table-body').innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
+            }
+        }
+        
+        async function fetchFeePendingReport() {
+            const feePendingReportBody = document.getElementById('fee-pending-report-body');
+            if (!feePendingReportBody) return; 
+
+            feePendingReportBody.innerHTML = `<tr><td colspan="6" class="px-6 py-4 text-center">Loading pending fees...</td></tr>`;
+            try {
+                const response = await fetch(`${API_BASE_URL}/reports/fee_pending`, {credentials: 'include'});
+                if (!response.ok) {
+                     const errorData = await response.json();
+                     throw new Error(errorData.message || `Server error: ${response.status}`);
+                }
+                const pendingList = await response.json();
+
+                feePendingReportBody.innerHTML = ''; 
+
+                if (pendingList.length === 0) {
+                    feePendingReportBody.innerHTML = `<tr><td colspan="6" class="px-6 py-4 text-center">No students with pending fees found.</td></tr>`;
+                    return;
+                }
+
+                pendingList.forEach(status => {
+                    const isOverdue = status.pending_days < 0;
+                    const balanceClass = isOverdue ? 'overdue' : 'pending';
+                    const balanceText = status.balance.toFixed(2);
+                    const isPhoneAvailable = !!status.phone_number;
+                    
+                    let dueText;
+                    if (isOverdue) {
+                        dueText = `${Math.abs(status.pending_days)} Days OVERDUE`;
+                    } else {
+                        dueText = `${status.pending_days} Days Left`;
+                    }
+
+                    feePendingReportBody.innerHTML += `
+                        <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${status.student_name}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold ${balanceClass}">₹${balanceText}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${status.due_date}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm ${isOverdue ? 'text-red-600' : 'text-slate-500'}">${dueText}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
+                                <button onclick="sendFeeReminderSms(${status.student_id}, '${status.student_name}', ${status.balance}, '${status.due_date}')" class="text-yellow-600 hover:text-yellow-700 disabled:text-slate-400" ${isPhoneAvailable ? '' : 'disabled'} title="Send Fee Reminder SMS">
+                                    <span class="material-symbols-outlined align-middle text-lg">sms</span>
+                                </button>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
+                                <button onclick="sendFeeReminderWhatsapp(${status.student_id}, '${status.student_name}', ${status.balance}, '${status.due_date}')" class="text-green-600 hover:text-green-700 disabled:text-slate-400" ${isPhoneAvailable ? '' : 'disabled'} title="Send Fee Reminder WhatsApp">
+                                    <span class="material-symbols-outlined align-middle text-lg">call</span>
+                                </button>
+                            </td>
+                        </tr>`;
+                });
+
+            } catch (error) {
+                console.error("Error fetching fee pending report:", error);
+                feePendingReportBody.innerHTML = `<tr><td colspan="6" class="px-6 py-4 text-center text-red-500">Error loading report data: ${error.message}</td></tr>`;
+            }
+        }
+        
+        window.sendFeeReminderSms = async function(studentId, studentName, balance, dueDate) {
+            if (confirm(`Send SMS fee reminder to ${studentName}?`)) {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/send_sms_alert`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        credentials: 'include',
+                        body: JSON.stringify({ student_id: studentId })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        alert(result.message);
+                    } else {
+                        alert(`Failed: ${result.message}`);
+                    }
+                } catch(error) {
+                    console.error('SMS Alert Error:', error);
+                    alert('Failed to send alert due to a server error.');
+                }
+            }
+        }
+
+        window.sendFeeReminderWhatsapp = function(studentId, studentName, balance, dueDate) {
+            const subject = "Fee Reminder";
+            const body = `Dear ${studentName}, your fee payment of INR ${balance.toFixed(2)} is pending. The due date is ${dueDate}. Please pay soon.`;
+             if (confirm(`Send WhatsApp fee reminder to ${studentName}? (Mock)`)) {
+                sendQuickNotification(studentId, subject, body, 'whatsapp');
+            }
+        }
+        
+        window.sendFeeAlert = async function(studentId) {
+            if (confirm('Send fee pending alert via SMS? (Uses configured API)')) {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/send_sms_alert`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        credentials: 'include',
+                        body: JSON.stringify({ student_id: studentId })
+                    });
+                    const result = await response.json();
+                    alert(result.message);
+                } catch(error) {
+                    console.error('SMS Alert Error:', error);
+                    alert('Failed to send alert due to a server error.');
+                }
+            }
+        }
+        
+        window.printReceipt = function(paymentId) {
+            if (paymentId && paymentId !== 'N/A' && paymentId !== 'null' && paymentId !== null) {
+                window.open(`${API_BASE_URL}/receipt/${paymentId}`, '_blank', 'width=700,height=600');
+            } else {
+                alert('No recent payment ID available to print.');
+            }
+        }
+
+        feeStructureForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            
+            const feeId = document.getElementById('fee-structure-id').value;
+            const method = feeId ? 'PUT' : 'POST';
+            const endpoint = `${API_BASE_URL}/fee_structures`;
+
+            const feeData = { 
+                id: feeId || undefined,
+                name: document.getElementById('fee-structure-name').value, 
+                academic_session_id: parseInt(document.getElementById('fee-session-select').value),
+                total_amount: parseFloat(document.getElementById('fee-total-amount').value),
+                due_date: document.getElementById('fee-due-date').value
+            };
+            
+            try {
+                const response = await fetch(endpoint, { 
+                    method: method, 
+                    headers: {'Content-Type': 'application/json'}, 
+                    credentials: 'include', 
+                    body: JSON.stringify(feeData) 
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert(`Fee structure ${method === 'POST' ? 'added' : 'updated'} successfully!`);
+                    resetFeeStructureForm();
+                    fetchFeeStructures();
+                    fetchFeeStatus();
+                } else {
+                    alert(`Save failed: ${result.message || 'An unknown error occurred.'}`);
+                }
+            } catch (error) {
+                alert(`An error occurred: ${error.message}`);
+                console.error('Error saving fee structure:', error);
+            }
+        });
+
+        paymentForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const paymentData = {
+                student_id: parseInt(document.getElementById('payment-student-select').value),
+                fee_structure_id: parseInt(document.getElementById('payment-fee-structure-select').value),
+                amount_paid: parseFloat(document.getElementById('payment-amount').value),
+                payment_method: document.getElementById('payment-method').value
+            };
+            try {
+                const response = await fetch(API_BASE_URL + '/payments', { method: 'POST', headers: {'Content-Type': 'application/json'}, credentials: 'include', body: JSON.stringify(paymentData) });
+                const result = await response.json();
+
+                if (response.ok) {
+                    paymentForm.reset();
+                    alert(result.message);
+                    fetchFeeStatus(); // Refresh status table
+                    fetchFeePendingReport(); // Refresh pending report table
+                    
+                    const paymentId = result.payment_id;
+                    if (paymentId) {
+                        window.open(`${API_BASE_URL}/receipt/${paymentId}`, '_blank', 'width=700,height=600');
+                    }
+
+                } else {
+                    alert(`Record failed: ${result.message || 'An unknown error occurred.'}`);
+                }
+            } catch (error) {
+                alert(`An error occurred: ${error.message}`);
+                console.error('Error recording payment:', error);
+            }
+        });
+        
+        // --- End Fee Fetch/Save Logic ---
+
+
+        // --- REPORT & DROPDOWN FUNCTIONS (FULL IMPLEMENTATION) ---
+        function populateParentDropdowns() {}
+        async function fetchCoursesForEnrollment() {
+             try {
+                const response = await fetch(`${API_BASE_URL}/courses`, {credentials: 'include'});
+                const courses = await response.json();
+                const selectElement = document.getElementById('student-course-select');
+                selectElement.innerHTML = '<option value="">Select Course</option>';
+                courses.forEach(c => {
+                    selectElement.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+                });
+            } catch (error) {
+                console.error("Error fetching courses for enrollment dropdown:", error);
+                document.getElementById('student-course-select').innerHTML = `
+                    <option value="">Error loading courses</option>
+                    <option value="">(Check if courses are registered)</option>
+                `;
+            }
+        }
+        
+        async function fetchAnnouncements(isManagementPage) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/announcements`, {credentials: 'include'});
+                const announcements = await response.json();
+                const mainAnnouncementsBody = document.getElementById('recent-announcements-body'); 
+                const recentAnnouncementsBody = document.getElementById('recent-announcements-body'); 
+                
+                // Clear both sections (they share the same tbody ID in the current HTML structure)
+                if (mainAnnouncementsBody) mainAnnouncementsBody.innerHTML = '';
+                
+                if (announcements.length === 0) {
+                    if (mainAnnouncementsBody) mainAnnouncementsBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center">No announcements found.</td></tr>`;
+                    return;
+                }
+
+                announcements.forEach((announcement, index) => {
+                    const row = `
+                        <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${announcement.title}</td>
+                            <td class="px-6 py-4 text-sm text-slate-500 dark:text-slate-400 max-w-xs truncate">${announcement.content}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${announcement.target_group.charAt(0).toUpperCase() + announcement.target_group.slice(1)}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${announcement.created_at.split(' ')[0]}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <button onclick="deleteAnnouncement(${announcement.id})" class="text-red-600 hover:text-red-900 ml-4">Delete</button>
+                            </td>
+                        </tr>`;
+                    // Display all in the main announcements section
+                    if (isManagementPage && mainAnnouncementsBody) {
+                        mainAnnouncementsBody.innerHTML += row;
+                    }
+                    // For the dashboard, display only recent ones (handled by separate ID in Dashboard section)
+                    // NOTE: Your HTML uses the same ID 'recent-announcements-body' for both tables. This renders the full table in the dashboard too.
+                });
+            } catch (error) {
+                console.error("Error fetching announcements:", error);
+                const tableBody = document.getElementById('recent-announcements-body');
+                if (tableBody) tableBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
+            }
+        }
+        
+        async function fetchStudentsForPaymentDropdown() {
+             try {
+                let students = allUsersCache.filter(u => u.role === 'student');
+                if (students.length === 0) {
+                    await fetchAllUsers();
+                    students = allUsersCache.filter(u => u.role === 'student');
+                }
+
+                const selectElement = document.getElementById('payment-student-select');
+                selectElement.innerHTML = '<option value="">Select a student...</option>';
+                students.forEach(student => { selectElement.innerHTML += `<option value="${student.id}">${student.name}</option>`; });
+            } catch (error) {
+                 console.error("Error fetching students for payment dropdown:", error);
+                 document.getElementById('payment-student-select').innerHTML = '<option value="">Error loading students</option>';
+            }
+        }
+
+        async function fetchAdmissionsReport() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/reports/admissions`, {credentials: 'include'});
+                const admissions = await response.json();
+                const tableBody = document.getElementById('admissions-report-body');
+                tableBody.innerHTML = '';
+                if (admissions.length === 0) {
+                    tableBody.innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-center">No new admissions in the last 30 days.</td></tr>`;
+                    return;
+                }
+                admissions.forEach(admission => {
+                    tableBody.innerHTML += `
+                        <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${admission.name}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${admission.email}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${admission.created_at}</td>
+                        </tr>`;
+                });
+            } catch (error) {
+                console.error("Error fetching admissions report:", error);
+                document.getElementById('admissions-report-body').innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
+            }
+        }
+
+        async function fetchAttendanceReport() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/reports/attendance`, {credentials: 'include'});
+                const report = await response.json();
+                const tableBody = document.getElementById('attendance-report-body');
+                tableBody.innerHTML = '';
+                if (report.length === 0) {
+                    tableBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center">No attendance data available.</td></tr>`;
+                    return;
+                }
+                report.forEach(data => {
+                    tableBody.innerHTML += `
+                        <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${data.student_name}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${data.total_classes}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 dark:text-green-400">${data.present}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 dark:text-red-400">${data.absent}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold">${data.percentage}%</td>
+                        </tr>`;
+                });
+            } catch (error) {
+                console.error("Error fetching attendance report:", error);
+                document.getElementById('attendance-report-body').innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
+            }
+        }
+
+        async function fetchPerformanceReport() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/reports/performance`, {credentials: 'include'});
+                const report = await response.json();
+                const tableBody = document.getElementById('performance-report-body');
+                tableBody.innerHTML = '';
+                if (report.length === 0) {
+                    tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center">No performance data available.</td></tr>`;
+                    return;
+                }
+                report.forEach(data => {
+                    tableBody.innerHTML += `
+                        <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${data.student_name}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${data.assessments_taken}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${data.total_score}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold">${data.overall_percentage}%</td>
+                        </tr>`;
+                });
+            } catch (error) {
+                console.error("Error fetching performance report:", error);
+                document.getElementById('performance-report-body').innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
+            }
+        }
+        
+        window.deleteAnnouncement = async function(id) {
+            if (confirm('Are you sure you want to delete this announcement?')) {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/announcements/${id}`, { method: 'DELETE', credentials: 'include' });
+                    if (response.ok) {
+                        alert('Announcement deleted successfully!');
+                        fetchAnnouncements(true); // Refresh table
+                    } else {
+                        const error = await response.json();
+                        alert(`Delete failed: ${error.message || 'An unknown error occurred.'}`);
+                    }
+                } catch (error) {
+                    alert(`An error occurred: ${error.message}`);
+                    console.error('Error deleting announcement:', error);
+                }
+            }
+        }
+
+        announcementForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const announcementData = { 
+                title: document.getElementById('announcement-title').value, 
+                content: document.getElementById('announcement-content').value,
+                target_group: document.getElementById('announcement-target-group').value
+            };
+            try {
+                const response = await fetch(API_BASE_URL + '/announcements', { method: 'POST', headers: {'Content-Type': 'application/json'}, credentials: 'include', body: JSON.stringify(announcementData) });
+                const result = await response.json();
+
+                if (response.ok) {
+                    announcementForm.reset();
+                    alert('Announcement published successfully!');
+                    fetchAnnouncements(true);
+                } else {
+                    alert(`Save failed: ${result.message || 'An unknown error occurred.'}`);
+                }
+            } catch (error) {
+                alert(`An error occurred: ${error.message}`);
+                console.error('Error saving announcement:', error);
+            }
+        });
 
         // --- User List Fetching (Needed for Teachers/Students/Parents tabs) ---
         async function fetchUsersByRole(role, tableBodyId) {
@@ -1320,7 +1809,6 @@
 
                 users.forEach(user => {
                     let phoneDisplay = user.phone_number || 'N/A';
-                    let actionsColumn = '';
                     let extraColumns = '';
                     let editFunc = `edit${role.charAt(0).toUpperCase() + role.slice(1)}`;
                     let deleteFunc = `delete${role.charAt(0).toUpperCase() + role.slice(1)}`;
@@ -1368,24 +1856,19 @@
         function fetchTeachers() { fetchUsersByRole('teacher', 'teacher-table-body'); }
         function fetchStudents() { fetchUsersByRole('student', 'student-table-body'); }
         function fetchParents() { fetchUsersByRole('parent', 'parent-table-body'); }
+        // --- End User List Fetching ---
 
 
         // --- Dummy/Placeholder functions needed to satisfy loadContentByHash ---
         function populateParentDropdowns() {}
-        function fetchCoursesForEnrollment() {}
-        function fetchAnnouncements() {}
-        function fetchFeeStructures() {}
+        
         function fetchStudentsForPaymentDropdown() {}
-        function fetchFeeSessionDropdowns() {}
-        function fetchFeeStatus() {}
-        function fetchFeePendingReport() {}
+        
         function fetchAdmissionsReport() {}
         function fetchAttendanceReport() {}
         function fetchPerformanceReport() {}
-        function resetFeeStructureForm() {}
         
-        window.sendQuickSms = () => {};
-        window.sendQuickWhatsapp = () => {};
+        function sendQuickNotification(studentId, subject, body, type) { /* Placeholder */ }
         // --- End Dummy/Placeholder functions ---
 
 
