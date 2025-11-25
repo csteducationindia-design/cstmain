@@ -553,8 +553,7 @@
                         <div class="mb-4">
                             <label for="message-subject" class="block text-sm font-medium mb-1">Subject / Header</label><input type="text" id="message-subject" required class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800"></div>
                         <div class="mb-4">
-                            <label for="message-body" class="block text-sm font-medium mb-1">Message Content (Max 160 Chars for SMS Mock)</label><textarea id="message-body" rows="4" required class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800"></textarea>
-                        </div>
+                            <label for="message-body" class="block text-sm font-medium mb-1">Message Content (Max 160 Chars for SMS Mock)</label><textarea id="message-body" rows="4" required class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800"></textarea></div>
                         <div class="grid grid-cols-2 gap-4">
                             <button type="button" data-type="sms" class="send-bulk-btn w-full bg-yellow-600 text-white font-medium py-2.5 px-4 rounded-lg text-sm hover:bg-yellow-700 transition duration-150">
                                 Send Bulk SMS
@@ -610,7 +609,7 @@
                     <div class="lg:col-span-2 bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6">
                         <h3 class="text-xl font-bold mb-4">Student Performance Report</h3>
                         <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700 table-auto-layout">
+                            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                                 <thead>
                                     <tr>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Student Name</th>
@@ -1516,6 +1515,7 @@
         
         window.printReceipt = function(paymentId) {
             if (paymentId && paymentId !== 'N/A' && paymentId !== 'null' && paymentId !== null) {
+                // FIX: Open receipt in a new tab
                 window.open(`${API_BASE_URL}/receipt/${paymentId}`, '_blank', 'width=700,height=600');
             } else {
                 alert('No recent payment ID available to print.');
@@ -1592,179 +1592,6 @@
             }
         });
         
-        // --- End Fee Fetch/Save Logic ---
-
-
-        // --- REPORT & DROPDOWN FUNCTIONS (FULL IMPLEMENTATION) ---
-        function populateParentDropdowns() {}
-        async function fetchCoursesForEnrollment() {
-             try {
-                const response = await fetch(`${API_BASE_URL}/courses`, {credentials: 'include'});
-                const courses = await response.json();
-                const selectElement = document.getElementById('student-course-select');
-                selectElement.innerHTML = '<option value="">Select Course</option>';
-                courses.forEach(c => {
-                    selectElement.innerHTML += `<option value="${c.id}">${c.name}</option>`;
-                });
-            } catch (error) {
-                console.error("Error fetching courses for enrollment dropdown:", error);
-                document.getElementById('student-course-select').innerHTML = `
-                    <option value="">Error loading courses</option>
-                    <option value="">(Check if courses are registered)</option>
-                `;
-            }
-        }
-        
-        async function fetchAnnouncements(isManagementPage) {
-            try {
-                const response = await fetch(`${API_BASE_URL}/announcements`, {credentials: 'include'});
-                const announcements = await response.json();
-                const mainAnnouncementsBody = document.getElementById('recent-announcements-body'); 
-                const recentAnnouncementsBody = document.getElementById('recent-announcements-body'); 
-                
-                // Clear both sections (they share the same tbody ID in the current HTML structure)
-                if (mainAnnouncementsBody) mainAnnouncementsBody.innerHTML = '';
-                
-                if (announcements.length === 0) {
-                    if (mainAnnouncementsBody) mainAnnouncementsBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center">No announcements found.</td></tr>`;
-                    return;
-                }
-
-                announcements.forEach((announcement, index) => {
-                    const row = `
-                        <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${announcement.title}</td>
-                            <td class="px-6 py-4 text-sm text-slate-500 dark:text-slate-400 max-w-xs truncate">${announcement.content}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${announcement.target_group.charAt(0).toUpperCase() + announcement.target_group.slice(1)}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${announcement.created_at.split(' ')[0]}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <button onclick="deleteAnnouncement(${announcement.id})" class="text-red-600 hover:text-red-900 ml-4">Delete</button>
-                            </td>
-                        </tr>`;
-                    // Display all in the main announcements section
-                    if (isManagementPage && mainAnnouncementsBody) {
-                        mainAnnouncementsBody.innerHTML += row;
-                    }
-                    // For the dashboard, display only recent ones (handled by separate ID in Dashboard section)
-                    // NOTE: Your HTML uses the same ID 'recent-announcements-body' for both tables. This renders the full table in the dashboard too.
-                });
-            } catch (error) {
-                console.error("Error fetching announcements:", error);
-                const tableBody = document.getElementById('recent-announcements-body');
-                if (tableBody) tableBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
-            }
-        }
-        
-        async function fetchStudentsForPaymentDropdown() {
-             try {
-                let students = allUsersCache.filter(u => u.role === 'student');
-                if (students.length === 0) {
-                    await fetchAllUsers();
-                    students = allUsersCache.filter(u => u.role === 'student');
-                }
-
-                const selectElement = document.getElementById('payment-student-select');
-                selectElement.innerHTML = '<option value="">Select a student...</option>';
-                students.forEach(student => { selectElement.innerHTML += `<option value="${student.id}">${student.name}</option>`; });
-            } catch (error) {
-                 console.error("Error fetching students for payment dropdown:", error);
-                 document.getElementById('payment-student-select').innerHTML = '<option value="">Error loading students</option>';
-            }
-        }
-
-        async function fetchAdmissionsReport() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/reports/admissions`, {credentials: 'include'});
-                const admissions = await response.json();
-                const tableBody = document.getElementById('admissions-report-body');
-                tableBody.innerHTML = '';
-                if (admissions.length === 0) {
-                    tableBody.innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-center">No new admissions in the last 30 days.</td></tr>`;
-                    return;
-                }
-                admissions.forEach(admission => {
-                    tableBody.innerHTML += `
-                        <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${admission.name}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${admission.email}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${admission.created_at}</td>
-                        </tr>`;
-                });
-            } catch (error) {
-                console.error("Error fetching admissions report:", error);
-                document.getElementById('admissions-report-body').innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
-            }
-        }
-
-        async function fetchAttendanceReport() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/reports/attendance`, {credentials: 'include'});
-                const report = await response.json();
-                const tableBody = document.getElementById('attendance-report-body');
-                tableBody.innerHTML = '';
-                if (report.length === 0) {
-                    tableBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center">No attendance data available.</td></tr>`;
-                    return;
-                }
-                report.forEach(data => {
-                    tableBody.innerHTML += `
-                        <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${data.student_name}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${data.total_classes}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 dark:text-green-400">${data.present}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 dark:text-red-400">${data.absent}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold">${data.percentage}%</td>
-                        </tr>`;
-                });
-            } catch (error) {
-                console.error("Error fetching attendance report:", error);
-                document.getElementById('attendance-report-body').innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
-            }
-        }
-
-        async function fetchPerformanceReport() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/reports/performance`, {credentials: 'include'});
-                const report = await response.json();
-                const tableBody = document.getElementById('performance-report-body');
-                tableBody.innerHTML = '';
-                if (report.length === 0) {
-                    tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center">No performance data available.</td></tr>`;
-                    return;
-                }
-                report.forEach(data => {
-                    tableBody.innerHTML += `
-                        <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${data.student_name}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${data.assessments_taken}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${data.total_score}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold">${data.overall_percentage}%</td>
-                        </tr>`;
-                });
-            } catch (error) {
-                console.error("Error fetching performance report:", error);
-                document.getElementById('performance-report-body').innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
-            }
-        }
-        
-        window.deleteAnnouncement = async function(id) {
-            if (confirm('Are you sure you want to delete this announcement?')) {
-                try {
-                    const response = await fetch(`${API_BASE_URL}/announcements/${id}`, { method: 'DELETE', credentials: 'include' });
-                    if (response.ok) {
-                        alert('Announcement deleted successfully!');
-                        fetchAnnouncements(true); // Refresh table
-                    } else {
-                        const error = await response.json();
-                        alert(`Delete failed: ${error.message || 'An unknown error occurred.'}`);
-                    }
-                } catch (error) {
-                    alert(`An error occurred: ${error.message}`);
-                    console.error('Error deleting announcement:', error);
-                }
-            }
-        }
-
         announcementForm.addEventListener('submit', async (event) => {
             event.preventDefault();
             const announcementData = { 
@@ -1859,19 +1686,161 @@
         // --- End User List Fetching ---
 
 
-        // --- Dummy/Placeholder functions needed to satisfy loadContentByHash ---
-        function populateParentDropdowns() {}
+        // --- Dropdown Population and Reset Logic ---
         
-        function fetchStudentsForPaymentDropdown() {}
+        async function populateParentDropdowns() {
+            try {
+                // Filter cache for parents
+                let parents = allUsersCache.filter(u => u.role === 'parent');
+                
+                const selectElement = document.getElementById('student-parent-select');
+                selectElement.innerHTML = '<option value="">-- No Parent --</option>';
+                parents.forEach(p => {
+                    selectElement.innerHTML += `<option value="${p.id}">${p.name}</option>`;
+                });
+            } catch (error) {
+                console.error("Error populating parent dropdown:", error);
+                document.getElementById('student-parent-select').innerHTML = '<option value="">Error loading parents</option>';
+            }
+        }
+
+        async function fetchCoursesForEnrollment() {
+             try {
+                const response = await fetch(`${API_BASE_URL}/courses`, {credentials: 'include'});
+                const courses = await response.json();
+                const selectElement = document.getElementById('student-course-select');
+                selectElement.innerHTML = '<option value="">Select Course</option>';
+                courses.forEach(c => {
+                    selectElement.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+                });
+            } catch (error) {
+                console.error("Error fetching courses for enrollment dropdown:", error);
+                document.getElementById('student-course-select').innerHTML = `
+                    <option value="">Error loading courses</option>
+                    <option value="">(Check if courses are registered)</option>
+                `;
+            }
+        }
         
-        function fetchAdmissionsReport() {}
-        function fetchAttendanceReport() {}
-        function fetchPerformanceReport() {}
+        function fetchStudentsForPaymentDropdown() {} // Placeholder for implementation
         
+        // --- End Dropdown Population and Reset Logic ---
+
+
+        // --- Report Fetching ---
+
+        async function fetchAdmissionsReport() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/reports/admissions`, {credentials: 'include'});
+                const admissions = await response.json();
+                const tableBody = document.getElementById('admissions-report-body');
+                tableBody.innerHTML = '';
+                if (admissions.length === 0) {
+                    tableBody.innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-center">No new admissions in the last 30 days.</td></tr>`;
+                    return;
+                }
+                admissions.forEach(admission => {
+                    tableBody.innerHTML += `
+                        <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${admission.name}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${admission.email}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${admission.created_at}</td>
+                        </tr>`;
+                });
+            } catch (error) {
+                console.error("Error fetching admissions report:", error);
+                document.getElementById('admissions-report-body').innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
+            }
+        }
+
+        async function fetchAttendanceReport() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/reports/attendance`, {credentials: 'include'});
+                const report = await response.json();
+                const tableBody = document.getElementById('attendance-report-body');
+                tableBody.innerHTML = '';
+                if (report.length === 0) {
+                    tableBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center">No attendance data available.</td></tr>`;
+                    return;
+                }
+                report.forEach(data => {
+                    tableBody.innerHTML += `
+                        <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${data.student_name}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${data.total_classes}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 dark:text-green-400">${data.present}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 dark:text-red-400">${data.absent}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold">${data.percentage}%</td>
+                        </tr>`;
+                });
+            } catch (error) {
+                console.error("Error fetching attendance report:", error);
+                document.getElementById('attendance-report-body').innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
+            }
+        }
+
+        async function fetchPerformanceReport() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/reports/performance`, {credentials: 'include'});
+                const report = await response.json();
+                const tableBody = document.getElementById('performance-report-body');
+                tableBody.innerHTML = '';
+                if (report.length === 0) {
+                    tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center">No performance data available.</td></tr>`;
+                    return;
+                }
+                report.forEach(data => {
+                    tableBody.innerHTML += `
+                        <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${data.student_name}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${data.assessments_taken}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${data.total_score}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold">${data.overall_percentage}%</td>
+                        </tr>`;
+                });
+            } catch (error) {
+                console.error("Error fetching performance report:", error);
+                document.getElementById('performance-report-body').innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
+            }
+        }
+        // --- End Report Fetching ---
+        
+        // --- Fee Logic ---
+        
+        window.editFeeStructure = async function(id) {
+             if (!id) return alert('Invalid Fee Structure ID.');
+            try {
+                const response = await fetch(`${API_BASE_URL}/fee_structures`, { credentials: 'include' });
+                const structures = await response.json();
+                const structure = structures.find(s => s.id == id);
+                if (structure) {
+                    document.getElementById('fee-structure-id').value = structure.id;
+                    document.getElementById('fee-structure-name').value = structure.name;
+                    document.getElementById('fee-total-amount').value = structure.total_amount;
+                    document.getElementById('fee-session-select').value = structure.academic_session_id;
+                    document.getElementById('fee-due-date').value = structure.due_date; 
+                    document.getElementById('save-fee-structure-btn').textContent = 'Update Fee Structure';
+                    window.location.hash = 'fees'; // Navigate to the section
+                } else {
+                    alert("Fee structure not found.");
+                }
+            } catch (error) {
+                console.error('Error fetching fee structure for edit:', error);
+                alert('Failed to load fee structure details for edit.');
+            }
+        }
+        
+        // --- End Fee Logic ---
+
+
+        // --- DUMMY/HELPER FUNCTIONS ---
+        function resetFeeStructureForm(structure = null) {
+            document.getElementById('fee-structure-form').reset();
+            document.getElementById('fee-structure-id').value = structure ? structure.id : '';
+            document.getElementById('save-fee-structure-btn').textContent = structure ? 'Update Fee Structure' : 'Save Fee Structure';
+        }
         function sendQuickNotification(studentId, subject, body, type) { /* Placeholder */ }
-        // --- End Dummy/Placeholder functions ---
-
-
+        
         // --- INITIAL PAGE LOAD CALLS ---
         checkAdminSession();
         loadContentByHash();
