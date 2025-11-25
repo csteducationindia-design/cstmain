@@ -1198,8 +1198,13 @@
                 const sessions = await response.json();
                 const session = sessions.find(s => s.id == id);
                 if (session) {
-                    resetSessionForm(session);
-                    window.location.hash = 'sessions'; 
+                    // FIX: Check if date values are valid before populating form
+                    if (session.start_date && session.end_date) {
+                        resetSessionForm(session);
+                        window.location.hash = 'sessions'; 
+                    } else {
+                        alert("Session dates are invalid in the database. Cannot edit.");
+                    }
                 }
             } catch (error) {
                 console.error('Error fetching session for edit:', error);
@@ -1476,7 +1481,7 @@
                     }
                 } catch(error) {
                     console.error('SMS Alert Error:', error);
-                    alert('Failed to send alert. Check console for details.');
+                    alert('Failed to send alert due to a server error.');
                 }
             }
         }
@@ -1590,30 +1595,138 @@
 
         // --- Dummy/Placeholder functions needed to satisfy loadContentByHash ---
         function populateParentDropdowns() {}
-        function fetchCoursesForEnrollment() {}
+        async function fetchCoursesForEnrollment() {
+             try {
+                const response = await fetch(`${API_BASE_URL}/courses`, {credentials: 'include'});
+                const courses = await response.json();
+                const selectElement = document.getElementById('student-course-select');
+                selectElement.innerHTML = '<option value="">Select Course</option>';
+                courses.forEach(c => {
+                    selectElement.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+                });
+            } catch (error) {
+                console.error("Error fetching courses for enrollment dropdown:", error);
+                document.getElementById('student-course-select').innerHTML = `
+                    <option value="">Error loading courses</option>
+                    <option value="">(Check if courses are registered)</option>
+                `;
+            }
+        }
         function fetchAnnouncements() {}
-        function fetchStudentsForPaymentDropdown() {}
+        async function fetchStudentsForPaymentDropdown() {
+             try {
+                let students = allUsersCache.filter(u => u.role === 'student');
+                if (students.length === 0) {
+                    await fetchAllUsers();
+                    students = allUsersCache.filter(u => u.role === 'student');
+                }
+
+                const selectElement = document.getElementById('payment-student-select');
+                selectElement.innerHTML = '<option value="">Select a student...</option>';
+                students.forEach(student => { selectElement.innerHTML += `<option value="${student.id}">${student.name}</option>`; });
+            } catch (error) {
+                 console.error("Error fetching students for payment dropdown:", error);
+                 document.getElementById('payment-student-select').innerHTML = '<option value="">Error loading students</option>';
+            }
+        }
         function fetchAdmissionsReport() {}
         function fetchAttendanceReport() {}
         function fetchPerformanceReport() {}
-        function resetFeeStructureForm() {}
         function resetFeeStructureForm(structure = null) {
             document.getElementById('fee-structure-form').reset();
+            document.getElementById('fee-structure-id').value = structure ? structure.id : '';
+            document.getElementById('save-fee-structure-btn').textContent = structure ? 'Update Fee Structure' : 'Save Fee Structure';
         }
         window.editFeeStructure = async function(id) {
-            const response = await fetch(`${API_BASE_URL}/fee_structures`, { credentials: 'include' });
-            const structures = await response.json();
-            const structure = structures.find(s => s.id == id);
-            if (structure) {
-                document.getElementById('fee-structure-id').value = structure.id;
-                document.getElementById('fee-structure-name').value = structure.name;
-                document.getElementById('fee-total-amount').value = structure.total_amount;
-                document.getElementById('fee-session-select').value = structure.academic_session_id;
-                document.getElementById('fee-due-date').value = structure.due_date; 
-                document.getElementById('save-fee-structure-btn').textContent = 'Update Fee Structure';
+             if (!id) return alert('Invalid Fee Structure ID.');
+            try {
+                const response = await fetch(`${API_BASE_URL}/fee_structures`, { credentials: 'include' });
+                const structures = await response.json();
+                const structure = structures.find(s => s.id == id);
+                if (structure) {
+                    document.getElementById('fee-structure-id').value = structure.id;
+                    document.getElementById('fee-structure-name').value = structure.name;
+                    document.getElementById('fee-total-amount').value = structure.total_amount;
+                    document.getElementById('fee-session-select').value = structure.academic_session_id;
+                    document.getElementById('fee-due-date').value = structure.due_date; 
+                    document.getElementById('save-fee-structure-btn').textContent = 'Update Fee Structure';
+                } else {
+                    alert("Fee structure not found.");
+                }
+            } catch (error) {
+                console.error('Error fetching fee structure for edit:', error);
+                alert('Failed to load fee structure details for edit.');
             }
         }
         function sendQuickNotification(studentId, subject, body, type) { /* Placeholder */ }
+        
+        async function fetchUsersByRole(role, tableBodyId) {
+            try {
+                let users = allUsersCache.filter(u => u.role === role);
+                if (users.length === 0 && allUsersCache.length === 0) {
+                    await fetchAllUsers();
+                    users = allUsersCache.filter(u => u.role === role);
+                }
+
+                const tableBody = document.getElementById(tableBodyId);
+                tableBody.innerHTML = '';
+                
+                if (users.length === 0) {
+                     const colspan = (role === 'student' ? 7 : 4);
+                    tableBody.innerHTML = `<tr><td colspan="${colspan}" class="px-6 py-4 text-center">No ${role}s found.</td></tr>`;
+                    return;
+                }
+
+                users.forEach(user => {
+                    let phoneDisplay = user.phone_number || 'N/A';
+                    let actionsColumn = '';
+                    let extraColumns = '';
+                    let editFunc = `edit${role.charAt(0).toUpperCase() + role.slice(1)}`;
+                    let deleteFunc = `delete${role.charAt(0).toUpperCase() + role.slice(1)}`;
+
+                    if (role === 'student') {
+                        const parent = allUsersCache.find(p => p.id === user.parent_id);
+                        const isPhoneAvailable = !!user.phone_number;
+                        extraColumns = `
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${parent ? parent.name : 'N/A'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400 student-phone">${phoneDisplay}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
+                                <button onclick="sendQuickSms(${user.id}, '${user.name}')" class="text-yellow-600 hover:text-yellow-700 disabled:text-slate-400" ${isPhoneAvailable ? '' : 'disabled'} title="Send Quick SMS">
+                                    <span class="material-symbols-outlined align-middle text-lg">sms</span>
+                                </button>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
+                                <button onclick="sendQuickWhatsapp(${user.id}, '${user.name}')" class="text-green-600 hover:text-green-700 disabled:text-slate-400" ${isPhoneAvailable ? '' : 'disabled'} title="Send Quick WhatsApp">
+                                    <span class="material-symbols-outlined align-middle text-lg">call</span>
+                                </button>
+                            </td>
+                        `;
+                    } else {
+                        extraColumns = `<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${phoneDisplay}</td>`;
+                    }
+
+
+                    tableBody.innerHTML += `
+                        <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${user.name}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${user.email}</td>
+                            ${extraColumns}
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <button onclick="${editFunc}(${user.id})" class="text-primary hover:text-blue-700 mr-2">Edit</button>
+                                <button onclick="${deleteFunc}(${user.id})" class="text-red-600 hover:text-red-900">Delete</button>
+                            </td>
+                        </tr>`;
+                });
+            } catch(error) {
+                 console.error(`Error fetching ${role}s:`, error);
+                 const colspan = (role === 'student' ? 7 : 4);
+                 document.getElementById(tableBodyId).innerHTML = `<tr><td colspan="${colspan}" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
+            }
+        }
+        
+        function fetchTeachers() { fetchUsersByRole('teacher', 'teacher-table-body'); }
+        function fetchStudents() { fetchUsersByRole('student', 'student-table-body'); }
+        function fetchParents() { fetchUsersByRole('parent', 'parent-table-body'); }
         // --- End Dummy/Placeholder functions ---
 
 
