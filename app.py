@@ -795,23 +795,28 @@ def delete_user(user_id):
     if user.id == current_user.id:
         return jsonify({'message': 'Cannot delete your own admin account'}), 403
 
-    # Manually delete dependent records to ensure clean deletion (Cascading)
-    if user.role == 'student':
-        Payment.query.filter_by(student_id=user_id).delete()
-        Grade.query.filter_by(student_id=user_id).delete()
-        Attendance.query.filter_by(student_id=user_id).delete()
-        Message.query.filter(or_(Message.recipient_id == user_id, Message.sender_id == user_id)).delete()
-        user.courses_enrolled = [] # Remove course associations
-    elif user.role == 'parent':
-        User.query.filter_by(parent_id=user_id).update({"parent_id": None})
-        Message.query.filter(or_(Message.recipient_id == user_id, Message.sender_id == user_id)).delete()
-    elif user.role == 'teacher':
-        Course.query.filter_by(teacher_id=user_id).update({"teacher_id": None})
-        Message.query.filter(or_(Message.recipient_id == user_id, Message.sender_id == user_id)).delete()
+    try:
+        # Manually delete dependent records to ensure clean deletion (Cascading)
+        if user.role == 'student':
+            Payment.query.filter_by(student_id=user_id).delete()
+            Grade.query.filter_by(student_id=user_id).delete()
+            Attendance.query.filter_by(student_id=user_id).delete()
+            Message.query.filter(or_(Message.recipient_id == user_id, Message.sender_id == user_id)).delete()
+            user.courses_enrolled = [] # Remove course associations
+        elif user.role == 'parent':
+            User.query.filter_by(parent_id=user_id).update({"parent_id": None})
+            Message.query.filter(or_(Message.recipient_id == user_id, Message.sender_id == user_id)).delete()
+        elif user.role == 'teacher':
+            Course.query.filter_by(teacher_id=user_id).update({"teacher_id": None})
+            Message.query.filter(or_(Message.recipient_id == user_id, Message.sender_id == user_id)).delete()
 
-    db.session.delete(user)
-    db.session.commit()
-    return jsonify({'message': 'User deleted'})
+        db.session.delete(user)
+        db.session.commit()
+        return jsonify({'message': 'User deleted'})
+    except Exception as e:
+        db.session.rollback()
+        print(f"--- ERROR DELETING USER {user_id}: {e} ---")
+        return jsonify({'message': f'Failed to delete user due to internal error. Check logs: {e}'}), 500
 
 @app.route('/api/bulk_upload/users', methods=['POST'])
 @login_required
@@ -952,14 +957,19 @@ def manage_courses():
         # FIX: Ensure teacher_id is None if empty string
         teacher_id_int = int(teacher_id) if teacher_id and str(teacher_id).isdigit() else None
         
-        new_course = Course(
-            name=data['name'],
-            subjects=data['subjects'],
-            teacher_id=teacher_id_int
-        )
-        db.session.add(new_course)
-        db.session.commit()
-        return jsonify(new_course.to_dict()), 201
+        try:
+            new_course = Course(
+                name=data['name'],
+                subjects=data['subjects'],
+                teacher_id=teacher_id_int
+            )
+            db.session.add(new_course)
+            db.session.commit()
+            return jsonify(new_course.to_dict()), 201
+        except Exception as e:
+            db.session.rollback()
+            print(f"--- ERROR SAVING COURSE (POST): {e} ---")
+            return jsonify({"message": f"Failed to save course. Check logs for details: {e}"}), 500
     
     if request.method == 'PUT':
         data = request.get_json()
@@ -976,12 +986,17 @@ def manage_courses():
         # FIX: Ensure teacher_id is None if empty string
         teacher_id_int = int(teacher_id) if teacher_id and str(teacher_id).isdigit() else None
         
-        course.name = data.get('name', course.name)
-        course.subjects = data.get('subjects', course.subjects)
-        course.teacher_id = teacher_id_int
-        
-        db.session.commit()
-        return jsonify(course.to_dict()), 200
+        try:
+            course.name = data.get('name', course.name)
+            course.subjects = data.get('subjects', course.subjects)
+            course.teacher_id = teacher_id_int
+            
+            db.session.commit()
+            return jsonify(course.to_dict()), 200
+        except Exception as e:
+            db.session.rollback()
+            print(f"--- ERROR SAVING COURSE (PUT): {e} ---")
+            return jsonify({"message": f"Failed to update course. Check logs for details: {e}"}), 500
         
     return jsonify([c.to_dict() for c in Course.query.all()])
 
@@ -990,10 +1005,16 @@ def manage_courses():
 def delete_course(course_id):
     if current_user.role != 'admin': return jsonify({"message": "Access denied"}), 403
     course = db.session.get_or_404(Course, course_id)
-    Grade.query.filter_by(course_id=course_id).delete()
-    db.session.delete(course)
-    db.session.commit()
-    return jsonify({'message': 'Course deleted successfully'})
+    try:
+        Grade.query.filter_by(course_id=course_id).delete()
+        db.session.delete(course)
+        db.session.commit()
+        return jsonify({'message': 'Course deleted successfully'})
+    except Exception as e:
+        db.session.rollback()
+        print(f"--- ERROR DELETING COURSE: {e} ---")
+        return jsonify({'message': f'Failed to delete course due to internal error. Check logs: {e}'}), 500
+
 
 @app.route('/api/sessions', methods=['GET', 'POST', 'PUT']) 
 @login_required
@@ -1002,7 +1023,6 @@ def manage_sessions():
     
     if request.method == 'POST':
         data = request.get_json()
-        # FIX: Ensure date format is correct (handled by frontend) and commit is protected
         try:
             new_session = AcademicSession(
                 name=data['name'],
@@ -1015,6 +1035,7 @@ def manage_sessions():
             return jsonify(new_session.to_dict()), 201
         except Exception as e:
             db.session.rollback()
+            print(f"--- ERROR SAVING SESSION (POST): {e} ---")
             return jsonify({"message": f"Failed to save session due to DB error: {e}"}), 500
 
     if request.method == 'PUT': 
@@ -1038,6 +1059,7 @@ def manage_sessions():
             return jsonify(session.to_dict()), 200
         except Exception as e:
             db.session.rollback()
+            print(f"--- ERROR SAVING SESSION (PUT): {e} ---")
             return jsonify({"message": f"Failed to update session due to DB error: {e}"}), 500
 
 
@@ -1052,9 +1074,15 @@ def delete_session(session_id):
     if linked_fees > 0:
         return jsonify({'message': f'Cannot delete session. It is linked to {linked_fees} fee structure(s).'}), 400
 
-    db.session.delete(session)
-    db.session.commit()
-    return jsonify({'message': 'Academic session deleted successfully'})
+    try:
+        db.session.delete(session)
+        db.session.commit()
+        return jsonify({'message': 'Academic session deleted successfully'})
+    except Exception as e:
+        db.session.rollback()
+        print(f"--- ERROR DELETING SESSION: {e} ---")
+        return jsonify({'message': f'Failed to delete session due to internal error. Check logs: {e}'}), 500
+
 
 @app.route('/api/announcements', methods=['GET', 'POST'])
 @login_required
