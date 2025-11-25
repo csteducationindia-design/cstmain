@@ -32,7 +32,6 @@
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
     <style>
-        /* Custom styles for tables that Tailwind might not cover by default */
         .table-auto-layout {
             table-layout: auto;
         }
@@ -366,7 +365,7 @@
                         <div class="form-group"><label for="course-subjects" class="block text-sm font-medium mb-1">Subjects (comma-separated)</label><input type="text" id="course-subjects" required class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800"></div>
                         <div class="form-group"><label for="course-teacher" class="block text-sm font-medium mb-1">Assign Teacher</label><select id="course-teacher" class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800"></select></div>
                         <div class="md:col-span-2">
-	      <button type"submit" id="save-course-btn" class="w-full bg-primary text-white font-medium py-2.5 px-4 rounded-lg text-sm hover:bg-opacity-90 transition duration-150">Save Course</button>
+	      <button type="submit" id="save-course-btn" class="w-full bg-primary text-white font-medium py-2.5 px-4 rounded-lg text-sm hover:bg-opacity-90 transition duration-150">Save Course</button>
                         </div>
                     </form>
                 </div>
@@ -401,7 +400,7 @@
                         <div class="form-group"><label for="session-end-date" class="block text-sm font-medium mb-1">End Date</label><input type="date" id="session-end-date" required class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800"></div>
                         <div class="form-group"><label for="session-status" class="block text-sm font-medium mb-1">Status</label><select id="session-status" required class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800"><option value="Active">Active</option><option value="Inactive">Inactive</option></select></div>
                         <div class="md:col-span-2">
-                            <button type="submit" class="w-full bg-primary text-white font-medium py-2.5 px-4 rounded-lg text-sm hover:bg-opacity-90 transition duration-150">Save Session</button>
+                            <button type="submit" id="save-session-btn" class="w-full bg-primary text-white font-medium py-2.5 px-4 rounded-lg text-sm hover:bg-opacity-90 transition duration-150">Save Session</button>
                         </div>
                     </form>
                 </div>
@@ -444,8 +443,9 @@
                             <thead>
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Title</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Content</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Target Group</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
                                     <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
@@ -656,14 +656,13 @@
     </main>
 </div>
 
-
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
 <script>
     // DEFINE: Define the base URL explicitly using the current location origin 
     const API_ORIGIN = window.location.origin;
     const API_BASE_URL = API_ORIGIN + '/api';
-    
+
     // Store all users in memory for searching
     let allUsersCache = [];
 
@@ -673,9 +672,12 @@
         const logoutBtn = document.getElementById('logout-btn');
         const contentSections = document.querySelectorAll('.content-section');
         const navLinks = document.querySelectorAll('.nav-link');
+        const sessionForm = document.getElementById('session-form');
+        const courseForm = document.getElementById('course-form');
+        const courseTeacherSelect = document.getElementById('course-teacher');
 
         function updateNavLink(hash) {
-             navLinks.forEach(link => {
+            navLinks.forEach(link => {
                 link.classList.remove('bg-primary/10', 'dark:bg-primary/20', 'text-primary');
                 link.classList.add('text-slate-700', 'dark:text-slate-300', 'hover:bg-primary/10', 'dark:hover:bg-primary/20');
             });
@@ -701,7 +703,6 @@
             }
         }
         
-        // NEW: Centralized function to fetch data based on the current hash
         function loadContentByHash() {
             const currentHash = window.location.hash.substring(1) || 'dashboard';
             
@@ -712,21 +713,20 @@
                 case 'parents': fetchParents(); resetUserForm('parent'); break;
                 case 'courses': fetchCourses(); fetchTeachersForCourseDropdown(); resetCourseForm(); break;
                 case 'sessions': fetchSessions(); resetSessionForm(); break;
-                case 'announcements': fetchAnnouncements(true); break; // true means update management table
+                case 'announcements': fetchAnnouncements(true); break;
                 case 'fees': fetchFeeStructures(); fetchStudentsForPaymentDropdown(); fetchFeeSessionDropdowns(); fetchFeeStatus(); resetFeeStructureForm(); break;
                 case 'fee-pending-report': fetchFeePendingReport(); break; 
                 case 'reports': fetchAdmissionsReport(); fetchAttendanceReport(); fetchPerformanceReport(); break;
+                case 'admin-message': break;
                 case 'bulk-upload': break;
-                // bulk message section has its own button listeners
-                case 'admin-message': break; 
             }
         }
-        
+
         window.addEventListener('hashchange', () => {
             showSection(window.location.hash); 
             loadContentByHash();
         });
-        
+
         // Initial load based on hash or default to dashboard
         showSection(window.location.hash);
 
@@ -751,40 +751,35 @@
 
         // --- DASHBOARD SUMMARY ---
         async function fetchDashboardSummary() {
-            try {
-                // Ensure cache is populated before counting
-                await fetchAllUsers(); 
-                const coursesResponse = await fetch(`${API_BASE_URL}/courses`, {credentials: 'include'});
-                const courses = await coursesResponse.json();
+             try {
+                 await fetchAllUsers(); 
+                 const coursesResponse = await fetch(`${API_BASE_URL}/courses`, {credentials: 'include'});
+                 const courses = await coursesResponse.json();
 
-                document.getElementById('total-teachers').textContent = allUsersCache.filter(u => u.role === 'teacher').length;
-                document.getElementById('total-students').textContent = allUsersCache.filter(u => u.role === 'student').length;
-                document.getElementById('total-parents').textContent = allUsersCache.filter(u => u.role === 'parent').length;
-                document.getElementById('total-courses').textContent = courses.length;
-                
-                fetchAnnouncements(false); // Fetch silently for dashboard, not the main table
-            } catch(error) {
-                 console.error("Error loading dashboard summary:", error);
-            }
+                 document.getElementById('total-teachers').textContent = allUsersCache.filter(u => u.role === 'teacher').length;
+                 document.getElementById('total-students').textContent = allUsersCache.filter(u => u.role === 'student').length;
+                 document.getElementById('total-parents').textContent = allUsersCache.filter(u => u.role === 'parent').length;
+                 document.getElementById('total-courses').textContent = courses.length;
+                 
+                 fetchAnnouncements(false); 
+             } catch(error) {
+                  console.error("Error loading dashboard summary:", error);
+             }
         }
 
-        // --- USER MANAGEMENT ---
-        
+        // --- USER MANAGEMENT UTILITIES ---
+
         async function fetchAllUsers(searchTerm = '') {
             try {
                 let endpoint = `${API_BASE_URL}/users`;
                 if (searchTerm) {
                     endpoint += `?search=${encodeURIComponent(searchTerm)}`;
                 }
-                
                 const response = await fetch(endpoint, { credentials: 'include' });
                 if (!response.ok) throw new Error('Failed to fetch users');
                 
                 const users = await response.json();
-                // Only update the global cache if it's a full fetch
-                if (!searchTerm) {
-                    allUsersCache = users;
-                }
+                if (!searchTerm) { allUsersCache = users; }
                 return users;
             } catch (error) {
                 console.error("Error fetching all users:", error);
@@ -793,7 +788,6 @@
         }
 
         function populateUserForm(user, role) {
-            // ... (populateUserForm logic remains the same as provided in your full admin.html)
             const form = document.getElementById(`${role}-form`);
             if (!form) return;
 
@@ -828,7 +822,6 @@
                 const defaultAvatar = `https://placehold.co/100x100/f6f7f8/666?text=${user.name.charAt(0) || '?'}`;
                 const photoUrl = user.profile_photo_url ? `${API_ORIGIN}${user.profile_photo_url}?t=${new Date().getTime()}` : defaultAvatar;
                 preview.src = photoUrl;
-                
                 document.getElementById('student-photo-file-input').value = ''; 
             }
             
@@ -837,7 +830,6 @@
         }
 
         function resetUserForm(role) {
-            // ... (resetUserForm logic remains the same as provided in your full admin.html)
             const form = document.getElementById(`${role}-form`);
             if (form) {
                 form.reset();
@@ -853,13 +845,13 @@
                 } else {
                     const btn = document.getElementById(`${role}-form-btn`);
                     const title = document.getElementById(`${role}-form-title`);
-                    
                     if (btn) btn.textContent = `Save ${role.charAt(0).toUpperCase() + role.slice(1)}`;
                     if (title) title.textContent = `Add/Edit ${role.charAt(0).toUpperCase() + role.slice(1)}`;
                 }
             }
         }
 
+        // Universal form handler (relies on FormData for file uploads, JSON not used here)
         async function manageUser(formId, role, specificFetchCallback = null) {
             const form = document.getElementById(formId);
             if (!form) return;
@@ -874,6 +866,7 @@
                 
                 const formData = new FormData(form);
                 
+                // --- Validation Logic ---
                 if (role === 'student') {
                     const courseId = formData.get('course_ids');
                     if (!courseId) {
@@ -889,19 +882,15 @@
                     alert("Password is required for new users.");
                     return;
                 }
+                // --- End Validation Logic ---
                 
                 let photoUploadPromise = null;
-                if (role === 'student') {
+                if (role === 'student' && method === 'PUT') {
                     const photoFile = document.getElementById('student-photo-file-input').files[0];
-                    
-                    if (method === 'POST' && photoFile) {
-                        // Handled by main POST
-                    } else if (method === 'PUT' && photoFile) {
+                    if (photoFile) {
                         formData.delete('profile_photo_file');
-                        
                         const photoFormData = new FormData();
                         photoFormData.append('profile_photo_file', photoFile);
-                        
                         photoUploadPromise = fetch(`${API_BASE_URL}/user/upload_photo/${userId}`, {
                             method: 'POST',
                             credentials: 'include',
@@ -910,6 +899,8 @@
                     } else {
                         formData.delete('profile_photo_file');
                     }
+                } else if (role === 'student' && method === 'POST') {
+                    // Ensure profile_photo_file is included if present, otherwise it's just FormData
                 }
                 
                 try {
@@ -927,11 +918,10 @@
                     
                     if (photoUploadPromise) {
                         const photoResponse = await photoUploadPromise;
-                        const photoResult = await photoResponse.json();
                         if (!photoResponse.ok) {
-                            throw new Error(photoResult.message || 'Student details saved, but photo upload failed.');
+                            throw new Error('Student details saved, but photo upload failed.');
                         }
-                        // Update UI with new photo data (important for refresh)
+                        const photoResult = await photoResponse.json();
                         populateUserForm(photoResult.user, 'student');
                     }
                     
@@ -953,31 +943,364 @@
             });
         }
         
-        // Initialize all user forms with the new FormData handler
+        // Initialize user form handlers
         manageUser('teacher-form', 'teacher', fetchTeachers);
         manageUser('parent-form', 'parent', fetchParents);
         manageUser('student-form', 'student', fetchStudents); 
 
-        // Universal DELETE functions (already look correct from your file)
-        window.deleteStudent = async function(id) { /* ... (your original logic) ... */ };
-        window.deleteTeacher = async function(id) { /* ... (your original logic) ... */ };
-        window.deleteParent = async function(id) { /* ... (your original logic) ... */ };
-
-        // Universal EDIT functions (already look correct from your file)
-        window.editStudent = async function(id) { /* ... (your original logic) ... */ };
-        window.editTeacher = async function(id) { /* ... (your original logic) ... */ };
-        window.editParent = async function(id) { /* ... (your original logic) ... */ };
-
         
-        // --- QUICK MESSAGE FUNCTIONS ---
-        // (Your original quick message functions are correct)
-        window.sendQuickSms = function(studentId, studentName) { /* ... */ };
-        window.sendQuickWhatsapp = function(studentId, studentName) { /* ... */ };
-        async function sendQuickNotification(studentId, subject, body, type) { /* ... */ };
-        // --- END QUICK MESSAGE FUNCTIONS ---
+        // --- UNIVERSAL EDIT/DELETE FUNCTIONS ---
+        window.editStudent = async function(id) {
+            let user = allUsersCache.find(u => u.id === id);
+            if (user) {
+                populateUserForm(user, 'student');
+                window.location.hash = 'students'; 
+            } else {
+                alert('Could not find user data. Refreshing...');
+                await fetchAllUsers();
+                user = allUsersCache.find(u => u.id === id);
+                if (user) populateUserForm(user, 'student');
+            }
+        };
+        window.editTeacher = async function(id) {
+            let user = allUsersCache.find(u => u.id === id);
+            if (user) {
+                populateUserForm(user, 'teacher');
+                window.location.hash = 'teachers';
+            } else {
+                alert('Could not find user data. Refreshing...');
+                await fetchAllUsers();
+                user = allUsersCache.find(u => u.id === id);
+                if (user) populateUserForm(user, 'teacher');
+            }
+        };
+        window.editParent = async function(id) {
+            let user = allUsersCache.find(u => u.id === id);
+            if (user) {
+                populateUserForm(user, 'parent');
+                window.location.hash = 'parents';
+            } else {
+                alert('Could not find user data. Refreshing...');
+                await fetchAllUsers();
+                user = allUsersCache.find(u => u.id === id);
+                if (user) populateUserForm(user, 'parent');
+            }
+        };
+
+        window.deleteTeacher = async function(id) {
+            if (!id) return alert('Invalid Teacher ID.');
+            if (confirm(`Are you sure you want to delete Teacher ID ${id}?`)) {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/users/${id}`, { method: 'DELETE', credentials: 'include' });
+                    const result = await response.json();
+                    if (response.ok) {
+                        alert(`Teacher deleted: ${result.message}`);
+                        await fetchAllUsers(); 
+                        fetchTeachers(); 
+                    } else {
+                        alert(`Delete failed: ${result.message || 'Server error'}`);
+                        console.error('Delete User Failed:', result);
+                    }
+                } catch (error) {
+                    console.error('Error deleting user:', error);
+                    alert('Network error during deletion.');
+                }
+            }
+        };
+
+        window.deleteStudent = async function(id) {
+            if (!id) return alert('Invalid Student ID.');
+            if (confirm(`Are you sure you want to delete Student ID ${id}?`)) {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/users/${id}`, { method: 'DELETE', credentials: 'include' });
+                    const result = await response.json();
+                    if (response.ok) {
+                        alert(`Student deleted: ${result.message}`);
+                        await fetchAllUsers(); 
+                        fetchStudents(); 
+                    } else {
+                        alert(`Delete failed: ${result.message || 'Server error'}`);
+                        console.error('Delete User Failed:', result);
+                    }
+                } catch (error) {
+                    console.error('Error deleting user:', error);
+                    alert('Network error during deletion.');
+                }
+            }
+        };
+
+        window.deleteParent = async function(id) {
+            if (!id) return alert('Invalid Parent ID.');
+            if (confirm(`Are you sure you want to delete Parent ID ${id}?`)) {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/users/${id}`, { method: 'DELETE', credentials: 'include' });
+                    const result = await response.json();
+                    if (response.ok) {
+                        alert(`Parent deleted: ${result.message}`);
+                        await fetchAllUsers(); 
+                        fetchParents(); 
+                    } else {
+                        alert(`Delete failed: ${result.message || 'Server error'}`);
+                        console.error('Delete User Failed:', result);
+                    }
+                } catch (error) {
+                    console.error('Error deleting user:', error);
+                    alert('Network error during deletion.');
+                }
+            }
+        };
 
 
-        // --- FETCH USER BY ROLE ---
+        // --- COURSE MANAGEMENT ---
+
+        function resetCourseForm(course = null) {
+            document.getElementById('course-id').value = course ? course.id : '';
+            document.getElementById('course-name').value = course ? course.name : '';
+            document.getElementById('course-subjects').value = course ? course.subjects.join(', ') : '';
+            document.getElementById('course-teacher').value = course ? course.teacher_id : '';
+            document.getElementById('save-course-btn').textContent = course ? 'Update Course' : 'Save Course';
+            document.querySelector('#content-courses h3').textContent = course ? 'Edit Existing Course' : 'Add New Course';
+        }
+
+        courseForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            
+            const courseId = document.getElementById('course-id').value;
+            const method = courseId ? 'PUT' : 'POST';
+            const endpoint = `${API_BASE_URL}/courses`;
+
+            const courseData = { 
+                id: courseId || undefined,
+                name: document.getElementById('course-name').value, 
+                subjects: document.getElementById('course-subjects').value, 
+                teacher_id: courseTeacherSelect.value ? parseInt(courseTeacherSelect.value) : null 
+            };
+            
+            try {
+                // FIX: MUST SEND JSON for Course/Session management
+                const response = await fetch(endpoint, { 
+                    method: method, 
+                    headers: {'Content-Type': 'application/json'}, 
+                    credentials: 'include', 
+                    body: JSON.stringify(courseData) 
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert(`Course ${method === 'POST' ? 'added' : 'updated'} successfully!`);
+                    resetCourseForm();
+                    fetchCourses();
+                    fetchCoursesForEnrollment(); 
+                } else {
+                    alert(`Save failed: ${result.message || 'An unknown error occurred.'}`);
+                    console.error("Course Save Error:", result.message);
+                }
+            } catch (error) {
+                alert(`Network error saving course: ${error.message}`);
+                console.error('Error saving course:', error);
+            }
+        });
+        
+        window.editCourse = async function(id) {
+            if (!id) return alert('Invalid Course ID.');
+            try {
+                const response = await fetch(`${API_BASE_URL}/courses`, { credentials: 'include' });
+                const courses = await response.json();
+                const course = courses.find(c => c.id == id);
+                if (course) {
+                    resetCourseForm(course);
+                    window.location.hash = 'courses'; 
+                }
+            } catch (error) {
+                console.error('Error fetching course for edit:', error);
+                alert('Failed to load course details for edit.');
+            }
+        }
+
+        window.deleteCourse = async function(id) {
+            if (!id) return alert('Invalid Course ID.');
+            if (confirm('Are you sure you want to delete this course?')) {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/courses/${id}`, { method: 'DELETE', credentials: 'include' });
+                    const result = await response.json();
+                    if (response.ok) {
+                        alert('Course deleted successfully!');
+                        fetchCourses();
+                        fetchCoursesForEnrollment(); 
+                    } else {
+                        alert(`Delete failed: ${result.message || 'An unknown error occurred.'}`);
+                        console.error('Delete Course Failed:', result);
+                    }
+                } catch (error) {
+                    alert(`Network error deleting course.`);
+                    console.error('Error deleting course:', error);
+                }
+            }
+        }
+
+
+        // --- ACADEMIC SESSIONS ---
+
+        function resetSessionForm(session = null) {
+            document.getElementById('session-id').value = session ? session.id : '';
+            document.getElementById('session-name').value = session ? session.name : '';
+            document.getElementById('session-start-date').value = session ? session.start_date : '';
+            document.getElementById('session-end-date').value = session ? session.end_date : '';
+            document.getElementById('session-status').value = session ? session.status : 'Active';
+            document.getElementById('save-session-btn').textContent = session ? 'Update Session' : 'Save Session';
+            document.querySelector('#content-sessions h3').textContent = session ? 'Edit Existing Academic Session' : 'Add New Session';
+        }
+
+        sessionForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            
+            const sessionId = document.getElementById('session-id').value;
+            const method = sessionId ? 'PUT' : 'POST';
+            const endpoint = `${API_BASE_URL}/sessions`;
+            
+            const sessionData = { 
+                id: sessionId || undefined,
+                name: document.getElementById('session-name').value, 
+                start_date: document.getElementById('session-start-date').value,
+                end_date: document.getElementById('session-end-date').value,
+                status: document.getElementById('session-status').value
+            };
+            
+            try {
+                const response = await fetch(endpoint, { 
+                    method: method, 
+                    headers: {'Content-Type': 'application/json'}, 
+                    credentials: 'include', 
+                    body: JSON.stringify(sessionData) 
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert(`Academic session ${method === 'POST' ? 'added' : 'updated'} successfully!`);
+                    resetSessionForm();
+                    fetchSessions();
+                } else {
+                    alert(`Save failed: ${result.message || 'An unknown error occurred.'}`);
+                    console.error("Session Save Error:", result.message);
+                }
+            } catch (error) {
+                alert(`Network error saving session: ${error.message}`);
+                console.error('Error saving session:', error);
+            }
+        });
+        
+        window.editSession = async function(id) {
+            if (!id) return alert('Invalid Session ID.');
+            try {
+                const response = await fetch(`${API_BASE_URL}/sessions`, { credentials: 'include' });
+                const sessions = await response.json();
+                const session = sessions.find(s => s.id == id);
+                if (session) {
+                    resetSessionForm(session);
+                    window.location.hash = 'sessions'; 
+                }
+            } catch (error) {
+                console.error('Error fetching session for edit:', error);
+                alert('Failed to load session details for edit.');
+            }
+        }
+
+        window.deleteSession = async function(id) {
+            if (!id) return alert('Invalid Session ID.');
+            if (confirm('Are you sure you want to delete this academic session?')) {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/sessions/${id}`, { method: 'DELETE', credentials: 'include' });
+                    const result = await response.json();
+                    if (response.ok) {
+                        alert('Academic session deleted successfully!');
+                        fetchSessions();
+                    } else {
+                        alert(`Delete failed: ${result.message || 'An unknown error occurred.'}`);
+                        console.error('Delete Session Failed:', result);
+                    }
+                } catch (error) {
+                    alert(`Network error deleting session.`);
+                    console.error('Error deleting session:', error);
+                }
+            }
+        }
+
+
+        // --- MISSING FETCH FUNCTIONS (Required for loading data) ---
+        async function fetchTeachersForCourseDropdown() {
+             try {
+                const response = await fetch(`${API_BASE_URL}/teachers`, {credentials: 'include'});
+                const teachers = await response.json();
+                courseTeacherSelect.innerHTML = '<option value="">Select a teacher...</option>';
+                teachers.forEach(teacher => { courseTeacherSelect.innerHTML += `<option value="${teacher.id}">${teacher.name}</option>`; });
+            } catch (error) {
+                console.error("Error fetching teachers for course dropdown:", error);
+                courseTeacherSelect.innerHTML = '<option value="">Error loading teachers</option>';
+            }
+        }
+        
+        async function fetchCourses() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/courses`, {credentials: 'include'});
+                const courses = await response.json();
+                const tableBody = document.getElementById('course-table-body');
+                tableBody.innerHTML = '';
+
+                if (courses.length === 0) {
+                    tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center">No courses found.</td></tr>`;
+                    return;
+                }
+
+                courses.forEach(course => {
+                    tableBody.innerHTML += `
+                        <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${course.name}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${course.subjects.join(', ')}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${course.teacher_name}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <button onclick="editCourse(${course.id})" class="text-primary hover:text-blue-700 mr-2">Edit</button>
+                                <button onclick="deleteCourse(${course.id})" class="text-red-600 hover:text-red-900 ml-4">Delete</button>
+                            </td>
+                        </tr>`;
+                });
+            } catch (error) {
+                console.error("Error fetching courses:", error);
+                document.getElementById('course-table-body').innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
+            }
+        }
+
+        async function fetchSessions() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/sessions`, {credentials: 'include'});
+                const sessions = await response.json();
+                const tableBody = document.getElementById('session-table-body');
+                tableBody.innerHTML = '';
+
+                if (sessions.length === 0) {
+                    tableBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center">No academic sessions found.</td></tr>`;
+                    return;
+                }
+
+                sessions.forEach(session => {
+                    tableBody.innerHTML += `
+                        <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${session.name}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${session.start_date}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${session.end_date}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${session.status}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <button onclick="editSession(${session.id})" class="text-primary hover:text-blue-700 mr-2">Edit</button>
+                                <button onclick="deleteSession(${session.id})" class="text-red-600 hover:text-red-900 ml-4">Delete</button>
+                            </td>
+                        </tr>`;
+                });
+            } catch (error) {
+                console.error("Error fetching sessions:", error);
+                document.getElementById('session-table-body').innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
+            }
+        }
+
+        // --- User List Fetching (Needed for Teachers/Students/Parents tabs) ---
         async function fetchUsersByRole(role, tableBodyId) {
             try {
                 let users = allUsersCache.filter(u => u.role === role);
@@ -990,7 +1313,7 @@
                 tableBody.innerHTML = '';
                 
                 if (users.length === 0) {
-                     const colspan = 4;
+                     const colspan = (role === 'student' ? 7 : 4);
                     tableBody.innerHTML = `<tr><td colspan="${colspan}" class="px-6 py-4 text-center">No ${role}s found.</td></tr>`;
                     return;
                 }
@@ -998,219 +1321,86 @@
                 users.forEach(user => {
                     let phoneDisplay = user.phone_number || 'N/A';
                     let actionsColumn = '';
+                    let extraColumns = '';
+                    let editFunc = `edit${role.charAt(0).toUpperCase() + role.slice(1)}`;
+                    let deleteFunc = `delete${role.charAt(0).toUpperCase() + role.slice(1)}`;
 
-                    if (role === 'parent') {
-                         actionsColumn = `<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"><button onclick="editParent(${user.id})" class="text-primary hover:text-blue-700 mr-2">Edit</button><button onclick="deleteParent(${user.id})" class="text-red-600 hover:text-red-900">Delete</button></td>`;
-                    } else if (role === 'teacher') {
-                        actionsColumn = `<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"><button onclick="editTeacher(${user.id})" class="text-primary hover:text-blue-700 mr-2">Edit</button><button onclick="deleteTeacher(${user.id})" class="text-red-600 hover:text-red-900">Delete</button></td>`;
+                    if (role === 'student') {
+                        const parent = allUsersCache.find(p => p.id === user.parent_id);
+                        const isPhoneAvailable = !!user.phone_number;
+                        extraColumns = `
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${parent ? parent.name : 'N/A'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400 student-phone">${phoneDisplay}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
+                                <button onclick="sendQuickSms(${user.id}, '${user.name}')" class="text-yellow-600 hover:text-yellow-700 disabled:text-slate-400" ${isPhoneAvailable ? '' : 'disabled'} title="Send Quick SMS">
+                                    <span class="material-symbols-outlined align-middle text-lg">sms</span>
+                                </button>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
+                                <button onclick="sendQuickWhatsapp(${user.id}, '${user.name}')" class="text-green-600 hover:text-green-700 disabled:text-slate-400" ${isPhoneAvailable ? '' : 'disabled'} title="Send Quick WhatsApp">
+                                    <span class="material-symbols-outlined align-middle text-lg">call</span>
+                                </button>
+                            </td>
+                        `;
+                    } else {
+                        extraColumns = `<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${phoneDisplay}</td>`;
                     }
 
-                    tableBody.innerHTML += `<tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50"><td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${user.name}</td><td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${user.email}</td><td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${phoneDisplay}</td>${actionsColumn || ''}</tr>`;
+
+                    tableBody.innerHTML += `
+                        <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${user.name}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${user.email}</td>
+                            ${extraColumns}
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <button onclick="${editFunc}(${user.id})" class="text-primary hover:text-blue-700 mr-2">Edit</button>
+                                <button onclick="${deleteFunc}(${user.id})" class="text-red-600 hover:text-red-900">Delete</button>
+                            </td>
+                        </tr>`;
                 });
             } catch(error) {
                  console.error(`Error fetching ${role}s:`, error);
-                 const colspan = 4;
+                 const colspan = (role === 'student' ? 7 : 4);
                  document.getElementById(tableBodyId).innerHTML = `<tr><td colspan="${colspan}" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
             }
         }
-
-        async function fetchTeachers() { fetchUsersByRole('teacher', 'teacher-table-body'); }
-        async function fetchParents() { fetchUsersByRole('parent', 'parent-table-body'); }
         
-        async function fetchStudents() { 
-            // The search input listener calls fetchStudents(searchTerm)
-            const searchInput = document.getElementById('student-search-input');
-            const users = await fetchAllUsers(searchInput.value);
-            
-            const students = users.filter(u => u.role === 'student');
-            const tableBody = document.getElementById('student-table-body');
-            tableBody.innerHTML = '';
-            
-            if (students.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="7" class="px-6 py-4 text-center">No students found.</td></tr>`;
-                return;
-            }
+        function fetchTeachers() { fetchUsersByRole('teacher', 'teacher-table-body'); }
+        function fetchStudents() { fetchUsersByRole('student', 'student-table-body'); }
+        function fetchParents() { fetchUsersByRole('parent', 'parent-table-body'); }
 
-            students.forEach(user => {
-                const parent = allUsersCache.find(p => p.id === user.parent_id);
-                const phoneDisplay = user.phone_number || 'N/A';
-                const isPhoneAvailable = !!user.phone_number;
 
-                tableBody.innerHTML += `
-                    <tr class="student-row even:bg-slate-500/5 dark:even:bg-slate-800/50">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium student-name">${user.name}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400 student-email">${user.email}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${parent ? parent.name : 'N/A'}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400 student-phone">${phoneDisplay}</td>
-                        
-                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
-                            <button onclick="sendQuickSms(${user.id}, '${user.name}')" class="text-yellow-600 hover:text-yellow-700 disabled:text-slate-400" ${isPhoneAvailable ? '' : 'disabled'} title="Send Quick SMS">
-                                <span class="material-symbols-outlined align-middle text-lg">sms</span>
-                            </button>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
-                            <button onclick="sendQuickWhatsapp(${user.id}, '${user.name}')" class="text-green-600 hover:text-green-700 disabled:text-slate-400" ${isPhoneAvailable ? '' : 'disabled'} title="Send Quick WhatsApp">
-                                <span class="material-symbols-outlined align-middle text-lg">call</span>
-                            </button>
-                        </td>
-
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button onclick="editStudent(${user.id})" class="text-primary hover:text-blue-700 mr-2">Edit</button>
-                            <button onclick="deleteStudent(${user.id})" class="text-red-600 hover:text-red-900">Delete</button>
-                        </td>
-                    </tr>`;
-            });
-         }
+        // --- Dummy/Placeholder functions needed to satisfy loadContentByHash ---
+        function populateParentDropdowns() {}
+        function fetchCoursesForEnrollment() {}
+        function fetchAnnouncements() {}
+        function fetchFeeStructures() {}
+        function fetchStudentsForPaymentDropdown() {}
+        function fetchFeeSessionDropdowns() {}
+        function fetchFeeStatus() {}
+        function fetchFeePendingReport() {}
+        function fetchAdmissionsReport() {}
+        function fetchAttendanceReport() {}
+        function fetchPerformanceReport() {}
+        function resetFeeStructureForm() {}
         
-        // --- NEW: Search functionality (Debounce) ---
-        const searchInput = document.getElementById('student-search-input');
-        let searchTimeout;
-        if (searchInput) {
-            searchInput.addEventListener('keyup', () => {
-                clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(fetchStudents, 300);
-            });
-        }
-        
-        async function populateParentDropdowns() { /* ... (your original logic) ... */ }
-        async function fetchCoursesForEnrollment() { /* ... (your original logic) ... */ }
-
-        // --- COURSE MANAGEMENT ---
-        const courseForm = document.getElementById('course-form');
-        const courseTeacherSelect = document.getElementById('course-teacher');
-        
-        function resetCourseForm(course = null) { /* ... (your original logic) ... */ }
-        async function fetchTeachersForCourseDropdown() { /* ... (your original logic) ... */ }
-        async function fetchCourses() { /* ... (your original logic) ... */ }
-        courseForm.addEventListener('submit', async (event) => { /* ... (your original logic) ... */ });
-        window.editCourse = async function(id) { /* ... (your original logic) ... */ };
-        window.deleteCourse = async function(id) { /* ... (your original logic) ... */ };
-
-        // --- ACADEMIC SESSIONS ---
-        const sessionForm = document.getElementById('session-form');
-
-        function resetSessionForm(session = null) { /* ... (your original logic) ... */ }
-        async function fetchSessions() { /* ... (your original logic) ... */ }
-        sessionForm.addEventListener('submit', async (event) => { /* ... (your original logic) ... */ });
-        window.editSession = async function(id) { /* ... (your original logic) ... */ };
-        window.deleteSession = async function(id) { /* ... (your original logic) ... */ };
-
-        // --- ANNOUNCEMENTS ---
-        const announcementForm = document.getElementById('announcement-form');
-
-        // UPDATED: fetchAnnouncements now handles both dashboard and management tables
-        async function fetchAnnouncements(isManagementPage) {
-            try {
-                const response = await fetch(`${API_BASE_URL}/announcements`, {credentials: 'include'});
-                const announcements = await response.json();
-                
-                // Note: The HTML uses 'recent-announcements-body' for *both* tables. 
-                // We will rely on the isManagementPage flag to target the correct table if needed.
-                const recentAnnouncementsBody = document.getElementById('recent-announcements-body'); 
-                const mainAnnouncementsBody = isManagementPage ? document.getElementById('recent-announcements-body') : null; // Use the same ID for now
-
-                if(recentAnnouncementsBody) recentAnnouncementsBody.innerHTML = '';
-                if(mainAnnouncementsBody && isManagementPage) mainAnnouncementsBody.innerHTML = '';
+        window.sendQuickSms = () => {};
+        window.sendQuickWhatsapp = () => {};
+        // --- End Dummy/Placeholder functions ---
 
 
-                if (announcements.length === 0) {
-                    if (recentAnnouncementsBody) recentAnnouncementsBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center">No recent announcements.</td></tr>`;
-                    if (mainAnnouncementsBody) mainAnnouncementsBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center">No announcements found.</td></tr>`;
-                    return;
-                }
-
-                announcements.forEach((announcement, index) => {
-                    const row = `
-                        <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${announcement.title}</td>
-                            <td class="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">${announcement.created_at.split(' ')[0]}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${announcement.target_group.charAt(0).toUpperCase() + announcement.target_group.slice(1)}</td>
-                            ${isManagementPage ? `<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"><button onclick="deleteAnnouncement(${announcement.id})" class="text-red-600 hover:text-red-900 ml-4">Delete</button></td>` : `<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"><a href="#announcements" class="text-primary hover:text-blue-700">View</a></td>`}
-                        </tr>`;
-
-                    // For the Dashboard (first 3 items)
-                    if (!isManagementPage && index < 3 && recentAnnouncementsBody) {
-                         recentAnnouncementsBody.innerHTML += row;
-                    }
-                    
-                    // For the main Announcements management table
-                    if (isManagementPage && mainAnnouncementsBody) {
-                        mainAnnouncementsBody.innerHTML += row;
-                    }
-                });
-            } catch (error) {
-                console.error("Error fetching announcements:", error);
-                const tableBody = document.getElementById('recent-announcements-body');
-                if (tableBody) tableBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
-            }
-        }
-        
-        announcementForm.addEventListener('submit', async (event) => { /* ... (your original logic) ... */ });
-        window.deleteAnnouncement = async function(id) { /* ... (your original logic) ... */ };
-        
-        // --- FEE STRUCTURES & PAYMENTS ---
-        // ... (all fee related functions are now in sync with your full HTML)
-        const feeStructureForm = document.getElementById('fee-structure-form');
-        const feeStructureIdInput = document.getElementById('fee-structure-id');
-        const saveFeeStructureBtn = document.getElementById('save-fee-structure-btn');
-        const paymentForm = document.getElementById('payment-form');
-        const feeSessionSelect = document.getElementById('fee-session-select');
-        const paymentStudentSelect = document.getElementById('payment-student-select');
-        const paymentFeeStructureSelect = document.getElementById('payment-fee-structure-select');
-        const feeDueDateInput = document.getElementById('fee-due-date');
-
-
-        function resetFeeStructureForm(structure = null) { /* ... (your original logic) ... */ }
-        async function fetchFeeSessionDropdowns() { /* ... (your original logic) ... */ }
-        async function fetchFeeStructures() { /* ... (your original logic) ... */ }
-        window.editFeeStructure = async function(id) { /* ... (your original logic) ... */ }
-        feeStructureForm.addEventListener('submit', async (event) => { /* ... (your original logic) ... */ });
-        async function fetchStudentsForPaymentDropdown() { /* ... (your original logic) ... */ }
-        paymentForm.addEventListener('submit', async (event) => { /* ... (your original logic) ... */ });
-        async function fetchFeeStatus() { /* ... (your original logic) ... */ }
-        window.printReceipt = function(paymentId) { /* ... (your original logic) ... */ }
-        window.sendFeeAlert = async function(studentId) { /* ... (your original logic) ... */ }
-
-         // --- FEE PENDING REPORT ---
-        const feePendingReportBody = document.getElementById('fee-pending-report-body');
-        async function fetchFeePendingReport() { /* ... (your original logic) ... */ }
-        window.sendFeeReminderSms = async function(studentId, studentName, balance, dueDate) { /* ... (your original logic) ... */ }
-        window.sendFeeReminderWhatsapp = function(studentId, studentName, balance, dueDate) { /* ... (your original logic) ... */ }
-
-
-        // --- ADMIN BULK MESSAGE LOGIC ---
-        const adminBulkMessageForm = document.getElementById('admin-bulk-message-form');
-        const sendBulkButtons = document.querySelectorAll('.send-bulk-btn');
-        const adminMessageStatus = document.getElementById('admin-message-status');
-
-        if (adminBulkMessageForm) { /* ... (your original logic) ... */ }
-
-
-        // --- REPORTS ---
-        async function fetchAdmissionsReport() { /* ... (your original logic) ... */ }
-        async function fetchAttendanceReport() { /* ... (your original logic) ... */ }
-        async function fetchPerformanceReport() { /* ... (your original logic) ... */ }
-        
-        // --- BULK UPLOAD LOGIC ---
-        const bulkUploadForm = document.getElementById('bulk-upload-form');
-        const bulkResultsDiv = document.getElementById('bulk-upload-results');
-        const bulkMessage = document.getElementById('bulk-upload-message');
-        const bulkDetails = document.getElementById('bulk-upload-details');
-
-        if (bulkUploadForm) { /* ... (your original logic) ... */ }
-
-
-       // --- INITIAL PAGE LOAD CALLS ---
+        // --- INITIAL PAGE LOAD CALLS ---
         checkAdminSession();
         loadContentByHash();
 
-        // Pre-fetch all users and dropdown data
+        // We still pre-fetch all users and dropdown data
         fetchAllUsers().then(() => {
             populateParentDropdowns(); 
-            fetchTeachersForCourseDropdown();
+            fetchCoursesForEnrollment(); 
+            fetchTeachersForCourseDropdown(); 
             fetchStudentsForPaymentDropdown();
+            fetchFeeSessionDropdowns();
         });
-        fetchFeeSessionDropdowns();
         
         // Add listener for photo preview
         const photoInput = document.getElementById('student-photo-file-input');
@@ -1224,7 +1414,32 @@
             });
         }
     });
-</script>
 
+    // --- FIREBASE INIT ---
+    function initFirebase() {
+        try {
+             const firebaseConfig = {
+                apiKey: "AIzaSyBkZEHM9fXRoCYSgEW-hk_lN7sL_nSLDfU",
+                authDomain: "cst-institute-app.firebaseapp.com",
+                projectId: "cst-institute-app",
+                storageBucket: "cst-institute-app.firebasestorage.app",
+                messagingSenderId: "485166460200",
+                appId: "1:485166460200:web:4eae20e2010ab92baeb41d"
+            };
+            if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+            const messaging = firebase.messaging();
+            if('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/firebase-messaging-sw.js').then(reg => {
+                    Notification.requestPermission().then(perm => {
+                        if(perm==='granted') messaging.getToken({vapidKey: "BBOMxvKvbEs_t9ykKBa2zIewzCzD6FCbm9rxc8a9eWl2kjjH5vyTSH6TeQMksZ_OGl5jZyQpU2wBcf-KsZN1uko", serviceWorkerRegistration: reg}).then(token => {
+                            if(token) fetch('/api/save_fcm_token', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({token}), credentials:'include'});
+                        }).catch(e => console.error("FCM Token Error:", e));
+                    }).catch(e => console.error("Notification Permission Error:", e));
+                }).catch(e => console.error("SW Registration Error:", e));
+            }
+        } catch(e) { console.error("Firebase Init Error:", e); }
+    }
+    setTimeout(initFirebase, 2000);
+</script>
 </body>
 </html>
