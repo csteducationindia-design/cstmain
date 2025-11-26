@@ -2048,16 +2048,14 @@ def send_push_notification(user_id, title, body):
     return False
 
 
-# --- Run Application ---
-if __name__ == '__main__':
-    # Initialize Database Tables within the application context on startup
+def init_db_command():
     with app.app_context():
-        # Create tables if they don't exist
         db.create_all()
         print("--- Database Tables Created/Verified ---")
-        
-        # Run migration check just in case
         check_and_upgrade_db()
         print("--- Database Schema Upgraded/Verified ---")
 
+# Change the final block to this:
+if __name__ == '__main__':
+    init_db_command()  # Still allows single-process dev run to setup DB
     app.run(debug=True, host='0.0.0.0', port=5000)
