@@ -13,7 +13,7 @@ import requests
 import uuid 
 from werkzeug.utils import secure_filename 
 import urllib.parse 
-from sqlalchemy import or_, inspect, text # Added inspect and text for robust migration
+from sqlalchemy import or_, inspect, text
 import firebase_admin
 from firebase_admin import credentials, messaging
 
@@ -1818,137 +1818,155 @@ def get_child_data(student_id):
 @app.route('/api/receipt/<int:payment_id>', methods=['GET'])
 @login_required
 def serve_receipt(payment_id):
-    payment = db.session.get_or_404(Payment, payment_id)
-    student = db.session.get(User, payment.student_id)
-    fee_structure = db.session.get(FeeStructure, payment.fee_structure_id)
+    try:
+        payment = db.session.get_or_404(Payment, payment_id)
+        student = db.session.get(User, payment.student_id)
+        fee_structure = db.session.get(FeeStructure, payment.fee_structure_id)
 
-    if not student:
-         return "Student record not found for this payment.", 404
+        if not student:
+            return "Student record not found for this payment.", 404
 
-    if current_user.role != 'admin' and (not student or (current_user.id != student.parent_id and current_user.id != student.id)):
-         return "Access Denied", 403
+        if current_user.role != 'admin' and (not student or (current_user.id != student.parent_id and current_user.id != student.id)):
+            return "Access Denied", 403
+            
+        # --- Safety Checks for Receipt Variables (FIXING 500 ERROR) ---
+        student_name = student.name if student and student.name else "N/A"
+        fee_name = fee_structure.name if fee_structure and fee_structure.name else "Fee Payment"
+        payment_amount = f"₹ {payment.amount_paid:.2f}"
+        payment_date_fmt = payment.payment_date.strftime('%d-%b-%Y %I:%M %p')
+        payment_method = payment.payment_method if payment.payment_method else "N/A"
 
-    # The HTML content is long, but remains the same as in your original file for brevity here.
-    html_content = f"""
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Receipt #{payment.id}</title>
-        <style>
-            body {{
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                margin: 0;
-                padding: 0;
-                background-color: #f4f4f4;
-            }}
-            .container {{
-                width: 80%;
-                max-width: 800px;
-                margin: 20px auto;
-                background-color: #fff;
-                padding: 30px;
-                border: 1px solid #ddd;
-                box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            }}
-            .header {{
-                text-align: center;
-                border-bottom: 2px solid #333;
-                margin-bottom: 20px;
-                padding-bottom: 10px;
-            }}
-            .header h1 {{
-                margin: 0;
-                color: #333;
-            }}
-            .header p {{
-                margin: 5px 0 0;
-                color: #666;
-            }}
-            .receipt-details {{
-                margin-bottom: 30px;
-            }}
-            .receipt-details h2 {{
-                color: #333;
-                border-bottom: 1px solid #eee;
-                padding-bottom: 5px;
-                margin-bottom: 15px;
-                font-size: 1.4em;
-            }}
-            .receipt-details table {{
-                width: 100%;
-                border-collapse: collapse;
-            }}
-            .receipt-details th, .receipt-details td {{
-                padding: 10px;
-                text-align: left;
-                border-bottom: 1px solid #eee;
-                font-size: 0.95em;
-            }}
-            .receipt-details th {{
-                background-color: #f9f9f9;
-                width: 30%;
-                color: #555;
-            }}
-            .receipt-details td {{
-                color: #333;
-            }}
-            .total {{
-                margin-top: 20px;
-                text-align: right;
-            }}
-            .total strong {{
-                font-size: 1.2em;
-                color: #000;
-            }}
-            .footer {{
-                margin-top: 40px;
-                text-align: center;
-                font-size: 0.8em;
-                color: #999;
-            }}
-            @media print {{
-              body {{ background-color: #fff; }}
-              .container {{ border: none; box-shadow: none; width: 100%; max-width: 100%; margin: 0; padding: 0; }}
-              .no-print {{ display: none; }}
-            }}
-            .print-button {{
-                 display: block; width: 100px; margin: 20px auto; padding: 10px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; text-align: center;
-            }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <h1>CST Institute</h1>
-                <p>Your Institute Address Here, City, State, Pin Code</p>
-                <p>Contact: your_phone | Email: your_email@example.com</p>
+        # Mock Institute Details (Replace with actual contact info)
+        institute_address = student.address_line1 if student.address_line1 else "Institute Address Here"
+        institute_city_state = f"{student.city if student.city else 'City'}, {student.state if student.state else 'State'}"
+        institute_contact = student.phone_number if student.phone_number else "your_phone"
+        institute_email = student.email if student.email else "your_email@example.com"
+        
+        # --- End Safety Checks ---
+
+        html_content = f"""
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Receipt #{payment.id}</title>
+            <style>
+                body {{
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    margin: 0;
+                    padding: 0;
+                    background-color: #f4f4f4;
+                }}
+                .container {{
+                    width: 80%;
+                    max-width: 800px;
+                    margin: 20px auto;
+                    background-color: #fff;
+                    padding: 30px;
+                    border: 1px solid #ddd;
+                    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+                }}
+                .header {{
+                    text-align: center;
+                    border-bottom: 2px solid #333;
+                    margin-bottom: 20px;
+                    padding-bottom: 10px;
+                }}
+                .header h1 {{
+                    margin: 0;
+                    color: #333;
+                }}
+                .header p {{
+                    margin: 5px 0 0;
+                    color: #666;
+                }}
+                .receipt-details {{
+                    margin-bottom: 30px;
+                }}
+                .receipt-details h2 {{
+                    color: #333;
+                    border-bottom: 1px solid #eee;
+                    padding-bottom: 5px;
+                    margin-bottom: 15px;
+                    font-size: 1.4em;
+                }}
+                .receipt-details table {{
+                    width: 100%;
+                    border-collapse: collapse;
+                }}
+                .receipt-details th, .receipt-details td {{
+                    padding: 10px;
+                    text-align: left;
+                    border-bottom: 1px solid #eee;
+                    font-size: 0.95em;
+                }}
+                .receipt-details th {{
+                    background-color: #f9f9f9;
+                    width: 30%;
+                    color: #555;
+                }}
+                .receipt-details td {{
+                    color: #333;
+                }}
+                .total {{
+                    margin-top: 20px;
+                    text-align: right;
+                }}
+                .total strong {{
+                    font-size: 1.2em;
+                    color: #000;
+                }}
+                .footer {{
+                    margin-top: 40px;
+                    text-align: center;
+                    font-size: 0.8em;
+                    color: #999;
+                }}
+                @media print {{
+                  body {{ background-color: #fff; }}
+                  .container {{ border: none; box-shadow: none; width: 100%; max-width: 100%; margin: 0; padding: 0; }}
+                  .no-print {{ display: none; }}
+                }}
+                .print-button {{
+                     display: block; width: 100px; margin: 20px auto; padding: 10px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; text-align: center;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>CST Institute</h1>
+                    <p>{institute_address}, {institute_city_state}</p>
+                    <p>Contact: {institute_contact} | Email: {institute_email}</p>
+                </div>
+
+                <div class="receipt-details">
+                    <h2>Payment Receipt</h2>
+                    <table>
+                        <tr><th>Receipt No:</th><td>#{payment.id}</td></tr>
+                        <tr><th>Date:</th><td>{payment_date_fmt}</td></tr>
+                        <tr><th>Student Name:</th><td>{student_name}</td></tr>
+                        <tr><th>Fee For:</th><td>{fee_name}</td></tr>
+                        <tr><th>Payment Method:</th><td>{payment_method}</td></tr>
+                        <tr class="total-row"><th>Amount Paid:</th><td><strong>{payment_amount}</strong></td></tr>
+                    </table>
+                </div>
+
+                <button class="print-button no-print" onclick="window.print()">Print Receipt</button>
+
+                <div class="footer">
+                    <p>This is a computer-generated receipt.</p>
+                    <p>Thank you!</p>
+                </div>
             </div>
-
-            <div class="receipt-details">
-                <h2>Payment Receipt</h2>
-                <table>
-                    <tr><th>Receipt No:</th><td>#{payment.id}</td></tr>
-                    <tr><th>Date:</th><td>{payment.payment_date.strftime('%d-%b-%Y %I:%M %p')}</td></tr>
-                    <tr><th>Student Name:</th><td>{student.name}</td></tr>
-                    <tr><th>Fee For:</th><td>{fee_structure.name if fee_structure else 'N/A'}</td></tr>
-                    <tr><th>Payment Method:</th><td>{payment.payment_method}</td></tr>
-                    <tr class="total-row"><th>Amount Paid:</th><td><strong>₹ {payment.amount_paid:.2f}</strong></td></tr>
-                </table>
-            </div>
-
-            <button class="print-button no-print" onclick="window.print()">Print Receipt</button>
-
-            <div class="footer">
-                <p>This is a computer-generated receipt.</p>
-                <p>Thank you!</p>
-            </div>
-        </div>
-    </body>
-    </html>
-    """
-    return html_content
+        </body>
+        </html>
+        """
+        return html_content
+    except Exception as e:
+        print(f"--- FATAL RECEIPT ERROR: {e} ---")
+        return "Internal Server Error during receipt generation. Check server logs.", 500
 
 
 # --- Routes to Serve Frontend Pages ---
