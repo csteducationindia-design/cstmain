@@ -2049,14 +2049,14 @@ def send_push_notification(user_id, title, body):
 # --- Run Application ---
 # --- Initialize Database Tables ---
 # This must run globally so Gunicorn executes it on startup
-with app.app_context():
-    # Create tables if they don't exist
-    db.create_all()
-    print("--- Database Tables Created/Verified ---")
+# with app.app_context():  <--- COMMENT OUT THIS LINE
+#    # Create tables if they don't exist
+#    db.create_all()       <--- COMMENT OUT THIS LINE
+#    print("--- Database Tables Created/Verified ---")
     
-    # Run migration check just in case
-    check_and_upgrade_db()
-    print("--- Database Schema Upgraded/Verified ---")
+#    # Run migration check just in case
+#    check_and_upgrade_db()  <--- COMMENT OUT THIS LINE
+#    print("--- Database Schema Upgraded/Verified ---")
 
 # --- Run Application ---
 if __name__ == '__main__':
