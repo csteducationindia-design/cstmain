@@ -2029,6 +2029,8 @@ def save_fcm_token():
 def service_worker():
     return send_from_directory(app.static_folder, 'firebase-messaging-sw.js')
 
+# (Original code above this point remains the same)
+
 # Helper function to use later
 def send_push_notification(user_id, title, body):
     user = db.session.get(User, user_id)
@@ -2047,17 +2049,15 @@ def send_push_notification(user_id, title, body):
 
 
 # --- Run Application ---
-# --- Initialize Database Tables ---
-# This must run globally so Gunicorn executes it on startup
-with app.app_context():
-    # Create tables if they don't exist
-    db.create_all()
-    print("--- Database Tables Created/Verified ---")
-    
-    # Run migration check just in case
-    check_and_upgrade_db()
-    print("--- Database Schema Upgraded/Verified ---")
-
-# --- Run Application ---
 if __name__ == '__main__':
+    # Initialize Database Tables within the application context on startup
+    with app.app_context():
+        # Create tables if they don't exist
+        db.create_all()
+        print("--- Database Tables Created/Verified ---")
+        
+        # Run migration check just in case
+        check_and_upgrade_db()
+        print("--- Database Schema Upgraded/Verified ---")
+
     app.run(debug=True, host='0.0.0.0', port=5000)
