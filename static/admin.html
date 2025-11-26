@@ -544,16 +544,16 @@
                         <div class="mb-4">
                             <label for="message-target-role" class="block text-sm font-medium mb-1">Target Group</label>
                             <select id="message-target-role" required class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800">
-                                <option value="all">ALL Users (Teachers, Students, Parents)</option>
+                                <option value="all">All Users (Teachers, Students, Parents)</option>
                                 <option value="teachers">Teachers Only</option>
                                 <option value="students">Students Only</option>
-                                <option value="parents">Parents Only</option>
                             </select>
                         </div>
                         <div class="mb-4">
                             <label for="message-subject" class="block text-sm font-medium mb-1">Subject / Header</label><input type="text" id="message-subject" required class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800"></div>
                         <div class="mb-4">
-                            <label for="message-body" class="block text-sm font-medium mb-1">Message Content (Max 160 Chars for SMS Mock)</label><textarea id="message-body" rows="4" required class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800"></textarea></div>
+                            <label for="message-body" class="block text-sm font-medium mb-1">Message Content (Max 160 Chars for SMS Mock)</label><textarea id="message-body" rows="4" required class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800"></textarea>
+                        </div>
                         <div class="grid grid-cols-2 gap-4">
                             <button type="button" data-type="sms" class="send-bulk-btn w-full bg-yellow-600 text-white font-medium py-2.5 px-4 rounded-lg text-sm hover:bg-yellow-700 transition duration-150">
                                 Send Bulk SMS
@@ -609,7 +609,7 @@
                     <div class="lg:col-span-2 bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6">
                         <h3 class="text-xl font-bold mb-4">Student Performance Report</h3>
                         <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700 table-auto-layout">
                                 <thead>
                                     <tr>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Student Name</th>
@@ -677,6 +677,8 @@
         const feeStructureForm = document.getElementById('fee-structure-form');
         const paymentForm = document.getElementById('payment-form');
         const announcementForm = document.getElementById('announcement-form'); // Added missing form reference
+        const searchInput = document.getElementById('student-search-input'); // Added missing search reference
+        let searchTimeout;
 
         function updateNavLink(hash) {
             navLinks.forEach(link => {
@@ -1233,81 +1235,92 @@
         }
 
 
-        // --- REPORT & DROPDOWN FUNCTIONS (FULL IMPLEMENTATION) ---
+        // --- ANNOUNCEMENT LOGIC ---
         
-        async function fetchTeachersForCourseDropdown() {
-             try {
-                const response = await fetch(`${API_BASE_URL}/teachers`, {credentials: 'include'});
-                const teachers = await response.json();
-                courseTeacherSelect.innerHTML = '<option value="">Select a teacher...</option>';
-                teachers.forEach(teacher => { courseTeacherSelect.innerHTML += `<option value="${teacher.id}">${teacher.name}</option>`; });
-            } catch (error) {
-                console.error("Error fetching teachers for course dropdown:", error);
-                courseTeacherSelect.innerHTML = '<option value="">Error loading teachers</option>';
-            }
-        }
-        
-        async function fetchCourses() {
+        async function fetchAnnouncements(isManagementPage) {
             try {
-                const response = await fetch(`${API_BASE_URL}/courses`, {credentials: 'include'});
-                const courses = await response.json();
-                const tableBody = document.getElementById('course-table-body');
-                tableBody.innerHTML = '';
-
-                if (courses.length === 0) {
-                    tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center">No courses found.</td></tr>`;
+                const response = await fetch(`${API_BASE_URL}/announcements`, {credentials: 'include'});
+                const announcements = await response.json();
+                const mainAnnouncementsBody = document.getElementById('recent-announcements-body'); 
+                
+                if (mainAnnouncementsBody) mainAnnouncementsBody.innerHTML = '';
+                
+                if (announcements.length === 0) {
+                    if (mainAnnouncementsBody) mainAnnouncementsBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center">No announcements found.</td></tr>`;
                     return;
                 }
 
-                courses.forEach(course => {
-                    tableBody.innerHTML += `
+                announcements.forEach((announcement, index) => {
+                    // Truncate content for dashboard view, show full content for management view
+                    const contentDisplay = isManagementPage ? announcement.content : announcement.content.substring(0, 50) + (announcement.content.length > 50 ? '...' : '');
+
+                    const row = `
                         <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${course.name}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${course.subjects.join(', ')}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${course.teacher_name}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${announcement.title}</td>
+                            <td class="px-6 py-4 text-sm text-slate-500 dark:text-slate-400 max-w-xs truncate">${contentDisplay}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${announcement.target_group.charAt(0).toUpperCase() + announcement.target_group.slice(1)}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${announcement.created_at.split(' ')[0]}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <button onclick="editCourse(${course.id})" class="text-primary hover:text-blue-700 mr-2">Edit</button>
-                                <button onclick="deleteCourse(${course.id})" class="text-red-600 hover:text-red-900 ml-4">Delete</button>
+                                <button onclick="deleteAnnouncement(${announcement.id})" class="text-red-600 hover:text-red-900 ml-4">Delete</button>
                             </td>
                         </tr>`;
+                    // Display all in the main announcements section
+                    if (mainAnnouncementsBody) {
+                        mainAnnouncementsBody.innerHTML += row;
+                    }
                 });
             } catch (error) {
-                console.error("Error fetching courses:", error);
-                document.getElementById('course-table-body').innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
-            }
-        }
-
-        async function fetchSessions() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/sessions`, {credentials: 'include'});
-                const sessions = await response.json();
-                const tableBody = document.getElementById('session-table-body');
-                tableBody.innerHTML = '';
-
-                if (sessions.length === 0) {
-                    tableBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center">No academic sessions found.</td></tr>`;
-                    return;
-                }
-
-                sessions.forEach(session => {
-                    tableBody.innerHTML += `
-                        <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${session.name}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${session.start_date}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${session.end_date}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${session.status}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <button onclick="editSession(${session.id})" class="text-primary hover:text-blue-700 mr-2">Edit</button>
-                                <button onclick="deleteSession(${session.id})" class="text-red-600 hover:text-red-900 ml-4">Delete</button>
-                            </td>
-                        </tr>`;
-                });
-            } catch (error) {
-                console.error("Error fetching sessions:", error);
-                document.getElementById('session-table-body').innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
+                console.error("Error fetching announcements:", error);
+                const tableBody = document.getElementById('recent-announcements-body');
+                if (tableBody) tableBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
             }
         }
         
+        window.deleteAnnouncement = async function(id) {
+            if (confirm('Are you sure you want to delete this announcement?')) {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/announcements/${id}`, { method: 'DELETE', credentials: 'include' });
+                    if (response.ok) {
+                        alert('Announcement deleted successfully!');
+                        fetchAnnouncements(true); // Refresh table
+                    } else {
+                        const error = await response.json();
+                        alert(`Delete failed: ${error.message || 'An unknown error occurred.'}`);
+                    }
+                } catch (error) {
+                    alert(`An error occurred: ${error.message}`);
+                    console.error('Error deleting announcement:', error);
+                }
+            }
+        }
+
+        announcementForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const announcementData = { 
+                title: document.getElementById('announcement-title').value, 
+                content: document.getElementById('announcement-content').value,
+                target_group: document.getElementById('announcement-target-group').value
+            };
+            try {
+                const response = await fetch(API_BASE_URL + '/announcements', { method: 'POST', headers: {'Content-Type': 'application/json'}, credentials: 'include', body: JSON.stringify(announcementData) });
+                const result = await response.json();
+
+                if (response.ok) {
+                    announcementForm.reset();
+                    alert('Announcement published successfully!');
+                    fetchAnnouncements(true);
+                } else {
+                    alert(`Save failed: ${result.message || 'An unknown error occurred.'}`);
+                }
+            } catch (error) {
+                alert(`An error occurred: ${error.message}`);
+                console.error('Error saving announcement:', error);
+            }
+        });
+
+
+        // --- FEE & REPORT LOGIC ---
+
         async function fetchFeeSessionDropdowns() {
             try {
                 const response = await fetch(`${API_BASE_URL}/sessions`, {credentials: 'include'});
@@ -1515,7 +1528,6 @@
         
         window.printReceipt = function(paymentId) {
             if (paymentId && paymentId !== 'N/A' && paymentId !== 'null' && paymentId !== null) {
-                // FIX: Open receipt in a new tab
                 window.open(`${API_BASE_URL}/receipt/${paymentId}`, '_blank', 'width=700,height=600');
             } else {
                 alert('No recent payment ID available to print.');
@@ -1592,35 +1604,140 @@
             }
         });
         
-        announcementForm.addEventListener('submit', async (event) => {
-            event.preventDefault();
-            const announcementData = { 
-                title: document.getElementById('announcement-title').value, 
-                content: document.getElementById('announcement-content').value,
-                target_group: document.getElementById('announcement-target-group').value
-            };
-            try {
-                const response = await fetch(API_BASE_URL + '/announcements', { method: 'POST', headers: {'Content-Type': 'application/json'}, credentials: 'include', body: JSON.stringify(announcementData) });
-                const result = await response.json();
+        // --- End Fee Fetch/Save Logic ---
 
-                if (response.ok) {
-                    announcementForm.reset();
-                    alert('Announcement published successfully!');
-                    fetchAnnouncements(true);
-                } else {
-                    alert(`Save failed: ${result.message || 'An unknown error occurred.'}`);
-                }
+
+        // --- REPORT & DROPDOWN FUNCTIONS (FULL IMPLEMENTATION) ---
+        function populateParentDropdowns() {}
+        async function fetchCoursesForEnrollment() {
+             try {
+                const response = await fetch(`${API_BASE_URL}/courses`, {credentials: 'include'});
+                const courses = await response.json();
+                const selectElement = document.getElementById('student-course-select');
+                selectElement.innerHTML = '<option value="">Select Course</option>';
+                courses.forEach(c => {
+                    selectElement.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+                });
             } catch (error) {
-                alert(`An error occurred: ${error.message}`);
-                console.error('Error saving announcement:', error);
+                console.error("Error fetching courses for enrollment dropdown:", error);
+                document.getElementById('student-course-select').innerHTML = `
+                    <option value="">Error loading courses</option>
+                    <option value="">(Check if courses are registered)</option>
+                `;
             }
-        });
+        }
+        
+        // This function is used to populate the dropdown in the course management tab
+        async function fetchTeachersForCourseDropdown() {
+             try {
+                const response = await fetch(`${API_BASE_URL}/teachers`, {credentials: 'include'});
+                const teachers = await response.json();
+                courseTeacherSelect.innerHTML = '<option value="">Select a teacher...</option>';
+                teachers.forEach(teacher => { courseTeacherSelect.innerHTML += `<option value="${teacher.id}">${teacher.name}</option>`; });
+            } catch (error) {
+                console.error("Error fetching teachers for course dropdown:", error);
+                courseTeacherSelect.innerHTML = '<option value="">Error loading teachers</option>';
+            }
+        }
+        
+        function fetchAdmissionsReport() {
+            try {
+                const response = fetch(`${API_BASE_URL}/reports/admissions`, {credentials: 'include'})
+                    .then(res => res.json())
+                    .then(admissions => {
+                        const tableBody = document.getElementById('admissions-report-body');
+                        tableBody.innerHTML = '';
+                        if (admissions.length === 0) {
+                            tableBody.innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-center">No new admissions in the last 30 days.</td></tr>`;
+                            return;
+                        }
+                        admissions.forEach(admission => {
+                            tableBody.innerHTML += `
+                                <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${admission.name}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${admission.email}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${admission.created_at}</td>
+                                </tr>`;
+                        });
+                    });
+            } catch (error) {
+                console.error("Error fetching admissions report:", error);
+                document.getElementById('admissions-report-body').innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
+            }
+        }
+
+        function fetchAttendanceReport() {
+            try {
+                const response = fetch(`${API_BASE_URL}/reports/attendance`, {credentials: 'include'})
+                    .then(res => res.json())
+                    .then(report => {
+                        const tableBody = document.getElementById('attendance-report-body');
+                        tableBody.innerHTML = '';
+                        if (report.length === 0) {
+                            tableBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center">No attendance data available.</td></tr>`;
+                            return;
+                        }
+                        report.forEach(data => {
+                            const percentClass = data.percentage < 75 ? 'text-red-600 font-bold' : 'text-green-600 font-bold';
+                            tableBody.innerHTML += `
+                                <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${data.student_name}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${data.total_classes}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 dark:text-green-400">${data.present}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 dark:text-red-400">${data.absent}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm ${percentClass}">${data.percentage}%</td>
+                                </tr>`;
+                        });
+                    });
+            } catch (error) {
+                console.error("Error fetching attendance report:", error);
+                document.getElementById('attendance-report-body').innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
+            }
+        }
+
+        function fetchPerformanceReport() {
+            try {
+                const response = fetch(`${API_BASE_URL}/reports/performance`, {credentials: 'include'})
+                    .then(res => res.json())
+                    .then(report => {
+                        const tableBody = document.getElementById('performance-report-body');
+                        tableBody.innerHTML = '';
+                        if (report.length === 0) {
+                            tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center">No performance data available.</td></tr>`;
+                            return;
+                        }
+                        report.forEach(data => {
+                            tableBody.innerHTML += `
+                                <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${data.student_name}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${data.assessments_taken}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${data.total_score}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-bold">${data.overall_percentage}%</td>
+                                </tr>`;
+                        });
+                    });
+            } catch (error) {
+                console.error("Error fetching performance report:", error);
+                document.getElementById('performance-report-body').innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
+            }
+        }
+        
+        function sendQuickNotification(studentId, subject, body, type) { /* Placeholder */ }
+        
+        // --- End Report Functions ---
+
 
         // --- User List Fetching (Needed for Teachers/Students/Parents tabs) ---
         async function fetchUsersByRole(role, tableBodyId) {
             try {
+                // Determine if we need to fetch all users or use cached/searched results
                 let users = allUsersCache.filter(u => u.role === role);
-                if (users.length === 0 && allUsersCache.length === 0) {
+                
+                // If this is the student list and a search term is present, refetch all with search query
+                if (role === 'student' && searchInput.value) {
+                     users = (await fetchAllUsers(searchInput.value)).filter(u => u.role === 'student');
+                } else if (users.length === 0 && allUsersCache.length === 0) {
+                    // Cache is empty, fetch everything once
                     await fetchAllUsers();
                     users = allUsersCache.filter(u => u.role === role);
                 }
@@ -1683,130 +1800,28 @@
         function fetchTeachers() { fetchUsersByRole('teacher', 'teacher-table-body'); }
         function fetchStudents() { fetchUsersByRole('student', 'student-table-body'); }
         function fetchParents() { fetchUsersByRole('parent', 'parent-table-body'); }
+        
+        if (searchInput) {
+            searchInput.addEventListener('keyup', () => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(fetchStudents, 300);
+            });
+        }
         // --- End User List Fetching ---
 
 
-        // --- Dropdown Population and Reset Logic ---
-        
-        async function populateParentDropdowns() {
-            try {
-                // Filter cache for parents
-                let parents = allUsersCache.filter(u => u.role === 'parent');
-                
-                const selectElement = document.getElementById('student-parent-select');
-                selectElement.innerHTML = '<option value="">-- No Parent --</option>';
-                parents.forEach(p => {
-                    selectElement.innerHTML += `<option value="${p.id}">${p.name}</option>`;
-                });
-            } catch (error) {
-                console.error("Error populating parent dropdown:", error);
-                document.getElementById('student-parent-select').innerHTML = '<option value="">Error loading parents</option>';
+        // --- Fees Dropdown Reset Functions (Needed for Form Initialization) ---
+        function resetFeeStructureForm(structure = null) {
+            document.getElementById('fee-structure-form').reset();
+            document.getElementById('fee-structure-id').value = structure ? structure.id : '';
+            document.getElementById('save-fee-structure-btn').textContent = structure ? 'Update Fee Structure' : 'Save Fee Structure';
+            if (structure) {
+                document.getElementById('fee-structure-name').value = structure.name;
+                document.getElementById('fee-total-amount').value = structure.total_amount;
+                document.getElementById('fee-session-select').value = structure.academic_session_id;
+                document.getElementById('fee-due-date').value = structure.due_date;
             }
         }
-
-        async function fetchCoursesForEnrollment() {
-             try {
-                const response = await fetch(`${API_BASE_URL}/courses`, {credentials: 'include'});
-                const courses = await response.json();
-                const selectElement = document.getElementById('student-course-select');
-                selectElement.innerHTML = '<option value="">Select Course</option>';
-                courses.forEach(c => {
-                    selectElement.innerHTML += `<option value="${c.id}">${c.name}</option>`;
-                });
-            } catch (error) {
-                console.error("Error fetching courses for enrollment dropdown:", error);
-                document.getElementById('student-course-select').innerHTML = `
-                    <option value="">Error loading courses</option>
-                    <option value="">(Check if courses are registered)</option>
-                `;
-            }
-        }
-        
-        function fetchStudentsForPaymentDropdown() {} // Placeholder for implementation
-        
-        // --- End Dropdown Population and Reset Logic ---
-
-
-        // --- Report Fetching ---
-
-        async function fetchAdmissionsReport() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/reports/admissions`, {credentials: 'include'});
-                const admissions = await response.json();
-                const tableBody = document.getElementById('admissions-report-body');
-                tableBody.innerHTML = '';
-                if (admissions.length === 0) {
-                    tableBody.innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-center">No new admissions in the last 30 days.</td></tr>`;
-                    return;
-                }
-                admissions.forEach(admission => {
-                    tableBody.innerHTML += `
-                        <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${admission.name}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${admission.email}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${admission.created_at}</td>
-                        </tr>`;
-                });
-            } catch (error) {
-                console.error("Error fetching admissions report:", error);
-                document.getElementById('admissions-report-body').innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
-            }
-        }
-
-        async function fetchAttendanceReport() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/reports/attendance`, {credentials: 'include'});
-                const report = await response.json();
-                const tableBody = document.getElementById('attendance-report-body');
-                tableBody.innerHTML = '';
-                if (report.length === 0) {
-                    tableBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center">No attendance data available.</td></tr>`;
-                    return;
-                }
-                report.forEach(data => {
-                    tableBody.innerHTML += `
-                        <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${data.student_name}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${data.total_classes}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 dark:text-green-400">${data.present}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 dark:text-red-400">${data.absent}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold">${data.percentage}%</td>
-                        </tr>`;
-                });
-            } catch (error) {
-                console.error("Error fetching attendance report:", error);
-                document.getElementById('attendance-report-body').innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
-            }
-        }
-
-        async function fetchPerformanceReport() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/reports/performance`, {credentials: 'include'});
-                const report = await response.json();
-                const tableBody = document.getElementById('performance-report-body');
-                tableBody.innerHTML = '';
-                if (report.length === 0) {
-                    tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center">No performance data available.</td></tr>`;
-                    return;
-                }
-                report.forEach(data => {
-                    tableBody.innerHTML += `
-                        <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${data.student_name}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${data.assessments_taken}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${data.total_score}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold">${data.overall_percentage}%</td>
-                        </tr>`;
-                });
-            } catch (error) {
-                console.error("Error fetching performance report:", error);
-                document.getElementById('performance-report-body').innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
-            }
-        }
-        // --- End Report Fetching ---
-        
-        // --- Fee Logic ---
-        
         window.editFeeStructure = async function(id) {
              if (!id) return alert('Invalid Fee Structure ID.');
             try {
@@ -1814,13 +1829,8 @@
                 const structures = await response.json();
                 const structure = structures.find(s => s.id == id);
                 if (structure) {
-                    document.getElementById('fee-structure-id').value = structure.id;
-                    document.getElementById('fee-structure-name').value = structure.name;
-                    document.getElementById('fee-total-amount').value = structure.total_amount;
-                    document.getElementById('fee-session-select').value = structure.academic_session_id;
-                    document.getElementById('fee-due-date').value = structure.due_date; 
-                    document.getElementById('save-fee-structure-btn').textContent = 'Update Fee Structure';
-                    window.location.hash = 'fees'; // Navigate to the section
+                    resetFeeStructureForm(structure);
+                    window.location.hash = 'fees'; 
                 } else {
                     alert("Fee structure not found.");
                 }
@@ -1829,18 +1839,16 @@
                 alert('Failed to load fee structure details for edit.');
             }
         }
+        // --- End Fees Dropdown Reset Functions ---
+
+
+        // --- Dummy/Placeholder functions needed to satisfy loadContentByHash ---
+        function populateParentDropdowns() {}
         
-        // --- End Fee Logic ---
-
-
-        // --- DUMMY/HELPER FUNCTIONS ---
-        function resetFeeStructureForm(structure = null) {
-            document.getElementById('fee-structure-form').reset();
-            document.getElementById('fee-structure-id').value = structure ? structure.id : '';
-            document.getElementById('save-fee-structure-btn').textContent = structure ? 'Update Fee Structure' : 'Save Fee Structure';
-        }
         function sendQuickNotification(studentId, subject, body, type) { /* Placeholder */ }
-        
+        // --- End Dummy/Placeholder functions ---
+
+
         // --- INITIAL PAGE LOAD CALLS ---
         checkAdminSession();
         loadContentByHash();
@@ -1848,50 +1856,4 @@
         // We still pre-fetch all users and dropdown data
         fetchAllUsers().then(() => {
             populateParentDropdowns(); 
-            fetchCoursesForEnrollment(); 
-            fetchTeachersForCourseDropdown(); 
-            fetchStudentsForPaymentDropdown();
-            fetchFeeSessionDropdowns();
-        });
-        
-        // Add listener for photo preview
-        const photoInput = document.getElementById('student-photo-file-input');
-        const photoPreview = document.getElementById('student-photo-preview');
-        if (photoInput && photoPreview) {
-            photoInput.addEventListener('change', () => {
-                const file = photoInput.files[0];
-                if (file) {
-                    photoPreview.src = URL.createObjectURL(file);
-                }
-            });
-        }
-    });
-
-    // --- FIREBASE INIT ---
-    function initFirebase() {
-        try {
-             const firebaseConfig = {
-                apiKey: "AIzaSyBkZEHM9fXRoCYSgEW-hk_lN7sL_nSLDfU",
-                authDomain: "cst-institute-app.firebaseapp.com",
-                projectId: "cst-institute-app",
-                storageBucket: "cst-institute-app.firebasestorage.app",
-                messagingSenderId: "485166460200",
-                appId: "1:485166460200:web:4eae20e2010ab92baeb41d"
-            };
-            if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-            const messaging = firebase.messaging();
-            if('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/firebase-messaging-sw.js').then(reg => {
-                    Notification.requestPermission().then(perm => {
-                        if(perm==='granted') messaging.getToken({vapidKey: "BBOMxvKvbEs_t9ykKBa2zIewzCzD6FCbm9rxc8a9eWl2kjjH5vyTSH6TeQMksZ_OGl5jZyQpU2wBcf-KsZN1uko", serviceWorkerRegistration: reg}).then(token => {
-                            if(token) fetch('/api/save_fcm_token', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({token}), credentials:'include'});
-                        }).catch(e => console.error("FCM Token Error:", e));
-                    }).catch(e => console.error("Notification Permission Error:", e));
-                }).catch(e => console.error("SW Registration Error:", e));
-            }
-        } catch(e) { console.error("Firebase Init Error:", e); }
-    }
-    setTimeout(initFirebase, 2000);
-</script>
-</body>
-</html>
+            fetchCoursesFor
