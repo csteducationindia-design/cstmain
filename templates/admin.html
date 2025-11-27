@@ -690,42 +690,69 @@
             }
         }
         
-        // admin.html, look for loadContentByHash() function
-function loadContentByHash() {
-    const currentHash = window.location.hash.substring(1) || 'dashboard';
-    
-    try { // CRITICAL: This outer try/catch prevents the application freeze!
-        switch (currentHash) {
-            case 'dashboard': 
-                fetchDashboardSummary(); 
-                break;
-            case 'teachers': 
-                fetchTeachers(); 
-                resetUserForm('teacher'); 
-                break; 
-            case 'students': 
-                fetchStudents(); 
-                populateParentDropdowns(); 
-                resetUserForm('student'); 
-                fetchCoursesForEnrollment(); 
-                break; 
-            case 'parents': 
-                fetchParents(); 
-                resetUserForm('parent'); 
-                break;
-            case 'courses': 
-                fetchCourses(); 
-                fetchTeachersForCourseDropdown(); 
-                resetCourseForm(); 
-                break; // <--- The likely current point of failure
-            // ... (rest of cases)
+        function loadContentByHash() {
+            const currentHash = window.location.hash.substring(1) || 'dashboard';
+            
+            try { // CRITICAL: This outer try/catch prevents the application freeze!
+                switch (currentHash) {
+                    case 'dashboard': 
+                        fetchDashboardSummary(); 
+                        break;
+                    case 'teachers': 
+                        fetchTeachers(); 
+                        resetUserForm('teacher'); 
+                        break; 
+                    case 'students': 
+                        fetchStudents(); 
+                        populateParentDropdowns(); 
+                        resetUserForm('student'); 
+                        fetchCoursesForEnrollment(); 
+                        break; 
+                    case 'parents': 
+                        fetchParents(); 
+                        resetUserForm('parent'); 
+                        break;
+                    case 'courses': 
+                        fetchCourses(); 
+                        fetchTeachersForCourseDropdown(); 
+                        resetCourseForm(); 
+                        break; 
+                    case 'sessions': 
+                        fetchSessions(); 
+                        resetSessionForm(); 
+                        break;
+                    case 'announcements': 
+                        fetchAnnouncements(true); 
+                        break;
+                    case 'fees': 
+                        fetchFeeStructures(); 
+                        fetchStudentsForPaymentDropdown(); 
+                        fetchFeeSessionDropdowns(); 
+                        fetchFeeStatus(); 
+                        // resetFeeStructureForm(); // Function not implemented/needed here
+                        break;
+                    case 'fee-pending-report': 
+                        fetchFeePendingReport(); 
+                        break; 
+                    case 'reports': 
+                        fetchAdmissionsReport(); 
+                        fetchAttendanceReport(); 
+                        fetchPerformanceReport(); 
+                        break;
+                    case 'admin-message': 
+                        break;
+                    case 'bulk-upload': 
+                        break;
+                    default: 
+                        console.warn(`Unknown hash: ${currentHash}`); 
+                        break;
+                }
+            } catch(e) {
+                console.error("Content Loading Error:", e);
+                // Display the generic error caught here
+                alert("An error occurred loading content. Please check the console.");
+            }
         }
-    } catch(e) {
-        console.error("Content Loading Error:", e);
-        // Display the generic error caught here
-        alert("An error occurred loading content. Please check the console.");
-    }
-}
 
         window.addEventListener('hashchange', () => {
              try { // CRITICAL: Added try...catch for stability
@@ -1642,36 +1669,164 @@ function loadContentByHash() {
         // --- End Fee Fetch/Save Logic ---
 
 
-        // --- REPORT & DROPDOWN FUNCTIONS (FULL IMPLEMENTATION) ---
+        // --- USER MANAGEMENT FETCHING FUNCTIONS (Fixes the Data Loading Error) ---
+
+        async function fetchTeachers() {
+            const tableBody = document.getElementById('teacher-table-body');
+            tableBody.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center">Loading teachers...</td></tr>';
+
+            try {
+                const users = await fetchAllUsers(); 
+                const teachers = users.filter(u => u.role === 'teacher');
+                
+                tableBody.innerHTML = '';
+                if (teachers.length === 0) {
+                    tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center">No teachers found.</td></tr>`;
+                    return;
+                }
+
+                teachers.forEach(teacher => {
+                    tableBody.innerHTML += `
+                        <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${teacher.name}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${teacher.email}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${teacher.phone_number || 'N/A'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <button onclick="editTeacher(${teacher.id})" class="text-primary hover:text-blue-700 mr-2">Edit</button>
+                                <button onclick="deleteTeacher(${teacher.id})" class="text-red-600 hover:text-red-900">Delete</button>
+                            </td>
+                        </tr>`;
+                });
+            } catch (error) {
+                console.error("Error fetching teachers:", error);
+                tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
+            }
+        }
+        
+        async function fetchStudents(searchTerm = '') {
+            const tableBody = document.getElementById('student-table-body');
+            tableBody.innerHTML = '<tr><td colspan="7" class="px-6 py-4 text-center">Loading students...</td></tr>';
+            
+            try {
+                const users = await fetchAllUsers(searchTerm); 
+                const students = users.filter(u => u.role === 'student');
+                
+                tableBody.innerHTML = '';
+                if (students.length === 0) {
+                    tableBody.innerHTML = `<tr><td colspan="7" class="px-6 py-4 text-center">${searchTerm ? 'No students match your search.' : 'No students found.'}</td></tr>`;
+                    return;
+                }
+                
+                const parents = users.filter(u => u.role === 'parent');
+                const parentMap = new Map(parents.map(p => [p.id, p.name]));
+                
+                students.forEach(student => {
+                    const parentName = parentMap.get(student.parent_id) || 'Unlinked';
+                    const isPhoneAvailable = !!student.phone_number;
+                    
+                    tableBody.innerHTML += `
+                        <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${student.name}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${student.email}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${parentName}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${student.phone_number || 'N/A'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
+                                <button onclick="sendQuickSms(${student.id}, '${student.name}')" class="text-yellow-600 hover:text-yellow-700 disabled:text-slate-400" ${isPhoneAvailable ? '' : 'disabled'}>SMS</button>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
+                                <button onclick="sendQuickWhatsapp(${student.id}, '${student.name}')" class="text-green-600 hover:text-green-700 disabled:text-slate-400" ${isPhoneAvailable ? '' : 'disabled'}>WA</button>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <button onclick="editStudent(${student.id})" class="text-primary hover:text-blue-700 mr-2">Edit</button>
+                                <button onclick="deleteStudent(${student.id})" class="text-red-600 hover:text-red-900">Delete</button>
+                            </td>
+                        </tr>`;
+                });
+            } catch (error) {
+                console.error("Error fetching students:", error);
+                tableBody.innerHTML = `<tr><td colspan="7" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
+            }
+        }
+        
+        // --- Student Search Event Listener (Add this if missing) ---
+        if (searchInput) {
+            searchInput.addEventListener('input', () => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    fetchStudents(searchInput.value.trim());
+                }, 300); // Debounce search
+            });
+        }
+        
+        async function fetchParents() {
+            const tableBody = document.getElementById('parent-table-body');
+            tableBody.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center">Loading parents...</td></tr>';
+
+            try {
+                const users = await fetchAllUsers(); 
+                const parents = users.filter(u => u.role === 'parent');
+                
+                tableBody.innerHTML = '';
+                if (parents.length === 0) {
+                    tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center">No parents found.</td></tr>`;
+                    return;
+                }
+
+                parents.forEach(parent => {
+                    tableBody.innerHTML += `
+                        <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${parent.name}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${parent.email}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${parent.phone_number || 'N/A'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <button onclick="editParent(${parent.id})" class="text-primary hover:text-blue-700 mr-2">Edit</button>
+                                <button onclick="deleteParent(${parent.id})" class="text-red-600 hover:text-red-900">Delete</button>
+                            </td>
+                        </tr>`;
+                });
+            } catch (error) {
+                console.error("Error fetching parents:", error);
+                tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
+            }
+        }
+        
+        // --- Mock Functions for Students/Reports (Crucial to prevent crash) ---
+        window.sendQuickSms = function(id, name) {
+            alert(`[MOCK] SMS alert to ${name} (ID: ${id}) triggered.`);
+            console.log(`MOCK SMS alert to student ID ${id}`);
+        };
+        window.sendQuickWhatsapp = function(id, name) {
+            alert(`[MOCK] WhatsApp alert to ${name} (ID: ${id}) triggered.`);
+            console.log(`MOCK WA alert to student ID ${id}`);
+        };
+
+
+        // --- REPORT & DROPDOWN FUNCTIONS (Cont.) ---
         
         // Used to populate the parent dropdown in the student form
-        // admin.html (Around line 1146 in the final provided script block)
+        async function populateParentDropdowns() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/parents`, {credentials: 'include'});
+                const parents = await response.json();
+                const selectElement = document.getElementById('student-parent-select');
+                
+                if (!selectElement) {
+                     console.warn("Element 'student-parent-select' not found.");
+                     return;
+                }
 
-async function populateParentDropdowns() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/parents`, {credentials: 'include'});
-        const parents = await response.json();
-        const selectElement = document.getElementById('student-parent-select');
-        
-        // Ensure the select element exists before modifying it
-        if (!selectElement) {
-             console.warn("Element 'student-parent-select' not found.");
-             return;
+                selectElement.innerHTML = '<option value="">(None)</option>';
+                parents.forEach(p => { 
+                    selectElement.innerHTML += `<option value="${p.id}">${p.name} (${p.email})</option>`; 
+                });
+            } catch (error) {
+                console.error("Error fetching parents for dropdown:", error);
+                const selectElement = document.getElementById('student-parent-select');
+                if (selectElement) {
+                    selectElement.innerHTML = '<option value="">Error loading parents</option>';
+                }
+            }
         }
-
-        selectElement.innerHTML = '<option value="">(None)</option>';
-        parents.forEach(p => { 
-            selectElement.innerHTML += `<option value="${p.id}">${p.name} (${p.email})</option>`; 
-        });
-    } catch (error) {
-        console.error("Error fetching parents for dropdown:", error);
-        const selectElement = document.getElementById('student-parent-select');
-        if (selectElement) {
-            selectElement.innerHTML = '<option value="">Error loading parents</option>';
-        }
-        // This catch block prevents the entire application from crashing.
-    }
-}
 
         async function fetchStudentsForPaymentDropdown() {
             try {
@@ -1683,7 +1838,8 @@ async function populateParentDropdowns() {
                 students.forEach(s => { selectElement.innerHTML += `<option value="${s.id}">${s.name} (${s.email})</option>`; });
             } catch (error) {
                  console.error("Error fetching students for payment dropdown:", error);
-                 document.getElementById('payment-student-select').innerHTML = '<option value="">Error loading students</option>';
+                 const selectElement = document.getElementById('payment-student-select');
+                 if(selectElement) selectElement.innerHTML = '<option value="">Error loading students</option>';
             }
         }
 
@@ -1698,10 +1854,8 @@ async function populateParentDropdowns() {
                 });
             } catch (error) {
                 console.error("Error fetching courses for enrollment dropdown:", error);
-                document.getElementById('student-course-select').innerHTML = `
-                    <option value="">Error loading courses</option>
-                    <option value="">(Check if courses are registered)</option>
-                `;
+                const selectElement = document.getElementById('student-course-select');
+                if(selectElement) selectElement.innerHTML = `<option value="">Error loading courses</option><option value="">(Check if courses are registered)</option>`;
             }
         }
         
@@ -1717,257 +1871,7 @@ async function populateParentDropdowns() {
                 courseTeacherSelect.innerHTML = '<option value="">Error loading teachers</option>';
             }
         }
-        
-        async function fetchCourses() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/courses`, {credentials: 'include'});
-                const courses = await response.json();
-                const tableBody = document.getElementById('course-table-body');
-                
-                tableBody.innerHTML = '';
-                if (courses.length === 0) {
-                     tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center">No courses found.</td></tr>`;
-                     return;
-                }
 
-                courses.forEach(course => {
-                    tableBody.innerHTML += `
-                        <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${course.name}</td>
-                            <td class="px-6 py-4 text-sm text-slate-500 dark:text-slate-400 max-w-xs truncate">${course.subjects.join(', ')}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${course.teacher_name}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <button onclick="editCourse(${course.id})" class="text-primary hover:text-blue-700 mr-2">Edit</button>
-                                <button onclick="deleteCourse(${course.id})" class="text-red-600 hover:text-red-900">Delete</button>
-                            </td>
-                        </tr>`;
-                });
-            } catch(error) {
-                 console.error('Error fetching courses:', error);
-                 document.getElementById('course-table-body').innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
-            }
-        }
-
-        async function fetchSessions() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/sessions`, {credentials: 'include'});
-                const sessions = await response.json();
-                const tableBody = document.getElementById('session-table-body');
-                
-                tableBody.innerHTML = '';
-                if (sessions.length === 0) {
-                     tableBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center">No academic sessions found.</td></tr>`;
-                     return;
-                }
-
-                sessions.forEach(session => {
-                    const statusClass = session.status === 'Active' ? 'text-green-600' : 'text-red-600';
-                    tableBody.innerHTML += `
-                        <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${session.name}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${session.start_date}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${session.end_date}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium ${statusClass}">${session.status}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <button onclick="editSession(${session.id})" class="text-primary hover:text-blue-700 mr-2">Edit</button>
-                                <button onclick="deleteSession(${session.id})" class="text-red-600 hover:text-red-900">Delete</button>
-                            </td>
-                        </tr>`;
-                });
-            } catch(error) {
-                 console.error('Error fetching sessions:', error);
-                 document.getElementById('session-table-body').innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
-            }
-        }
-
-        function fetchAdmissionsReport() {
-            try {
-                const response = fetch(`${API_BASE_URL}/reports/admissions`, {credentials: 'include'})
-                    .then(res => res.json())
-                    .then(admissions => {
-                        const tableBody = document.getElementById('admissions-report-body');
-                        tableBody.innerHTML = '';
-                        if (admissions.length === 0) {
-                            tableBody.innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-center">No new admissions in the last 30 days.</td></tr>`;
-                            return;
-                        }
-                        admissions.forEach(admission => {
-                            tableBody.innerHTML += `
-                                <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${admission.name}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${admission.email}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${admission.created_at}</td>
-                                </tr>`;
-                        });
-                    });
-            } catch (error) {
-                console.error("Error fetching admissions report:", error);
-                document.getElementById('admissions-report-body').innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
-            }
-        }
-
-        function fetchAttendanceReport() {
-            try {
-                const response = fetch(`${API_BASE_URL}/reports/attendance`, {credentials: 'include'})
-                    .then(res => res.json())
-                    .then(report => {
-                        const tableBody = document.getElementById('attendance-report-body');
-                        tableBody.innerHTML = '';
-                        if (report.length === 0) {
-                            tableBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center">No attendance data available.</td></tr>`;
-                            return;
-                        }
-                        report.forEach(data => {
-                            const percentClass = data.percentage < 75 ? 'text-red-600 font-bold' : 'text-green-600 font-bold';
-                            tableBody.innerHTML += `
-                                <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${data.student_name}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${data.total_classes}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 dark:text-green-400">${data.present}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 dark:text-red-400">${data.absent}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm ${percentClass}">${data.percentage}%</td>
-                                </tr>`;
-                        });
-                    });
-            } catch (error) {
-                console.error("Error fetching attendance report:", error);
-                document.getElementById('attendance-report-body').innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
-            }
-        }
-
-        function fetchPerformanceReport() {
-            try {
-                const response = fetch(`${API_BASE_URL}/reports/performance`, {credentials: 'include'})
-                    .then(res => res.json())
-                    .then(report => {
-                        const tableBody = document.getElementById('performance-report-body');
-                        tableBody.innerHTML = '';
-                        if (report.length === 0) {
-                            tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center">No performance data available.</td></tr>`;
-                            return;
-                        }
-                        report.forEach(data => {
-                            tableBody.innerHTML += `
-                                <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${data.student_name}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${data.assessments_taken}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${data.total_score}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-bold">${data.overall_percentage}%</td>
-                                </tr>`;
-                        });
-                    });
-            } catch (error) {
-                console.error("Error fetching performance report:", error);
-                document.getElementById('performance-report-body').innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
-            }
-        }
-        
-        // --- Bulk Message Handler ---
-        const sendBulkButtons = document.querySelectorAll('.send-bulk-btn');
-        const adminMessageStatus = document.getElementById('admin-message-status');
-
-        sendBulkButtons.forEach(button => {
-            button.addEventListener('click', async (e) => {
-                e.preventDefault();
-                adminMessageStatus.classList.add('hidden');
-                
-                const targetRole = document.getElementById('message-target-role').value;
-                const subject = document.getElementById('message-subject').value;
-                const body = document.getElementById('message-body').value;
-                const notifyType = button.getAttribute('data-type');
-                
-                if (!subject || !body) {
-                    alert('Please fill out the subject and message content.');
-                    return;
-                }
-
-                adminMessageStatus.textContent = `Sending bulk message via ${notifyType.toUpperCase()}, please wait...`;
-                adminMessageStatus.classList.remove('hidden', 'text-red-500', 'text-green-600');
-
-                try {
-                    const response = await fetch(`${API_BASE_URL}/admin/bulk_notify`, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        credentials: 'include',
-                        body: JSON.stringify({
-                            subject: subject,
-                            body: body,
-                            type: notifyType,
-                            target_role: targetRole
-                        })
-                    });
-
-                    const result = await response.json();
-
-                    if (response.ok) {
-                        adminMessageStatus.textContent = result.message;
-                        adminMessageStatus.classList.add('text-green-600');
-                        adminBulkMessageForm.reset();
-                    } else {
-                        adminMessageStatus.textContent = `Error: ${result.message || 'Server failed to send notifications.'}`;
-                        adminMessageStatus.classList.add('text-red-600');
-                    }
-                } catch (error) {
-                    adminMessageStatus.textContent = 'Network error: Could not connect to the server.';
-                    adminMessageStatus.classList.add('text-red-600');
-                    console.error('Bulk message error:', error);
-                }
-            });
-        });
-        
-        // --- Bulk Upload Handler ---
-        bulkUploadForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const resultsDiv = document.getElementById('bulk-upload-results');
-            const messageP = document.getElementById('bulk-upload-message');
-            const detailsDiv = document.getElementById('bulk-upload-details');
-            resultsDiv.classList.remove('hidden');
-            resultsDiv.classList.remove('bg-red-100', 'dark:bg-red-900');
-            resultsDiv.classList.add('bg-slate-50', 'dark:bg-slate-800');
-
-            messageP.textContent = 'Processing file, please wait...';
-            detailsDiv.innerHTML = '';
-            
-            const formData = new FormData(bulkUploadForm);
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/bulk_upload/users`, {
-                    method: 'POST',
-                    credentials: 'include',
-                    body: formData
-                });
-
-                const result = await response.json();
-
-                if (response.ok) {
-                    messageP.textContent = result.message;
-                    resultsDiv.classList.remove('bg-red-100', 'dark:bg-red-900');
-                    resultsDiv.classList.add('bg-green-50', 'dark:bg-green-900');
-                    bulkUploadForm.reset();
-                } else {
-                    messageP.textContent = `Upload Failed: ${result.message || 'Server error.'}`;
-                    resultsDiv.classList.remove('bg-green-50', 'dark:bg-green-900');
-                    resultsDiv.classList.add('bg-red-100', 'dark:bg-red-900');
-                }
-                
-                if (result.details && result.details.failed && result.details.failed.length > 0) {
-                    detailsDiv.innerHTML = `<h5 class="font-semibold text-red-600 mt-2">Failed Records (${result.details.failed.length}):</h5><ul class="list-disc list-inside text-sm text-red-500">${result.details.failed.map(f => `<li>${f}</li>`).join('')}</ul>`;
-                }
-
-                // Refresh all user lists and dashboard summary
-                await fetchAllUsers();
-                fetchDashboardSummary();
-                if(window.location.hash.includes('#students')) fetchStudents();
-                if(window.location.hash.includes('#teachers')) fetchTeachers();
-                if(window.location.hash.includes('#parents')) fetchParents();
-
-            } catch (error) {
-                messageP.textContent = 'Network error: Could not connect to the server for bulk upload.';
-                resultsDiv.classList.remove('bg-green-50', 'dark:bg-green-900');
-                resultsDiv.classList.add('bg-red-100', 'dark:bg-red-900');
-                console.error('Bulk Upload Error:', error);
-            }
-        });
 
         // --- FINAL INITIALIZATION CALLS ---
         
