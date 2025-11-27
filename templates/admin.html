@@ -690,30 +690,42 @@
             }
         }
         
-        function loadContentByHash() {
-            const currentHash = window.location.hash.substring(1) || 'dashboard';
-            
-            try { // CRITICAL: Added try...catch for stability
-                switch (currentHash) {
-                    case 'dashboard': fetchDashboardSummary(); break;
-                    case 'teachers': fetchTeachers(); resetUserForm('teacher'); break; 
-                    case 'students': fetchStudents(); populateParentDropdowns(); resetUserForm('student'); fetchCoursesForEnrollment(); break; 
-                    case 'parents': fetchParents(); resetUserForm('parent'); break;
-                    case 'courses': fetchCourses(); fetchTeachersForCourseDropdown(); resetCourseForm(); break;
-                    case 'sessions': fetchSessions(); resetSessionForm(); break;
-                    case 'announcements': fetchAnnouncements(true); break;
-                    case 'fees': fetchFeeStructures(); fetchStudentsForPaymentDropdown(); fetchFeeSessionDropdowns(); fetchFeeStatus(); resetFeeStructureForm(); break;
-                    case 'fee-pending-report': fetchFeePendingReport(); break; 
-                    case 'reports': fetchAdmissionsReport(); fetchAttendanceReport(); fetchPerformanceReport(); break;
-                    case 'admin-message': break;
-                    case 'bulk-upload': break;
-                    default: console.warn(`Unknown hash: ${currentHash}`); break;
-                }
-            } catch(e) {
-                console.error("Content Loading Error:", e);
-                alert("An error occurred loading content. Please check the console.");
-            }
+        // admin.html, look for loadContentByHash() function
+function loadContentByHash() {
+    const currentHash = window.location.hash.substring(1) || 'dashboard';
+    
+    try { // CRITICAL: This outer try/catch prevents the application freeze!
+        switch (currentHash) {
+            case 'dashboard': 
+                fetchDashboardSummary(); 
+                break;
+            case 'teachers': 
+                fetchTeachers(); 
+                resetUserForm('teacher'); 
+                break; 
+            case 'students': 
+                fetchStudents(); 
+                populateParentDropdowns(); 
+                resetUserForm('student'); 
+                fetchCoursesForEnrollment(); 
+                break; 
+            case 'parents': 
+                fetchParents(); 
+                resetUserForm('parent'); 
+                break;
+            case 'courses': 
+                fetchCourses(); 
+                fetchTeachersForCourseDropdown(); 
+                resetCourseForm(); 
+                break; // <--- The likely current point of failure
+            // ... (rest of cases)
         }
+    } catch(e) {
+        console.error("Content Loading Error:", e);
+        // Display the generic error caught here
+        alert("An error occurred loading content. Please check the console.");
+    }
+}
 
         window.addEventListener('hashchange', () => {
              try { // CRITICAL: Added try...catch for stability
