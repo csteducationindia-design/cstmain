@@ -18,29 +18,7 @@ import firebase_admin
 from firebase_admin import credentials, messaging
 
 
-# Initialize Firebase (only once)
-if not firebase_admin._apps:
-    firebase_env = os.environ.get('FIREBASE_CREDENTIALS_JSON')
-    
-    if firebase_env:
-        try:
-            # Clean string just in case (remove potential surrounding quotes)
-            firebase_env = firebase_env.strip("'").strip('"')
-            cred_dict = json.loads(firebase_env)
-            cred = credentials.Certificate(cred_dict)
-            firebase_admin.initialize_app(cred)
-            print("--- Firebase Initialized from Env Var ---")
-        except json.JSONDecodeError as e:
-            print(f"--- FIREBASE JSON ERROR: {e} ---")
-            print(f"--- Bad Content Start: {firebase_env[:20]}... ---")
-        except Exception as e:
-            print(f"--- FIREBASE INIT ERROR: {e} ---")
-    elif os.path.exists("firebase_credentials.json"):
-        cred = credentials.Certificate("firebase_credentials.json")
-        firebase_admin.initialize_app(cred)
-        print("--- Firebase Initialized from Local File ---")
-    else:
-        print("--- WARNING: No Firebase Credentials Found (App will run but Notifications will fail) ---")
+
 
 # --- Basic Setup ---
 app = Flask(__name__, template_folder='templates')
@@ -2032,7 +2010,26 @@ def service_worker():
 # (Original code above this point remains the same)
 
 # Helper function to use later
+# Helper function to use later
 def send_push_notification(user_id, title, body):
+    # 1. LAZY INITIALIZATION: Only initialize Firebase if it hasn't been already
+    if not firebase_admin._apps:
+        firebase_env = os.environ.get('FIREBASE_CREDENTIALS_JSON')
+        if firebase_env:
+            try:
+                firebase_env = firebase_env.strip("'").strip('"')
+                cred_dict = json.loads(firebase_env)
+                cred = credentials.Certificate(cred_dict)
+                firebase_admin.initialize_app(cred)
+                print("--- Firebase Lazily Initialized ---")
+            except Exception as e:
+                print(f"--- LAZY FIREBASE INIT FAILED: {e} ---")
+                return False
+        else:
+            print("--- WARNING: No Firebase Credentials Found for Push ---")
+            return False
+
+    # 2. SEND PUSH
     user = db.session.get(User, user_id)
     if user and user.fcm_token:
         try:
@@ -2050,10 +2047,7 @@ def send_push_notification(user_id, title, body):
 
 # app.py (Near the end, replacing the 'if __name__ == "__main__":' block)
 
-# Helper function to use later
-def send_push_notification(user_id, title, body):
-# ... (Keep the rest of the function content as is)
-    pass
+
 
 
 # --- Run Application ---
