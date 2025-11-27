@@ -177,7 +177,6 @@
                 <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">Manage Teachers</h2>
                 <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6 mb-8">
 	<h3 id="teacher-form-title" class="text-xl font-bold mb-4">Add/Edit Teacher</h3>
-                    <!-- This form now uses FormData, handled by manageUser() -->
                     <form id="teacher-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <input type="hidden" id="teacher-id" name="id">
                         <input type="hidden" id="teacher-role" name="role" value="teacher">
@@ -212,12 +211,10 @@
                 <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">Manage Students</h2>
                 <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6 mb-8">
                     <h3 id="student-form-title" class="text-xl font-bold mb-4">Add/Edit Student</h3>
-                    <!-- UPDATED: Form uses FormData and is split into sections -->
                     <form id="student-form" class="space-y-6" enctype="multipart/form-data">
                         <input type="hidden" id="student-id" name="id">
                         <input type="hidden" id="student-role" name="role" value="student">
                         
-                        <!-- Enrollment Details Group (MOVED TO TOP) -->
                         <fieldset>
                             <legend class="text-lg font-semibold text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-700 pb-2 mb-4">Enrollment Details</legend>
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -231,7 +228,6 @@
                             </div>
                         </fieldset>
 
-                        <!-- Basic Details Group -->
                         <fieldset>
                             <legend class="text-lg font-semibold text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-700 pb-2 mb-4">Basic Details</legend>
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -251,7 +247,6 @@
                             </div>
                         </fieldset>
 
-                        <!-- Parent/Guardian Details Group -->
                         <fieldset>
                             <legend class="text-lg font-semibold text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-700 pb-2 mb-4">Parent/Guardian Details</legend>
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -261,7 +256,6 @@
                             </div>
                         </fieldset>
 
-                        <!-- Address Details Group -->
                         <fieldset>
                             <legend class="text-lg font-semibold text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-700 pb-2 mb-4">Address Details</legend>
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -273,7 +267,6 @@
                         </fieldset>
                         
 
-                        <!-- Profile Photo Upload -->
                         <fieldset>
                             <legend class="text-lg font-semibold text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-700 pb-2 mb-4">Profile Photo</legend>
                             <div class="flex items-center gap-4">
@@ -292,7 +285,6 @@
                     </form>
                 </div>
                 <div>
-                    <!-- NEW: Search Bar -->
                     <div class="mb-4">
                         <label for="student-search-input" class="block text-sm font-medium mb-1">Search Students (by Name, Email, or Phone)</label>
                         <input type="text" id="student-search-input" placeholder="Start typing to search..." class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800">
@@ -322,7 +314,6 @@
                 <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">Manage Parents</h2>
                 <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6 mb-8">
                     <h3 id="parent-form-title" class="text-xl font-bold mb-4">Add/Edit Parent</h3>
-                    <!-- FIX: Added name attributes for FormData -->
                     <form id="parent-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <input type="hidden" id="parent-id" name="id">
                         <input type="hidden" id="parent-role" name="role" value="parent">
@@ -514,8 +505,7 @@
                 </div>
             </div>
             
-             <!-- FEE PENDING REPORT SECTION (NEW) -->
-            <div id="content-fee-pending-report" class="content-section hidden">
+             <div id="content-fee-pending-report" class="content-section hidden">
                 <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">Student Fee Pending Report</h2>
                 <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm overflow-hidden">
                     <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700 table-auto-layout">
@@ -533,10 +523,6 @@
                     </table>
                 </div>
             </div>
-            <!-- END FEE PENDING REPORT SECTION -->
-
-
-            <!-- ADMIN BULK MESSAGE SECTION -->
             <div id="content-admin-message" class="content-section hidden">
                 <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">Send Bulk Notifications (SMS/WhatsApp Mock)</h2>
                 <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6 mb-8">
@@ -566,10 +552,7 @@
                     <p id="admin-message-status" class="mt-4 text-sm font-medium text-center text-slate-500 dark:text-slate-400 hidden"></p>
                 </div>
             </div>
-            <!-- END ADMIN BULK MESSAGE SECTION -->
-
-            
-<div id="content-reports" class="content-section hidden">
+            <div id="content-reports" class="content-section hidden">
                 <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">General Reports</h2>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6">
@@ -625,7 +608,6 @@
                 </div>
             </div>
 
-            <!-- BULK UPLOAD SECTION -->
             <div id="content-bulk-upload" class="content-section hidden">
                 <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">Bulk Data Upload</h2>
                 <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6 mb-8">
@@ -649,9 +631,7 @@
                     </div>
                 </div>
             </div>
-            <!-- END BULK UPLOAD SECTION -->
-
-        </div>
+            </div>
     </main>
 </div>
 
@@ -676,8 +656,11 @@
         const courseTeacherSelect = document.getElementById('course-teacher');
         const feeStructureForm = document.getElementById('fee-structure-form');
         const paymentForm = document.getElementById('payment-form');
-        const announcementForm = document.getElementById('announcement-form'); // Added missing form reference
-        const searchInput = document.getElementById('student-search-input'); // Added missing search reference
+        const announcementForm = document.getElementById('announcement-form'); 
+        const searchInput = document.getElementById('student-search-input'); 
+        const bulkUploadForm = document.getElementById('bulk-upload-form');
+        const adminBulkMessageForm = document.getElementById('admin-bulk-message-form');
+
         let searchTimeout;
 
         function updateNavLink(hash) {
@@ -710,25 +693,36 @@
         function loadContentByHash() {
             const currentHash = window.location.hash.substring(1) || 'dashboard';
             
-            switch (currentHash) {
-                case 'dashboard': fetchDashboardSummary(); break;
-                case 'teachers': fetchTeachers(); resetUserForm('teacher'); break; 
-                case 'students': fetchStudents(); populateParentDropdowns(); resetUserForm('student'); fetchCoursesForEnrollment(); break; 
-                case 'parents': fetchParents(); resetUserForm('parent'); break;
-                case 'courses': fetchCourses(); fetchTeachersForCourseDropdown(); resetCourseForm(); break;
-                case 'sessions': fetchSessions(); resetSessionForm(); break;
-                case 'announcements': fetchAnnouncements(true); break;
-                case 'fees': fetchFeeStructures(); fetchStudentsForPaymentDropdown(); fetchFeeSessionDropdowns(); fetchFeeStatus(); resetFeeStructureForm(); break;
-                case 'fee-pending-report': fetchFeePendingReport(); break; 
-                case 'reports': fetchAdmissionsReport(); fetchAttendanceReport(); fetchPerformanceReport(); break;
-                case 'admin-message': break;
-                case 'bulk-upload': break;
+            try { // CRITICAL: Added try...catch for stability
+                switch (currentHash) {
+                    case 'dashboard': fetchDashboardSummary(); break;
+                    case 'teachers': fetchTeachers(); resetUserForm('teacher'); break; 
+                    case 'students': fetchStudents(); populateParentDropdowns(); resetUserForm('student'); fetchCoursesForEnrollment(); break; 
+                    case 'parents': fetchParents(); resetUserForm('parent'); break;
+                    case 'courses': fetchCourses(); fetchTeachersForCourseDropdown(); resetCourseForm(); break;
+                    case 'sessions': fetchSessions(); resetSessionForm(); break;
+                    case 'announcements': fetchAnnouncements(true); break;
+                    case 'fees': fetchFeeStructures(); fetchStudentsForPaymentDropdown(); fetchFeeSessionDropdowns(); fetchFeeStatus(); resetFeeStructureForm(); break;
+                    case 'fee-pending-report': fetchFeePendingReport(); break; 
+                    case 'reports': fetchAdmissionsReport(); fetchAttendanceReport(); fetchPerformanceReport(); break;
+                    case 'admin-message': break;
+                    case 'bulk-upload': break;
+                    default: console.warn(`Unknown hash: ${currentHash}`); break;
+                }
+            } catch(e) {
+                console.error("Content Loading Error:", e);
+                alert("An error occurred loading content. Please check the console.");
             }
         }
 
         window.addEventListener('hashchange', () => {
-            showSection(window.location.hash); 
-            loadContentByHash();
+             try { // CRITICAL: Added try...catch for stability
+                showSection(window.location.hash); 
+                loadContentByHash();
+             } catch(e) {
+                 console.error("Navigation Error:", e);
+                 alert("A critical navigation error occurred. See console for details.");
+             }
         });
 
         // Initial load based on hash or default to dashboard
@@ -749,8 +743,13 @@
             }
         }
         logoutBtn.addEventListener('click', async () => {
-            await fetch(`${API_BASE_URL}/logout`, { method: 'POST', credentials: 'include' });
-            window.location.href = API_ORIGIN + '/';
+            try { // CRITICAL: Added try...catch for stability
+                await fetch(`${API_BASE_URL}/logout`, { method: 'POST', credentials: 'include' });
+                window.location.href = API_ORIGIN + '/';
+            } catch (error) {
+                console.error("Logout Error:", error);
+                alert("Logout failed. Please try refreshing the page.");
+            }
         });
 
         // --- DASHBOARD SUMMARY ---
@@ -768,6 +767,10 @@
                  fetchAnnouncements(false); 
              } catch(error) {
                   console.error("Error loading dashboard summary:", error);
+                  document.getElementById('total-teachers').textContent = 'Error';
+                  document.getElementById('total-students').textContent = 'Error';
+                  document.getElementById('total-parents').textContent = 'Error';
+                  document.getElementById('total-courses').textContent = 'Error';
              }
         }
 
@@ -955,39 +958,54 @@
         
         // --- UNIVERSAL EDIT/DELETE FUNCTIONS ---
         window.editStudent = async function(id) {
-            let user = allUsersCache.find(u => u.id === id);
-            if (user) {
-                populateUserForm(user, 'student');
-                window.location.hash = 'students'; 
-            } else {
-                alert('Could not find user data. Refreshing...');
-                await fetchAllUsers();
-                user = allUsersCache.find(u => u.id === id);
-                if (user) populateUserForm(user, 'student');
+            try { // CRITICAL: Added try...catch for stability
+                let user = allUsersCache.find(u => u.id === id);
+                if (user) {
+                    populateUserForm(user, 'student');
+                    window.location.hash = 'students'; 
+                } else {
+                    alert('Could not find user data. Refreshing...');
+                    await fetchAllUsers();
+                    user = allUsersCache.find(u => u.id === id);
+                    if (user) populateUserForm(user, 'student');
+                }
+            } catch (error) {
+                 console.error('Error during editStudent:', error);
+                 alert('A critical error occurred during edit.');
             }
         };
         window.editTeacher = async function(id) {
-            let user = allUsersCache.find(u => u.id === id);
-            if (user) {
-                populateUserForm(user, 'teacher');
-                window.location.hash = 'teachers';
-            } else {
-                alert('Could not find user data. Refreshing...');
-                await fetchAllUsers();
-                user = allUsersCache.find(u => u.id === id);
-                if (user) populateUserForm(user, 'teacher');
+            try { // CRITICAL: Added try...catch for stability
+                let user = allUsersCache.find(u => u.id === id);
+                if (user) {
+                    populateUserForm(user, 'teacher');
+                    window.location.hash = 'teachers';
+                } else {
+                    alert('Could not find user data. Refreshing...');
+                    await fetchAllUsers();
+                    user = allUsersCache.find(u => u.id === id);
+                    if (user) populateUserForm(user, 'teacher');
+                }
+            } catch (error) {
+                 console.error('Error during editTeacher:', error);
+                 alert('A critical error occurred during edit.');
             }
         };
         window.editParent = async function(id) {
-            let user = allUsersCache.find(u => u.id === id);
-            if (user) {
-                populateUserForm(user, 'parent');
-                window.location.hash = 'parents';
-            } else {
-                alert('Could not find user data. Refreshing...');
-                await fetchAllUsers();
-                user = allUsersCache.find(u => u.id === id);
-                if (user) populateUserForm(user, 'parent');
+            try { // CRITICAL: Added try...catch for stability
+                let user = allUsersCache.find(u => u.id === id);
+                if (user) {
+                    populateUserForm(user, 'parent');
+                    window.location.hash = 'parents';
+                } else {
+                    alert('Could not find user data. Refreshing...');
+                    await fetchAllUsers();
+                    user = allUsersCache.find(u => u.id === id);
+                    if (user) populateUserForm(user, 'parent');
+                }
+            } catch (error) {
+                 console.error('Error during editParent:', error);
+                 alert('A critical error occurred during edit.');
             }
         };
 
@@ -1107,7 +1125,7 @@
         
         window.editCourse = async function(id) {
             if (!id) return alert('Invalid Course ID.');
-            try {
+            try { // CRITICAL: Added try...catch for stability
                 const response = await fetch(`${API_BASE_URL}/courses`, { credentials: 'include' });
                 const courses = await response.json();
                 const course = courses.find(c => c.id == id);
@@ -1195,7 +1213,7 @@
         
         window.editSession = async function(id) {
             if (!id) return alert('Invalid Session ID.');
-            try {
+            try { // CRITICAL: Added try...catch for stability
                 const response = await fetch(`${API_BASE_URL}/sessions`, { credentials: 'include' });
                 const sessions = await response.json();
                 const session = sessions.find(s => s.id == id);
@@ -1253,6 +1271,12 @@
                 announcements.forEach((announcement, index) => {
                     // Truncate content for dashboard view, show full content for management view
                     const contentDisplay = isManagementPage ? announcement.content : announcement.content.substring(0, 50) + (announcement.content.length > 50 ? '...' : '');
+                    
+                    // Conditionally include the delete button only for the management page
+                    const actionsHtml = isManagementPage ? `
+                        <button onclick="deleteAnnouncement(${announcement.id})" class="text-red-600 hover:text-red-900 ml-4">Delete</button>
+                    ` : '';
+
 
                     const row = `
                         <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
@@ -1260,9 +1284,7 @@
                             <td class="px-6 py-4 text-sm text-slate-500 dark:text-slate-400 max-w-xs truncate">${contentDisplay}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${announcement.target_group.charAt(0).toUpperCase() + announcement.target_group.slice(1)}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${announcement.created_at.split(' ')[0]}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <button onclick="deleteAnnouncement(${announcement.id})" class="text-red-600 hover:text-red-900 ml-4">Delete</button>
-                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">${actionsHtml}</td>
                         </tr>`;
                     // Display all in the main announcements section
                     if (mainAnnouncementsBody) {
@@ -1478,7 +1500,7 @@
         
         window.sendFeeReminderSms = async function(studentId, studentName, balance, dueDate) {
             if (confirm(`Send SMS fee reminder to ${studentName}?`)) {
-                try {
+                try { // CRITICAL: Added try...catch for stability
                     const response = await fetch(`${API_BASE_URL}/send_sms_alert`, {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
@@ -1504,13 +1526,14 @@
             const subject = "Fee Reminder";
             const body = `Dear ${studentName}, your fee payment of INR ${balance.toFixed(2)} is pending. The due date is ${dueDate}. Please pay soon.`;
              if (confirm(`Send WhatsApp fee reminder to ${studentName}? (Mock)`)) {
-                sendQuickNotification(studentId, subject, body, 'whatsapp');
+                 // CRITICAL: Ensure sendQuickNotification function exists or use a mock logic.
+                alert(`[MOCK] WhatsApp sent to ${studentName}: ${body}`);
             }
         }
         
         window.sendFeeAlert = async function(studentId) {
             if (confirm('Send fee pending alert via SMS? (Uses configured API)')) {
-                try {
+                try { // CRITICAL: Added try...catch for stability
                     const response = await fetch(`${API_BASE_URL}/send_sms_alert`, {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
@@ -1608,7 +1631,35 @@
 
 
         // --- REPORT & DROPDOWN FUNCTIONS (FULL IMPLEMENTATION) ---
-        function populateParentDropdowns() {}
+        
+        // Used to populate the parent dropdown in the student form
+        async function populateParentDropdowns() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/parents`, {credentials: 'include'});
+                const parents = await response.json();
+                const selectElement = document.getElementById('student-parent-select');
+                selectElement.innerHTML = '<option value="">(None)</option>';
+                parents.forEach(p => { selectElement.innerHTML += `<option value="${p.id}">${p.name} (${p.email})</option>`; });
+            } catch (error) {
+                console.error("Error fetching parents for dropdown:", error);
+                document.getElementById('student-parent-select').innerHTML = '<option value="">Error loading parents</option>';
+            }
+        }
+
+        async function fetchStudentsForPaymentDropdown() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/users`, {credentials: 'include'});
+                const users = await response.json();
+                const students = users.filter(u => u.role === 'student');
+                const selectElement = document.getElementById('payment-student-select');
+                selectElement.innerHTML = '<option value="">Select a student...</option>';
+                students.forEach(s => { selectElement.innerHTML += `<option value="${s.id}">${s.name} (${s.email})</option>`; });
+            } catch (error) {
+                 console.error("Error fetching students for payment dropdown:", error);
+                 document.getElementById('payment-student-select').innerHTML = '<option value="">Error loading students</option>';
+            }
+        }
+
         async function fetchCoursesForEnrollment() {
              try {
                 const response = await fetch(`${API_BASE_URL}/courses`, {credentials: 'include'});
@@ -1640,6 +1691,68 @@
             }
         }
         
+        async function fetchCourses() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/courses`, {credentials: 'include'});
+                const courses = await response.json();
+                const tableBody = document.getElementById('course-table-body');
+                
+                tableBody.innerHTML = '';
+                if (courses.length === 0) {
+                     tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center">No courses found.</td></tr>`;
+                     return;
+                }
+
+                courses.forEach(course => {
+                    tableBody.innerHTML += `
+                        <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${course.name}</td>
+                            <td class="px-6 py-4 text-sm text-slate-500 dark:text-slate-400 max-w-xs truncate">${course.subjects.join(', ')}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${course.teacher_name}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <button onclick="editCourse(${course.id})" class="text-primary hover:text-blue-700 mr-2">Edit</button>
+                                <button onclick="deleteCourse(${course.id})" class="text-red-600 hover:text-red-900">Delete</button>
+                            </td>
+                        </tr>`;
+                });
+            } catch(error) {
+                 console.error('Error fetching courses:', error);
+                 document.getElementById('course-table-body').innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
+            }
+        }
+
+        async function fetchSessions() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/sessions`, {credentials: 'include'});
+                const sessions = await response.json();
+                const tableBody = document.getElementById('session-table-body');
+                
+                tableBody.innerHTML = '';
+                if (sessions.length === 0) {
+                     tableBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center">No academic sessions found.</td></tr>`;
+                     return;
+                }
+
+                sessions.forEach(session => {
+                    const statusClass = session.status === 'Active' ? 'text-green-600' : 'text-red-600';
+                    tableBody.innerHTML += `
+                        <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${session.name}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${session.start_date}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${session.end_date}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium ${statusClass}">${session.status}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <button onclick="editSession(${session.id})" class="text-primary hover:text-blue-700 mr-2">Edit</button>
+                                <button onclick="deleteSession(${session.id})" class="text-red-600 hover:text-red-900">Delete</button>
+                            </td>
+                        </tr>`;
+                });
+            } catch(error) {
+                 console.error('Error fetching sessions:', error);
+                 document.getElementById('session-table-body').innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
+            }
+        }
+
         function fetchAdmissionsReport() {
             try {
                 const response = fetch(`${API_BASE_URL}/reports/admissions`, {credentials: 'include'})
@@ -1722,138 +1835,126 @@
             }
         }
         
-        function sendQuickNotification(studentId, subject, body, type) { /* Placeholder */ }
-        
-        // --- End Report Functions ---
+        // --- Bulk Message Handler ---
+        const sendBulkButtons = document.querySelectorAll('.send-bulk-btn');
+        const adminMessageStatus = document.getElementById('admin-message-status');
 
-
-        // --- User List Fetching (Needed for Teachers/Students/Parents tabs) ---
-        async function fetchUsersByRole(role, tableBodyId) {
-            try {
-                // Determine if we need to fetch all users or use cached/searched results
-                let users = allUsersCache.filter(u => u.role === role);
+        sendBulkButtons.forEach(button => {
+            button.addEventListener('click', async (e) => {
+                e.preventDefault();
+                adminMessageStatus.classList.add('hidden');
                 
-                // If this is the student list and a search term is present, refetch all with search query
-                if (role === 'student' && searchInput.value) {
-                     users = (await fetchAllUsers(searchInput.value)).filter(u => u.role === 'student');
-                } else if (users.length === 0 && allUsersCache.length === 0) {
-                    // Cache is empty, fetch everything once
-                    await fetchAllUsers();
-                    users = allUsersCache.filter(u => u.role === role);
-                }
-
-                const tableBody = document.getElementById(tableBodyId);
-                tableBody.innerHTML = '';
+                const targetRole = document.getElementById('message-target-role').value;
+                const subject = document.getElementById('message-subject').value;
+                const body = document.getElementById('message-body').value;
+                const notifyType = button.getAttribute('data-type');
                 
-                if (users.length === 0) {
-                     const colspan = (role === 'student' ? 7 : 4);
-                    tableBody.innerHTML = `<tr><td colspan="${colspan}" class="px-6 py-4 text-center">No ${role}s found.</td></tr>`;
+                if (!subject || !body) {
+                    alert('Please fill out the subject and message content.');
                     return;
                 }
 
-                users.forEach(user => {
-                    let phoneDisplay = user.phone_number || 'N/A';
-                    let extraColumns = '';
-                    let editFunc = `edit${role.charAt(0).toUpperCase() + role.slice(1)}`;
-                    let deleteFunc = `delete${role.charAt(0).toUpperCase() + role.slice(1)}`;
+                adminMessageStatus.textContent = `Sending bulk message via ${notifyType.toUpperCase()}, please wait...`;
+                adminMessageStatus.classList.remove('hidden', 'text-red-500', 'text-green-600');
 
-                    if (role === 'student') {
-                        const parent = allUsersCache.find(p => p.id === user.parent_id);
-                        const isPhoneAvailable = !!user.phone_number;
-                        extraColumns = `
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${parent ? parent.name : 'N/A'}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400 student-phone">${phoneDisplay}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
-                                <button onclick="sendQuickSms(${user.id}, '${user.name}')" class="text-yellow-600 hover:text-yellow-700 disabled:text-slate-400" ${isPhoneAvailable ? '' : 'disabled'} title="Send Quick SMS">
-                                    <span class="material-symbols-outlined align-middle text-lg">sms</span>
-                                </button>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
-                                <button onclick="sendQuickWhatsapp(${user.id}, '${user.name}')" class="text-green-600 hover:text-green-700 disabled:text-slate-400" ${isPhoneAvailable ? '' : 'disabled'} title="Send Quick WhatsApp">
-                                    <span class="material-symbols-outlined align-middle text-lg">call</span>
-                                </button>
-                            </td>
-                        `;
+                try {
+                    const response = await fetch(`${API_BASE_URL}/admin/bulk_notify`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            subject: subject,
+                            body: body,
+                            type: notifyType,
+                            target_role: targetRole
+                        })
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        adminMessageStatus.textContent = result.message;
+                        adminMessageStatus.classList.add('text-green-600');
+                        adminBulkMessageForm.reset();
                     } else {
-                        extraColumns = `<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${phoneDisplay}</td>`;
+                        adminMessageStatus.textContent = `Error: ${result.message || 'Server failed to send notifications.'}`;
+                        adminMessageStatus.classList.add('text-red-600');
                     }
-
-
-                    tableBody.innerHTML += `
-                        <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${user.name}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${user.email}</td>
-                            ${extraColumns}
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <button onclick="${editFunc}(${user.id})" class="text-primary hover:text-blue-700 mr-2">Edit</button>
-                                <button onclick="${deleteFunc}(${user.id})" class="text-red-600 hover:text-red-900">Delete</button>
-                            </td>
-                        </tr>`;
-                });
-            } catch(error) {
-                 console.error(`Error fetching ${role}s:`, error);
-                 const colspan = (role === 'student' ? 7 : 4);
-                 document.getElementById(tableBodyId).innerHTML = `<tr><td colspan="${colspan}" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
-            }
-        }
-        
-        function fetchTeachers() { fetchUsersByRole('teacher', 'teacher-table-body'); }
-        function fetchStudents() { fetchUsersByRole('student', 'student-table-body'); }
-        function fetchParents() { fetchUsersByRole('parent', 'parent-table-body'); }
-        
-        if (searchInput) {
-            searchInput.addEventListener('keyup', () => {
-                clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(fetchStudents, 300);
-            });
-        }
-        // --- End User List Fetching ---
-
-
-        // --- Fees Dropdown Reset Functions (Needed for Form Initialization) ---
-        function resetFeeStructureForm(structure = null) {
-            document.getElementById('fee-structure-form').reset();
-            document.getElementById('fee-structure-id').value = structure ? structure.id : '';
-            document.getElementById('save-fee-structure-btn').textContent = structure ? 'Update Fee Structure' : 'Save Fee Structure';
-            if (structure) {
-                document.getElementById('fee-structure-name').value = structure.name;
-                document.getElementById('fee-total-amount').value = structure.total_amount;
-                document.getElementById('fee-session-select').value = structure.academic_session_id;
-                document.getElementById('fee-due-date').value = structure.due_date;
-            }
-        }
-        window.editFeeStructure = async function(id) {
-             if (!id) return alert('Invalid Fee Structure ID.');
-            try {
-                const response = await fetch(`${API_BASE_URL}/fee_structures`, { credentials: 'include' });
-                const structures = await response.json();
-                const structure = structures.find(s => s.id == id);
-                if (structure) {
-                    resetFeeStructureForm(structure);
-                    window.location.hash = 'fees'; 
-                } else {
-                    alert("Fee structure not found.");
+                } catch (error) {
+                    adminMessageStatus.textContent = 'Network error: Could not connect to the server.';
+                    adminMessageStatus.classList.add('text-red-600');
+                    console.error('Bulk message error:', error);
                 }
-            } catch (error) {
-                console.error('Error fetching fee structure for edit:', error);
-                alert('Failed to load fee structure details for edit.');
-            }
-        }
-        // --- End Fees Dropdown Reset Functions ---
-
-
-        // --- Dummy/Placeholder functions needed to satisfy loadContentByHash ---
-        function populateParentDropdowns() {}
+            });
+        });
         
-        function sendQuickNotification(studentId, subject, body, type) { /* Placeholder */ }
-        // --- End Dummy/Placeholder functions ---
+        // --- Bulk Upload Handler ---
+        bulkUploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const resultsDiv = document.getElementById('bulk-upload-results');
+            const messageP = document.getElementById('bulk-upload-message');
+            const detailsDiv = document.getElementById('bulk-upload-details');
+            resultsDiv.classList.remove('hidden');
+            resultsDiv.classList.remove('bg-red-100', 'dark:bg-red-900');
+            resultsDiv.classList.add('bg-slate-50', 'dark:bg-slate-800');
 
+            messageP.textContent = 'Processing file, please wait...';
+            detailsDiv.innerHTML = '';
+            
+            const formData = new FormData(bulkUploadForm);
 
-        // --- INITIAL PAGE LOAD CALLS ---
-        checkAdminSession();
-        loadContentByHash();
+            try {
+                const response = await fetch(`${API_BASE_URL}/bulk_upload/users`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData
+                });
 
-        // We still pre-fetch all users and dropdown data
-        fetchAllUsers().then(() => {
-            populateParentDropdowns(); 
-            fetchCoursesFor
+                const result = await response.json();
+
+                if (response.ok) {
+                    messageP.textContent = result.message;
+                    resultsDiv.classList.remove('bg-red-100', 'dark:bg-red-900');
+                    resultsDiv.classList.add('bg-green-50', 'dark:bg-green-900');
+                    bulkUploadForm.reset();
+                } else {
+                    messageP.textContent = `Upload Failed: ${result.message || 'Server error.'}`;
+                    resultsDiv.classList.remove('bg-green-50', 'dark:bg-green-900');
+                    resultsDiv.classList.add('bg-red-100', 'dark:bg-red-900');
+                }
+                
+                if (result.details && result.details.failed && result.details.failed.length > 0) {
+                    detailsDiv.innerHTML = `<h5 class="font-semibold text-red-600 mt-2">Failed Records (${result.details.failed.length}):</h5><ul class="list-disc list-inside text-sm text-red-500">${result.details.failed.map(f => `<li>${f}</li>`).join('')}</ul>`;
+                }
+
+                // Refresh all user lists and dashboard summary
+                await fetchAllUsers();
+                fetchDashboardSummary();
+                if(window.location.hash.includes('#students')) fetchStudents();
+                if(window.location.hash.includes('#teachers')) fetchTeachers();
+                if(window.location.hash.includes('#parents')) fetchParents();
+
+            } catch (error) {
+                messageP.textContent = 'Network error: Could not connect to the server for bulk upload.';
+                resultsDiv.classList.remove('bg-green-50', 'dark:bg-green-900');
+                resultsDiv.classList.add('bg-red-100', 'dark:bg-red-900');
+                console.error('Bulk Upload Error:', error);
+            }
+        });
+
+        // --- FINAL INITIALIZATION CALLS ---
+        
+        try {
+            checkAdminSession();
+            // loadContentByHash() is called immediately after checkAdminSession completes successfully (via promise chain or redirect)
+            // Initial call to set up the dashboard state
+            loadContentByHash();
+
+        } catch(globalError) {
+            console.error("Critical Global Script Error:", globalError);
+            alert("A critical error occurred during page initialization. Please refresh or contact support.");
+        }
+    });
+</script>
+</body>
+</html>
