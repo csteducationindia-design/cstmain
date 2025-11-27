@@ -2048,14 +2048,26 @@ def send_push_notification(user_id, title, body):
     return False
 
 
-def init_db_command():
+# app.py (Near the end, replacing the 'if __name__ == "__main__":' block)
+
+# Helper function to use later
+def send_push_notification(user_id, title, body):
+# ... (Keep the rest of the function content as is)
+    pass
+
+
+# --- Run Application ---
+# NEW: Define a dedicated function for database setup
+def initialize_database():
     with app.app_context():
+        # Create tables if they don't exist
         db.create_all()
         print("--- Database Tables Created/Verified ---")
+        
+        # Run migration check just in case
         check_and_upgrade_db()
         print("--- Database Schema Upgraded/Verified ---")
 
-# Change the final block to this:
 if __name__ == '__main__':
-    init_db_command()  # Still allows single-process dev run to setup DB
+    initialize_database() # Run initialization once in development
     app.run(debug=True, host='0.0.0.0', port=5000)
