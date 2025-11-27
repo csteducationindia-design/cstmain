@@ -1645,18 +1645,33 @@ function loadContentByHash() {
         // --- REPORT & DROPDOWN FUNCTIONS (FULL IMPLEMENTATION) ---
         
         // Used to populate the parent dropdown in the student form
-        async function populateParentDropdowns() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/parents`, {credentials: 'include'});
-                const parents = await response.json();
-                const selectElement = document.getElementById('student-parent-select');
-                selectElement.innerHTML = '<option value="">(None)</option>';
-                parents.forEach(p => { selectElement.innerHTML += `<option value="${p.id}">${p.name} (${p.email})</option>`; });
-            } catch (error) {
-                console.error("Error fetching parents for dropdown:", error);
-                document.getElementById('student-parent-select').innerHTML = '<option value="">Error loading parents</option>';
-            }
+        // admin.html (Around line 1146 in the final provided script block)
+
+async function populateParentDropdowns() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/parents`, {credentials: 'include'});
+        const parents = await response.json();
+        const selectElement = document.getElementById('student-parent-select');
+        
+        // Ensure the select element exists before modifying it
+        if (!selectElement) {
+             console.warn("Element 'student-parent-select' not found.");
+             return;
         }
+
+        selectElement.innerHTML = '<option value="">(None)</option>';
+        parents.forEach(p => { 
+            selectElement.innerHTML += `<option value="${p.id}">${p.name} (${p.email})</option>`; 
+        });
+    } catch (error) {
+        console.error("Error fetching parents for dropdown:", error);
+        const selectElement = document.getElementById('student-parent-select');
+        if (selectElement) {
+            selectElement.innerHTML = '<option value="">Error loading parents</option>';
+        }
+        // This catch block prevents the entire application from crashing.
+    }
+}
 
         async function fetchStudentsForPaymentDropdown() {
             try {
