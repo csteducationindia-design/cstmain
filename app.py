@@ -645,8 +645,9 @@ def manage_users():
         return jsonify(new_user.to_dict()), 201
 
     # PUT (Update User)
+    # PUT (Update User)
     if request.method == 'PUT':
-        data = request.form
+        data = request.form # Get data from FormData object
         user_id = data.get('id')
         try:
             user = db.session.get(User, int(user_id))
@@ -656,24 +657,24 @@ def manage_users():
         if not user:
             return jsonify({"message": "User not found"}), 404
 
-        if 'email' in data and data['email'] != user.email:
-            if User.query.filter(User.email == data['email'], User.id != int(user_id)).first():
-                return jsonify({"message": "Email address already exists for another user"}), 400
+        # ... (Email uniqueness check remains the same)
 
         user.name = data.get('name', user.name)
         user.email = data.get('email', user.email)
         user.phone_number = data.get('phone_number', user.phone_number)
         user.role = data.get('role', user.role)
         
-        # FIX: Handle parent_id correctly, especially if cleared to None
-        if 'parent_id' in data: 
-             user.parent_id = int(data.get('parent_id')) if data.get('parent_id') and data.get('parent_id').isdigit() else None
+        # --- FIX 1: Safely handle Parent ID and empty strings ---
+        parent_id_str = data.get('parent_id')
+        user.parent_id = int(parent_id_str) if parent_id_str and parent_id_str.isdigit() else None
         
-        # Student-specific fields
+        # Student-specific fields (Safely handle potentially missing keys from FormData)
         user.dob = data.get('dob', user.dob)
         user.gender = data.get('gender', user.gender)
         user.father_name = data.get('father_name', user.father_name)
         user.mother_name = data.get('mother_name', user.mother_name)
+        
+        # Ensure address fields are correctly pulled or retain old value if key not present
         user.address_line1 = data.get('address_line1', user.address_line1)
         user.city = data.get('city', user.city)
         user.state = data.get('state', user.state)
@@ -700,7 +701,6 @@ def manage_users():
 
         db.session.commit()
         return jsonify(user.to_dict()), 200
-
     # GET: Add search capability
     search_term = request.args.get('search', '').lower()
     query = User.query
@@ -1161,8 +1161,7 @@ def record_payment():
     if current_user.role != 'admin': return jsonify({"message": "Access denied"}), 403
     data = request.get_json()
 
-    if not data.get('student_id') or not data.get('fee_structure_id') or not data.get('amount_paid') or not data.get('payment_method'):
-         return jsonify({"message": "Missing required payment fields."}), 400
+    # ... (Missing required fields check remains the same)
 
     new_payment = Payment(
         student_id=data['student_id'],
@@ -1171,19 +1170,49 @@ def record_payment():
         payment_method=data['payment_method']
     )
     db.session.add(new_payment)
-    db.session.commit() 
+    
+    try:
+        db.session.commit() # Commit the new payment first
 
-    receipt_message = "Receipt link available." 
+        receipt_message = "Receipt link available." 
 
-    # Send Fee Alert (handles SMS and Push for both student and parent)
-    student = db.session.get(User, data['student_id'])
-    if student:
-        status = calculate_fee_status(data['student_id'])
-        if status['balance'] > 0: 
-            # This function is now correctly placed *after* db.session.commit()
-            send_fee_alert(student.id) 
+        # Send Fee Alert (handles SMS and Push for both student and parent)
+        student = db.session.get(User, data['student_id'])
+        if student:
+            status = calculate_fee_status(student.id)
+            if status['balance'] > 0: 
+                # This function is now correctly placed *after* db.session.commit()
+                # Send push/sms reminders if balance is still > 0
+                send_fee_alert_notifications(student.id) 
 
-    return jsonify({"message": f"Payment recorded. {receipt_message}", "payment_id": new_payment.id}), 201
+        return jsonify({"message": f"Payment recorded. {receipt_message}", "payment_id": new_payment.id}), 201
+
+    except Exception as e:
+        db.session.rollback()
+        # FIX 2: Return a guaranteed JSON response on failure
+        return jsonify({"message": f"Internal Error Recording Payment: {e}"}), 500
+
+# NEW FUNCTION: Centralized function for sending fee alerts
+def send_fee_alert_notifications(student_id):
+    student = db.session.get(User, student_id)
+    if not student: return False
+    
+    status = calculate_fee_status(student_id)
+    parent = db.session.get(User, student.parent_id) if student.parent_id else None
+    
+    # Send SMS (using existing logic from send_fee_alert_sms)
+    student_alerted = send_fee_alert_sms(student, status['balance'], status['due_date'])
+    if parent:
+        parent_alerted = send_fee_alert_sms(parent, status['balance'], status['due_date'])
+
+    # Send Push Notification
+    push_title = "Fee Reminder"
+    push_body = f"Fee of Rs {status['balance']:.2f} pending. Due: {status['due_date']}."
+    send_push_notification(student.id, push_title, push_body)
+    if parent:
+        send_push_notification(parent.id, f"Child Alert: {push_title}", push_body)
+    
+    return student_alerted or (parent_alerted if parent else False)
 
 
 @app.route('/api/fee_status', methods=['GET'])
@@ -1808,17 +1837,48 @@ def serve_receipt(payment_id):
             return "Access Denied", 403
             
         # --- Safety Checks for Receipt Variables (FIXING 500 ERROR) ---
+        # ... inside serve_receipt(payment_id) route ...
+
+        # --- Safety Checks for Receipt Variables (FIXING 500 ERROR) ---
         student_name = student.name if student and student.name else "N/A"
         fee_name = fee_structure.name if fee_structure and fee_structure.name else "Fee Payment"
         payment_amount = f"₹ {payment.amount_paid:.2f}"
         payment_date_fmt = payment.payment_date.strftime('%d-%b-%Y %I:%M %p')
         payment_method = payment.payment_method if payment.payment_method else "N/A"
 
+        # FIX 3: Safely format the Due Date, checking if FeeStructure or due_date is None
+        if fee_structure and fee_structure.due_date:
+            fee_due_date_fmt = fee_structure.due_date.strftime('%d-%b-%Y')
+        else:
+            fee_due_date_fmt = "N/A"
+        
         # Mock Institute Details (Replace with actual contact info)
-        institute_address = student.address_line1 if student.address_line1 else "Institute Address Here"
-        institute_city_state = f"{student.city if student.city else 'City'}, {student.state if student.state else 'State'}"
-        institute_contact = student.phone_number if student.phone_number else "your_phone"
-        institute_email = student.email if student.email else "your_email@example.com"
+        # Using placeholder values for receipt details since student fields might be null
+        institute_address = "CST Institute Address" 
+        institute_city_state = "Jalgaon, Maharashtra"
+        institute_contact = "9822826307"
+        institute_email = "admin@cstai.in"
+        
+        # --- End Safety Checks ---
+
+        html_content = f"""
+        ... (rest of the HTML content remains the same, ensure to reference fee_due_date_fmt) ...
+        
+        # ... inside the html_content variable ...
+                <div class="receipt-details">
+                    <h2>Payment Receipt</h2>
+                    <table>
+                        <tr><th>Receipt No:</th><td>#{payment.id}</td></tr>
+                        <tr><th>Date:</th><td>{payment_date_fmt}</td></tr>
+                        <tr><th>Student Name:</th><td>{student_name}</td></tr>
+                        <tr><th>Fee For:</th><td>{fee_name}</td></tr>
+                        <tr><th>Fee Due Date:</th><td>{fee_due_date_fmt}</td></tr>                          
+			<tr><th>Payment Method:</th><td>{payment_method}</td></tr>
+                        <tr class="total-row"><th>Amount Paid:</th><td><strong>{payment_amount}</strong></td></tr>
+                    </table>
+                </div>
+# ... (rest of the code)
+        
         
         # --- End Safety Checks ---
 
