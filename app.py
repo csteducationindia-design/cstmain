@@ -18,8 +18,6 @@ import firebase_admin
 from firebase_admin import credentials, messaging
 
 
-
-
 # --- Basic Setup ---
 app = Flask(__name__, template_folder='templates')
 app.config['SECRET_KEY'] = 'a_very_secret_key_that_should_be_changed'
@@ -66,12 +64,20 @@ def check_and_upgrade_db():
                     if column not in columns:
                         print(f"--- MIGRATING DB: Adding {column} column to {table}... ---")
                         conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {type}"))
+                        conn.commit() # Commit each column addition immediately
 
+                # Ensure these columns exist, as they were added in recent fixes
                 add_column(conn, 'user', 'fcm_token', 'VARCHAR(500)')
                 add_column(conn, 'user', 'pincode', 'VARCHAR(20)')
-                # Add any other missing columns needed for the latest schema here
+                add_column(conn, 'user', 'dob', 'VARCHAR(20)') 
+                add_column(conn, 'user', 'profile_photo_url', 'VARCHAR(300)')
+                add_column(conn, 'user', 'gender', 'VARCHAR(20)')
+                add_column(conn, 'user', 'father_name', 'VARCHAR(100)')
+                add_column(conn, 'user', 'mother_name', 'VARCHAR(100)')
+                add_column(conn, 'user', 'address_line1', 'VARCHAR(200)')
+                add_column(conn, 'user', 'city', 'VARCHAR(100)')
+                add_column(conn, 'user', 'state', 'VARCHAR(100)')
 
-                conn.commit()
     except Exception as e:
         print(f"--- MIGRATION WARNING: {e} ---")
 # -------------------------
@@ -177,6 +183,7 @@ class Course(db.Model):
         """Serializes Course object to dictionary."""
         return {
             "id": self.id, "name": self.name,
+            # FIX: Ensure subjects field is split only if not None
             "subjects": [s.strip() for s in self.subjects.split(',')] if self.subjects else [],
             "teacher_id": self.teacher_id,
             "teacher_name": self.teacher.name if self.teacher else "Unassigned"
@@ -226,7 +233,7 @@ class FeeStructure(db.Model):
             "academic_session_id": self.academic_session_id,
             "session_name": session.name if session else "N/A",
             "total_amount": self.total_amount,
-            "due_date": self.due_date.strftime('%Y-%m-%d')
+            "due_date": self.due_date.strftime('%Y-%m-%d') if self.due_date else None # FIX: Ensure date is safe
         }
 
 class Payment(db.Model):
@@ -325,7 +332,7 @@ def send_fee_alert_sms(user, balance, due_date):
             except:
                 formatted_date = due_date
         else:
-            formatted_date = due_date.strftime('%d-%b-%Y')
+            formatted_date = due_date.strftime('%d-%b-%Y') if due_date else "N/A"
 
         # 2. Format Amount
         clean_balance = int(balance) 
@@ -431,7 +438,7 @@ def calculate_fee_status(student_id):
         "total_due": total_due,
         "total_paid": total_paid,
         "balance": balance,
-        "due_date": due_date.strftime('%Y-%m-%d'),
+        "due_date": due_date.strftime('%Y-%m-%d') if due_date else "N/A", # FIX: Ensure date is safe
         "pending_days": pending_days
     }
 
@@ -616,7 +623,7 @@ def manage_users():
         new_user = User(
             name=data['name'], email=data['email'], password=hashed_password, role=data['role'],
             phone_number=data.get('phone_number'),
-            parent_id=int(data.get('parent_id')) if data.get('parent_id') else None,
+            parent_id=int(data.get('parent_id')) if data.get('parent_id') and data.get('parent_id').isdigit() else None,
             can_edit=False if data['role'] == 'admin' else True,
             dob=data.get('dob'),
             profile_photo_url=profile_photo_url, 
@@ -633,7 +640,7 @@ def manage_users():
         # FIX: Ensure course assignment works for POST
         if new_user.role == 'student':
             course_id_str = request.form.get('course_ids') 
-            if course_id_str:
+            if course_id_str and course_id_str.isdigit():
                 try:
                     course = db.session.get(Course, int(course_id_str))
                     if course:
@@ -641,13 +648,17 @@ def manage_users():
                 except ValueError:
                     pass # Ignore if course_id is not a valid integer
                 
-        db.session.commit()
-        return jsonify(new_user.to_dict()), 201
+        try:
+            db.session.commit()
+            return jsonify(new_user.to_dict()), 201
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({"message": f"Database error creating user: {e}"}), 500
+
 
     # PUT (Update User)
-    # PUT (Update User)
     if request.method == 'PUT':
-        data = request.form # Get data from FormData object
+        data = request.form
         user_id = data.get('id')
         try:
             user = db.session.get(User, int(user_id))
@@ -657,7 +668,9 @@ def manage_users():
         if not user:
             return jsonify({"message": "User not found"}), 404
 
-        # ... (Email uniqueness check remains the same)
+        if 'email' in data and data['email'] != user.email:
+            if User.query.filter(User.email == data['email'], User.id != int(user_id)).first():
+                return jsonify({"message": "Email address already exists for another user"}), 400
 
         user.name = data.get('name', user.name)
         user.email = data.get('email', user.email)
@@ -668,7 +681,7 @@ def manage_users():
         parent_id_str = data.get('parent_id')
         user.parent_id = int(parent_id_str) if parent_id_str and parent_id_str.isdigit() else None
         
-        # Student-specific fields (Safely handle potentially missing keys from FormData)
+        # Student-specific fields
         user.dob = data.get('dob', user.dob)
         user.gender = data.get('gender', user.gender)
         user.father_name = data.get('father_name', user.father_name)
@@ -679,6 +692,7 @@ def manage_users():
         user.city = data.get('city', user.city)
         user.state = data.get('state', user.state)
         user.pincode = data.get('pincode', user.pincode)
+
 
         # FIX: Ensure course assignment works for PUT
         if user.role == 'student':
@@ -699,8 +713,13 @@ def manage_users():
         if new_password:
             user.password = bcrypt.generate_password_hash(new_password).decode('utf-8')
 
-        db.session.commit()
-        return jsonify(user.to_dict()), 200
+        try:
+            db.session.commit()
+            return jsonify(user.to_dict()), 200
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({"message": f"Database error updating user: {e}"}), 500
+
     # GET: Add search capability
     search_term = request.args.get('search', '').lower()
     query = User.query
@@ -1115,6 +1134,10 @@ def manage_fee_structures():
     if request.method == 'POST':
         data = request.get_json()
         try:
+            # FIX: Ensure all required fields exist before date parsing
+            if not all([data.get('due_date'), data.get('academic_session_id'), data.get('total_amount'), data.get('name')]):
+                return jsonify({"message": "Missing required fee structure fields."}), 400
+
             due_date_obj = datetime.strptime(data['due_date'], '%Y-%m-%d').date()
         except ValueError:
             return jsonify({"message": "Invalid date format. Use YYYY-MM-DD."}), 400
@@ -1125,9 +1148,14 @@ def manage_fee_structures():
             total_amount=data['total_amount'],
             due_date=due_date_obj
         )
-        db.session.add(new_structure)
-        db.session.commit()
-        return jsonify(new_structure.to_dict()), 201
+        try:
+            db.session.add(new_structure)
+            db.session.commit()
+            return jsonify(new_structure.to_dict()), 201
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({"message": f"Database error creating fee structure: {e}"}), 500
+
 
     if request.method == 'PUT':
         data = request.get_json()
@@ -1141,7 +1169,10 @@ def manage_fee_structures():
             return jsonify({"message": "Fee structure not found"}), 404
             
         try:
-            due_date_obj = datetime.strptime(data['due_date'], '%Y-%m-%d').date()
+            if data.get('due_date'):
+                due_date_obj = datetime.strptime(data['due_date'], '%Y-%m-%d').date()
+            else:
+                 due_date_obj = structure.due_date # Retain existing date if not provided
         except ValueError:
             return jsonify({"message": "Invalid date format. Use YYYY-MM-DD."}), 400
 
@@ -1150,8 +1181,12 @@ def manage_fee_structures():
         structure.total_amount = data.get('total_amount', structure.total_amount)
         structure.due_date = due_date_obj
 
-        db.session.commit()
-        return jsonify(structure.to_dict()), 200
+        try:
+            db.session.commit()
+            return jsonify(structure.to_dict()), 200
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({"message": f"Database error updating fee structure: {e}"}), 500
         
     return jsonify([s.to_dict() for s in FeeStructure.query.order_by(FeeStructure.id.desc()).all()])
 
@@ -1161,7 +1196,8 @@ def record_payment():
     if current_user.role != 'admin': return jsonify({"message": "Access denied"}), 403
     data = request.get_json()
 
-    # ... (Missing required fields check remains the same)
+    if not data.get('student_id') or not data.get('fee_structure_id') or data.get('amount_paid') is None or not data.get('payment_method'):
+         return jsonify({"message": "Missing required payment fields."}), 400
 
     new_payment = Payment(
         student_id=data['student_id'],
@@ -1191,28 +1227,6 @@ def record_payment():
         db.session.rollback()
         # FIX 2: Return a guaranteed JSON response on failure
         return jsonify({"message": f"Internal Error Recording Payment: {e}"}), 500
-
-# NEW FUNCTION: Centralized function for sending fee alerts
-def send_fee_alert_notifications(student_id):
-    student = db.session.get(User, student_id)
-    if not student: return False
-    
-    status = calculate_fee_status(student_id)
-    parent = db.session.get(User, student.parent_id) if student.parent_id else None
-    
-    # Send SMS (using existing logic from send_fee_alert_sms)
-    student_alerted = send_fee_alert_sms(student, status['balance'], status['due_date'])
-    if parent:
-        parent_alerted = send_fee_alert_sms(parent, status['balance'], status['due_date'])
-
-    # Send Push Notification
-    push_title = "Fee Reminder"
-    push_body = f"Fee of Rs {status['balance']:.2f} pending. Due: {status['due_date']}."
-    send_push_notification(student.id, push_title, push_body)
-    if parent:
-        send_push_notification(parent.id, f"Child Alert: {push_title}", push_body)
-    
-    return student_alerted or (parent_alerted if parent else False)
 
 
 @app.route('/api/fee_status', methods=['GET'])
@@ -1261,9 +1275,9 @@ def send_fee_alert():
 
     # Send Push Notification
     push_title = "Fee Reminder"
-    push_body = f"Dear {student.name}, fee of Rs {status['balance']:.2f} is pending. Due: {status['due_date']}."
+    push_body = f"Fee of Rs {status['balance']:.2f} is pending. Due: {status['due_date']}."
     
-    send_push_notification(student_id, push_title, push_body)
+    send_push_notification(student.id, push_title, push_body)
     if parent:
         send_push_notification(parent.id, f"Child Alert: {push_title}", push_body)
 
@@ -1833,52 +1847,33 @@ def serve_receipt(payment_id):
         if not student:
             return "Student record not found for this payment.", 404
 
-        if current_user.role != 'admin' and (not student or (current_user.id != student.parent_id and current_user.id != student.id)):
+        # Authorization Check (Admin, Student paying, or Parent of Student)
+        is_authorized = (
+            current_user.role == 'admin' or
+            current_user.id == student.id or
+            current_user.id == student.parent_id
+        )
+
+        if not is_authorized:
             return "Access Denied", 403
             
-        # --- Safety Checks for Receipt Variables (FIXING 500 ERROR) ---
-        # ... inside serve_receipt(payment_id) route ...
-
-        # --- Safety Checks for Receipt Variables (FIXING 500 ERROR) ---
+        # --- Safety Checks for Receipt Variables ---
         student_name = student.name if student and student.name else "N/A"
         fee_name = fee_structure.name if fee_structure and fee_structure.name else "Fee Payment"
         payment_amount = f"₹ {payment.amount_paid:.2f}"
         payment_date_fmt = payment.payment_date.strftime('%d-%b-%Y %I:%M %p')
         payment_method = payment.payment_method if payment.payment_method else "N/A"
-
-        # FIX 3: Safely format the Due Date, checking if FeeStructure or due_date is None
+        
         if fee_structure and fee_structure.due_date:
             fee_due_date_fmt = fee_structure.due_date.strftime('%d-%b-%Y')
         else:
             fee_due_date_fmt = "N/A"
         
-        # Mock Institute Details (Replace with actual contact info)
-        # Using placeholder values for receipt details since student fields might be null
-        institute_address = "CST Institute Address" 
+        # Mock Institute Details (Using static placeholders since user details can be null)
+        institute_address = "CST Institute Address, Plot No 43 Om Park, Jalgaon"
         institute_city_state = "Jalgaon, Maharashtra"
         institute_contact = "9822826307"
         institute_email = "admin@cstai.in"
-        
-        # --- End Safety Checks ---
-
-        html_content = f"""
-        ... (rest of the HTML content remains the same, ensure to reference fee_due_date_fmt) ...
-        
-        # ... inside the html_content variable ...
-                <div class="receipt-details">
-                    <h2>Payment Receipt</h2>
-                    <table>
-                        <tr><th>Receipt No:</th><td>#{payment.id}</td></tr>
-                        <tr><th>Date:</th><td>{payment_date_fmt}</td></tr>
-                        <tr><th>Student Name:</th><td>{student_name}</td></tr>
-                        <tr><th>Fee For:</th><td>{fee_name}</td></tr>
-                        <tr><th>Fee Due Date:</th><td>{fee_due_date_fmt}</td></tr>                          
-			<tr><th>Payment Method:</th><td>{payment_method}</td></tr>
-                        <tr class="total-row"><th>Amount Paid:</th><td><strong>{payment_amount}</strong></td></tr>
-                    </table>
-                </div>
-# ... (rest of the code)
-        
         
         # --- End Safety Checks ---
 
@@ -1940,6 +1935,10 @@ def serve_receipt(payment_id):
                     font-size: 0.95em;
                 }}
                 .receipt-details th {{
+                    padding: 10px;
+                    text-align: left;
+                    border-bottom: 1px solid #eee;
+                    font-size: 0.95em;
                     background-color: #f9f9f9;
                     width: 30%;
                     color: #555;
@@ -1986,6 +1985,7 @@ def serve_receipt(payment_id):
                         <tr><th>Date:</th><td>{payment_date_fmt}</td></tr>
                         <tr><th>Student Name:</th><td>{student_name}</td></tr>
                         <tr><th>Fee For:</th><td>{fee_name}</td></tr>
+                        <tr><th>Fee Due Date:</th><td>{fee_due_date_fmt}</td></tr>
                         <tr><th>Payment Method:</th><td>{payment_method}</td></tr>
                         <tr class="total-row"><th>Amount Paid:</th><td><strong>{payment_amount}</strong></td></tr>
                     </table>
@@ -2067,9 +2067,29 @@ def save_fcm_token():
 def service_worker():
     return send_from_directory(app.static_folder, 'firebase-messaging-sw.js')
 
-# (Original code above this point remains the same)
+# Helper function to send notifications
+def send_fee_alert_notifications(student_id):
+    student = db.session.get(User, student_id)
+    if not student: return False
+    
+    status = calculate_fee_status(student_id)
+    parent = db.session.get(User, student.parent_id) if student.parent_id else None
+    
+    # Send SMS (using existing logic from send_fee_alert_sms)
+    student_alerted = send_fee_alert_sms(student, status['balance'], status['due_date'])
+    if parent:
+        parent_alerted = send_fee_alert_sms(parent, status['balance'], status['due_date'])
 
-# Helper function to use later
+    # Send Push Notification
+    push_title = "Fee Reminder"
+    push_body = f"Fee of Rs {status['balance']:.2f} pending. Due: {status['due_date']}."
+    
+    send_push_notification(student.id, push_title, push_body)
+    if parent:
+        send_push_notification(parent.id, f"Child Alert: {push_title}", push_body)
+    
+    return student_alerted or (parent_alerted if parent else False)
+
 # Helper function to use later
 def send_push_notification(user_id, title, body):
     # 1. LAZY INITIALIZATION: Only initialize Firebase if it hasn't been already
@@ -2105,18 +2125,8 @@ def send_push_notification(user_id, title, body):
     return False
 
 
-# app.py (Near the end, replacing the 'if __name__ == "__main__":' block)
-
-# app.py (Near the end, replacing the final execution block)
-
-# Helper function to use later (Keep the existing implementation of send_push_notification)
-def send_push_notification(user_id, title, body):
-    # ... (Your existing Firebase lazy initialization and send logic here)
-    pass
-
-
+# --- Run Application ---
 # NEW: Define a dedicated function for database setup
-# This function is now standalone and can be called explicitly outside the app import flow.
 def initialize_database():
     with app.app_context():
         # Create tables if they don't exist
@@ -2127,11 +2137,6 @@ def initialize_database():
         check_and_upgrade_db()
         print("--- Database Schema Upgraded/Verified ---")
 
-# --- Run Application ---
-
-# CRITICAL FIX: Only call initialize_database() when run directly (e.g., python app.py)
-# Gunicorn/WSGI will ignore this block when importing the 'app' instance.
 if __name__ == '__main__':
     initialize_database() 
     app.run(debug=True, host='0.0.0.0', port=5000)
-
