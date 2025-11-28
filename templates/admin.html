@@ -1111,98 +1111,68 @@
             }
         };
 
-
-        // --- COURSE MANAGEMENT ---
+// --- COURSE MANAGEMENT UTILITIES ---
 
         function resetCourseForm(course = null) {
             document.getElementById('course-id').value = course ? course.id : '';
             document.getElementById('course-name').value = course ? course.name : '';
-            document.getElementById('course-subjects').value = course ? course.subjects.join(', ') : '';
+            // NOTE: Assumes course.subjects is an array of strings
+            document.getElementById('course-subjects').value = course && course.subjects ? course.subjects.join(', ') : '';
             document.getElementById('course-teacher').value = course ? course.teacher_id : '';
             document.getElementById('save-course-btn').textContent = course ? 'Update Course' : 'Save Course';
             document.querySelector('#content-courses h3').textContent = course ? 'Edit Existing Course' : 'Add New Course';
         }
-
-        courseForm.addEventListener('submit', async (event) => {
-            event.preventDefault();
-            
-            const courseId = document.getElementById('course-id').value;
-            const method = courseId ? 'PUT' : 'POST';
-            const endpoint = `${API_BASE_URL}/courses`;
-
-            const courseData = { 
-                id: courseId || undefined,
-                name: document.getElementById('course-name').value, 
-                subjects: document.getElementById('course-subjects').value, 
-                teacher_id: courseTeacherSelect.value ? parseInt(courseTeacherSelect.value) : null 
-            };
-            
-            try {
-                // FIX: MUST SEND JSON for Course/Session management
-                const response = await fetch(endpoint, { 
-                    method: method, 
-                    headers: {'Content-Type': 'application/json'}, 
-                    credentials: 'include', 
-                    body: JSON.stringify(courseData) 
-                });
-                const result = await response.json();
-
-                if (response.ok) {
-                    alert(`Course ${method === 'POST' ? 'added' : 'updated'} successfully!`);
-                    resetCourseForm();
-                    fetchCourses();
-                    fetchCoursesForEnrollment(); 
-                } else {
-                    alert(`Save failed: ${result.message || 'An unknown error occurred.'}`);
-                    console.error("Course Save Error:", result.message);
-                }
-            } catch (error) {
-                alert(`Network error saving course: ${error.message}`);
-                console.error('Error saving course:', error);
-            }
-        });
         
-        window.editCourse = async function(id) {
-            if (!id) return alert('Invalid Course ID.');
-            try { // CRITICAL: Added try...catch for stability
-                const response = await fetch(`${API_BASE_URL}/courses`, { credentials: 'include' });
-                const courses = await response.json();
-                const course = courses.find(c => c.id == id);
-                if (course) {
-                    resetCourseForm(course);
-                    window.location.hash = 'courses'; 
-                }
+        async function fetchTeachersForCourseDropdown() {
+             try {
+                const response = await fetch(`${API_BASE_URL}/teachers`, {credentials: 'include'});
+                const teachers = await response.json();
+                const courseTeacherSelect = document.getElementById('course-teacher');
+                courseTeacherSelect.innerHTML = '<option value="">Select a teacher...</option>';
+                teachers.forEach(teacher => { courseTeacherSelect.innerHTML += `<option value="${teacher.id}">${teacher.name}</option>`; });
             } catch (error) {
-                console.error('Error fetching course for edit:', error);
-                alert('Failed to load course details for edit.');
+                console.error("Error fetching teachers for course dropdown:", error);
+                const courseTeacherSelect = document.getElementById('course-teacher');
+                if(courseTeacherSelect) courseTeacherSelect.innerHTML = '<option value="">Error loading teachers</option>';
             }
         }
-
-        window.deleteCourse = async function(id) {
-            if (!id) return alert('Invalid Course ID.');
-            if (confirm('Are you sure you want to delete this course?')) {
-                try {
-                    const response = await fetch(`${API_BASE_URL}/courses/${id}`, { method: 'DELETE', credentials: 'include' });
-                    const result = await response.json();
-                    if (response.ok) {
-                        alert('Course deleted successfully!');
-                        fetchCourses();
-                        fetchCoursesForEnrollment(); 
-                    } else {
-                        alert(`Delete failed: ${result.message || 'An unknown error occurred.'}`);
-                        console.error('Delete Course Failed:', result);
-                    }
-                } catch (error) {
-                    alert(`Network error deleting course.`);
-                    console.error('Error deleting course:', error);
+        
+        async function fetchCourses() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/courses`, {credentials: 'include'});
+                const courses = await response.json();
+                const tableBody = document.getElementById('course-table-body');
+                
+                tableBody.innerHTML = '';
+                if (courses.length === 0) {
+                     tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center">No courses found.</td></tr>`;
+                     return;
                 }
+
+                courses.forEach(course => {
+                    tableBody.innerHTML += `
+                        <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${course.name}</td>
+                            <td class="px-6 py-4 text-sm text-slate-500 dark:text-slate-400 max-w-xs truncate">${course.subjects.join(', ')}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${course.teacher_name}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <button onclick="editCourse(${course.id})" class="text-primary hover:text-blue-700 mr-2">Edit</button>
+                                <button onclick="deleteCourse(${course.id})" class="text-red-600 hover:text-red-900">Delete</button>
+                            </td>
+                        </tr>`;
+                });
+            } catch(error) {
+                console.error('Error fetching courses:', error);
+                document.getElementById('course-table-body').innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
             }
         }
-
-
-        // --- ACADEMIC SESSIONS ---
+        
+        // --- ACADEMIC SESSIONS UTILITIES ---
 
         function resetSessionForm(session = null) {
+            const sessionForm = document.getElementById('session-form');
+            if (sessionForm) sessionForm.reset();
+            
             document.getElementById('session-id').value = session ? session.id : '';
             document.getElementById('session-name').value = session ? session.name : '';
             document.getElementById('session-start-date').value = session ? session.start_date : '';
@@ -1212,43 +1182,37 @@
             document.querySelector('#content-sessions h3').textContent = session ? 'Edit Existing Academic Session' : 'Add New Session';
         }
 
-        sessionForm.addEventListener('submit', async (event) => {
-            event.preventDefault();
-            
-            const sessionId = document.getElementById('session-id').value;
-            const method = sessionId ? 'PUT' : 'POST';
-            const endpoint = `${API_BASE_URL}/sessions`;
-            
-            const sessionData = { 
-                id: sessionId || undefined,
-                name: document.getElementById('session-name').value, 
-                start_date: document.getElementById('session-start-date').value,
-                end_date: document.getElementById('session-end-date').value,
-                status: document.getElementById('session-status').value
-            };
-            
+        async function fetchSessions() {
             try {
-                const response = await fetch(endpoint, { 
-                    method: method, 
-                    headers: {'Content-Type': 'application/json'}, 
-                    credentials: 'include', 
-                    body: JSON.stringify(sessionData) 
-                });
-                const result = await response.json();
-
-                if (response.ok) {
-                    alert(`Academic session ${method === 'POST' ? 'added' : 'updated'} successfully!`);
-                    resetSessionForm();
-                    fetchSessions();
-                } else {
-                    alert(`Save failed: ${result.message || 'An unknown error occurred.'}`);
-                    console.error("Session Save Error:", result.message);
+                const response = await fetch(`${API_BASE_URL}/sessions`, {credentials: 'include'});
+                const sessions = await response.json();
+                const tableBody = document.getElementById('session-table-body');
+                
+                tableBody.innerHTML = '';
+                if (sessions.length === 0) {
+                     tableBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center">No academic sessions found.</td></tr>`;
+                     return;
                 }
-            } catch (error) {
-                alert(`Network error saving session: ${error.message}`);
-                console.error('Error saving session:', error);
+
+                sessions.forEach(session => {
+                    const statusClass = session.status === 'Active' ? 'text-green-600' : 'text-red-600';
+                    tableBody.innerHTML += `
+                        <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${session.name}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${session.start_date}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${session.end_date}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium ${statusClass}">${session.status}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <button onclick="editSession(${session.id})" class="text-primary hover:text-blue-700 mr-2">Edit</button>
+                                <button onclick="deleteSession(${session.id})" class="text-red-600 hover:text-red-900">Delete</button>
+                            </td>
+                        </tr>`;
+                });
+            } catch(error) {
+                 console.error('Error fetching sessions:', error);
+                 document.getElementById('session-table-body').innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
             }
-        });
+        }
         
         window.editSession = async function(id) {
             if (!id) return alert('Invalid Session ID.');
@@ -1395,7 +1359,61 @@
             }
         }
         
-        async function fetchFeeStructures() {
+// --- FEE MANAGEMENT UTILITIES ---
+        function resetFeeStructureForm(structure = null) {
+             const feeStructureForm = document.getElementById('fee-structure-form');
+             if (feeStructureForm) feeStructureForm.reset();
+             
+             document.getElementById('fee-structure-id').value = structure ? structure.id : '';
+             document.getElementById('save-fee-structure-btn').textContent = structure ? 'Update Fee Structure' : 'Save Fee Structure';
+             document.querySelector('#content-fees h3').textContent = structure ? 'Edit Fee Structure' : 'Manage Fee Structures';
+             
+             if (structure) {
+                 // Populate form for editing
+                 document.getElementById('fee-structure-name').value = structure.name;
+                 document.getElementById('fee-session-select').value = structure.academic_session_id;
+                 document.getElementById('fee-total-amount').value = structure.total_amount;
+                 document.getElementById('fee-due-date').value = structure.due_date;
+             }
+         }
+         
+        window.editFeeStructure = async function(id) {
+            if (!id) return alert('Invalid Fee Structure ID.');
+            try {
+                const response = await fetch(`${API_BASE_URL}/fee_structures`, { credentials: 'include' });
+                const structures = await response.json();
+                const structure = structures.find(s => s.id == id);
+                if (structure) {
+                    resetFeeStructureForm(structure);
+                    window.location.hash = 'fees'; 
+                }
+            } catch (error) {
+                console.error('Error fetching fee structure for edit:', error);
+                alert('Failed to load fee structure details for edit.');
+            }
+        }
+
+        // --- REPORT FUNCTIONS (Stubs to prevent errors) ---
+
+        function fetchAdmissionsReport() {
+            // Placeholder: Implement actual data fetching and table filling
+            document.getElementById('admissions-report-body').innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-center">Data not loaded yet.</td></tr>`;
+        }
+
+        function fetchAttendanceReport() {
+            // Placeholder: Implement actual data fetching and table filling
+            document.getElementById('attendance-report-body').innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center">Data not loaded yet.</td></tr>`;
+        }
+
+        function fetchPerformanceReport() {
+            // Placeholder: Implement actual data fetching and table filling
+            document.getElementById('performance-report-body').innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center">Data not loaded yet.</td></tr>`;
+        }        
+
+
+
+
+async function fetchFeeStructures() {
             try {
                 const response = await fetch(`${API_BASE_URL}/fee_structures`, {credentials: 'include'});
                 const structures = await response.json();
