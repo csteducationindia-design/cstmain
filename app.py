@@ -2107,11 +2107,16 @@ def send_push_notification(user_id, title, body):
 
 # app.py (Near the end, replacing the 'if __name__ == "__main__":' block)
 
+# app.py (Near the end, replacing the final execution block)
+
+# Helper function to use later (Keep the existing implementation of send_push_notification)
+def send_push_notification(user_id, title, body):
+    # ... (Your existing Firebase lazy initialization and send logic here)
+    pass
 
 
-
-# --- Run Application ---
 # NEW: Define a dedicated function for database setup
+# This function is now standalone and can be called explicitly outside the app import flow.
 def initialize_database():
     with app.app_context():
         # Create tables if they don't exist
@@ -2122,6 +2127,11 @@ def initialize_database():
         check_and_upgrade_db()
         print("--- Database Schema Upgraded/Verified ---")
 
+# --- Run Application ---
+
+# CRITICAL FIX: Only call initialize_database() when run directly (e.g., python app.py)
+# Gunicorn/WSGI will ignore this block when importing the 'app' instance.
 if __name__ == '__main__':
-    initialize_database() # Run initialization once in development
+    initialize_database() 
     app.run(debug=True, host='0.0.0.0', port=5000)
+
