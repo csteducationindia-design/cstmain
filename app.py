@@ -1217,7 +1217,6 @@ def record_payment():
         if student:
             status = calculate_fee_status(student.id)
             if status['balance'] > 0: 
-                # This function is now correctly placed *after* db.session.commit()
                 # Send push/sms reminders if balance is still > 0
                 send_fee_alert_notifications(student.id) 
 
@@ -1864,6 +1863,7 @@ def serve_receipt(payment_id):
         payment_date_fmt = payment.payment_date.strftime('%d-%b-%Y %I:%M %p')
         payment_method = payment.payment_method if payment.payment_method else "N/A"
         
+        # FIX: Added fee_due_date_fmt variable using safe check
         if fee_structure and fee_structure.due_date:
             fee_due_date_fmt = fee_structure.due_date.strftime('%d-%b-%Y')
         else:
@@ -2128,6 +2128,13 @@ def send_push_notification(user_id, title, body):
 # --- Run Application ---
 # NEW: Define a dedicated function for database setup
 def initialize_database():
+    # FIX: Must import all necessary items inside the function scope for Python 3.x
+    # in environments where the script might be executed via command line.
+    from flask import Flask, request, jsonify, render_template, redirect, url_for, send_from_directory
+    from flask_sqlalchemy import SQLAlchemy
+    from sqlalchemy import inspect
+    
+    # Create a temporary Flask context for database operations
     with app.app_context():
         # Create tables if they don't exist
         db.create_all()
