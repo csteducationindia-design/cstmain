@@ -1375,7 +1375,7 @@ def fee_pending_report():
 def get_student_fees():
     if current_user.role != 'student': return jsonify({"message": "Access denied"}), 403
     
-    try: # Added Try Block
+    try: # Fix: Robust Error Handling
         status = calculate_fee_status(current_user.id)
         payments = Payment.query.filter_by(student_id=current_user.id).order_by(Payment.payment_date.desc()).all()
 
@@ -1389,31 +1389,31 @@ def get_student_fees():
             **status,
             "history": history
         })
-    except Exception as e: # Added Exception Handler
+    except Exception as e:
         print(f"ERROR fetching fees for student {current_user.id}: {e}")
-        return jsonify({"message": f"Error loading fees: {e}"}), 500
+        return jsonify({"message": "Error loading fee data. Check server logs."}), 500
 
 
 @app.route('/api/student/attendance', methods=['GET'])
 @login_required
 def get_student_attendance():
     if current_user.role != 'student': return jsonify({"message": "Access denied"}), 403
-    try: # Added Try Block
+    try: # Fix: Robust Error Handling
         attendance_records = Attendance.query.filter_by(student_id=current_user.id).order_by(Attendance.check_in_time.desc()).limit(10).all()
         return jsonify([{
             "date": r.check_in_time.strftime('%Y-%m-%d'),
             "time": r.check_in_time.strftime('%I:%M %p'),
             "status": r.status
         } for r in attendance_records])
-    except Exception as e: # Added Exception Handler
+    except Exception as e:
         print(f"ERROR fetching attendance for student {current_user.id}: {e}")
-        return jsonify({"message": f"Error loading attendance: {e}"}), 500
+        return jsonify({"message": "Error loading attendance data. Check server logs."}), 500
 
 @app.route('/api/student/grades', methods=['GET'])
 @login_required
 def get_student_grades():
     if current_user.role != 'student': return jsonify({"message": "Access denied"}), 403
-    try: # Added Try Block
+    try: # Fix: Robust Error Handling
         grades = Grade.query.filter_by(student_id=current_user.id).all()
         grade_data = []
         for grade in grades:
@@ -1425,9 +1425,9 @@ def get_student_grades():
                 "total_marks": grade.total_marks
             })
         return jsonify(grade_data)
-    except Exception as e: # Added Exception Handler
+    except Exception as e:
         print(f"ERROR fetching grades for student {current_user.id}: {e}")
-        return jsonify({"message": f"Error loading grades: {e}"}), 500
+        return jsonify({"message": "Error loading grades data. Check server logs."}), 500
 
 @app.route('/api/student/notes', methods=['GET'])
 @login_required
@@ -1435,15 +1435,15 @@ def get_student_notes():
     if current_user.role != 'student':
         return jsonify({"message": "Access denied"}), 403
     
-    try: # Added Try Block
+    try: # Fix: Robust Error Handling
         # Students now see notes for courses they are enrolled in
         student_course_ids = [c.id for c in current_user.courses_enrolled]
         notes = SharedNote.query.filter(SharedNote.course_id.in_(student_course_ids)).order_by(SharedNote.created_at.desc()).all()
         
         return jsonify([note.to_dict() for note in notes])
-    except Exception as e: # Added Exception Handler
+    except Exception as e:
         print(f"ERROR fetching notes for student {current_user.id}: {e}")
-        return jsonify({"message": f"Error loading notes: {e}"}), 500
+        return jsonify({"message": "Error loading notes data. Check server logs."}), 500
 
 
 # --- Teacher API Endpoints ---
