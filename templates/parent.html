@@ -169,6 +169,7 @@
         
         function resetTable(id, message = "No data available", cols = 3) {
             const tableBody = document.getElementById(id);
+            // FIX: Ensure rows are visually reset to show status
             tableBody.innerHTML = `<tr><td colspan="${cols}" class="p-4 text-center text-red-500">${message}</td></tr>`;
         }
 
@@ -199,6 +200,7 @@
                 const res = await fetch(`${API_BASE_URL}/parent/children`, {credentials: 'include'});
                 
                 if (!res.ok) {
+                    // Expecting JSON error detail from backend (thanks to app.py robust handlers)
                     const err = await res.json();
                     throw new Error(err.message || `API Error: ${res.status}`);
                 }
@@ -227,12 +229,14 @@
                 });
             } catch (e) { 
                 console.error("Load children error:", e);
-                resetTable('attendance-body', 'Error loading children list.');
-                resetTable('grades-body', 'Error loading children list.');
+                // FIX: Display red error message clearly for initial failure
+                resetTable('attendance-body', `Error loading children list: ${e.message}`, 3);
+                resetTable('grades-body', `Error loading children list: ${e.message}`, 3);
             }
         }
 
         async function fetchChildData(id) {
+            // Display loading indicators
             resetTable('attendance-body', 'Loading attendance...');
             resetTable('grades-body', 'Loading results...');
             
@@ -240,6 +244,7 @@
                 const res = await fetch(`${API_BASE_URL}/parent/child_data/${id}`, {credentials: 'include'});
                 
                 if(!res.ok) {
+                    // FIX: Ensure API error messages (like 500) are extracted and displayed
                     const err = await res.json();
                     throw new Error(err.message || `API Error: ${res.status}`);
                 }
@@ -291,8 +296,9 @@
                 
             } catch (e) { 
                 console.error("Fetch Child Data Error:", e);
-                resetTable('attendance-body', `Error fetching data: ${e.message}`, 3);
-                resetTable('grades-body', `Error fetching data: ${e.message}`, 3);
+                // FIX: If data load fails, display the API error message clearly
+                resetTable('attendance-body', `Data loading failed: ${e.message}`, 3);
+                resetTable('grades-body', `Data loading failed: ${e.message}`, 3);
             }
         }
 
@@ -301,10 +307,12 @@
             resetTable('messages-body', 'Loading messages...', 4);
             try {
                  const res = await fetch(`${API_BASE_URL}/parent/messages`, {credentials: 'include'});
+                 
                  if (!res.ok) {
                     const err = await res.json();
                     throw new Error(err.message || `API Error: ${res.status}`);
                  }
+                 
                  const messages = await res.json();
                  
                  if (messages.length === 0) {
