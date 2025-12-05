@@ -736,31 +736,35 @@ def manage_users():
     return jsonify([user.to_dict() for user in users])
 
 # NEW: Endpoint to handle profile photo upload separately (used for PUT requests)
+
 @app.route('/api/user/upload_photo/<int:user_id>', methods=['POST'])
 @login_required
 def upload_profile_photo(user_id):
     if current_user.role != 'admin':
         return jsonify({"message": "Access denied"}), 403
-        
-    user = db.session.get_or_404(User, user_id)
-    
+
+    # FIX: use db.session.get instead of get_or_404
+    user = db.session.get(User, user_id)
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
     if 'profile_photo_file' not in request.files:
         return jsonify({"message": "No file part in request"}), 400
-        
+
     file = request.files['profile_photo_file']
-    
+
     if file.filename == '':
         return jsonify({"message": "No selected file"}), 400
-        
+
     if file and allowed_file(file.filename, ALLOWED_IMAGE_EXTENSIONS):
         original_filename = secure_filename(file.filename)
         ext = os.path.splitext(original_filename)[1]
-        unique_filename = f"{uuid.uuid4()}{ext}" 
+        unique_filename = f"{uuid.uuid4()}{ext}"
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
-        
+
         try:
             file.save(file_path)
-            
+
             # Delete old photo if it exists and is a local file
             if user.profile_photo_url and user.profile_photo_url.startswith('/uploads/'):
                 old_path = os.path.join(basedir, user.profile_photo_url.lstrip('/'))
@@ -769,18 +773,19 @@ def upload_profile_photo(user_id):
                         os.remove(old_path)
                     except Exception as e:
                         print(f"Warning: Could not delete old photo {old_path}: {e}")
-                    
+
             # Save the new file path
             user.profile_photo_url = f"/uploads/{unique_filename}"
             db.session.commit()
-            
+
             return jsonify({"message": "Profile photo uploaded successfully!", "user": user.to_dict()}), 200
-            
+
         except Exception as e:
             db.session.rollback()
             return jsonify({"message": f"An error occurred: {e}"}), 500
     else:
         return jsonify({"message": "File type not allowed. Use png, jpg, jpeg, or gif."}), 400
+
 
 
 @app.route('/api/users/<int:user_id>', methods=['DELETE'])
@@ -1806,22 +1811,36 @@ def get_parent_messages():
 @app.route('/api/parent/child_data/<int:student_id>', methods=['GET'])
 @login_required
 def get_child_data(student_id):
-    if current_user.role not in ['parent', 'admin']: return jsonify({"message": "Access denied"}), 403
-    
-    try: # FIX: Added Try Block for Robust Error Handling
-        student = db.session.get_or_404(User, student_id)
+    if current_user.role not in ['parent', 'admin']:
+        return jsonify({"message": "Access denied"}), 403
 
-        if student.role != 'student' or (current_user.role == 'parent' and student.parent_id != current_user.id):
+    try:
+        # FIX: use db.session.get instead of get_or_404
+        student = db.session.get(User, student_id)
+        if not student:
+            return jsonify({"message": "Student not found"}), 404
+
+        # Authorization: must be an actual child of this parent (unless admin)
+        if student.role != 'student' or (
+            current_user.role == 'parent' and student.parent_id != current_user.id
+        ):
             return jsonify({"message": "Authorization error or not a valid child."}), 403
 
-        # These functions are already wrapped, so we should be safe here, but we wrap the overall logic.
-        attendance_records = Attendance.query.filter_by(student_id=student.id).order_by(Attendance.check_in_time.desc()).limit(10).all()
+        # Recent attendance
+        attendance_records = (
+            Attendance.query
+            .filter_by(student_id=student.id)
+            .order_by(Attendance.check_in_time.desc())
+            .limit(10)
+            .all()
+        )
         attendance_data = [{
             "date": r.check_in_time.strftime('%Y-%m-%d'),
             "time": r.check_in_time.strftime('%I:%M %p'),
             "status": r.status
         } for r in attendance_records]
 
+        # Grades
         grades = Grade.query.filter_by(student_id=student.id).all()
         grade_data = []
         for grade in grades:
@@ -1833,6 +1852,7 @@ def get_child_data(student_id):
                 "total_marks": grade.total_marks
             })
 
+        # Fees
         fee_status = calculate_fee_status(student.id)
 
         return jsonify({
@@ -1845,12 +1865,18 @@ def get_child_data(student_id):
         print(f"ERROR fetching child data for parent {current_user.id} and student {student_id}: {e}")
         return jsonify({"message": f"Internal Server Error: Failed to load child data. Error: {e}"}), 500
 
+
+
 # --- Receipt Route ---
 @app.route('/api/receipt/<int:payment_id>', methods=['GET'])
 @login_required
 def serve_receipt(payment_id):
     try:
-        payment = db.session.get_or_404(Payment, payment_id)
+        # FIX: use db.session.get instead of get_or_404
+        payment = db.session.get(Payment, payment_id)
+        if not payment:
+            return "Payment not found.", 404
+
         student = db.session.get(User, payment.student_id)
         fee_structure = db.session.get(FeeStructure, payment.fee_structure_id)
 
@@ -1866,27 +1892,24 @@ def serve_receipt(payment_id):
 
         if not is_authorized:
             return "Access Denied", 403
-            
+
         # --- Safety Checks for Receipt Variables ---
         student_name = student.name if student and student.name else "N/A"
         fee_name = fee_structure.name if fee_structure and fee_structure.name else "Fee Payment"
         payment_amount = f"₹ {payment.amount_paid:.2f}"
         payment_date_fmt = payment.payment_date.strftime('%d-%b-%Y %I:%M %p')
         payment_method = payment.payment_method if payment.payment_method else "N/A"
-        
-        # FIX: Added fee_due_date_fmt variable using safe check
+
         if fee_structure and fee_structure.due_date:
             fee_due_date_fmt = fee_structure.due_date.strftime('%d-%b-%Y')
         else:
             fee_due_date_fmt = "N/A"
-        
-        # Mock Institute Details (Using static placeholders since user details can be null)
+
+        # Mock Institute Details
         institute_address = "CST Institute Address, Plot No 43 Om Park, Jalgaon"
         institute_city_state = "Jalgaon, Maharashtra"
         institute_contact = "9822826307"
         institute_email = "admin@cstai.in"
-        
-        # --- End Safety Checks ---
 
         html_content = f"""
         <!DOCTYPE html>
@@ -1911,73 +1934,73 @@ def serve_receipt(payment_id):
                     border: 1px solid #ddd;
                     box-shadow: 0 0 10px rgba(0,0,0,0.1);
                 }}
+                h1, h2, h3, h4 {{
+                    margin: 0;
+                    padding: 0;
+                }}
                 .header {{
                     text-align: center;
-                    border-bottom: 2px solid #333;
                     margin-bottom: 20px;
-                    padding-bottom: 10px;
                 }}
                 .header h1 {{
-                    margin: 0;
-                    color: #333;
+                    font-size: 24px;
+                    font-weight: 700;
                 }}
                 .header p {{
-                    margin: 5px 0 0;
-                    color: #666;
-                }}
-                .receipt-details {{
-                    margin-bottom: 30px;
-                }}
-                .receipt-details h2 {{
-                    color: #333;
-                    border-bottom: 1px solid #eee;
-                    padding-bottom: 5px;
-                    margin-bottom: 15px;
-                    font-size: 1.4em;
-                }}
-                .receipt-details table {{
-                    width: 100%;
-                    border-collapse: collapse;
-                }}
-                .receipt-details th, .receipt-details td {{
-                    padding: 10px;
-                    text-align: left;
-                    border-bottom: 1px solid #eee;
-                    font-size: 0.95em;
-                }}
-                .receipt-details th {{
-                    padding: 10px;
-                    text-align: left;
-                    border-bottom: 1px solid #eee;
-                    font-size: 0.95em;
-                    background-color: #f9f9f9;
-                    width: 30%;
+                    margin: 4px 0;
                     color: #555;
                 }}
-                .receipt-details td {{
-                    color: #333;
-                }}
-                .total {{
+                .section-title {{
+                    font-size: 18px;
+                    font-weight: 600;
                     margin-top: 20px;
-                    text-align: right;
+                    margin-bottom: 10px;
+                    border-bottom: 1px solid #eee;
+                    padding-bottom: 5px;
                 }}
-                .total strong {{
-                    font-size: 1.2em;
-                    color: #000;
+                table {{
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-top: 10px;
+                }}
+                table td {{
+                    padding: 6px 4px;
+                    vertical-align: top;
+                    font-size: 14px;
+                }}
+                .label {{
+                    font-weight: 600;
+                    color: #333;
+                    width: 30%;
+                }}
+                .value {{
+                    color: #555;
                 }}
                 .footer {{
-                    margin-top: 40px;
                     text-align: center;
-                    font-size: 0.8em;
-                    color: #999;
+                    margin-top: 30px;
+                    font-size: 12px;
+                    color: #777;
+                }}
+                .amount-box {{
+                    margin-top: 15px;
+                    padding: 10px;
+                    border: 1px dashed #999;
+                    text-align: right;
+                    font-size: 16px;
+                    font-weight: 600;
                 }}
                 @media print {{
-                  body {{ background-color: #fff; }}
-                  .container {{ border: none; box-shadow: none; width: 100%; max-width: 100%; margin: 0; padding: 0; }}
-                  .no-print {{ display: none; }}
-                }}
-                .print-button {{
-                     display: block; width: 100px; margin: 20px auto; padding: 10px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; text-align: center;
+                    body {{
+                        background-color: #fff;
+                    }}
+                    .container {{
+                        box-shadow: none;
+                        border: none;
+                    }}
+                    .no-print {{
+                        display: none;
+                    }}
                 }}
             </style>
         </head>
@@ -1985,37 +2008,48 @@ def serve_receipt(payment_id):
             <div class="container">
                 <div class="header">
                     <h1>CST Institute</h1>
-                    <p>{institute_address}, {institute_city_state}</p>
+                    <p>{institute_address}</p>
+                    <p>{institute_city_state}</p>
                     <p>Contact: {institute_contact} | Email: {institute_email}</p>
                 </div>
 
-                <div class="receipt-details">
-                    <h2>Payment Receipt</h2>
-                    <table>
-                        <tr><th>Receipt No:</th><td>#{payment.id}</td></tr>
-                        <tr><th>Date:</th><td>{payment_date_fmt}</td></tr>
-                        <tr><th>Student Name:</th><td>{student_name}</td></tr>
-                        <tr><th>Fee For:</th><td>{fee_name}</td></tr>
-                        <tr><th>Fee Due Date:</th><td>{fee_due_date_fmt}</td></tr>
-                        <tr><th>Payment Method:</th><td>{payment_method}</td></tr>
-                        <tr class="total-row"><th>Amount Paid:</th><td><strong>{payment_amount}</strong></td></tr>
-                    </table>
+                <h2 class="section-title">Receipt Details</h2>
+                <table>
+                    <tr><td class="label">Receipt No.</td><td class="value">#{payment.id}</td></tr>
+                    <tr><td class="label">Payment Date</td><td class="value">{payment_date_fmt}</td></tr>
+                    <tr><td class="label">Payment Method</td><td class="value">{payment_method}</td></tr>
+                </table>
+
+                <h2 class="section-title">Student Details</h2>
+                <table>
+                    <tr><td class="label">Student Name</td><td class="value">{student_name}</td></tr>
+                    <tr><td class="label">Student ID</td><td class="value">{student.id}</td></tr>
+                </table>
+
+                <h2 class="section-title">Fee Details</h2>
+                <table>
+                    <tr><td class="label">Fee Name</td><td class="value">{fee_name}</td></tr>
+                    <tr><td class="label">Due Date</td><td class="value">{fee_due_date_fmt}</td></tr>
+                </table>
+
+                <div class="amount-box">
+                    Amount Paid: {payment_amount}
                 </div>
 
-                <button class="print-button no-print" onclick="window.print()">Print Receipt</button>
-
-                <div class="footer">
-                    <p>This is a computer-generated receipt.</p>
-                    <p>Thank you!</p>
+                <div class="footer no-print">
+                    <p>This is a system-generated receipt.</p>
+                    <button onclick="window.print()">Print Receipt</button>
                 </div>
             </div>
         </body>
         </html>
         """
+
         return html_content
     except Exception as e:
-        print(f"--- FATAL RECEIPT ERROR: {e} ---")
-        return "Internal Server Error during receipt generation. Check server logs.", 500
+        print(f"ERROR generating receipt for payment {payment_id}: {e}")
+        return "Internal Server Error while generating receipt.", 500
+
 
 
 # --- Routes to Serve Frontend Pages ---
