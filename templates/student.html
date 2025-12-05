@@ -307,7 +307,7 @@
             try {
                 const response = await fetch(`${API_BASE_URL}/student/attendance`, {credentials: 'include'});
                 
-                if (!response.ok) { // Check for server-side errors (400, 500)
+                if (!response.ok) { // FIX 1: Explicitly check for server-side errors (400, 500)
                     const errorDetails = await response.json();
                     throw new Error(errorDetails.message || `API Error: ${response.status}`);
                 }
@@ -330,7 +330,7 @@
              try {
                 const response = await fetch(`${API_BASE_URL}/student/grades`, {credentials: 'include'});
                 
-                if (!response.ok) { // Check for server-side errors (400, 500)
+                if (!response.ok) { // FIX 1: Explicitly check for server-side errors (400, 500)
                     const errorDetails = await response.json();
                     throw new Error(errorDetails.message || `API Error: ${response.status}`);
                 }
@@ -366,7 +366,7 @@
             try {
                 const response = await fetch(`${API_BASE_URL}/student/fees`, {credentials: 'include'});
                 
-                if (!response.ok) { // Check for server-side errors (400, 500)
+                if (!response.ok) { // FIX 1: Explicitly check for server-side errors (400, 500)
                     const errorDetails = await response.json();
                     throw new Error(errorDetails.message || `API Error: ${response.status}`);
                 }
@@ -398,7 +398,7 @@
             try {
                 const response = await fetch(`${API_BASE_URL}/announcements`, {credentials: 'include'});
                 
-                if (!response.ok) { // Check for server-side errors (400, 500)
+                if (!response.ok) { // FIX 1: Explicitly check for server-side errors (400, 500)
                     const errorDetails = await response.json();
                     throw new Error(errorDetails.message || `API Error: ${response.status}`);
                 }
@@ -422,7 +422,7 @@
              try {
                 const response = await fetch(`${API_BASE_URL}/student/notes`, {credentials: 'include'});
                 
-                if (!response.ok) { // Check for server-side errors (400, 500)
+                if (!response.ok) { // FIX 1: Explicitly check for server-side errors (400, 500)
                     const errorDetails = await response.json();
                     throw new Error(errorDetails.message || `API Error: ${response.status}`);
                 }
