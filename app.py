@@ -1186,7 +1186,8 @@ def manage_fee_structures():
             return jsonify(structure.to_dict()), 200
         except Exception as e:
             db.session.rollback()
-            return jsonify({"message": f"Database error updating fee structure: {e}"}), 500
+            print(f"--- ERROR SAVING COURSE (PUT): {e} ---")
+            return jsonify({"message": f"Failed to update course. Check logs for details: {e}"}), 500
         
     return jsonify([s.to_dict() for s in FeeStructure.query.order_by(FeeStructure.id.desc()).all()])
 
@@ -1369,13 +1370,13 @@ def fee_pending_report():
     return jsonify(pending_list)
 
 
-# --- Student API Endpoints ---
+# --- Student API Endpoints (FIXED WITH TRY/EXCEPT) ---
 @app.route('/api/student/fees', methods=['GET'])
 @login_required
 def get_student_fees():
     if current_user.role != 'student': return jsonify({"message": "Access denied"}), 403
     
-    try: # Fix: Robust Error Handling
+    try: # FIX: Added Try Block for Robust Error Handling
         status = calculate_fee_status(current_user.id)
         payments = Payment.query.filter_by(student_id=current_user.id).order_by(Payment.payment_date.desc()).all()
 
@@ -1389,31 +1390,31 @@ def get_student_fees():
             **status,
             "history": history
         })
-    except Exception as e:
+    except Exception as e: # Catch all errors and return 500 JSON response
         print(f"ERROR fetching fees for student {current_user.id}: {e}")
-        return jsonify({"message": "Error loading fee data. Check server logs."}), 500
+        return jsonify({"message": f"Internal Server Error: Failed to load fee data. Error: {e}"}), 500
 
 
 @app.route('/api/student/attendance', methods=['GET'])
 @login_required
 def get_student_attendance():
     if current_user.role != 'student': return jsonify({"message": "Access denied"}), 403
-    try: # Fix: Robust Error Handling
+    try: # FIX: Added Try Block for Robust Error Handling
         attendance_records = Attendance.query.filter_by(student_id=current_user.id).order_by(Attendance.check_in_time.desc()).limit(10).all()
         return jsonify([{
             "date": r.check_in_time.strftime('%Y-%m-%d'),
             "time": r.check_in_time.strftime('%I:%M %p'),
             "status": r.status
         } for r in attendance_records])
-    except Exception as e:
+    except Exception as e: # Catch all errors and return 500 JSON response
         print(f"ERROR fetching attendance for student {current_user.id}: {e}")
-        return jsonify({"message": "Error loading attendance data. Check server logs."}), 500
+        return jsonify({"message": f"Internal Server Error: Failed to load attendance data. Error: {e}"}), 500
 
 @app.route('/api/student/grades', methods=['GET'])
 @login_required
 def get_student_grades():
     if current_user.role != 'student': return jsonify({"message": "Access denied"}), 403
-    try: # Fix: Robust Error Handling
+    try: # FIX: Added Try Block for Robust Error Handling
         grades = Grade.query.filter_by(student_id=current_user.id).all()
         grade_data = []
         for grade in grades:
@@ -1425,9 +1426,9 @@ def get_student_grades():
                 "total_marks": grade.total_marks
             })
         return jsonify(grade_data)
-    except Exception as e:
+    except Exception as e: # Catch all errors and return 500 JSON response
         print(f"ERROR fetching grades for student {current_user.id}: {e}")
-        return jsonify({"message": "Error loading grades data. Check server logs."}), 500
+        return jsonify({"message": f"Internal Server Error: Failed to load grades data. Error: {e}"}), 500
 
 @app.route('/api/student/notes', methods=['GET'])
 @login_required
@@ -1435,15 +1436,15 @@ def get_student_notes():
     if current_user.role != 'student':
         return jsonify({"message": "Access denied"}), 403
     
-    try: # Fix: Robust Error Handling
+    try: # FIX: Added Try Block for Robust Error Handling
         # Students now see notes for courses they are enrolled in
         student_course_ids = [c.id for c in current_user.courses_enrolled]
         notes = SharedNote.query.filter(SharedNote.course_id.in_(student_course_ids)).order_by(SharedNote.created_at.desc()).all()
         
         return jsonify([note.to_dict() for note in notes])
-    except Exception as e:
+    except Exception as e: # Catch all errors and return 500 JSON response
         print(f"ERROR fetching notes for student {current_user.id}: {e}")
-        return jsonify({"message": "Error loading notes data. Check server logs."}), 500
+        return jsonify({"message": f"Internal Server Error: Failed to load notes data. Error: {e}"}), 500
 
 
 # --- Teacher API Endpoints ---
@@ -1764,71 +1765,85 @@ def serve_uploaded_file(filename):
         return "File not found.", 404
 
 
-# --- Parent API Endpoints ---
+# --- Parent API Endpoints (FIXED WITH TRY/EXCEPT) ---
 @app.route('/api/parent/children', methods=['GET'])
 @login_required
 def get_parent_children():
     if current_user.role != 'parent': return jsonify({"message": "Access denied"}), 403
-    # FIX: Ensure children filtering is correct
-    children = User.query.filter(User.parent_id == current_user.id).all() 
-    return jsonify([c.to_dict() for c in children])
+    try: # FIX: Added Try Block for Robust Error Handling
+        # FIX: Ensure children filtering is correct
+        children = User.query.filter(User.parent_id == current_user.id).all() 
+        return jsonify([c.to_dict() for c in children])
+    except Exception as e:
+        print(f"ERROR fetching children for parent {current_user.id}: {e}")
+        return jsonify({"message": f"Internal Server Error: Failed to load children data. Error: {e}"}), 500
 
 @app.route('/api/parent/messages', methods=['GET'])
 @login_required
 def get_parent_messages():
     if current_user.role != 'parent': return jsonify({"message": "Access denied"}), 403
-    messages_to_parent = Message.query.filter_by(recipient_id=current_user.id).order_by(Message.sent_at.desc()).all()
+    try: # FIX: Added Try Block for Robust Error Handling
+        messages_to_parent = Message.query.filter_by(recipient_id=current_user.id).order_by(Message.sent_at.desc()).all()
 
-    child_ids = [c.id for c in User.query.filter_by(parent_id=current_user.id).all()]
-    messages_to_children = Message.query.filter(Message.recipient_id.in_(child_ids)).order_by(Message.sent_at.desc()).all()
+        child_ids = [c.id for c in User.query.filter_by(parent_id=current_user.id).all()]
+        messages_to_children = Message.query.filter(Message.recipient_id.in_(child_ids)).order_by(Message.sent_at.desc()).all()
 
-    all_messages = sorted(messages_to_parent + messages_to_children, key=lambda m: m.sent_at, reverse=True)
+        all_messages = sorted(messages_to_parent + messages_to_children, key=lambda m: m.sent_at, reverse=True)
 
-    unique_messages = []
-    seen_ids = set()
-    for msg in all_messages:
-        if msg.id not in seen_ids:
-            unique_messages.append(msg)
-            seen_ids.add(msg.id)
+        unique_messages = []
+        seen_ids = set()
+        for msg in all_messages:
+            if msg.id not in seen_ids:
+                unique_messages.append(msg)
+                seen_ids.add(msg.id)
 
-    return jsonify([m.to_dict() for m in unique_messages])
+        return jsonify([m.to_dict() for m in unique_messages])
+    except Exception as e:
+        print(f"ERROR fetching messages for parent {current_user.id}: {e}")
+        return jsonify({"message": f"Internal Server Error: Failed to load messages. Error: {e}"}), 500
 
 
 @app.route('/api/parent/child_data/<int:student_id>', methods=['GET'])
 @login_required
 def get_child_data(student_id):
     if current_user.role not in ['parent', 'admin']: return jsonify({"message": "Access denied"}), 403
-    student = db.session.get_or_404(User, student_id)
+    
+    try: # FIX: Added Try Block for Robust Error Handling
+        student = db.session.get_or_404(User, student_id)
 
-    if student.role != 'student' or (current_user.role == 'parent' and student.parent_id != current_user.id):
-        return jsonify({"message": "Authorization error or not a valid child."}), 403
+        if student.role != 'student' or (current_user.role == 'parent' and student.parent_id != current_user.id):
+            return jsonify({"message": "Authorization error or not a valid child."}), 403
 
-    attendance_records = Attendance.query.filter_by(student_id=student.id).order_by(Attendance.check_in_time.desc()).limit(10).all()
-    attendance_data = [{
-        "date": r.check_in_time.strftime('%Y-%m-%d'),
-        "time": r.check_in_time.strftime('%I:%M %p'),
-        "status": r.status
-    } for r in attendance_records]
+        # These functions are already wrapped, so we should be safe here, but we wrap the overall logic.
+        attendance_records = Attendance.query.filter_by(student_id=student.id).order_by(Attendance.check_in_time.desc()).limit(10).all()
+        attendance_data = [{
+            "date": r.check_in_time.strftime('%Y-%m-%d'),
+            "time": r.check_in_time.strftime('%I:%M %p'),
+            "status": r.status
+        } for r in attendance_records]
 
-    grades = Grade.query.filter_by(student_id=student.id).all()
-    grade_data = []
-    for grade in grades:
-        course = db.session.get(Course, grade.course_id)
-        grade_data.append({
-            "course_name": course.name if course else "N/A",
-            "assessment_name": grade.assessment_name,
-            "marks_obtained": grade.marks_obtained,
-            "total_marks": grade.total_marks
+        grades = Grade.query.filter_by(student_id=student.id).all()
+        grade_data = []
+        for grade in grades:
+            course = db.session.get(Course, grade.course_id)
+            grade_data.append({
+                "course_name": course.name if course else "N/A",
+                "assessment_name": grade.assessment_name,
+                "marks_obtained": grade.marks_obtained,
+                "total_marks": grade.total_marks
+            })
+
+        fee_status = calculate_fee_status(student.id)
+
+        return jsonify({
+            "profile": student.to_dict(),
+            "attendance": attendance_data,
+            "grades": grade_data,
+            "fees": fee_status
         })
-
-    fee_status = calculate_fee_status(student.id)
-
-    return jsonify({
-        "profile": student.to_dict(),
-        "attendance": attendance_data,
-        "grades": grade_data,
-        "fees": fee_status
-    })
+    except Exception as e:
+        print(f"ERROR fetching child data for parent {current_user.id} and student {student_id}: {e}")
+        return jsonify({"message": f"Internal Server Error: Failed to load child data. Error: {e}"}), 500
 
 # --- Receipt Route ---
 @app.route('/api/receipt/<int:payment_id>', methods=['GET'])
@@ -2120,7 +2135,7 @@ def send_push_notification(user_id, title, body):
             return False
     return False
 
-# --- NEW HEALTH CHECK ENDPOINT ---
+# --- NEW HEALTH CHECK ENDPOINT (Needed for Coolify) ---
 @app.route('/healthz', methods=['GET'])
 def health_check():
     """A simple, unprotected endpoint for external health monitoring."""
