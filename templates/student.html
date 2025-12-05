@@ -1,179 +1,253 @@
 <!DOCTYPE html>
-
-<html lang="en">
+<html lang="en" class="h-full bg-slate-50">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Student Portal</title>
+    <meta charset="UTF-8">
+    <title>Institute Student Portal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<link rel="manifest" href="/static/manifest.json">
+    <!-- Google Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@400;500&display=swap"
+    />
 
-<link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
-<link as="style" href="https://fonts.googleapis.com/css2?display=swap&family=Inter:wght@400;500;700;900" onload="this.rel='stylesheet'" rel="stylesheet"/>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<script>
-    tailwind.config = {
-        darkMode: "class",
-        theme: {
-            extend: {
-                colors: {
-                    "primary": "#1173d4",
-                    "background-light": "#f6f7f8",
-                    "background-dark": "#101922",
-                },
-                fontFamily: {
-                    "display": ["Inter"]
-                },
-                borderRadius: {
-                    "DEFAULT": "0.25rem",
-                    "lg": "0.5rem",
-                    "xl": "0.75rem",
-                    "full": "9999px"
-                },
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif']
+                    },
+                    colors: {
+                        primary: '#2563EB'
+                    }
+                }
             },
-        },
-    }
-</script>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+            darkMode: 'class'
+        };
+    </script>
 
-
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings:
+                    'FILL' 0,
+                    'wght' 400,
+                    'GRAD' 0,
+                    'opsz' 24;
+        }
+    </style>
 </head>
-<body class="bg-background-light dark:bg-background-dark font-display text-slate-800 dark:text-slate-200">
+<body class="h-full bg-slate-100 text-slate-900">
+<div class="min-h-screen flex">
+    <!-- SIDEBAR -->
+    <aside class="w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col">
+        <div class="p-6 flex items-center gap-3 border-b border-slate-200 dark:border-slate-800">
+            <div
+                class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white font-bold text-lg">
+                CS
+            </div>
+            <div>
+                <h1 class="text-lg font-semibold text-slate-900 dark:text-white">Institute Student</h1>
+                <p class="text-sm text-slate-500 dark:text-slate-400">Student Portal</p>
+            </div>
+        </div>
 
-<div class="flex min-h-screen">
-<aside class="w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col shadow-lg">
-<div class="p-6">
-<h1 class="text-2xl font-bold text-slate-900 dark:text-white">Institute Student</h1>
-<p class="text-sm text-slate-500 dark:text-slate-400">Student Portal</p>
-</div>
-<nav class="flex-1 px-4 py-2 space-y-1">
-<a href="#dashboard" class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg bg-primary/10 dark:bg-primary/20 text-primary">
-<span class="material-symbols-outlined">dashboard</span>
-<span class="text-sm font-medium">Dashboard</span>
-</a>
-<a href="#fees" class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-primary/10 dark:hover:bg-primary/20">
-<span class="material-symbols-outlined">payments</span>
-<span class="text-sm font-medium">Fees</span>
-</a>
-<a href="#notes" class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-primary/10 dark:hover:bg-primary/20">
-<span class="material-symbols-outlined">note_stack</span>
-<span class="text-sm font-medium">Shared Notes</span>
-</a>
-<a href="#announcements" class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-primary/10 dark:hover:bg-primary/20">
-<span class="material-symbols-outlined">campaign</span>
-<span class="text-sm font-medium">Announcements</span>
-</a>
-</nav>
-<div class="p-6 border-t border-slate-200 dark:border-slate-800">
-<button id="logout-btn" class="w-full bg-red-600 text-white font-medium py-2 px-4 rounded-lg text-sm hover:bg-red-700 transition duration-150">
-Logout
-</button>
-</div>
-</aside>
+        <nav class="flex-1 px-4 py-3 space-y-1">
+            <a href="#dashboard"
+               class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg bg-primary/10 dark:bg-primary/20 text-primary">
+                <span class="material-symbols-outlined">dashboard</span>
+                <span class="text-sm font-medium">Dashboard</span>
+            </a>
+            <a href="#fees"
+               class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-primary/10 dark:hover:bg-primary/20">
+                <span class="material-symbols-outlined">payments</span>
+                <span class="text-sm font-medium">Fees</span>
+            </a>
+            <a href="#notes"
+               class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-primary/10 dark:hover:bg-primary/20">
+                <span class="material-symbols-outlined">note_stack</span>
+                <span class="text-sm font-medium">Shared Notes</span>
+            </a>
+            <a href="#announcements"
+               class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-primary/10 dark:hover:bg-primary/20">
+                <span class="material-symbols-outlined">campaign</span>
+                <span class="text-sm font-medium">Announcements</span>
+            </a>
 
-<main class="flex-1 p-8">
-    <div class="max-w-7xl mx-auto">
-        <header class="mb-8">
-            <h1 id="student-welcome" class="text-4xl font-bold text-slate-900 dark:text-white">Welcome, Student!</h1>
-            <p class="text-slate-500 dark:text-slate-400 mt-2">Your personalized dashboard and academic overview.</p>
-        </header>
+            <!-- PWA install -->
+            <button id="install-app-btn"
+                    class="hidden w-full mt-3 flex items-center gap-3 px-4 py-2 rounded-lg text-green-600 hover:bg-green-50 font-medium text-sm">
+                <span class="material-symbols-outlined">download</span>
+                <span>Install Mobile App</span>
+            </button>
+        </nav>
 
-        <div id="content-dashboard" class="content-section">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                
-                <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6 lg:col-span-1">
-                    <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><span class="material-symbols-outlined">person</span> My Profile</h2>
-                    <div class="flex flex-col items-center gap-4">
-                        <img id="profile-photo" 
-                             src="https://placehold.co/128x128/f6f7f8/666?text=Loading..." 
-                             alt="Profile Photo" 
-                             class="w-32 h-32 rounded-full object-cover border-4 border-primary/20 shadow-md"
-                             onerror="this.src='https://placehold.co/128x128/1173d4/FFFFFF?text=USER'">
-                        
-                        <div class="w-full text-left space-y-1">
-                            <p class="text-sm"><strong class="font-medium text-slate-900 dark:text-white w-24 inline-block">Name:</strong> <span id="profile-name" class="text-slate-600 dark:text-slate-400"></span></p>
-                            <p class="text-sm"><strong class="font-medium text-slate-900 dark:text-white w-24 inline-block">Email:</strong> <span id="profile-email" class="text-slate-600 dark:text-slate-400"></span></p>
-                            <p class="text-sm"><strong class="font-medium text-slate-900 dark:text-white w-24 inline-block">Phone:</strong> <span id="profile-phone" class="text-slate-600 dark:text-slate-400"></span></p>
-                            <p class="text-sm"><strong class="font-medium text-slate-900 dark:text-white w-24 inline-block">D.O.B:</strong> <span id="profile-dob" class="text-slate-600 dark:text-slate-400"></span></p>
+        <div class="p-6 border-t border-slate-200 dark:border-slate-800">
+            <button id="logout-btn"
+                    class="w-full bg-red-600 text-white font-medium py-2 px-4 rounded-lg text-sm hover:bg-red-700 transition duration-150">
+                Logout
+            </button>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 p-8">
+        <div class="max-w-7xl mx-auto">
+            <header class="mb-8">
+                <h1 id="student-welcome" class="text-4xl font-bold text-slate-900 dark:text-white">
+                    Welcome, Student!
+                </h1>
+                <p class="text-slate-500 dark:text-slate-400 mt-2">
+                    Your personalized dashboard and academic overview.
+                </p>
+            </header>
+
+            <!-- DASHBOARD -->
+            <div id="content-dashboard" class="content-section">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                    <!-- Profile -->
+                    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6 lg:col-span-1">
+                        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                            <span class="material-symbols-outlined">person</span>
+                            My Profile
+                        </h2>
+                        <div class="flex flex-col items-center gap-4">
+                            <img id="profile-photo"
+                                 src="https://placehold.co/128x128/f6f7f8/666?text=USER"
+                                 alt="Profile Photo"
+                                 class="w-32 h-32 rounded-full object-cover border-4 border-primary/20 shadow-md"
+                                 onerror="this.src='https://placehold.co/128x128/1173d4/FFFFFF?text=USER'">
+                            <div class="w-full text-left space-y-1">
+                                <p class="text-sm">
+                                    <strong class="font-medium text-slate-900 dark:text-white w-24 inline-block">Name:</strong>
+                                    <span id="profile-name" class="text-slate-600 dark:text-slate-400"></span>
+                                </p>
+                                <p class="text-sm">
+                                    <strong class="font-medium text-slate-900 dark:text-white w-24 inline-block">Email:</strong>
+                                    <span id="profile-email" class="text-slate-600 dark:text-slate-400"></span>
+                                </p>
+                                <p class="text-sm">
+                                    <strong class="font-medium text-slate-900 dark:text-white w-24 inline-block">Phone:</strong>
+                                    <span id="profile-phone" class="text-slate-600 dark:text-slate-400"></span>
+                                </p>
+                                <p class="text-sm">
+                                    <strong class="font-medium text-slate-900 dark:text-white w-24 inline-block">D.O.B:</strong>
+                                    <span id="profile-dob" class="text-slate-600 dark:text-slate-400"></span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Fee tiles -->
+                    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6 lg:col-span-2">
+                        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                            <span class="material-symbols-outlined">payments</span>
+                            Fee Status
+                        </h2>
+                        <div class="grid grid-cols-3 gap-4 text-center">
+                            <div class="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg">
+                                <p class="text-sm text-slate-500">Total Due</p>
+                                <p id="fee-due" class="text-xl font-bold text-slate-900 dark:text-white">₹0.00</p>
+                            </div>
+                            <div class="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg">
+                                <p class="text-sm text-slate-500">Total Paid</p>
+                                <p id="fee-paid" class="text-xl font-bold text-green-600">₹0.00</p>
+                            </div>
+                            <div class="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg">
+                                <p class="text-sm text-slate-500">Balance</p>
+                                <p id="fee-balance" class="text-xl font-bold text-red-600">₹0.00</p>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6 lg:col-span-2">
-                    <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><span class="material-symbols-outlined">payments</span> Fee Status</h2>
-                    <div class="grid grid-cols-3 gap-4 text-center">
-                        <div class="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg"><p class="text-sm text-slate-500">Total Due</p><p id="fee-due" class="text-xl font-bold text-slate-900 dark:text-white">₹0.00</p></div>
-                        <div class="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg"><p class="text-sm text-slate-500">Total Paid</p><p id="fee-paid" class="text-xl font-bold text-green-600">₹0.00</p></div>
-                        <div class="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg"><p class="text-sm text-slate-500">Balance</p><p id="fee-balance" class="text-xl font-bold text-red-600">₹0.00</p></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6">
-                    <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><span class="material-symbols-outlined">how_to_reg</span> Recent Attendance</h2>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                            <thead>
+                <!-- Attendance + Results -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6">
+                        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                            <span class="material-symbols-outlined">schedule</span>
+                            Recent Attendance
+                        </h2>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                                <thead>
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Time</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
                                 </tr>
-                            </thead>
-                            <tbody id="attendance-body" class="divide-y divide-slate-200 dark:divide-slate-700">
-                                <tr><td colspan="3" class="px-6 py-4 text-center">Loading...</td></tr>
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody id="attendance-body" class="divide-y divide-slate-200 dark:divide-slate-700">
+                                <tr>
+                                    <td colspan="3" class="px-6 py-4 text-center">Loading.</td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </div>
 
-                <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6">
-                    <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><span class="material-symbols-outlined">assessment</span> My Results</h2>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                            <thead>
+                    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6">
+                        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                            <span class="material-symbols-outlined">assessment</span>
+                            My Results
+                        </h2>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                                <thead>
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Course</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Assessment</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Score</th>
                                 </tr>
-                            </thead>
-                            <tbody id="grades-body" class="divide-y divide-slate-200 dark:divide-slate-700">
-                                <tr><td colspan="3" class="px-6 py-4 text-center">Loading...</td></tr>
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody id="grades-body" class="divide-y divide-slate-200 dark:divide-slate-700">
+                                <tr>
+                                    <td colspan="3" class="px-6 py-4 text-center">Loading.</td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div id="content-fees" class="content-section hidden">
-            <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">Payment History</h2>
-            <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6">
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                        <thead>
+            <!-- FEES -->
+            <div id="content-fees" class="content-section hidden">
+                <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">Payment History</h2>
+                <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                            <thead>
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Amount Paid</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Method</th>
                             </tr>
-                        </thead>
-                        <tbody id="fee-history-body" class="divide-y divide-slate-200 dark:divide-slate-700">
-                            <tr><td colspan="3" class="px-6 py-4 text-center">Loading...</td></tr>
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody id="fee-history-body" class="divide-y divide-slate-200 dark:divide-slate-700">
+                            <tr>
+                                <td colspan="3" class="px-6 py-4 text-center">Loading.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
-        </div>
-        
-        <div id="content-notes" class="content-section hidden">
-            <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">Shared Course Notes</h2>
-            <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6">
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                        <thead>
+
+            <!-- NOTES -->
+            <div id="content-notes" class="content-section hidden">
+                <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">Shared Course Notes</h2>
+                <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                            <thead>
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Title</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Course</th>
@@ -181,342 +255,475 @@ Logout
                                 <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Download</th>
                             </tr>
-                        </thead>
-                        <tbody id="notes-table-body" class="divide-y divide-slate-200 dark:divide-slate-700">
-                            <tr><td colspan="5" class="px-6 py-4 text-center">Loading...</td></tr>
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody id="notes-table-body" class="divide-y divide-slate-200 dark:divide-slate-700">
+                            <tr>
+                                <td colspan="5" class="px-6 py-4 text-center">Loading.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div id="content-announcements" class="content-section hidden">
-            <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">Institute Announcements</h2>
-            <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6">
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                        <thead>
+            <!-- ANNOUNCEMENTS -->
+            <div id="content-announcements" class="content-section hidden">
+                <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">Institute Announcements</h2>
+                <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                            <thead>
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Title</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Content</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
-                        </tr>
-                    </thead>
-                    <tbody id="announcements-table-body" class="divide-y divide-slate-200 dark:divide-slate-700">
-                    </tbody>
-                </table>
+                            </tr>
+                            </thead>
+                            <tbody id="announcements-table-body" class="divide-y divide-slate-200 dark:divide-slate-700">
+                            <tr>
+                                <td colspan="3" class="px-6 py-4 text-center">Loading.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
+
         </div>
-    </div>
-</main>
-
-
+    </main>
 </div>
 
+<!-- Firebase CDN -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
 
 <script>
-// FIX 1: Keep API_ORIGIN declaration only here, outside the DOMContentLoaded listener.
-const API_ORIGIN = window.location.origin;
-const API_BASE_URL = API_ORIGIN + '/api';
+    const API_ORIGIN = window.location.origin;
+    const API_BASE_URL = API_ORIGIN + '/api';
 
-document.addEventListener(&#39;DOMContentLoaded&#39;, () =&gt; {
-    const logoutBtn = document.getElementById(&#39;logout-btn&#39;);
-    const contentSections = document.querySelectorAll(&#39;.content-section&#39;);
-    const navLinks = document.querySelectorAll(&#39;.nav-link&#39;);
+    // --- PWA Install Logic ---
+    let deferredPrompt;
+    const installBtn = document.getElementById('install-app-btn');
 
-    function showSection(hash) {
-        contentSections.forEach(section =&gt; { section.classList.add(&#39;hidden&#39;); });
-        navLinks.forEach(link =&gt; {
-            link.classList.remove(&#39;bg-primary/10&#39;, &#39;dark:bg-primary/20&#39;, &#39;text-primary&#39;);
-            link.classList.add(&#39;text-slate-700&#39;, &#39;dark:text-slate-300&#39;, &#39;hover:bg-primary/10&#39;, &#39;dark:hover:bg-primary/20&#39;);
-        });
-        let targetId = hash.substring(1) || &#39;dashboard&#39;;
-        let targetSection = document.getElementById(`content-${targetId}`);
-        let targetLink = document.querySelector(`.nav-link[href=&quot;#${targetId}&quot;]`);
-        if (targetSection) {
-            targetSection.classList.remove(&#39;hidden&#39;);
-            if (targetLink) {
-                targetLink.classList.add(&#39;bg-primary/10&#39;, &#39;dark:bg-primary/20&#39;, &#39;text-primary&#39;);
-                targetLink.classList.remove(&#39;text-slate-700&#39;, &#39;dark:text-slate-300&#39;, &#39;hover:bg-primary/10&#39;, &#39;dark:hover:bg-primary/20&#39;);
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        if (installBtn) installBtn.classList.remove('hidden');
+    });
+
+    if (installBtn) {
+        installBtn.addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                installBtn.classList.add('hidden');
             }
-        }
+            deferredPrompt = null;
+        });
     }
 
-    window.addEventListener(&#39;hashchange&#39;, () =&gt; {
-        showSection(window.location.hash);
-        const currentHash = window.location.hash.substring(1) || &#39;dashboard&#39;;
-        
-        // FIX: Ensure data fetching runs on hash change
-        if (currentHash === &#39;fees&#39;) fetchFees();
-        if (currentHash === &#39;announcements&#39;) fetchAnnouncements();
-        if (currentHash === &#39;notes&#39;) fetchSharedNotes(); 
-        // Dashboard data is re-fetched on checkStudentSession/initial load
-    });
-    showSection(window.location.hash);
+    document.addEventListener('DOMContentLoaded', () => {
+        const sections = document.querySelectorAll('.content-section');
+        const navLinks = document.querySelectorAll('.nav-link');
+        const logoutBtn = document.getElementById('logout-btn');
 
-    async function checkStudentSession() {
-        try {
-            // Fetch profile data first
-            const response = await fetch(`${API_ORIGIN}/api/check_session`, {credentials: &#39;include&#39;});
-            
-            if (response.status === 401 || !response.ok) { 
-                throw new Error(&#39;Session check failed&#39;);
+        function showSection(hash) {
+            sections.forEach(s => s.classList.add('hidden'));
+            navLinks.forEach(l => {
+                l.classList.remove('bg-primary/10', 'dark:bg-primary/20', 'text-primary');
+                l.classList.add('text-slate-700', 'dark:text-slate-300', 'hover:bg-primary/10', 'dark:hover:bg-primary/20');
+            });
+
+            let id = hash.replace('#', '') || 'dashboard';
+            const section = document.getElementById(`content-${id}`);
+            const link = document.querySelector(`.nav-link[href="#${id}"]`);
+
+            if (section) section.classList.remove('hidden');
+            if (link) {
+                link.classList.add('bg-primary/10', 'dark:bg-primary/20', 'text-primary');
+                link.classList.remove('text-slate-700', 'dark:text-slate-300', 'hover:bg-primary/10', 'dark:hover:bg-primary/20');
             }
-            
-            const result = await response.json();
-            if (!result.logged_in || result.user.role !== &#39;student&#39;) {
-                window.location.href = API_ORIGIN + &#39;/&#39;;
-            } else {
-                const user = result.user;
-                document.getElementById(&#39;student-welcome&#39;).textContent = `Welcome, ${user.name}!`;
 
-                // Populate Profile Details 
-                const defaultAvatar = `https://placehold.co/128x128/1173d4/FFFFFF?text=${user.name.charAt(0) || &#39;U&#39;}`;
-                const imgElement = document.getElementById(&#39;profile-photo&#39;);
-                const photoUrl = user.profile_photo_url ? `${API_ORIGIN}${user.profile_photo_url}?t=${new Date().getTime()}` : defaultAvatar;
-                imgElement.src = photoUrl;
-                imgElement.onerror = () =&gt; { imgElement.src = defaultAvatar; }; 
-                document.getElementById(&#39;profile-name&#39;).textContent = user.name;
-                document.getElementById(&#39;profile-email&#39;).textContent = user.email;
-                document.getElementById(&#39;profile-phone&#39;).textContent = user.phone_number || &#39;Not provided&#39;;
-                document.getElementById(&#39;profile-dob&#39;).textContent = user.dob || &#39;Not provided&#39;; // Should show D.O.B.
-                
-                // Fetch all dashboard content
-                fetchFees(); 
+            // Trigger data loading per section
+            if (id === 'dashboard') {
                 fetchAttendance();
                 fetchGrades();
-                
-                // !!! INITIALIZE FIREBASE AFTER LOGIN !!!
-                // This is executed asynchronously after the primary UI loads
-                initFirebase(); 
+                fetchFees();
+            } else if (id === 'fees') {
+                fetchFees();
+            } else if (id === 'notes') {
+                fetchSharedNotes();
+            } else if (id === 'announcements') {
+                fetchAnnouncements();
             }
-        } catch (error) { 
-            console.error(&quot;Session check failed:&quot;, error);
-            window.location.href = API_ORIGIN + &#39;/&#39;; 
         }
-    }
 
-    logoutBtn.addEventListener(&#39;click&#39;, async () =&gt; {
-        await fetch(`${API_BASE_URL}/logout`, { method: &#39;POST&#39;, credentials: &#39;include&#39; });
-        window.location.href = API_ORIGIN + &#39;/&#39;;
-    });
-    
-    function handleFetchError(sectionId, message, tableCols) {
-        const tableBody = document.getElementById(sectionId);
-        tableBody.innerHTML = `&lt;tr&gt;&lt;td colspan=&quot;${tableCols}&quot; class=&quot;px-6 py-4 text-center text-red-500&quot;&gt;${message}&lt;/td&gt;&lt;/tr&gt;`;
-    }
-
-    async function fetchAttendance() {
-        const tableBody = document.getElementById(&#39;attendance-body&#39;);
-        try {
-            const response = await fetch(`${API_BASE_URL}/student/attendance`, {credentials: &#39;include&#39;});
-            
-            if (!response.ok) { // Check for server-side errors (400, 500)
-                const errorDetails = await response.json();
-                throw new Error(errorDetails.message || `API Error: ${response.status}`);
-            }
-            
-            const records = await response.json();
-            tableBody.innerHTML = &#39;&#39;;
-            if (records.length === 0) tableBody.innerHTML = &#39;&lt;tr&gt;&lt;td colspan=&quot;3&quot; class=&quot;px-6 py-4 text-center&quot;&gt;No attendance records found.&lt;/td&gt;&lt;/tr&gt;&#39;;
-            else records.forEach(r =&gt; {
-                const statusClass = r.status === &#39;Present&#39; || r.status === &#39;Checked-In&#39; ? &#39;text-green-600&#39; : &#39;text-red-600&#39;;
-                tableBody.innerHTML += `&lt;tr class=&quot;even:bg-slate-50 dark:even:bg-slate-800&quot;&gt;&lt;td class=&quot;px-6 py-4 whitespace-nowrap text-sm&quot;&gt;${r.date}&lt;/td&gt;&lt;td class=&quot;px-6 py-4 whitespace-nowrap text-sm&quot;&gt;${r.time}&lt;/td&gt;&lt;td class=&quot;px-6 py-4 whitespace-nowrap text-sm font-medium ${statusClass}&quot;&gt;${r.status}&lt;/td&gt;&lt;/tr&gt;`;
-            });
-        } catch(e) { 
-            handleFetchError(&#39;attendance-body&#39;, e.message, 3); 
-            console.error(&quot;Attendance load error:&quot;, e); 
-        }
-    }
-    
-    async function fetchGrades() {
-         const tableBody = document.getElementById(&#39;grades-body&#39;);
-         try {
-            const response = await fetch(`${API_BASE_URL}/student/grades`, {credentials: &#39;include&#39;});
-            
-            if (!response.ok) { // Check for server-side errors (400, 500)
-                const errorDetails = await response.json();
-                throw new Error(errorDetails.message || `API Error: ${response.status}`);
-            }
-            
-            const grades = await response.json();
-            tableBody.innerHTML = &#39;&#39;;
-            if (grades.length === 0) tableBody.innerHTML = &#39;&lt;tr&gt;&lt;td colspan=&quot;3&quot; class=&quot;px-6 py-4 text-center&quot;&gt;No grades found.&lt;/td&gt;&lt;/tr&gt;&#39;;
-            else grades.forEach(g =&gt; {
-                // Safety Check: Avoid division by zero if total_marks is 0 or null
-                const totalMarks = g.total_marks || 1; 
-                const percentage = ((g.marks_obtained / totalMarks) * 100).toFixed(0);
-                const scoreClass = percentage &gt;= 70 ? &#39;text-green-600&#39; : percentage &gt;= 50 ? &#39;text-yellow-600&#39; : &#39;text-red-600&#39;;
-                tableBody.innerHTML += `&lt;tr class=&quot;even:bg-slate-50 dark:even:bg-slate-800&quot;&gt;&lt;td class=&quot;px-6 py-4 whitespace-nowrap text-sm&quot;&gt;${g.course_name}&lt;/td&gt;&lt;td class=&quot;px-6 py-4 whitespace-nowrap text-sm&quot;&gt;${g.assessment_name}&lt;/td&gt;&lt;td class=&quot;px-6 py-4 whitespace-nowrap text-sm font-medium ${scoreClass}&quot;&gt;${g.marks_obtained} / ${g.total_marks} (${percentage}%)&lt;/td&gt;&lt;/tr&gt;`;
-            });
-        } catch(e) { 
-            handleFetchError(&#39;grades-body&#39;, e.message, 3);
-            console.error(&quot;Grades load error:&quot;, e); 
-        }
-    }
-
-    async function fetchFees() {
-        const historyBody = document.getElementById(&#39;fee-history-body&#39;);
-        
-        // Set initial loading state for tiles
-        const resetTiles = (text) =&gt; {
-            document.getElementById(&#39;fee-due&#39;).textContent = text;
-            document.getElementById(&#39;fee-paid&#39;).textContent = text;
-            document.getElementById(&#39;fee-balance&#39;).textContent = text;
-        };
-        resetTiles(&#39;Loading...&#39;);
-        historyBody.innerHTML = &#39;&lt;tr&gt;&lt;td colspan=&quot;3&quot; class=&quot;px-6 py-4 text-center&quot;&gt;Loading payment history...&lt;/td&gt;&lt;/tr&gt;&#39;;
-
-        try {
-            const response = await fetch(`${API_BASE_URL}/student/fees`, {credentials: &#39;include&#39;});
-            
-            if (!response.ok) { // Check for server-side errors (400, 500)
-                const errorDetails = await response.json();
-                throw new Error(errorDetails.message || `API Error: ${response.status}`);
-            }
-            
-            const fees = await response.json();
-            
-            // Update Dashboard Tiles
-            document.getElementById(&#39;fee-due&#39;).textContent = `₹${fees.total_due.toFixed(2)}`;
-            document.getElementById(&#39;fee-paid&#39;).textContent = `₹${fees.total_paid.toFixed(2)}`;
-            document.getElementById(&#39;fee-balance&#39;).textContent = `₹${fees.balance.toFixed(2)}`;
-            document.getElementById(&#39;fee-balance&#39;).classList.toggle(&#39;text-red-600&#39;, fees.balance &gt; 0);
-            document.getElementById(&#39;fee-balance&#39;).classList.toggle(&#39;text-green-600&#39;, fees.balance &lt;= 0);
-            
-            // Update History Table
-            historyBody.innerHTML = &#39;&#39;;
-            if (fees.history.length === 0) historyBody.innerHTML = &#39;&lt;tr&gt;&lt;td colspan=&quot;3&quot; class=&quot;px-6 py-4 text-center&quot;&gt;No payment history found.&lt;/td&gt;&lt;/tr&gt;&#39;;
-            else fees.history.forEach(p =&gt; {
-                historyBody.innerHTML += `&lt;tr class=&quot;even:bg-slate-50 dark:even:bg-slate-800&quot;&gt;&lt;td class=&quot;px-6 py-4 whitespace-nowrap text-sm&quot;&gt;${p.date}&lt;/td&gt;&lt;td class=&quot;px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600&quot;&gt;₹${p.amount.toFixed(2)}&lt;/td&gt;&lt;td class=&quot;px-6 py-4 whitespace-nowrap text-sm text-slate-500&quot;&gt;${p.method}&lt;/td&gt;&lt;/tr&gt;`;
-            });
-        } catch(e) { 
-            handleFetchError(&#39;fee-history-body&#39;, e.message, 3); 
-            resetTiles(&#39;Error&#39;); // Reset tiles to Error state on failure
-            console.error(&quot;Fees load error:&quot;, e);
-        }
-    }
-
-    async function fetchAnnouncements() {
-        const tableBody = document.getElementById(&#39;announcements-table-body&#39;);
-        try {
-            const response = await fetch(`${API_BASE_URL}/announcements`, {credentials: &#39;include&#39;});
-            
-            if (!response.ok) { // Check for server-side errors (400, 500)
-                const errorDetails = await response.json();
-                throw new Error(errorDetails.message || `API Error: ${response.status}`);
-            }
-            
-            const announcements = await response.json();
-            tableBody.innerHTML = &#39;&#39;;
-            // Only show announcements targeted to &#39;all&#39; or &#39;students&#39;
-            const relevant = announcements.filter(a =&gt; a.target_group === &#39;all&#39; || a.target_group === &#39;students&#39;);
-            if (relevant.length === 0) { tableBody.innerHTML = `&lt;tr&gt;&lt;td colspan=&quot;3&quot; class=&quot;px-6 py-4 text-center&quot;&gt;No announcements for students.&lt;/td&gt;&lt;/tr&gt;`; return; }
-            relevant.forEach(a =&gt; {
-                tableBody.innerHTML += `&lt;tr class=&quot;even:bg-slate-50 dark:even:bg-slate-800&quot;&gt;&lt;td class=&quot;px-6 py-4 whitespace-nowrap text-sm font-medium&quot;&gt;${a.title}&lt;/td&gt;&lt;td class=&quot;px-6 py-4 text-sm text-slate-500 max-w-lg truncate&quot;&gt;${a.content}&lt;/td&gt;&lt;td class=&quot;px-6 py-4 whitespace-nowrap text-sm text-slate-500&quot;&gt;${a.created_at.split(&#39; &#39;)[0]}&lt;/td&gt;&lt;/tr&gt;`;
-            });
-        } catch(e) { 
-            handleFetchError(&#39;announcements-table-body&#39;, e.message, 3);
-            console.error(&quot;Announcements load error:&quot;, e); 
-        }
-    }
-
-    async function fetchSharedNotes() {
-         const tableBody = document.getElementById(&#39;notes-table-body&#39;);
-         try {
-            const response = await fetch(`${API_BASE_URL}/student/notes`, {credentials: &#39;include&#39;});
-            
-            if (!response.ok) { // Check for server-side errors (400, 500)
-                const errorDetails = await response.json();
-                throw new Error(errorDetails.message || `API Error: ${response.status}`);
-            }
-            
-            const notes = await response.json();
-            tableBody.innerHTML = &#39;&#39;;
-            if (notes.length === 0) { tableBody.innerHTML = `&lt;tr&gt;&lt;td colspan=&quot;5&quot; class=&quot;px-6 py-4 text-center&quot;&gt;No notes shared.&lt;/td&gt;&lt;/tr&gt;`; return; }
-            notes.forEach(note =&gt; {
-                tableBody.innerHTML += `&lt;tr class=&quot;even:bg-slate-50 dark:even:bg-slate-800&quot;&gt;&lt;td class=&quot;px-6 py-4 whitespace-nowrap text-sm font-medium&quot;&gt;${note.title}&lt;/td&gt;&lt;td class=&quot;px-6 py-4 whitespace-nowrap text-sm text-slate-500&quot;&gt;${note.course_name}&lt;/td&gt;&lt;td class=&quot;px-6 py-4 whitespace-nowrap text-sm text-slate-500&quot;&gt;${note.teacher_name}&lt;/td&gt;&lt;td class=&quot;px-6 py-4 whitespace-nowrap text-sm text-slate-500&quot;&gt;${note.created_at.split(&#39; &#39;)[0]}&lt;/td&gt;&lt;td class=&quot;px-6 py-4 whitespace-nowrap text-sm font-medium&quot;&gt;&lt;a href=&quot;${API_ORIGIN}/uploads/${note.filename}&quot; class=&quot;text-primary hover:text-blue-700&quot; download=&quot;${note.original_filename}&quot;&gt;Download&lt;/a&gt;&lt;/td&gt;&lt;/tr&gt;`;
-            });
-        } catch(e) { 
-            handleFetchError(&#39;notes-table-body&#39;, e.message, 5);
-            console.error(&quot;Notes load error:&quot;, e); 
-        }
-    }
-
-    checkStudentSession();
-});
-// FIX 2: Removed redundant API_ORIGIN/API_BASE_URL declarations here, keeping only the final logic block.
-// PWA Logic
-let deferredPrompt;
-const installBtn = document.getElementById(&#39;install-app-btn&#39;);
-window.addEventListener(&#39;beforeinstallprompt&#39;, (e) =&gt; { e.preventDefault(); deferredPrompt = e; installBtn.classList.remove(&#39;hidden&#39;); });
-installBtn.addEventListener(&#39;click&#39;, async () =&gt; { if(deferredPrompt){ deferredPrompt.prompt(); deferredPrompt = null; } });
-
-// --- FIREBASE LOGIC ---
-
-
-function initFirebase() {
-try {
-const firebaseConfig = {
-apiKey: "AIzaSyBkZEHM9fXRoCYSgEW-hk_lN7sL_nSLDfU",
-authDomain: "cst-institute-app.firebaseapp.com",
-projectId: "cst-institute-app",
-storageBucket: "cst-institute-app.firebasestorage.app",
-messagingSenderId: "485166460200",
-appId: "1:485166460200:web:4eae20e2010ab92baeb41d"
-};
-
-    // Initialize
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
-
-    const messaging = firebase.messaging();
-
-    // Register Service Worker
-    if (&#39;serviceWorker&#39; in navigator) {
-        navigator.serviceWorker.register(&#39;/firebase-messaging-sw.js&#39;)
-        .then((registration) =&gt; {
-            console.log(&#39;Service Worker registered:&#39;, registration);
-            
-            // Request Permission &amp; Get Token
-            Notification.requestPermission().then((permission) =&gt; {
-                if (permission === &#39;granted&#39;) {
-                    console.log(&#39;Notification permission granted.&#39;);
-                    
-                    // ========================================================
-                    // 2. PASTE YOUR &quot;VAPID KEY&quot; HERE (from Cloud Messaging tab)
-                    // ========================================================
-                    return messaging.getToken({ 
-                        vapidKey: &#39;BBOMxvKvbEs_t9ykKBa2zIewzCzD6FCbm9rxc8a9eWl2kjjH5vyTSH6TeQMksZ_OGl5jZyQpU2wBcf-KsZN1uko&#39;, 
-                        serviceWorkerRegistration: registration 
-                    });
-                } else {
-                    console.log(&#39;Unable to get permission to notify.&#39;);
-                }
-            }).then((token) =&gt; {
-                if (token) {
-                    console.log(&#39;FCM Token:&#39;, token);
-                    // Send to backend
-                    fetch(&#39;/api/save_fcm_token&#39;, {
-                        method: &#39;POST&#39;,
-                        headers: {&#39;Content-Type&#39;: &#39;application/json&#39;},
-                        body: JSON.stringify({ token: token })
-                    });
-                }
-            }).catch((err) =&gt; {
-                console.log(&#39;An error occurred while retrieving token. &#39;, err);
-            });
+        window.addEventListener('hashchange', () => {
+            showSection(window.location.hash);
         });
+        showSection(window.location.hash);
+
+        function resetTable(id, message, cols) {
+            const body = document.getElementById(id);
+            if (!body) return;
+            body.innerHTML =
+                `<tr><td colspan="${cols}" class="px-6 py-4 text-center text-red-500">${message}</td></tr>`;
+        }
+
+        async function checkStudentSession() {
+            try {
+                const response = await fetch(`${API_ORIGIN}/api/check_session`, {
+                    credentials: 'include'
+                });
+
+                if (response.status === 401 || !response.ok) {
+                    throw new Error('Session check failed');
+                }
+
+                const result = await response.json();
+                if (!result.logged_in || !result.user || result.user.role !== 'student') {
+                    window.location.href = API_ORIGIN + '/';
+                    return;
+                }
+
+                const user = result.user;
+                document.getElementById('student-welcome').textContent = `Welcome, ${user.name}!`;
+
+                // Profile details
+                const defaultAvatar =
+                    `https://placehold.co/128x128/1173d4/FFFFFF?text=${(user.name || 'U').charAt(0)}`;
+                const imgEl = document.getElementById('profile-photo');
+                const photoUrl = user.profile_photo_url
+                    ? `${API_ORIGIN}${user.profile_photo_url}?t=${Date.now()}`
+                    : defaultAvatar;
+                imgEl.src = photoUrl;
+                imgEl.onerror = () => {
+                    imgEl.src = defaultAvatar;
+                };
+
+                document.getElementById('profile-name').textContent = user.name || '';
+                document.getElementById('profile-email').textContent = user.email || '';
+                document.getElementById('profile-phone').textContent = user.phone_number || 'Not provided';
+                document.getElementById('profile-dob').textContent = user.dob || 'Not provided';
+
+                // Initial loads
+                fetchAttendance();
+                fetchGrades();
+                fetchFees();
+                fetchAnnouncements();
+                fetchSharedNotes();
+
+                // Start Firebase after login (small delay to avoid blocking UI)
+                setTimeout(initFirebase, 1500);
+            } catch (error) {
+                console.error('Session check failed:', error);
+                window.location.href = API_ORIGIN + '/';
+            }
+        }
+
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', async () => {
+                try {
+                    await fetch(`${API_BASE_URL}/logout`, {
+                        method: 'POST',
+                        credentials: 'include'
+                    });
+                } catch (e) {
+                    console.error('Logout error:', e);
+                }
+                window.location.href = API_ORIGIN + '/';
+            });
+        }
+
+        // --- DATA FETCHERS ---
+
+        async function fetchAttendance() {
+            const body = document.getElementById('attendance-body');
+            if (!body) return;
+            body.innerHTML =
+                `<tr><td colspan="3" class="px-6 py-4 text-center">Loading attendance.</td></tr>`;
+            try {
+                const response = await fetch(`${API_BASE_URL}/student/attendance`, {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || `API Error: ${response.status}`);
+                }
+
+                if (!Array.isArray(data) || data.length === 0) {
+                    body.innerHTML =
+                        `<tr><td colspan="3" class="px-6 py-4 text-center">No attendance records found.</td></tr>`;
+                    return;
+                }
+
+                body.innerHTML = '';
+                data.forEach(r => {
+                    const statusClass =
+                        (r.status === 'Present' || r.status === 'Checked-In')
+                            ? 'text-green-600'
+                            : 'text-red-600';
+                    body.innerHTML += `
+                        <tr class="even:bg-slate-50 dark:even:bg-slate-800">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">${r.date}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">${r.time}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium ${statusClass}">${r.status}</td>
+                        </tr>`;
+                });
+            } catch (e) {
+                console.error('Attendance load error:', e);
+                resetTable('attendance-body', `Error loading attendance: ${e.message}`, 3);
+            }
+        }
+
+        async function fetchGrades() {
+            const body = document.getElementById('grades-body');
+            if (!body) return;
+            body.innerHTML =
+                `<tr><td colspan="3" class="px-6 py-4 text-center">Loading grades.</td></tr>`;
+            try {
+                const response = await fetch(`${API_BASE_URL}/student/grades`, {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || `API Error: ${response.status}`);
+                }
+
+                if (!Array.isArray(data) || data.length === 0) {
+                    body.innerHTML =
+                        `<tr><td colspan="3" class="px-6 py-4 text-center">No grades found.</td></tr>`;
+                    return;
+                }
+
+                body.innerHTML = '';
+                data.forEach(g => {
+                    const totalMarks = g.total_marks || 1;
+                    const percentage = ((g.marks_obtained / totalMarks) * 100).toFixed(0);
+                    const scoreClass =
+                        percentage >= 70 ? 'text-green-600'
+                            : percentage >= 50 ? 'text-yellow-600'
+                                : 'text-red-600';
+
+                    body.innerHTML += `
+                        <tr class="even:bg-slate-50 dark:even:bg-slate-800">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">${g.course_name}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">${g.assessment_name}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium ${scoreClass}">
+                                ${g.marks_obtained} / ${g.total_marks} (${percentage}%)
+                            </td>
+                        </tr>`;
+                });
+            } catch (e) {
+                console.error('Grades load error:', e);
+                resetTable('grades-body', `Error loading grades: ${e.message}`, 3);
+            }
+        }
+
+        async function fetchFees() {
+            const historyBody = document.getElementById('fee-history-body');
+            if (!historyBody) return;
+
+            const setTiles = (text, isError) => {
+                const dueEl = document.getElementById('fee-due');
+                const paidEl = document.getElementById('fee-paid');
+                const balEl = document.getElementById('fee-balance');
+                if (!dueEl || !paidEl || !balEl) return;
+                dueEl.textContent = text;
+                paidEl.textContent = text;
+                balEl.textContent = text;
+                balEl.classList.toggle('text-red-600', !!isError);
+                balEl.classList.toggle('text-green-600', !isError);
+            };
+
+            setTiles('Loading...', false);
+            historyBody.innerHTML =
+                `<tr><td colspan="3" class="px-6 py-4 text-center">Loading payment history.</td></tr>`;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/student/fees`, {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || `API Error: ${response.status}`);
+                }
+
+                const fees = data;
+                const dueEl = document.getElementById('fee-due');
+                const paidEl = document.getElementById('fee-paid');
+                const balEl = document.getElementById('fee-balance');
+
+                if (dueEl && paidEl && balEl) {
+                    dueEl.textContent = `₹${(fees.total_due || 0).toFixed(2)}`;
+                    paidEl.textContent = `₹${(fees.total_paid || 0).toFixed(2)}`;
+                    balEl.textContent = `₹${(fees.balance || 0).toFixed(2)}`;
+                    balEl.classList.toggle('text-red-600', fees.balance > 0);
+                    balEl.classList.toggle('text-green-600', fees.balance <= 0);
+                }
+
+                historyBody.innerHTML = '';
+                if (!fees.history || fees.history.length === 0) {
+                    historyBody.innerHTML =
+                        `<tr><td colspan="3" class="px-6 py-4 text-center">No payment history found.</td></tr>`;
+                    return;
+                }
+
+                fees.history.forEach(p => {
+                    historyBody.innerHTML += `
+                        <tr class="even:bg-slate-50 dark:even:bg-slate-800">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">${p.date}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">₹${p.amount.toFixed(2)}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${p.method}</td>
+                        </tr>`;
+                });
+            } catch (e) {
+                console.error('Fees load error:', e);
+                resetTable('fee-history-body', `Error loading fees: ${e.message}`, 3);
+                setTiles('Error', true);
+            }
+        }
+
+        async function fetchAnnouncements() {
+            const body = document.getElementById('announcements-table-body');
+            if (!body) return;
+            body.innerHTML =
+                `<tr><td colspan="3" class="px-6 py-4 text-center">Loading announcements.</td></tr>`;
+            try {
+                const response = await fetch(`${API_BASE_URL}/announcements`, {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || `API Error: ${response.status}`);
+                }
+
+                const relevant = data.filter(a => a.target_group === 'all' || a.target_group === 'students');
+                if (relevant.length === 0) {
+                    body.innerHTML =
+                        `<tr><td colspan="3" class="px-6 py-4 text-center">No announcements for students.</td></tr>`;
+                    return;
+                }
+
+                body.innerHTML = '';
+                relevant.forEach(a => {
+                    body.innerHTML += `
+                        <tr class="even:bg-slate-50 dark:even:bg-slate-800">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${a.title}</td>
+                            <td class="px-6 py-4 text-sm text-slate-500 max-w-lg truncate">${a.content}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                                ${a.created_at.split(' ')[0]}
+                            </td>
+                        </tr>`;
+                });
+            } catch (e) {
+                console.error('Announcements load error:', e);
+                resetTable('announcements-table-body', `Error loading announcements: ${e.message}`, 3);
+            }
+        }
+
+        async function fetchSharedNotes() {
+            const body = document.getElementById('notes-table-body');
+            if (!body) return;
+            body.innerHTML =
+                `<tr><td colspan="5" class="px-6 py-4 text-center">Loading notes.</td></tr>`;
+            try {
+                const response = await fetch(`${API_BASE_URL}/student/notes`, {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || `API Error: ${response.status}`);
+                }
+
+                if (!Array.isArray(data) || data.length === 0) {
+                    body.innerHTML =
+                        `<tr><td colspan="5" class="px-6 py-4 text-center">No notes shared.</td></tr>`;
+                    return;
+                }
+
+                body.innerHTML = '';
+                data.forEach(note => {
+                    body.innerHTML += `
+                        <tr class="even:bg-slate-50 dark:even:bg-slate-800">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${note.title}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${note.course_name}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${note.teacher_name}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                                ${note.created_at.split(' ')[0]}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <a href="${API_ORIGIN}/uploads/${note.filename}"
+                                   class="text-primary hover:text-blue-700"
+                                   download="${note.original_filename}">
+                                    Download
+                                </a>
+                            </td>
+                        </tr>`;
+                });
+            } catch (e) {
+                console.error('Notes load error:', e);
+                resetTable('notes-table-body', `Error loading notes: ${e.message}`, 5);
+            }
+        }
+
+        // Kick off auth + initial load
+        checkStudentSession();
+    });
+
+    // --- FIREBASE PUSH NOTIFICATIONS ---
+    function initFirebase() {
+        try {
+            const firebaseConfig = {
+                apiKey: "AIzaSyBkZEHM9fXRoCYSgEW-hk_lN7sL_nSLDfU",
+                authDomain: "cst-institute-app.firebaseapp.com",
+                projectId: "cst-institute-app",
+                storageBucket: "cst-institute-app.firebasestorage.app",
+                messagingSenderId: "485166460200",
+                appId: "1:485166460200:web:4eae20e2010ab92baeb41d"
+            };
+
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
+
+            const messaging = firebase.messaging();
+
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/firebase-messaging-sw.js').then((registration) => {
+                    return Notification.requestPermission().then((permission) => {
+                        if (permission !== 'granted') {
+                            console.log('Notification permission not granted.');
+                            return null;
+                        }
+                        return messaging.getToken({
+                            vapidKey: 'BBOMxvKvbEs_t9ykKBa2zIewzCzD6FCbm9rxc8a9eWl2kjjH5vyTSH6TeQMksZ_OGl5jZyQpU2wBcf-KsZN1uko',
+                            serviceWorkerRegistration: registration
+                        });
+                    });
+                }).then((token) => {
+                    if (!token) return;
+                    console.log('FCM Token:', token);
+                    return fetch('/api/save_fcm_token', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        credentials: 'include',
+                        body: JSON.stringify({token})
+                    });
+                }).catch((err) => {
+                    console.log('Firebase messaging error:', err);
+                });
+            }
+        } catch (e) {
+            console.log('Firebase init error (notifications disabled):', e);
+        }
     }
-} catch(e) { console.log(&quot;Firebase Error (Notifications disabled):&quot;, e); }
-}
-
-
 </script>
-
 </body>
 </html>
