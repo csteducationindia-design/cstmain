@@ -79,11 +79,23 @@
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6">
                         <h2 class="text-2xl font-bold mb-4">Recent Attendance</h2>
-                        <table class="min-w-full"><tbody id="attendance-body"></tbody></table>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                                <tbody id="attendance-body">
+                                    <tr><td colspan="3" class="px-6 py-4 text-center">Loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                     <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6">
                         <h2 class="text-2xl font-bold mb-4">Recent Results</h2>
-                        <table class="min-w-full"><tbody id="grades-body"></tbody></table>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                                <tbody id="grades-body">
+                                    <tr><td colspan="3" class="px-6 py-4 text-center">Loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -140,50 +152,71 @@
             
             if(el) el.classList.remove('hidden');
             if(link) link.classList.add('bg-primary/10', 'text-primary');
+            
+            // Trigger data fetch on navigation for the visible section
+            if (id === 'messages') loadMessages();
+            if (id === 'announcements') fetchAnnouncements();
+            if (id === 'dashboard') {
+                 const select = document.getElementById('child-select');
+                 if (select.value) fetchChildData(select.value);
+            }
         }
         
         window.addEventListener('hashchange', () => {
             showSection(window.location.hash);
-            if(window.location.hash === '#messages') loadMessages();
-            if(window.location.hash === '#announcements') fetchAnnouncements();
         });
         showSection(window.location.hash);
+        
+        function resetTable(id, message = "No data available", cols = 3) {
+            const tableBody = document.getElementById(id);
+            tableBody.innerHTML = `<tr><td colspan="${cols}" class="p-4 text-center text-red-500">${message}</td></tr>`;
+        }
 
         // --- Auth & Data Loading ---
         async function checkParentSession() {
             try {
                 const res = await fetch(`${API_ORIGIN}/api/check_session`, {credentials: 'include'});
                 const data = await res.json();
-                if (!data.logged_in || data.user.role !== 'parent') {
+                if (!res.ok || !data.logged_in || data.user.role !== 'parent') {
                     window.location.href = API_ORIGIN + '/';
                 } else {
                     document.getElementById('parent-welcome').textContent = `Welcome, ${data.user.name}!`;
                     // 1. Load Data First
                     await loadChildren();
-                    loadMessages();
+                    
                     // 2. Then Initialize Firebase (Safe Mode)
                     setTimeout(initFirebase, 2000); 
                 }
             } catch (error) {
-                console.error(error);
-                alert("Error connecting to server. Please refresh.");
+                console.error("Parent session error:", error);
+                // Fail safe: Redirect to login if initial check fails
+                window.location.href = API_ORIGIN + '/';
             }
         }
 
         async function loadChildren() {
             try {
                 const res = await fetch(`${API_BASE_URL}/parent/children`, {credentials: 'include'});
+                
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.message || `API Error: ${res.status}`);
+                }
+                
                 const children = await res.json();
                 const select = document.getElementById('child-select');
                 select.innerHTML = '<option value="">Select your child...</option>';
                 
                 if (children.length === 0) {
-                    alert("No children linked to your account. Please contact Admin.");
+                    select.innerHTML = '<option value="">No children linked to account.</option>';
+                    resetTable('attendance-body', 'No children linked.');
+                    resetTable('grades-body', 'No children linked.');
                     return;
                 }
                 
                 children.forEach(c => select.innerHTML += `<option value="${c.id}">${c.name}</option>`);
                 
+                // If only one child, auto-select and load data
                 if (children.length === 1) {
                     select.value = children[0].id;
                     fetchChildData(children[0].id);
@@ -192,36 +225,141 @@
                 select.addEventListener('change', () => {
                     if(select.value) fetchChildData(select.value);
                 });
-            } catch (e) { console.error(e); }
+            } catch (e) { 
+                console.error("Load children error:", e);
+                resetTable('attendance-body', 'Error loading children list.');
+                resetTable('grades-body', 'Error loading children list.');
+            }
         }
 
         async function fetchChildData(id) {
+            resetTable('attendance-body', 'Loading attendance...');
+            resetTable('grades-body', 'Loading results...');
+            
             try {
                 const res = await fetch(`${API_BASE_URL}/parent/child_data/${id}`, {credentials: 'include'});
-                if(!res.ok) throw new Error("Failed to load data");
+                
+                if(!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.message || `API Error: ${res.status}`);
+                }
+                
                 const data = await res.json();
                 
+                // Update profile and title
+                document.getElementById('child-dashboard-title').textContent = `${data.profile.name}'s Dashboard`;
                 document.getElementById('profile-name').textContent = data.profile.name;
                 document.getElementById('profile-email').textContent = data.profile.email;
                 document.getElementById('profile-phone').textContent = data.profile.phone_number || 'N/A';
                 
-                document.getElementById('fee-due').textContent = `₹${data.fees.total_due}`;
-                document.getElementById('fee-paid').textContent = `₹${data.fees.total_paid}`;
-                document.getElementById('fee-balance').textContent = `₹${data.fees.balance}`;
+                // Update Fees
+                document.getElementById('fee-due').textContent = `₹${data.fees.total_due.toFixed(2)}`;
+                document.getElementById('fee-paid').textContent = `₹${data.fees.total_paid.toFixed(2)}`;
+                document.getElementById('fee-balance').textContent = `₹${data.fees.balance.toFixed(2)}`;
                 
-                // Populate Tables (Simplified for brevity)
+                // Populate Attendance Table
                 const attBody = document.getElementById('attendance-body');
-                attBody.innerHTML = data.attendance.map(r => `<tr><td class="p-2 border-b">${r.date}</td><td class="p-2 border-b">${r.time}</td><td class="p-2 border-b">${r.status}</td></tr>`).join('') || '<tr><td colspan="3" class="p-4 text-center">No data</td></tr>';
+                if (data.attendance.length === 0) {
+                    resetTable('attendance-body', 'No attendance records.', 3);
+                } else {
+                    attBody.innerHTML = data.attendance.map(r => `
+                        <tr>
+                            <td class="p-2 border-b text-sm">${r.date}</td>
+                            <td class="p-2 border-b text-sm">${r.time}</td>
+                            <td class="p-2 border-b text-sm font-medium ${r.status === 'Present' ? 'text-green-600' : 'text-red-600'}">${r.status}</td>
+                        </tr>
+                    `).join('');
+                }
                 
+                // Populate Grades Table
                 const gradeBody = document.getElementById('grades-body');
-                gradeBody.innerHTML = data.grades.map(g => `<tr><td class="p-2 border-b">${g.course_name}</td><td class="p-2 border-b">${g.assessment_name}</td><td class="p-2 border-b">${g.marks_obtained}/${g.total_marks}</td></tr>`).join('') || '<tr><td colspan="3" class="p-4 text-center">No data</td></tr>';
+                if (data.grades.length === 0) {
+                    resetTable('grades-body', 'No assessment results.', 3);
+                } else {
+                    gradeBody.innerHTML = data.grades.map(g => {
+                        const score = g.marks_obtained / g.total_marks;
+                        const percentage = isNaN(score) ? 'N/A' : (score * 100).toFixed(0) + '%';
+                        return `
+                            <tr>
+                                <td class="p-2 border-b text-sm">${g.course_name}</td>
+                                <td class="p-2 border-b text-sm">${g.assessment_name}</td>
+                                <td class="p-2 border-b text-sm">${g.marks_obtained} / ${g.total_marks} (${percentage})</td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
                 
-            } catch (e) { console.error(e); }
+            } catch (e) { 
+                console.error("Fetch Child Data Error:", e);
+                resetTable('attendance-body', `Error fetching data: ${e.message}`, 3);
+                resetTable('grades-body', `Error fetching data: ${e.message}`, 3);
+            }
         }
 
-        // Placeholder functions for others
-        async function loadMessages() { /* Fetch logic similar to above */ }
-        async function fetchAnnouncements() { /* Fetch logic similar to above */ }
+        async function loadMessages() {
+            const tableBody = document.getElementById('messages-body');
+            resetTable('messages-body', 'Loading messages...', 4);
+            try {
+                 const res = await fetch(`${API_BASE_URL}/parent/messages`, {credentials: 'include'});
+                 if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.message || `API Error: ${res.status}`);
+                 }
+                 const messages = await res.json();
+                 
+                 if (messages.length === 0) {
+                     resetTable('messages-body', 'No messages found.', 4);
+                     return;
+                 }
+                 
+                 tableBody.innerHTML = messages.map(m => `
+                    <tr>
+                        <td class="p-2 border-b font-medium">${m.sender_name}</td>
+                        <td class="p-2 border-b text-sm text-slate-500 max-w-md truncate">${m.content}</td>
+                        <td class="p-2 border-b text-sm text-slate-500">${m.sent_at.split(' ')[0]}</td>
+                    </tr>
+                 `).join('');
+                 
+            } catch (e) {
+                 console.error("Load messages error:", e);
+                 resetTable('messages-body', `Error loading messages: ${e.message}`, 4);
+            }
+        }
+        
+        async function fetchAnnouncements() {
+            const tableBody = document.getElementById('announcements-table-body');
+            resetTable('announcements-table-body', 'Loading announcements...', 3);
+            try {
+                const response = await fetch(`${API_BASE_URL}/announcements`, {credentials: 'include'});
+                
+                if (!response.ok) {
+                    const errorDetails = await response.json();
+                    throw new Error(errorDetails.message || `API Error: ${response.status}`);
+                }
+                
+                const announcements = await response.json();
+                
+                const relevant = announcements.filter(a => a.target_group === 'all' || a.target_group === 'parents');
+                
+                if (relevant.length === 0) { 
+                    resetTable('announcements-table-body', 'No announcements for parents.', 3);
+                    return; 
+                }
+                
+                tableBody.innerHTML = relevant.map(a => `
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${a.title}</td>
+                        <td class="px-6 py-4 text-sm text-slate-500 max-w-lg truncate">${a.content}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${a.created_at.split(' ')[0]}</td>
+                    </tr>
+                `).join('');
+                
+            } catch(e) { 
+                console.error("Announcements load error:", e); 
+                resetTable('announcements-table-body', `Error loading announcements: ${e.message}`, 3);
+            }
+        }
+
 
         document.getElementById('logout-btn').addEventListener('click', async () => {
             await fetch(`${API_BASE_URL}/logout`, {method: 'POST', credentials: 'include'});
@@ -261,5 +399,3 @@
         } catch(e) { console.log("Firebase Error (Notifications disabled):", e); }
     }
 </script>
-</body>
-</html>
