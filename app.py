@@ -1374,47 +1374,60 @@ def fee_pending_report():
 @login_required
 def get_student_fees():
     if current_user.role != 'student': return jsonify({"message": "Access denied"}), 403
+    
+    try: # Added Try Block
+        status = calculate_fee_status(current_user.id)
+        payments = Payment.query.filter_by(student_id=current_user.id).order_by(Payment.payment_date.desc()).all()
 
-    status = calculate_fee_status(current_user.id)
-    payments = Payment.query.filter_by(student_id=current_user.id).order_by(Payment.payment_date.desc()).all()
+        history = [{
+            "date": p.payment_date.strftime('%Y-%m-%d'),
+            "amount": p.amount_paid,
+            "method": p.payment_method
+        } for p in payments]
 
-    history = [{
-        "date": p.payment_date.strftime('%Y-%m-%d'),
-        "amount": p.amount_paid,
-        "method": p.payment_method
-    } for p in payments]
+        return jsonify({
+            **status,
+            "history": history
+        })
+    except Exception as e: # Added Exception Handler
+        print(f"ERROR fetching fees for student {current_user.id}: {e}")
+        return jsonify({"message": f"Error loading fees: {e}"}), 500
 
-    return jsonify({
-        **status,
-        "history": history
-    })
 
 @app.route('/api/student/attendance', methods=['GET'])
 @login_required
 def get_student_attendance():
     if current_user.role != 'student': return jsonify({"message": "Access denied"}), 403
-    attendance_records = Attendance.query.filter_by(student_id=current_user.id).order_by(Attendance.check_in_time.desc()).limit(10).all()
-    return jsonify([{
-        "date": r.check_in_time.strftime('%Y-%m-%d'),
-        "time": r.check_in_time.strftime('%I:%M %p'),
-        "status": r.status
-    } for r in attendance_records])
+    try: # Added Try Block
+        attendance_records = Attendance.query.filter_by(student_id=current_user.id).order_by(Attendance.check_in_time.desc()).limit(10).all()
+        return jsonify([{
+            "date": r.check_in_time.strftime('%Y-%m-%d'),
+            "time": r.check_in_time.strftime('%I:%M %p'),
+            "status": r.status
+        } for r in attendance_records])
+    except Exception as e: # Added Exception Handler
+        print(f"ERROR fetching attendance for student {current_user.id}: {e}")
+        return jsonify({"message": f"Error loading attendance: {e}"}), 500
 
 @app.route('/api/student/grades', methods=['GET'])
 @login_required
 def get_student_grades():
     if current_user.role != 'student': return jsonify({"message": "Access denied"}), 403
-    grades = Grade.query.filter_by(student_id=current_user.id).all()
-    grade_data = []
-    for grade in grades:
-        course = db.session.get(Course, grade.course_id)
-        grade_data.append({
-            "course_name": course.name if course else "N/A",
-            "assessment_name": grade.assessment_name,
-            "marks_obtained": grade.marks_obtained,
-            "total_marks": grade.total_marks
-        })
-    return jsonify(grade_data)
+    try: # Added Try Block
+        grades = Grade.query.filter_by(student_id=current_user.id).all()
+        grade_data = []
+        for grade in grades:
+            course = db.session.get(Course, grade.course_id)
+            grade_data.append({
+                "course_name": course.name if course else "N/A",
+                "assessment_name": grade.assessment_name,
+                "marks_obtained": grade.marks_obtained,
+                "total_marks": grade.total_marks
+            })
+        return jsonify(grade_data)
+    except Exception as e: # Added Exception Handler
+        print(f"ERROR fetching grades for student {current_user.id}: {e}")
+        return jsonify({"message": f"Error loading grades: {e}"}), 500
 
 @app.route('/api/student/notes', methods=['GET'])
 @login_required
@@ -1422,11 +1435,15 @@ def get_student_notes():
     if current_user.role != 'student':
         return jsonify({"message": "Access denied"}), 403
     
-    # Students now see notes for courses they are enrolled in
-    student_course_ids = [c.id for c in current_user.courses_enrolled]
-    notes = SharedNote.query.filter(SharedNote.course_id.in_(student_course_ids)).order_by(SharedNote.created_at.desc()).all()
-    
-    return jsonify([note.to_dict() for note in notes])
+    try: # Added Try Block
+        # Students now see notes for courses they are enrolled in
+        student_course_ids = [c.id for c in current_user.courses_enrolled]
+        notes = SharedNote.query.filter(SharedNote.course_id.in_(student_course_ids)).order_by(SharedNote.created_at.desc()).all()
+        
+        return jsonify([note.to_dict() for note in notes])
+    except Exception as e: # Added Exception Handler
+        print(f"ERROR fetching notes for student {current_user.id}: {e}")
+        return jsonify({"message": f"Error loading notes: {e}"}), 500
 
 
 # --- Teacher API Endpoints ---
@@ -1624,28 +1641,7 @@ def teacher_attendance_report():
         Course.id.in_(teacher_course_ids)
     ).distinct().all()
 
-    report = []
-
-    for student in enrolled_students:
-        total_classes = Attendance.query.filter_by(student_id=student.id).count()
-        present_records = Attendance.query.filter_by(student_id=student.id).filter(
-            Attendance.status.in_(['Present', 'Checked-In'])
-        ).count()
-        absent_records = total_classes - present_records
-
-        percentage = round((present_records / total_classes) * 100) if total_classes > 0 else 0
-
-        report.append({
-            "student_id": student.id,
-            "student_name": student.name,
-            "phone_number": student.phone_number,
-            "total_classes": total_classes,
-            "present": present_records,
-            "absent": absent_records,
-            "percentage": percentage
-        })
-
-    return jsonify(report)
+    return jsonify([s.to_dict() for s in enrolled_students])
 
 @app.route('/api/teacher/notes', methods=['GET', 'DELETE'])
 @login_required
@@ -2143,11 +2139,11 @@ def initialize_database():
     with app.app_context():
         # Create tables if they don't exist
         db.create_all()
-        print("--- Database Tables Created/Verified ---")
+        print("--- Database Tables Created/Verified ---\r\n")
         
         # Run migration check just in case
         check_and_upgrade_db()
-        print("--- Database Schema Upgraded/Verified ---")
+        print("--- Database Schema Upgraded/Verified ---\r\n")
 
 if __name__ == '__main__':
     initialize_database() 
