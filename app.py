@@ -2124,6 +2124,11 @@ def send_push_notification(user_id, title, body):
             return False
     return False
 
+# --- NEW HEALTH CHECK ENDPOINT ---
+@app.route('/healthz', methods=['GET'])
+def health_check():
+    """A simple, unprotected endpoint for external health monitoring."""
+    return "OK", 200
 
 # --- Run Application ---
 # NEW: Define a dedicated function for database setup
