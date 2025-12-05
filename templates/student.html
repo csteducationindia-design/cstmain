@@ -266,7 +266,7 @@
                     const user = result.user;
                     document.getElementById('student-welcome').textContent = `Welcome, ${user.name}!`;
 
-                    // Populate Profile Details
+                    // Populate Profile Details (CRITICAL STEP 1)
                     const defaultAvatar = `https://placehold.co/128x128/1173d4/FFFFFF?text=${user.name.charAt(0) || 'U'}`;
                     const imgElement = document.getElementById('profile-photo');
                     const photoUrl = user.profile_photo_url ? `${API_ORIGIN}${user.profile_photo_url}?t=${new Date().getTime()}` : defaultAvatar;
@@ -277,8 +277,8 @@
                     document.getElementById('profile-phone').textContent = user.phone_number || 'Not provided';
                     document.getElementById('profile-dob').textContent = user.dob || 'Not provided'; // Should show D.O.B.
                     
-                    // Fetch all dashboard content
-                    fetchFees(); // Loads fee status and history
+                    // Fetch all dashboard content (CRITICAL STEP 2: Initiate data loading)
+                    fetchFees(); 
                     fetchAttendance();
                     fetchGrades();
                     
@@ -296,11 +296,22 @@
             await fetch(`${API_BASE_URL}/logout`, { method: 'POST', credentials: 'include' });
             window.location.href = API_ORIGIN + '/';
         });
+        
+        function handleFetchError(sectionId, message, tableCols) {
+            const tableBody = document.getElementById(sectionId);
+            tableBody.innerHTML = `<tr><td colspan="${tableCols}" class="px-6 py-4 text-center text-red-500">${message}</td></tr>`;
+        }
 
         async function fetchAttendance() {
             const tableBody = document.getElementById('attendance-body');
             try {
                 const response = await fetch(`${API_BASE_URL}/student/attendance`, {credentials: 'include'});
+                
+                if (!response.ok) { // Check for server-side errors (400, 500)
+                    const errorDetails = await response.json();
+                    throw new Error(errorDetails.message || `API Error: ${response.status}`);
+                }
+                
                 const records = await response.json();
                 tableBody.innerHTML = '';
                 if (records.length === 0) tableBody.innerHTML = '<tr><td colspan="3" class="px-6 py-4 text-center">No attendance records found.</td></tr>';
@@ -308,38 +319,56 @@
                     const statusClass = r.status === 'Present' || r.status === 'Checked-In' ? 'text-green-600' : 'text-red-600';
                     tableBody.innerHTML += `<tr class="even:bg-slate-50 dark:even:bg-slate-800"><td class="px-6 py-4 whitespace-nowrap text-sm">${r.date}</td><td class="px-6 py-4 whitespace-nowrap text-sm">${r.time}</td><td class="px-6 py-4 whitespace-nowrap text-sm font-medium ${statusClass}">${r.status}</td></tr>`;
                 });
-            } catch(e) { tableBody.innerHTML = '<tr><td colspan="3" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>'; console.error("Attendance load error:", e); }
+            } catch(e) { 
+                handleFetchError('attendance-body', e.message, 3); 
+                console.error("Attendance load error:", e); 
+            }
         }
         
         async function fetchGrades() {
              const tableBody = document.getElementById('grades-body');
              try {
                 const response = await fetch(`${API_BASE_URL}/student/grades`, {credentials: 'include'});
+                
+                if (!response.ok) { // Check for server-side errors (400, 500)
+                    const errorDetails = await response.json();
+                    throw new Error(errorDetails.message || `API Error: ${response.status}`);
+                }
+                
                 const grades = await response.json();
                 tableBody.innerHTML = '';
                 if (grades.length === 0) tableBody.innerHTML = '<tr><td colspan="3" class="px-6 py-4 text-center">No grades found.</td></tr>';
                 else grades.forEach(g => {
-                    const percentage = ((g.marks_obtained / g.total_marks) * 100).toFixed(0);
+                    // Safety Check: Avoid division by zero if total_marks is 0 or null
+                    const totalMarks = g.total_marks || 1; 
+                    const percentage = ((g.marks_obtained / totalMarks) * 100).toFixed(0);
                     const scoreClass = percentage >= 70 ? 'text-green-600' : percentage >= 50 ? 'text-yellow-600' : 'text-red-600';
                     tableBody.innerHTML += `<tr class="even:bg-slate-50 dark:even:bg-slate-800"><td class="px-6 py-4 whitespace-nowrap text-sm">${g.course_name}</td><td class="px-6 py-4 whitespace-nowrap text-sm">${g.assessment_name}</td><td class="px-6 py-4 whitespace-nowrap text-sm font-medium ${scoreClass}">${g.marks_obtained} / ${g.total_marks} (${percentage}%)</td></tr>`;
                 });
-            } catch(e) { tableBody.innerHTML = '<tr><td colspan="3" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>'; console.error("Grades load error:", e); }
+            } catch(e) { 
+                handleFetchError('grades-body', e.message, 3);
+                console.error("Grades load error:", e); 
+            }
         }
 
         async function fetchFees() {
             const historyBody = document.getElementById('fee-history-body');
-            // Set initial loading state for both dashboard tiles and history table
-            document.getElementById('fee-due').textContent = 'Loading...';
-            document.getElementById('fee-paid').textContent = 'Loading...';
-            document.getElementById('fee-balance').textContent = 'Loading...';
+            
+            // Set initial loading state for tiles
+            const resetTiles = (text) => {
+                document.getElementById('fee-due').textContent = text;
+                document.getElementById('fee-paid').textContent = text;
+                document.getElementById('fee-balance').textContent = text;
+            };
+            resetTiles('Loading...');
             historyBody.innerHTML = '<tr><td colspan="3" class="px-6 py-4 text-center">Loading payment history...</td></tr>';
 
             try {
                 const response = await fetch(`${API_BASE_URL}/student/fees`, {credentials: 'include'});
                 
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`Server status ${response.status}. Details: ${errorText.substring(0, 50)}...`);
+                if (!response.ok) { // Check for server-side errors (400, 500)
+                    const errorDetails = await response.json();
+                    throw new Error(errorDetails.message || `API Error: ${response.status}`);
                 }
                 
                 const fees = await response.json();
@@ -358,12 +387,9 @@
                     historyBody.innerHTML += `<tr class="even:bg-slate-50 dark:even:bg-slate-800"><td class="px-6 py-4 whitespace-nowrap text-sm">${p.date}</td><td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">₹${p.amount.toFixed(2)}</td><td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${p.method}</td></tr>`;
                 });
             } catch(e) { 
-                historyBody.innerHTML = '<tr><td colspan="3" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>'; 
+                handleFetchError('fee-history-body', e.message, 3); 
+                resetTiles('Error'); // Reset tiles to Error state on failure
                 console.error("Fees load error:", e);
-                // Reset tiles to Error state on failure
-                document.getElementById('fee-due').textContent = 'Error';
-                document.getElementById('fee-paid').textContent = 'Error';
-                document.getElementById('fee-balance').textContent = 'Error';
             }
         }
 
@@ -371,6 +397,12 @@
             const tableBody = document.getElementById('announcements-table-body');
             try {
                 const response = await fetch(`${API_BASE_URL}/announcements`, {credentials: 'include'});
+                
+                if (!response.ok) { // Check for server-side errors (400, 500)
+                    const errorDetails = await response.json();
+                    throw new Error(errorDetails.message || `API Error: ${response.status}`);
+                }
+                
                 const announcements = await response.json();
                 tableBody.innerHTML = '';
                 // Only show announcements targeted to 'all' or 'students'
@@ -379,20 +411,32 @@
                 relevant.forEach(a => {
                     tableBody.innerHTML += `<tr class="even:bg-slate-50 dark:even:bg-slate-800"><td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${a.title}</td><td class="px-6 py-4 text-sm text-slate-500 max-w-lg truncate">${a.content}</td><td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${a.created_at.split(' ')[0]}</td></tr>`;
                 });
-            } catch(e) { tableBody.innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-center text-red-500">Error loading announcements.</td></tr>`; console.error("Announcements load error:", e); }
+            } catch(e) { 
+                handleFetchError('announcements-table-body', e.message, 3);
+                console.error("Announcements load error:", e); 
+            }
         }
 
         async function fetchSharedNotes() {
              const tableBody = document.getElementById('notes-table-body');
              try {
                 const response = await fetch(`${API_BASE_URL}/student/notes`, {credentials: 'include'});
+                
+                if (!response.ok) { // Check for server-side errors (400, 500)
+                    const errorDetails = await response.json();
+                    throw new Error(errorDetails.message || `API Error: ${response.status}`);
+                }
+                
                 const notes = await response.json();
                 tableBody.innerHTML = '';
                 if (notes.length === 0) { tableBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center">No notes shared.</td></tr>`; return; }
                 notes.forEach(note => {
                     tableBody.innerHTML += `<tr class="even:bg-slate-50 dark:even:bg-slate-800"><td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${note.title}</td><td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${note.course_name}</td><td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${note.teacher_name}</td><td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${note.created_at.split(' ')[0]}</td><td class="px-6 py-4 whitespace-nowrap text-sm font-medium"><a href="${API_ORIGIN}/uploads/${note.filename}" class="text-primary hover:text-blue-700" download="${note.original_filename}">Download</a></td></tr>`;
                 });
-            } catch(e) { tableBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-red-500">Error loading notes.</td></tr>`; console.error("Notes load error:", e); }
+            } catch(e) { 
+                handleFetchError('notes-table-body', e.message, 5);
+                console.error("Notes load error:", e); 
+            }
         }
 
         checkStudentSession();
