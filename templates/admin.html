@@ -664,6 +664,79 @@
         const adminBulkMessageForm = document.getElementById('admin-bulk-message-form');
 
         let searchTimeout;
+        // --- BULK UPLOAD USERS (CSV) ---
+        if (bulkUploadForm) {
+            bulkUploadForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const fileInput = document.getElementById('bulk-file-input');
+                const resultsBox = document.getElementById('bulk-upload-results');
+                const messageEl = document.getElementById('bulk-upload-message');
+                const detailsEl = document.getElementById('bulk-upload-details');
+
+                if (!fileInput.files || fileInput.files.length === 0) {
+                    alert('Please select a CSV file first.');
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+
+                // Show loading message
+                if (resultsBox) resultsBox.classList.remove('hidden');
+                if (messageEl) {
+                    messageEl.textContent = 'Uploading and processing CSV, please wait...';
+                    messageEl.className = 'font-medium mb-2 text-blue-600';
+                }
+                if (detailsEl) detailsEl.innerHTML = '';
+
+                try {
+                    const response = await fetch(`${API_BASE_URL}/bulk_upload/users`, {
+                        method: 'POST',
+                        credentials: 'include',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+
+                    if (messageEl) {
+                        messageEl.textContent = result.message || (response.ok ? 'Upload completed.' : 'Upload failed.');
+                        messageEl.className = 'font-medium mb-2 ' + (response.ok ? 'text-green-600' : 'text-red-600');
+                    }
+
+                    if (detailsEl) {
+                        const details = result.details || {};
+                        const added = details.added || [];
+                        const failed = details.failed || [];
+
+                        let html = '';
+
+                        if (added.length) {
+                            html += `<p class="text-sm text-green-600 mb-1"><strong>Added (${added.length}):</strong> ${added.join(', ')}</p>`;
+                        }
+                        if (failed.length) {
+                            html += `<p class="text-sm text-red-600 mb-1"><strong>Failed (${failed.length}):</strong></p>`;
+                            html += '<ul class="list-disc ml-5 text-sm text-red-600">' +
+                                    failed.map(err => `<li>${err}</li>`).join('') +
+                                    '</ul>';
+                        }
+                        if (!html) {
+                            html = '<p class="text-sm text-slate-600">No detailed info returned.</p>';
+                        }
+
+                        detailsEl.innerHTML = html;
+                    }
+                } catch (error) {
+                    console.error('Bulk upload error:', error);
+                    if (messageEl) {
+                        messageEl.textContent = 'Network / server error while uploading CSV.';
+                        messageEl.className = 'font-medium mb-2 text-red-600';
+                    }
+                    if (detailsEl) detailsEl.innerHTML = '';
+                }
+            });
+        }
+
 
         function updateNavLink(hash) {
             navLinks.forEach(link => {
