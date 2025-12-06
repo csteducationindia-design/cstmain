@@ -1630,24 +1630,57 @@ def send_notification_to_student():
 
     return jsonify({"message": " | ".join(result_messages)}), 200
 
+
 @app.route('/api/teacher/reports/attendance', methods=['GET'])
 @login_required
 def teacher_attendance_report():
     if current_user.role != 'teacher':
         return jsonify({"message": "Access denied"}), 403
 
-    # Filter students by courses taught by the current teacher
-    teacher_course_ids = [c.id for c in Course.query.filter_by(teacher_id=current_user.id).all()]
-    
+    # 1. Get IDs of courses taught by this teacher
+    teacher_course_ids = [
+        c.id for c in Course.query.filter_by(teacher_id=current_user.id).all()
+    ]
+
     if not teacher_course_ids:
+        # No courses assigned to this teacher
         return jsonify([])
 
-    enrolled_students = User.query.join(student_course_association).join(Course).filter(
-        User.role == 'student',
-        Course.id.in_(teacher_course_ids)
-    ).distinct().all()
+    # 2. Get distinct students enrolled in those courses
+    students = (
+        User.query
+        .join(student_course_association)
+        .join(Course)
+        .filter(
+            User.role == 'student',
+            Course.id.in_(teacher_course_ids)
+        )
+        .distinct()
+        .all()
+    )
 
-    return jsonify([s.to_dict() for s in enrolled_students])
+    # 3. Build attendance summary per student
+    report = []
+    for student in students:
+        total_classes = Attendance.query.filter_by(student_id=student.id).count()
+        present_records = (
+            Attendance.query
+            .filter_by(student_id=student.id)
+            .filter(Attendance.status.in_(['Present', 'Checked-In']))
+            .count()
+        )
+        absent_records = total_classes - present_records
+
+        report.append({
+            "student_id": student.id,
+            "student_name": student.name,
+            "phone_number": student.phone_number,
+            "total_classes": total_classes,
+            "present": present_records,
+            "absent": absent_records
+        })
+
+    return jsonify(report)
 
 @app.route('/api/teacher/notes', methods=['GET', 'DELETE'])
 @login_required
