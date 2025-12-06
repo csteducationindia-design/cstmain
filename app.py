@@ -1740,11 +1740,13 @@ def upload_note():
     if file and allowed_file(file.filename, ALLOWED_NOTE_EXTENSIONS):
         original_filename = secure_filename(file.filename)
         ext = os.path.splitext(original_filename)[1]
-        unique_filename = f"{uuid.uuid4()}{ext}" 
+        unique_filename = f"{uuid.uuid4()}{ext}"
         
         try:
+            # Save file to uploads folder
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], unique_filename))
             
+            # Create DB record
             new_note = SharedNote(
                 filename=unique_filename,
                 original_filename=original_filename,
@@ -1756,16 +1758,20 @@ def upload_note():
             db.session.add(new_note)
             db.session.commit()
 
-            # Notify Students about New Note
+            # Notify Students about New Note via PUSH
             try:
                 course = db.session.get(Course, int(course_id))
                 if course and course.students:
                     for student in course.students:
-                        send_push_notification(student.id, "New Study Material", f"New note added in {course.name}: {title}")
+                        send_push_notification(
+                            student.id,
+                            "New Study Material",
+                            f"New note added in {course.name}: {title}"
+                        )
             except Exception as e:
                 print(f"--- Notes Push Error: {e} ---")
 
-            return jsonify({"message": "File uploaded...", "note": new_note.to_dict()}), 201
+            return jsonify({"message": "File uploaded.", "note": new_note.to_dict()}), 201
             
         except Exception as e:
             db.session.rollback()
@@ -1775,33 +1781,33 @@ def upload_note():
 
 
 @app.route('/uploads/<filename>')
-@login_required 
+@login_required
 def serve_uploaded_file(filename):
     if current_user.role not in ['student', 'parent', 'teacher', 'admin']:
         return "Access denied", 403
-        
+
+    # SECURITY: block path traversal (../etc), but allow normal filenames with dots
     if '..' in filename or filename.startswith('/'):
         return "Invalid filename", 400
 
     try:
-        # Security check: Ensure file is in a known table (Notes or Users)
+        # Ensure file is referenced either as a SharedNote or as a profile photo
         note = SharedNote.query.filter_by(filename=filename).first()
         user = User.query.filter_by(profile_photo_url=f"/uploads/{filename}").first()
         
         if not note and not user:
-             return "File not found or unauthorized", 404
-             
+            return "File not found or unauthorized", 404
+
         download_name = note.original_filename if note else filename
-        
+
         return send_from_directory(
             app.config['UPLOAD_FOLDER'],
             filename,
-            as_attachment=True if note else False, # Download notes, display photos
+            as_attachment=True if note else False,  # Download notes, inline for photos
             download_name=download_name if note else None
         )
     except FileNotFoundError:
         return "File not found.", 404
-
 
 # --- Parent API Endpoints (FIXED WITH TRY/EXCEPT) ---
 @app.route('/api/parent/children', methods=['GET'])
