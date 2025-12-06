@@ -314,7 +314,10 @@
 
     if (installBtn) {
         installBtn.addEventListener('click', async () => {
-            if (!deferredPrompt) return;
+            if (!deferredPrompt) {
+        alert('If the install popup does not appear, please use your browser menu: "Install app" or "Add to Home Screen".');
+        return;
+    }
             deferredPrompt.prompt();
             const { outcome } = await deferredPrompt.userChoice;
             if (outcome === 'accepted') {
