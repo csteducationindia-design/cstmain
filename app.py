@@ -16,15 +16,12 @@ import urllib.parse
 from sqlalchemy import or_, inspect, text
 import firebase_admin
 from firebase_admin import credentials, messaging
-import requests
-from flask import redirect, url_for   # (you probably already have these imports at the top)
+
 
 # --- Basic Setup ---
 app = Flask(__name__, template_folder='templates')
 app.config['SECRET_KEY'] = 'a_very_secret_key_that_should_be_changed'
 CORS(app, supports_credentials=True)
-
-
 
 # --- Email Configuration ---
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
@@ -52,7 +49,6 @@ if not os.path.exists(data_dir):
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(data_dir, 'institute.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
-
 
 # --- MIGRATION UTILITY ---
 def check_and_upgrade_db():
@@ -572,54 +568,6 @@ def process_bulk_users(file_stream):
         
     return {"added": users_added, "failed": users_failed}
 
-
-def _get_fcm_access_token():
-    if FCM_CREDENTIALS is None:
-        raise RuntimeError("FCM credentials not configured")
-    req = Request()
-    FCM_CREDENTIALS.refresh(req)
-    return FCM_CREDENTIALS.token
-
-
-def send_push_notification(user_ids, title, body, data=None):
-    """
-    Send FCM HTTP v1 push notifications.
-    """
-    if isinstance(user_ids, int):
-        user_ids = [user_ids]
-
-    tokens = []
-    for uid in user_ids:
-        user = db.session.get(User, uid)
-        if user and getattr(user, "fcm_token", None):
-            tokens.append(user.fcm_token)
-
-    if not tokens:
-        print("FCM v1: No tokens found.")
-        return
-
-    access_token = _get_fcm_access_token()
-
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json",
-    }
-
-    url = f"https://fcm.googleapis.com/v1/projects/{FCM_PROJECT_ID}/messages:send"
-
-    for token in tokens:
-        message = {
-            "message": {
-                "token": token,
-                "notification": {"title": title, "body": body},
-                "data": data or {},
-            }
-        }
-
-        resp = requests.post(url, headers=headers, json=message)
-        print("FCM v1 sent:", resp.status_code, resp.text[:200])
-
-# ---------- END OF ADDITION ----------
 
 # --- Authentication and Session API Endpoints ---
 @app.route('/api/login', methods=['POST'])
@@ -1813,22 +1761,15 @@ def upload_note():
             # Notify Students about New Note via PUSH
             try:
                 course = db.session.get(Course, int(course_id))
-    if course and course.students:
-        student_ids = [s.id for s in course.students]
-
-        send_push_notification(
-            student_ids,
-            "New Study Material",
-            f"New note added in {course.name}: {title}",
-            data={
-                "type": "note",
-                "course_id": str(course.id),
-                "note_id": str(new_note.id),
-            }
-        )
-except Exception as e:
-    print("FCM v1 Notification Error:", e)
-                #print(f"--- Notes Push Error: {e} ---")
+                if course and course.students:
+                    for student in course.students:
+                        send_push_notification(
+                            student.id,
+                            "New Study Material",
+                            f"New note added in {course.name}: {title}"
+                        )
+            except Exception as e:
+                print(f"--- Notes Push Error: {e} ---")
 
             return jsonify({"message": "File uploaded.", "note": new_note.to_dict()}), 201
             
@@ -2291,11 +2232,6 @@ def initialize_database():
         # Run migration check just in case
         check_and_upgrade_db()
         print("--- Database Schema Upgraded/Verified ---\r\n")
-
-@app.route('/')
-def index():
-    # Redirect anyone opening cstai.in to the login page
-    return redirect(url_for('login'))
 
 if __name__ == '__main__':
     initialize_database() 
