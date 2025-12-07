@@ -30,14 +30,24 @@ CORS(app, supports_credentials=True)
 # --- FCM HTTP v1 CONFIG ---
 FCM_PROJECT_ID = "cst-institute-app"  # your Firebase Project ID
 
-FCM_SERVICE_ACCOUNT_FILE = os.path.join(basedir, "firebase-service-account.json")
 
 FCM_SCOPES = ["https://www.googleapis.com/auth/firebase.messaging"]
 
-FCM_CREDENTIALS = service_account.Credentials.from_service_account_file(
-    FCM_SERVICE_ACCOUNT_FILE,
-    scopes=FCM_SCOPES,
-)
+fcm_sa_json = os.getenv("FCM_SERVICE_ACCOUNT_JSON")
+if not fcm_sa_json:
+    print("WARNING: FCM_SERVICE_ACCOUNT_JSON not set. Push notifications will not work.")
+    FCM_CREDENTIALS = None
+else:
+    try:
+        sa_info = json.loads(fcm_sa_json)
+        FCM_CREDENTIALS = service_account.Credentials.from_service_account_info(
+            sa_info,
+            scopes=FCM_SCOPES,
+        )
+    except Exception as e:
+        print("ERROR parsing FCM_SERVICE_ACCOUNT_JSON:", e)
+        FCM_CREDENTIALS = None
+
 
 # --- Email Configuration ---
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
@@ -65,6 +75,7 @@ if not os.path.exists(data_dir):
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(data_dir, 'institute.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+
 
 # --- MIGRATION UTILITY ---
 def check_and_upgrade_db():
@@ -584,6 +595,60 @@ def process_bulk_users(file_stream):
         
     return {"added": users_added, "failed": users_failed}
 
+
+def _get_fcm_access_token():
+    if FCM_CREDENTIALS is None:
+        raise RuntimeError("FCM credentials not configured")
+    req = Request()
+    FCM_CREDENTIALS.refresh(req)
+    return FCM_CREDENTIALS.token
+
+
+def send_push_notification(user_ids, title, body, data=None):
+    """
+    Send FCM HTTP v1 push notifications.
+    """
+    if isinstance(user_ids, int):
+        user_ids = [user_ids]
+
+    tokens = []
+    for uid in user_ids:
+        user = db.session.get(User, uid)
+        if user and getattr(user, "fcm_token", None):
+            tokens.append(user.fcm_token)
+
+    if not tokens:
+        print("FCM v1: No tokens found.")
+        return
+
+    access_token = _get_fcm_access_token()
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
+    }
+
+    url = f"https://fcm.googleapis.com/v1/projects/{FCM_PROJECT_ID}/messages:send"
+
+    for token in tokens:
+        message = {
+            "message": {
+                "token": token,
+                "notification": {"title": title, "body": body},
+                "data": data or {},
+            }
+        }
+
+        resp = requests.post(url, headers=headers, json=message)
+        print("FCM v1 sent:", resp.status_code, resp.text[:200])
+
+# ---------- END OF ADDITION ----------
+
+
+# Now your @app.route definitions start...
+@app.route('/')
+def index():
+    return render_template("index.html")
 
 # --- Authentication and Session API Endpoints ---
 @app.route('/api/login', methods=['POST'])
