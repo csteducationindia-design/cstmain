@@ -17,9 +17,6 @@ from sqlalchemy import or_, inspect, text
 import firebase_admin
 from firebase_admin import credentials, messaging
 import requests
-from google.oauth2 import service_account
-from google.auth.transport.requests import Request
-
 
 
 # --- Basic Setup ---
@@ -27,26 +24,6 @@ app = Flask(__name__, template_folder='templates')
 app.config['SECRET_KEY'] = 'a_very_secret_key_that_should_be_changed'
 CORS(app, supports_credentials=True)
 
-# --- FCM HTTP v1 CONFIG ---
-FCM_PROJECT_ID = "cst-institute-app"  # your Firebase Project ID
-
-
-FCM_SCOPES = ["https://www.googleapis.com/auth/firebase.messaging"]
-
-fcm_sa_json = os.getenv("FCM_SERVICE_ACCOUNT_JSON")
-if not fcm_sa_json:
-    print("WARNING: FCM_SERVICE_ACCOUNT_JSON not set. Push notifications will not work.")
-    FCM_CREDENTIALS = None
-else:
-    try:
-        sa_info = json.loads(fcm_sa_json)
-        FCM_CREDENTIALS = service_account.Credentials.from_service_account_info(
-            sa_info,
-            scopes=FCM_SCOPES,
-        )
-    except Exception as e:
-        print("ERROR parsing FCM_SERVICE_ACCOUNT_JSON:", e)
-        FCM_CREDENTIALS = None
 
 
 # --- Email Configuration ---
@@ -2289,65 +2266,6 @@ def send_push_notification(user_id, title, body):
             print(f"Push Error: {e}")
             return False
     return False
-
-def _get_fcm_access_token():
-    """Generate an OAuth2 access token for FCM HTTP v1."""
-    global FCM_CREDENTIALS
-    req = Request()
-    FCM_CREDENTIALS.refresh(req)
-    return FCM_CREDENTIALS.token
-
-
-def send_push_notification(user_ids, title, body, data=None):
-    """
-    Send FCM HTTP v1 push notifications to students/teachers.
-    user_ids = single int or list of user IDs.
-    """
-
-    if isinstance(user_ids, int):
-        user_ids = [user_ids]
-
-    # Get tokens from DB
-    tokens = []
-    for uid in user_ids:
-        user = db.session.get(User, uid)
-        if user and getattr(user, "fcm_token", None):
-            tokens.append(user.fcm_token)
-
-    if not tokens:
-        print("FCM v1: No tokens found.")
-        return
-
-    try:
-        access_token = _get_fcm_access_token()
-    except Exception as e:
-        print("FCM v1 token error:", e)
-        return
-
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json",
-    }
-
-    url = f"https://fcm.googleapis.com/v1/projects/{FCM_PROJECT_ID}/messages:send"
-
-    for token in tokens:
-        message = {
-            "message": {
-                "token": token,
-                "notification": {
-                    "title": title,
-                    "body": body,
-                },
-                "data": data or {},
-            }
-        }
-
-        try:
-            response = requests.post(url, headers=headers, json=message)
-            print("FCM v1 sent:", response.status_code, response.text[:200])
-        except Exception as e:
-            print("FCM v1 send error:", e)
 
 # --- NEW HEALTH CHECK ENDPOINT (Needed for Coolify) ---
 @app.route('/healthz', methods=['GET'])
