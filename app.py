@@ -644,12 +644,6 @@ def send_push_notification(user_ids, title, body, data=None):
 
 # ---------- END OF ADDITION ----------
 
-
-# Now your @app.route definitions start...
-@app.route('/')
-def index():
-    return render_template("index.html")
-
 # --- Authentication and Session API Endpoints ---
 @app.route('/api/login', methods=['POST'])
 def login():
