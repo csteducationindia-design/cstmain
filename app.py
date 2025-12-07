@@ -17,7 +17,7 @@ from sqlalchemy import or_, inspect, text
 import firebase_admin
 from firebase_admin import credentials, messaging
 import requests
-
+from flask import redirect, url_for   # (you probably already have these imports at the top)
 
 # --- Basic Setup ---
 app = Flask(__name__, template_folder='templates')
@@ -2291,6 +2291,11 @@ def initialize_database():
         # Run migration check just in case
         check_and_upgrade_db()
         print("--- Database Schema Upgraded/Verified ---\r\n")
+
+@app.route('/')
+def index():
+    # Redirect anyone opening cstai.in to the login page
+    return redirect(url_for('login'))
 
 if __name__ == '__main__':
     initialize_database() 
