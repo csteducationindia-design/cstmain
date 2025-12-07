@@ -16,12 +16,28 @@ import urllib.parse
 from sqlalchemy import or_, inspect, text
 import firebase_admin
 from firebase_admin import credentials, messaging
+import requests
+from google.oauth2 import service_account
+from google.auth.transport.requests import Request
+
 
 
 # --- Basic Setup ---
 app = Flask(__name__, template_folder='templates')
 app.config['SECRET_KEY'] = 'a_very_secret_key_that_should_be_changed'
 CORS(app, supports_credentials=True)
+
+# --- FCM HTTP v1 CONFIG ---
+FCM_PROJECT_ID = "cst-institute-app"  # your Firebase Project ID
+
+FCM_SERVICE_ACCOUNT_FILE = os.path.join(basedir, "firebase-service-account.json")
+
+FCM_SCOPES = ["https://www.googleapis.com/auth/firebase.messaging"]
+
+FCM_CREDENTIALS = service_account.Credentials.from_service_account_file(
+    FCM_SERVICE_ACCOUNT_FILE,
+    scopes=FCM_SCOPES,
+)
 
 # --- Email Configuration ---
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
@@ -1761,15 +1777,22 @@ def upload_note():
             # Notify Students about New Note via PUSH
             try:
                 course = db.session.get(Course, int(course_id))
-                if course and course.students:
-                    for student in course.students:
-                        send_push_notification(
-                            student.id,
-                            "New Study Material",
-                            f"New note added in {course.name}: {title}"
-                        )
-            except Exception as e:
-                print(f"--- Notes Push Error: {e} ---")
+    if course and course.students:
+        student_ids = [s.id for s in course.students]
+
+        send_push_notification(
+            student_ids,
+            "New Study Material",
+            f"New note added in {course.name}: {title}",
+            data={
+                "type": "note",
+                "course_id": str(course.id),
+                "note_id": str(new_note.id),
+            }
+        )
+except Exception as e:
+    print("FCM v1 Notification Error:", e)
+                #print(f"--- Notes Push Error: {e} ---")
 
             return jsonify({"message": "File uploaded.", "note": new_note.to_dict()}), 201
             
@@ -2207,6 +2230,65 @@ def send_push_notification(user_id, title, body):
             print(f"Push Error: {e}")
             return False
     return False
+
+def _get_fcm_access_token():
+    """Generate an OAuth2 access token for FCM HTTP v1."""
+    global FCM_CREDENTIALS
+    req = Request()
+    FCM_CREDENTIALS.refresh(req)
+    return FCM_CREDENTIALS.token
+
+
+def send_push_notification(user_ids, title, body, data=None):
+    """
+    Send FCM HTTP v1 push notifications to students/teachers.
+    user_ids = single int or list of user IDs.
+    """
+
+    if isinstance(user_ids, int):
+        user_ids = [user_ids]
+
+    # Get tokens from DB
+    tokens = []
+    for uid in user_ids:
+        user = db.session.get(User, uid)
+        if user and getattr(user, "fcm_token", None):
+            tokens.append(user.fcm_token)
+
+    if not tokens:
+        print("FCM v1: No tokens found.")
+        return
+
+    try:
+        access_token = _get_fcm_access_token()
+    except Exception as e:
+        print("FCM v1 token error:", e)
+        return
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
+    }
+
+    url = f"https://fcm.googleapis.com/v1/projects/{FCM_PROJECT_ID}/messages:send"
+
+    for token in tokens:
+        message = {
+            "message": {
+                "token": token,
+                "notification": {
+                    "title": title,
+                    "body": body,
+                },
+                "data": data or {},
+            }
+        }
+
+        try:
+            response = requests.post(url, headers=headers, json=message)
+            print("FCM v1 sent:", response.status_code, response.text[:200])
+        except Exception as e:
+            print("FCM v1 send error:", e)
 
 # --- NEW HEALTH CHECK ENDPOINT (Needed for Coolify) ---
 @app.route('/healthz', methods=['GET'])
