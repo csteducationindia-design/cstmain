@@ -10,3 +10,4 @@ email_validator
 Flask-Mail
 requests
 firebase-admin
+google-auth>=2.0.0

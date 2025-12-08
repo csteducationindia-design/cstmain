@@ -16,8 +16,91 @@ import urllib.parse
 from sqlalchemy import or_, inspect, text
 import firebase_admin
 from firebase_admin import credentials, messaging
+import logging
+
+# Set up logging to show in Coolify console
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
+# --- Basic Setup ---
+app = Flask(__name__, template_folder='templates')
+# ... existing code ...
+def send_fee_alert_notifications(student_id):
+    student = db.session.get(User, student_id)
+    if not student: return False
+    
+    status = calculate_fee_status(student_id)
+    parent = db.session.get(User, student.parent_id) if student.parent_id else None
+    
+    # Send SMS (using existing logic from send_fee_alert_sms)
+    student_alerted = send_fee_alert_sms(student, status['balance'], status['due_date'])
+    if parent:
+        parent_alerted = send_fee_alert_sms(parent, status['balance'], status['due_date'])
+
+    # Send Push Notification
+    push_title = "Fee Reminder"
+    push_body = f"Fee of Rs {status['balance']:.2f} pending. Due: {status['due_date']}."
+    
+    send_push_notification(student.id, push_title, push_body)
+    if parent:
+        send_push_notification(parent.id, f"Child Alert: {push_title}", push_body)
+    
+    return student_alerted or (parent_alerted if parent else False)
+
+# --- MODIFIED PUSH FUNCTION WITH LOGGING ---
+def send_push_notification(user_id, title, body):
+    # 1. LAZY INITIALIZATION
+    if not firebase_admin._apps:
+        firebase_env = os.environ.get('FIREBASE_CREDENTIALS_JSON')
+        if firebase_env:
+            try:
+                # Clean up the string just in case
+                firebase_env = firebase_env.strip("'").strip('"')
+                cred_dict = json.loads(firebase_env)
+                cred = credentials.Certificate(cred_dict)
+                firebase_admin.initialize_app(cred)
+                logger.info("--- Firebase Lazily Initialized Successfully ---")
+            except Exception as e:
+                logger.error(f"--- FIREBASE INIT FAILED: {e} ---")
+                return False
+        else:
+            logger.warning("--- WARNING: No Firebase Credentials Found ---")
+            return False
+
+    # 2. SEND PUSH
+    with app.app_context(): # Ensure we are in app context to access DB
+        user = db.session.get(User, user_id)
+        
+        if not user:
+            logger.warning(f"Push Failed: User ID {user_id} not found.")
+            return False
+            
+        if not user.fcm_token:
+            logger.warning(f"Push Failed: User {user.name} (ID: {user.id}) has NO FCM Token. They must log in to the App once.")
+            return False
+
+        try:
+            message = messaging.Message(
+                notification=messaging.Notification(title=title, body=body),
+                token=user.fcm_token,
+            )
+            response = messaging.send(message)
+            logger.info(f"Push Sent to {user.name}: {response}")
+            return True
+        except Exception as e:
+            logger.error(f"Push Error for {user.name}: {e}")
+            # If token is invalid (stale), maybe clear it?
+            if 'registration-token-not-registered' in str(e):
+                logger.info(f"Token invalid for {user.name}, clearing it.")
+                user.fcm_token = None
+                db.session.commit()
+            return False
+
+# --- NEW HEALTH CHECK ENDPOINT (Needed for Coolify) ---
+@app.route('/healthz', methods=['GET'])
+def health_check():
+    """A simple, unprotected endpoint
 # --- Basic Setup ---
 app = Flask(__name__, template_folder='templates')
 app.config['SECRET_KEY'] = 'a_very_secret_key_that_should_be_changed'
@@ -1630,24 +1713,57 @@ def send_notification_to_student():
 
     return jsonify({"message": " | ".join(result_messages)}), 200
 
+
 @app.route('/api/teacher/reports/attendance', methods=['GET'])
 @login_required
 def teacher_attendance_report():
     if current_user.role != 'teacher':
         return jsonify({"message": "Access denied"}), 403
 
-    # Filter students by courses taught by the current teacher
-    teacher_course_ids = [c.id for c in Course.query.filter_by(teacher_id=current_user.id).all()]
-    
+    # 1. Get IDs of courses taught by this teacher
+    teacher_course_ids = [
+        c.id for c in Course.query.filter_by(teacher_id=current_user.id).all()
+    ]
+
     if not teacher_course_ids:
+        # No courses assigned to this teacher
         return jsonify([])
 
-    enrolled_students = User.query.join(student_course_association).join(Course).filter(
-        User.role == 'student',
-        Course.id.in_(teacher_course_ids)
-    ).distinct().all()
+    # 2. Get distinct students enrolled in those courses
+    students = (
+        User.query
+        .join(student_course_association)
+        .join(Course)
+        .filter(
+            User.role == 'student',
+            Course.id.in_(teacher_course_ids)
+        )
+        .distinct()
+        .all()
+    )
 
-    return jsonify([s.to_dict() for s in enrolled_students])
+    # 3. Build attendance summary per student
+    report = []
+    for student in students:
+        total_classes = Attendance.query.filter_by(student_id=student.id).count()
+        present_records = (
+            Attendance.query
+            .filter_by(student_id=student.id)
+            .filter(Attendance.status.in_(['Present', 'Checked-In']))
+            .count()
+        )
+        absent_records = total_classes - present_records
+
+        report.append({
+            "student_id": student.id,
+            "student_name": student.name,
+            "phone_number": student.phone_number,
+            "total_classes": total_classes,
+            "present": present_records,
+            "absent": absent_records
+        })
+
+    return jsonify(report)
 
 @app.route('/api/teacher/notes', methods=['GET', 'DELETE'])
 @login_required
@@ -1707,11 +1823,13 @@ def upload_note():
     if file and allowed_file(file.filename, ALLOWED_NOTE_EXTENSIONS):
         original_filename = secure_filename(file.filename)
         ext = os.path.splitext(original_filename)[1]
-        unique_filename = f"{uuid.uuid4()}{ext}" 
+        unique_filename = f"{uuid.uuid4()}{ext}"
         
         try:
+            # Save file to uploads folder
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], unique_filename))
             
+            # Create DB record
             new_note = SharedNote(
                 filename=unique_filename,
                 original_filename=original_filename,
@@ -1723,16 +1841,20 @@ def upload_note():
             db.session.add(new_note)
             db.session.commit()
 
-            # Notify Students about New Note
+            # Notify Students about New Note via PUSH
             try:
                 course = db.session.get(Course, int(course_id))
                 if course and course.students:
                     for student in course.students:
-                        send_push_notification(student.id, "New Study Material", f"New note added in {course.name}: {title}")
+                        send_push_notification(
+                            student.id,
+                            "New Study Material",
+                            f"New note added in {course.name}: {title}"
+                        )
             except Exception as e:
                 print(f"--- Notes Push Error: {e} ---")
 
-            return jsonify({"message": "File uploaded...", "note": new_note.to_dict()}), 201
+            return jsonify({"message": "File uploaded.", "note": new_note.to_dict()}), 201
             
         except Exception as e:
             db.session.rollback()
@@ -1742,33 +1864,33 @@ def upload_note():
 
 
 @app.route('/uploads/<filename>')
-@login_required 
+@login_required
 def serve_uploaded_file(filename):
     if current_user.role not in ['student', 'parent', 'teacher', 'admin']:
         return "Access denied", 403
-        
+
+    # SECURITY: block path traversal (../etc), but allow normal filenames with dots
     if '..' in filename or filename.startswith('/'):
         return "Invalid filename", 400
 
     try:
-        # Security check: Ensure file is in a known table (Notes or Users)
+        # Ensure file is referenced either as a SharedNote or as a profile photo
         note = SharedNote.query.filter_by(filename=filename).first()
         user = User.query.filter_by(profile_photo_url=f"/uploads/{filename}").first()
         
         if not note and not user:
-             return "File not found or unauthorized", 404
-             
+            return "File not found or unauthorized", 404
+
         download_name = note.original_filename if note else filename
-        
+
         return send_from_directory(
             app.config['UPLOAD_FOLDER'],
             filename,
-            as_attachment=True if note else False, # Download notes, display photos
+            as_attachment=True if note else False,  # Download notes, inline for photos
             download_name=download_name if note else None
         )
     except FileNotFoundError:
         return "File not found.", 404
-
 
 # --- Parent API Endpoints (FIXED WITH TRY/EXCEPT) ---
 @app.route('/api/parent/children', methods=['GET'])
