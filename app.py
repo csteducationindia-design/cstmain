@@ -102,9 +102,9 @@ def send_push_notification(user_id, title, body):
 #def health_check():
 #    """A simple, unprotected endpoint
 # --- Basic Setup ---
-app = Flask(__name__, template_folder='templates')
-app.config['SECRET_KEY'] = 'a_very_secret_key_that_should_be_changed'
-CORS(app, supports_credentials=True)
+#app = Flask(__name__, template_folder='templates')
+#app.config['SECRET_KEY'] = 'a_very_secret_key_that_should_be_changed'
+#CORS(app, supports_credentials=True)
 
 # --- Email Configuration ---
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
