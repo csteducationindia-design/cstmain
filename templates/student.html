@@ -10,7 +10,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- Using Material Symbols to match Lucide look -->
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet" />
 
     <!-- Tailwind CSS -->
@@ -26,7 +25,6 @@
         };
     </script>
     <style>
-        /* Hide Scrollbar but keep functionality */
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         .material-symbols-rounded { font-size: 24px; }
@@ -111,7 +109,6 @@
                 <p class="text-blue-100 font-medium text-sm">Download notes shared by your teachers.</p>
             </div>
             <div id="notes-list" class="space-y-4">
-                <!-- Notes injected here -->
                 <div class="text-center py-10 text-gray-400">Loading notes...</div>
             </div>
         </div>
@@ -123,7 +120,6 @@
                 <h3 class="font-bold text-xl">Exam Results</h3>
             </div>
             <div id="grades-list" class="space-y-4">
-                <!-- Grades injected here -->
                 <div class="text-center py-10 text-gray-400">Loading results...</div>
             </div>
         </div>
@@ -135,7 +131,6 @@
                 <h3 class="font-bold text-xl">Attendance History</h3>
             </div>
             <div id="attendance-list" class="space-y-4">
-                <!-- Attendance injected here -->
                 <div class="text-center py-10 text-gray-400">Loading attendance...</div>
             </div>
         </div>
@@ -144,7 +139,6 @@
         <div id="view-notifications" class="view-section hidden animate-fade">
             <h3 class="font-bold text-gray-800 text-xl mb-6">Announcements</h3>
             <div id="notifications-list" class="space-y-4">
-                <!-- Notifications injected here -->
                 <div class="text-center py-10 text-gray-400">No new announcements.</div>
             </div>
         </div>
@@ -176,7 +170,7 @@
                 </button>
             </div>
 
-            <p class="mt-auto text-xs text-gray-300 pt-8 pb-4">CST Institute App v2.0</p>
+            <p class="mt-auto text-xs text-gray-300 pt-8 pb-4">CST Institute App v2.1</p>
         </div>
 
     </main>
@@ -207,9 +201,9 @@
 </div>
 
 <!-- LOADING SCREEN -->
-<div id="loading-screen" class="fixed inset-0 bg-blue-600 z-50 flex flex-col items-center justify-center text-white">
+<div id="loading-screen" class="fixed inset-0 bg-blue-600 z-50 flex flex-col items-center justify-center text-white transition-opacity duration-500">
     <div class="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin mb-4"></div>
-    <p class="font-medium animate-pulse">Loading Student Portal...</p>
+    <p class="font-medium animate-pulse" id="loading-text">Loading Student Portal...</p>
 </div>
 
 <!-- SCRIPTS -->
@@ -228,19 +222,24 @@
     const navButtons = document.querySelectorAll('.nav-btn');
     const viewSections = document.querySelectorAll('.view-section');
 
-    // --- STATE MANAGEMENT ---
-    let currentUser = null;
-    let currentFeeStatus = null;
+    // --- SAFETY TIMER ---
+    // Force hide loader after 5 seconds if connection is slow/broken
+    setTimeout(() => {
+        if (!loadingScreen.classList.contains('hidden')) {
+            console.warn("Forcing app load after timeout");
+            loadingScreen.classList.add('hidden');
+            appContainer.classList.remove('hidden');
+        }
+    }, 5000);
 
     // --- INITIALIZATION ---
     document.addEventListener('DOMContentLoaded', () => {
         checkSession();
-        setupPWA(); // This call now works because function is defined below
+        setupPWA();
     });
 
     // --- NAVIGATION LOGIC ---
     window.switchView = function(viewId) {
-        // 1. Update Title
         const titles = {
             'dashboard': 'Student Portal',
             'academics': 'Academics',
@@ -249,32 +248,30 @@
             'profile': 'My Profile',
             'notifications': 'Notifications'
         };
-        headerTitle.textContent = titles[viewId] || 'Student Portal';
+        if(headerTitle) headerTitle.textContent = titles[viewId] || 'Student Portal';
 
-        // 2. Hide all sections, show target
         viewSections.forEach(el => el.classList.add('hidden'));
-        document.getElementById(`view-${viewId}`).classList.remove('hidden');
+        const target = document.getElementById(`view-${viewId}`);
+        if(target) target.classList.remove('hidden');
 
-        // 3. Update Bottom Nav Active State
         navButtons.forEach(btn => {
             const icon = btn.querySelector('.material-symbols-rounded');
-            const label = btn.querySelector('span:last-child');
             
             if (btn.dataset.target === viewId) {
                 btn.classList.remove('text-gray-400');
                 btn.classList.add('text-blue-600');
-                icon.style.fontVariationSettings = "'FILL' 1, 'wght' 600"; // Filled icon
+                if(icon) icon.style.fontVariationSettings = "'FILL' 1, 'wght' 600";
             } else {
                 btn.classList.add('text-gray-400');
                 btn.classList.remove('text-blue-600');
-                icon.style.fontVariationSettings = "'FILL' 0, 'wght' 400"; // Outlined icon
+                if(icon) icon.style.fontVariationSettings = "'FILL' 0, 'wght' 400";
             }
         });
 
-        // 4. Scroll to top
-        document.getElementById('main-content').scrollTop = 0;
+        const mainContent = document.getElementById('main-content');
+        if(mainContent) mainContent.scrollTop = 0;
 
-        // 5. Trigger specific data loads if needed
+        // Trigger data loads
         if (viewId === 'academics') fetchNotes();
         if (viewId === 'results') fetchGrades();
         if (viewId === 'attendance') fetchAttendance();
@@ -285,95 +282,95 @@
     async function checkSession() {
         try {
             const response = await fetch(`${API_ORIGIN}/api/check_session`, { credentials: 'include' });
+            if (!response.ok) throw new Error('Session invalid');
+            
             const result = await response.json();
 
-            if (response.ok && result.logged_in && result.user.role === 'student') {
-                currentUser = result.user;
-                initApp(currentUser);
+            if (result.logged_in && result.user.role === 'student') {
+                initApp(result.user);
             } else {
-                // Redirect to login if not logged in
                 window.location.href = API_ORIGIN + '/';
             }
         } catch (error) {
             console.error('Session check failed', error);
+            // If check fails, we still try to redirect to login
             window.location.href = API_ORIGIN + '/';
         }
     }
 
     async function initApp(user) {
         try {
-            // Populate static user data
             updateProfileUI(user);
-            
-            // Fetch initial dashboard data
-            await Promise.all([fetchFees(), fetchAttendanceSummary()]);
+            // Fetch initial data but don't let failures block the UI
+            await Promise.allSettled([fetchFees(), fetchAttendanceSummary()]);
         } catch (error) {
-            console.error("Initialization error (continuing anyway):", error);
+            console.error("Initialization error:", error);
         } finally {
-            // ALWAYS hide loader and show app, even if there was an error
-            loadingScreen.classList.add('hidden');
-            appContainer.classList.remove('hidden');
-            
-            // Init Firebase
+            // ALWAYS hide loader
+            if(loadingScreen) loadingScreen.classList.add('hidden');
+            if(appContainer) appContainer.classList.remove('hidden');
             setTimeout(initFirebase, 2000);
         }
     }
 
     // --- UI UPDATERS ---
-
     function updateProfileUI(user) {
+        if (!user) return;
         const initial = user.name ? user.name.charAt(0).toUpperCase() : 'U';
         const photoUrl = user.profile_photo_url ? `${API_ORIGIN}${user.profile_photo_url}` : null;
 
-        // Dashboard Header
-        document.getElementById('dash-name').textContent = user.name.split(' ')[0];
-        document.getElementById('dash-email').textContent = user.email;
-        document.getElementById('dash-profile-initial').textContent = initial;
-        
-        // Profile View
-        document.getElementById('profile-view-name').textContent = user.name;
-        document.getElementById('profile-view-email').textContent = `${user.role} • ${user.email}`;
-        document.getElementById('profile-view-initial').textContent = initial;
+        const safeSetText = (id, text) => {
+            const el = document.getElementById(id);
+            if(el) el.textContent = text;
+        };
 
-        // Images
-        const imgElements = [document.getElementById('dash-profile-img'), document.getElementById('profile-view-img')];
-        const textElements = [document.getElementById('dash-profile-initial'), document.getElementById('profile-view-initial')];
+        safeSetText('dash-name', user.name ? user.name.split(' ')[0] : 'Student');
+        safeSetText('dash-email', user.email);
+        safeSetText('dash-profile-initial', initial);
+        safeSetText('profile-view-name', user.name);
+        safeSetText('profile-view-email', `${user.role} • ${user.email}`);
+        safeSetText('profile-view-initial', initial);
+
+        const imgIds = ['dash-profile-img', 'profile-view-img'];
+        const txtIds = ['dash-profile-initial', 'profile-view-initial'];
 
         if (photoUrl) {
-            imgElements.forEach(img => { img.src = photoUrl; img.classList.remove('hidden'); });
-            textElements.forEach(txt => txt.classList.add('hidden'));
+            imgIds.forEach(id => {
+                const img = document.getElementById(id);
+                if(img) { img.src = photoUrl; img.classList.remove('hidden'); }
+            });
+            txtIds.forEach(id => {
+                const txt = document.getElementById(id);
+                if(txt) txt.classList.add('hidden');
+            });
         }
     }
 
-    // --- DATA FETCHING FUNCTIONS ---
-
+    // --- DATA FETCHING ---
     async function fetchFees() {
         try {
             const res = await fetch(`${API_BASE_URL}/student/fees`, { credentials: 'include' });
+            if (!res.ok) return;
             const data = await res.json();
             
-            if (res.ok) {
-                currentFeeStatus = data;
-                const balance = data.balance || 0;
-                const balanceFormatted = `₹${balance}`;
-                
-                // Dashboard Card
-                document.getElementById('dash-fees').textContent = balanceFormatted;
-                
-                // Profile Page Big Card
-                const profileBalEl = document.getElementById('profile-view-balance');
-                profileBalEl.textContent = balanceFormatted;
-                if (balance > 0) {
-                    profileBalEl.className = "text-4xl font-bold text-red-500";
-                } else {
-                    profileBalEl.className = "text-4xl font-bold text-green-600";
-                }
+            const balance = data.balance || 0;
+            const balanceFormatted = `₹${balance}`;
+            
+            const dashFees = document.getElementById('dash-fees');
+            if(dashFees) dashFees.textContent = balanceFormatted;
+            
+            const profileBal = document.getElementById('profile-view-balance');
+            if(profileBal) {
+                profileBal.textContent = balanceFormatted;
+                profileBal.className = balance > 0 ? "text-4xl font-bold text-red-500" : "text-4xl font-bold text-green-600";
+            }
 
-                // Fee Alert Box
-                const alertBox = document.getElementById('fee-alert');
+            const alertBox = document.getElementById('fee-alert');
+            const alertText = document.getElementById('fee-alert-text');
+            if(alertBox && alertText) {
                 if (balance > 0) {
                     alertBox.classList.remove('hidden');
-                    document.getElementById('fee-alert-text').innerHTML = `You have a balance of <span class="font-bold">₹${balance}</span>. Please clear it before ${data.due_date}.`;
+                    alertText.innerHTML = `You have a balance of <span class="font-bold">₹${balance}</span>. Please clear it before ${data.due_date}.`;
                 } else {
                     alertBox.classList.add('hidden');
                 }
@@ -382,27 +379,25 @@
     }
 
     async function fetchAttendanceSummary() {
-        // Just gets percentage for dashboard
         try {
-            const res = await fetch(`${API_BASE_URL}/reports/attendance`, { credentials: 'include' }); // Uses admin report endpoint filtered or student endpoint if available
-            // Fallback: Calculate from student attendance list if summary endpoint unavailable
-            const res2 = await fetch(`${API_BASE_URL}/student/attendance`, { credentials: 'include' });
-            const data = await res2.json();
-            
-            if (res2.ok && Array.isArray(data)) {
-                const total = data.length;
-                const present = data.filter(r => r.status === 'Present' || r.status === 'Checked-In').length;
-                const percent = total > 0 ? Math.round((present / total) * 100) : 0;
-                document.getElementById('dash-attendance').textContent = `${percent}%`;
+            // Try fetching from reports endpoint first, generic fallback if fails
+            const res = await fetch(`${API_BASE_URL}/student/attendance`, { credentials: 'include' });
+            if(res.ok) {
+                const data = await res.json();
+                if (Array.isArray(data)) {
+                    const total = data.length;
+                    const present = data.filter(r => r.status === 'Present' || r.status === 'Checked-In').length;
+                    const percent = total > 0 ? Math.round((present / total) * 100) : 0;
+                    const dashAtt = document.getElementById('dash-attendance');
+                    if(dashAtt) dashAtt.textContent = `${percent}%`;
+                }
             }
-        } catch (e) { 
-            console.error('Att summary error', e); 
-            document.getElementById('dash-attendance').textContent = '--%';
-        }
+        } catch (e) { console.error('Att summary error', e); }
     }
 
     async function fetchAttendance() {
         const container = document.getElementById('attendance-list');
+        if(!container) return;
         container.innerHTML = '<div class="flex justify-center"><div class="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div></div>';
         
         try {
@@ -410,7 +405,7 @@
             const data = await res.json();
             
             container.innerHTML = '';
-            if (!res.ok || data.length === 0) {
+            if (!res.ok || !Array.isArray(data) || data.length === 0) {
                 container.innerHTML = '<div class="text-center py-10 text-gray-400">No records found.</div>';
                 return;
             }
@@ -421,7 +416,7 @@
                 const day = dateObj.getDate();
                 const isPresent = r.status === 'Present' || r.status === 'Checked-In';
                 
-                const item = `
+                container.innerHTML += `
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
                     <div class="flex items-center gap-5">
                         <div class="flex flex-col items-center justify-center bg-gray-50 border border-gray-200 rounded-xl w-14 h-14">
@@ -437,13 +432,13 @@
                         ${r.status}
                     </div>
                 </div>`;
-                container.innerHTML += item;
             });
         } catch (e) { container.innerHTML = '<div class="text-center text-red-500">Error loading data.</div>'; }
     }
 
     async function fetchGrades() {
         const container = document.getElementById('grades-list');
+        if(!container) return;
         container.innerHTML = '<div class="flex justify-center"><div class="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div></div>';
 
         try {
@@ -451,18 +446,19 @@
             const data = await res.json();
             
             container.innerHTML = '';
-            if (!res.ok || data.length === 0) {
+            if (!res.ok || !Array.isArray(data) || data.length === 0) {
                 container.innerHTML = '<div class="text-center py-10 text-gray-400">No results published yet.</div>';
                 return;
             }
 
             data.forEach(g => {
-                const percentage = Math.round((g.marks_obtained / g.total_marks) * 100);
+                const total = g.total_marks || 100;
+                const percentage = Math.round((g.marks_obtained / total) * 100);
                 const isPass = percentage >= 35;
                 const accentColor = isPass ? 'bg-green-500' : 'bg-red-500';
                 const pillColor = isPass ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700';
 
-                const item = `
+                container.innerHTML += `
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 relative overflow-hidden">
                     <div class="absolute left-0 top-0 bottom-0 w-1.5 ${accentColor}"></div>
                     <div class="flex justify-between items-start mb-4 pl-3">
@@ -477,17 +473,17 @@
                     <div class="pt-3 border-t border-gray-50 flex items-center justify-between pl-3">
                         <span class="text-xs font-bold text-gray-400 uppercase tracking-wide">Score</span>
                         <span class="font-bold text-gray-800 text-lg">
-                            ${g.marks_obtained} <span class="text-gray-400 text-sm font-normal">/ ${g.total_marks}</span>
+                            ${g.marks_obtained} <span class="text-gray-400 text-sm font-normal">/ ${total}</span>
                         </span>
                     </div>
                 </div>`;
-                container.innerHTML += item;
             });
         } catch (e) { container.innerHTML = '<div class="text-center text-red-500">Error loading data.</div>'; }
     }
 
     async function fetchNotes() {
         const container = document.getElementById('notes-list');
+        if(!container) return;
         container.innerHTML = '<div class="flex justify-center"><div class="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div></div>';
 
         try {
@@ -495,13 +491,13 @@
             const data = await res.json();
             
             container.innerHTML = '';
-            if (!res.ok || data.length === 0) {
+            if (!res.ok || !Array.isArray(data) || data.length === 0) {
                 container.innerHTML = '<div class="text-center py-10 text-gray-400">No notes shared.</div>';
                 return;
             }
 
             data.forEach(note => {
-                const item = `
+                container.innerHTML += `
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
                     <div class="flex items-center gap-4 overflow-hidden">
                         <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -516,7 +512,6 @@
                         <span class="material-symbols-rounded">download</span>
                     </a>
                 </div>`;
-                container.innerHTML += item;
             });
         } catch (e) { container.innerHTML = '<div class="text-center text-red-500">Error loading data.</div>'; }
     }
@@ -524,19 +519,17 @@
     async function fetchAnnouncements() {
         const container = document.getElementById('notifications-list');
         const badge = document.getElementById('notif-badge');
+        if(!container) return;
         
         try {
             const res = await fetch(`${API_BASE_URL}/announcements`, { credentials: 'include' });
+            if(!res.ok) return;
             const data = await res.json();
             
-            // Filter
             const relevant = data.filter(a => a.target_group === 'all' || a.target_group === 'students');
             
-            if (relevant.length > 0) {
-                badge.classList.remove('hidden'); // Show dot
-            } else {
-                badge.classList.add('hidden');
-            }
+            if (relevant.length > 0 && badge) badge.classList.remove('hidden');
+            else if (badge) badge.classList.add('hidden');
 
             container.innerHTML = '';
             if (relevant.length === 0) {
@@ -546,7 +539,7 @@
 
             relevant.forEach(notif => {
                 const dateStr = notif.created_at ? notif.created_at.split(' ')[0] : 'Today';
-                const item = `
+                container.innerHTML += `
                 <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex gap-4">
                     <div class="w-10 h-10 rounded-full flex-shrink-0 bg-blue-50 text-blue-600 flex items-center justify-center">
                         <span class="material-symbols-rounded text-sm">campaign</span>
@@ -559,43 +552,47 @@
                         <p class="text-sm text-gray-500 leading-relaxed">${notif.content}</p>
                     </div>
                 </div>`;
-                container.innerHTML += item;
             });
         } catch (e) { console.error(e); }
     }
 
-    // --- LOGOUT & PWA ---
-    document.getElementById('logout-btn').addEventListener('click', async () => {
-        await fetch(`${API_BASE_URL}/logout`, { method: 'POST', credentials: 'include' });
-        window.location.href = API_ORIGIN + '/';
-    });
-
-    // PWA SETUP FUNCTION (FIX FOR REFERENCE ERROR)
+    // --- PWA & LOGOUT ---
     function setupPWA() {
-        let deferredPrompt;
-        const installBtn = document.getElementById('install-app-btn');
-        const installArea = document.getElementById('install-pwa-area');
+        try {
+            let deferredPrompt;
+            const installBtn = document.getElementById('install-app-btn');
+            const installArea = document.getElementById('install-pwa-area');
 
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            installArea.classList.remove('hidden');
-        });
+            if(!installBtn || !installArea) return;
 
-        installBtn.addEventListener('click', async () => {
-            if (!deferredPrompt) return;
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            if (outcome === 'accepted') installArea.classList.add('hidden');
-            deferredPrompt = null;
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                installArea.classList.remove('hidden');
+            });
+
+            installBtn.addEventListener('click', async () => {
+                if (!deferredPrompt) return;
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') installArea.classList.add('hidden');
+                deferredPrompt = null;
+            });
+        } catch (e) { console.warn("PWA setup error", e); }
+    }
+
+    const logoutBtn = document.getElementById('logout-btn');
+    if(logoutBtn) {
+        logoutBtn.addEventListener('click', async () => {
+            await fetch(`${API_BASE_URL}/logout`, { method: 'POST', credentials: 'include' });
+            window.location.href = API_ORIGIN + '/';
         });
     }
 
-    // --- FIREBASE INIT ---
+    // --- FIREBASE ---
     function initFirebase() {
         try {
-            // PASTE YOUR CONFIG FROM firebase_credentials.json HERE
-            // Public config is safe to expose in client-side code
+            // FIREBASE CONFIG - REPLACE WITH YOUR KEYS
             const firebaseConfig = {
                 apiKey: "AIzaSyBkZEHM9fXRoCYSgEW-hk_lN7sL_nSLDfU",
                 authDomain: "cst-institute-app.firebaseapp.com",
@@ -605,21 +602,23 @@
                 appId: "1:485166460200:web:4eae20e2010ab92baeb41d"
             };
 
-            if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-            const messaging = firebase.messaging();
+            if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+                const messaging = firebase.messaging();
 
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/firebase-messaging-sw.js').then((reg) => {
-                    return Notification.requestPermission().then((permission) => {
-                        if (permission === 'granted') {
-                            return messaging.getToken({ vapidKey: 'BBOMxvKvbEs_t9ykKBa2zIewzCzD6FCbm9rxc8a9eWl2kjjH5vyTSH6TeQMksZ_OGl5jZyQpU2wBcf-KsZN1uko', serviceWorkerRegistration: reg });
-                        }
-                    });
-                }).then((token) => {
-                    if (token) fetch('/api/save_fcm_token', { method: 'POST', headers: {'Content-Type': 'application/json'}, credentials: 'include', body: JSON.stringify({token}) });
-                }).catch(console.error);
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.register('/firebase-messaging-sw.js').then((reg) => {
+                        return Notification.requestPermission().then((permission) => {
+                            if (permission === 'granted') {
+                                return messaging.getToken({ vapidKey: 'BBOMxvKvbEs_t9ykKBa2zIewzCzD6FCbm9rxc8a9eWl2kjjH5vyTSH6TeQMksZ_OGl5jZyQpU2wBcf-KsZN1uko', serviceWorkerRegistration: reg });
+                            }
+                        });
+                    }).then((token) => {
+                        if (token) fetch('/api/save_fcm_token', { method: 'POST', headers: {'Content-Type': 'application/json'}, credentials: 'include', body: JSON.stringify({token}) });
+                    }).catch(err => console.log('Firebase error', err));
+                }
             }
-        } catch (e) { console.log('Firebase init error', e); }
+        } catch (e) { console.log('Firebase init skipped'); }
     }
 </script>
 </body>
