@@ -98,9 +98,9 @@ def send_push_notification(user_id, title, body):
             return False
 
 # --- NEW HEALTH CHECK ENDPOINT (Needed for Coolify) ---
-@app.route('/healthz', methods=['GET'])
-def health_check():
-    """A simple, unprotected endpoint
+#@app.route('/healthz', methods=['GET'])
+#def health_check():
+#    """A simple, unprotected endpoint
 # --- Basic Setup ---
 app = Flask(__name__, template_folder='templates')
 app.config['SECRET_KEY'] = 'a_very_secret_key_that_should_be_changed'
