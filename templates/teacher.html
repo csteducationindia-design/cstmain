@@ -58,6 +58,20 @@
             width: 100%;
             border-collapse: collapse;
         }
+        
+        /* Loading Spinner */
+        .spinner {
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #1173d4;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body class="bg-background-light dark:bg-background-dark font-display text-slate-800 dark:text-slate-200 antialiased">
@@ -89,6 +103,16 @@
             <a href="#attendance" class="nav-link group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-primary/5 dark:hover:bg-primary/10">
                 <span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">fact_check</span>
                 <span class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-primary dark:group-hover:text-primary-400">Mark Attendance</span>
+            </a>
+
+            <a href="#syllabus" class="nav-link group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-primary/5 dark:hover:bg-primary/10">
+                <span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">menu_book</span>
+                <span class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-primary dark:group-hover:text-primary-400">Syllabus Tracker</span>
+            </a>
+
+            <a href="#assignments" class="nav-link group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-primary/5 dark:hover:bg-primary/10">
+                <span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">assignment</span>
+                <span class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-primary dark:group-hover:text-primary-400">Assignments</span>
             </a>
             
             <a href="#notes" class="nav-link group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-primary/5 dark:hover:bg-primary/10">
@@ -129,7 +153,7 @@
             </header>
 
             <div id="content-dashboard" class="content-section animate-fade-in">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm p-6 border border-slate-100 dark:border-slate-700">
                         <div class="flex items-center gap-4">
                             <div class="p-3 bg-blue-50 text-blue-600 rounded-xl dark:bg-blue-900/30 dark:text-blue-400">
@@ -164,6 +188,30 @@
                                 <p class="text-2xl font-bold text-slate-900 dark:text-white mt-1" id="total-shared-notes">0</p>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+                    <div class="p-6 border-b border-slate-100 dark:border-slate-700">
+                        <h3 class="font-bold text-slate-900 dark:text-white">My Weekly Timetable</h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                            <thead class="bg-slate-50 dark:bg-slate-800">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Day</th>
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">10:00 AM - 12:00 PM</th>
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">02:00 PM - 04:00 PM</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white dark:bg-surface-dark divide-y divide-slate-200 dark:divide-slate-700 text-sm">
+                                <tr><td class="px-6 py-4 font-medium">Monday</td><td class="px-6 py-4">Java Programming</td><td class="px-6 py-4">C++ Basics</td></tr>
+                                <tr><td class="px-6 py-4 font-medium">Tuesday</td><td class="px-6 py-4">Python Advanced</td><td class="px-6 py-4">Java Programming</td></tr>
+                                <tr><td class="px-6 py-4 font-medium">Wednesday</td><td class="px-6 py-4">C++ Basics</td><td class="px-6 py-4">Tally Prime</td></tr>
+                                <tr><td class="px-6 py-4 font-medium">Thursday</td><td class="px-6 py-4">Tally Prime</td><td class="px-6 py-4">Python Advanced</td></tr>
+                                <tr><td class="px-6 py-4 font-medium">Friday</td><td class="px-6 py-4">Java Lab</td><td class="px-6 py-4">C++ Lab</td></tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -228,8 +276,8 @@
                                     <th class="px-6 py-3 text-left w-16">
                                         <input type="checkbox" id="select-all-students" class="rounded border-slate-300 text-primary focus:ring-primary" disabled>
                                     </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Student Name</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">ID</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Student Name</th>
                                     <th class="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider">Current Status</th>
                                 </tr>
                             </thead>
@@ -245,6 +293,59 @@
                         <span class="material-symbols-outlined">save</span>
                         Submit Attendance
                     </button>
+                </div>
+            </div>
+
+            <div id="content-syllabus" class="content-section hidden animate-fade-in">
+                <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm p-6 border border-slate-100 dark:border-slate-700">
+                    <h3 class="text-xl font-bold mb-4">Daily Syllabus Log</h3>
+                    <form class="space-y-4" onsubmit="event.preventDefault(); alert('Syllabus log saved (Mock)!');">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Course</label>
+                                <select id="syllabus-course-select" class="w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm">
+                                    <option value="">-- Choose Course --</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Date</label>
+                                <input type="date" class="w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Topics Covered Today</label>
+                            <textarea rows="3" placeholder="e.g. Introduction to Loops, While Loop syntax..." class="w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm"></textarea>
+                        </div>
+                        <button class="bg-primary text-white font-bold py-2 px-6 rounded-lg hover:bg-primary-hover">Save Log</button>
+                    </form>
+                </div>
+            </div>
+
+            <div id="content-assignments" class="content-section hidden animate-fade-in">
+                <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm p-6 border border-slate-100 dark:border-slate-700 mb-6">
+                    <div class="flex items-end gap-4">
+                        <div class="w-full md:w-1/2">
+                            <label class="block text-sm font-medium mb-2">Select Course to View Students</label>
+                            <select id="assignment-course-select" class="w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm">
+                                <option value="">-- Choose Course --</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm overflow-hidden border border-slate-100 dark:border-slate-700">
+                    <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                        <thead class="bg-slate-50 dark:bg-slate-800">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Student Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Assignment Status</th>
+                                <th class="px-6 py-3 text-right text-xs font-bold text-slate-500 uppercase">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="assignment-table-body" class="divide-y divide-slate-200 dark:divide-slate-700">
+                            <tr><td colspan="3" class="px-6 py-8 text-center text-slate-500">Select a course to track assignments.</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
@@ -309,7 +410,7 @@
                 <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm p-6 mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
                         <h2 class="text-xl font-bold text-slate-900 dark:text-white">Student Reports</h2>
-                        <p class="text-sm text-slate-500">View attendance and contact details.</p>
+                        <p class="text-sm text-slate-500">Filter by course to see reports.</p>
                     </div>
                     <div class="w-full md:w-64">
                         <label for="report-course-select" class="block text-xs font-bold uppercase text-slate-400 mb-1">Filter by Course</label>
@@ -325,14 +426,13 @@
                             <thead class="bg-slate-50 dark:bg-slate-800">
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Photo</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Student Name</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Phone</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Name</th>
                                     <th class="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider">Attendance</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Quick Remarks & Message</th>
                                 </tr>
                             </thead>
                             <tbody id="teacher-reports-body" class="divide-y divide-slate-200 dark:divide-slate-700 bg-white dark:bg-surface-dark">
-                                <tr><td colspan="5" class="px-6 py-8 text-center text-slate-500">Loading reports...</td></tr>
+                                <tr><td colspan="4" class="px-6 py-8 text-center text-slate-500">Loading reports...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -391,9 +491,9 @@
     
     // --- CACHE ---
     let allTeacherCourses = [];
-    let allTeacherStudents = []; // Contains ALL students of this teacher
+    let allTeacherStudents = [];
     let currentAttendanceStatus = {};
-    let reportData = []; // Cache for report data to allow filtering
+    let reportData = []; 
 
     // --- PWA INSTALL ---
     let deferredPrompt;
@@ -433,7 +533,9 @@
         const uploadNoteForm = document.getElementById('upload-note-form');
         const noteCourseSelect = document.getElementById('note-course-select');
         
-        // Report Elements
+        // Syllabus/Assignments/Report Elements
+        const syllabusCourseSelect = document.getElementById('syllabus-course-select');
+        const assignmentCourseSelect = document.getElementById('assignment-course-select');
         const reportCourseSelect = document.getElementById('report-course-select');
         
         // Modal Elements
@@ -452,22 +554,19 @@
                 
                 // Update Nav Styles
                 navLinks.forEach(link => {
-                    link.classList.remove('bg-primary/10', 'dark:bg-primary/20', 'text-primary');
-                    link.classList.add('text-slate-600', 'dark:text-slate-300');
-                    const icon = link.querySelector('span');
-                    if(icon) icon.classList.remove('text-primary');
+                    link.classList.remove('bg-primary/5', 'dark:bg-primary/10', 'text-primary');
+                    const span = link.querySelector('span.text-sm');
+                    if(span) span.classList.remove('text-primary');
                 });
                 
                 const activeLink = document.querySelector(`.nav-link[href="${hash}"]`) || document.querySelector(`.nav-link[href="#dashboard"]`);
                 if(activeLink) {
-                    activeLink.classList.remove('text-slate-600', 'dark:text-slate-300');
-                    activeLink.classList.add('bg-primary/10', 'dark:bg-primary/20', 'text-primary');
-                    const icon = activeLink.querySelector('span');
-                    if(icon) icon.classList.add('text-primary');
+                    activeLink.classList.add('bg-primary/5', 'dark:bg-primary/10', 'text-primary');
+                    activeLink.querySelector('span.text-sm')?.classList.add('text-primary');
                 }
 
                 // Update Title
-                const titles = {'dashboard': 'Dashboard', 'courses': 'My Courses', 'attendance': 'Mark Attendance', 'notes': 'Share Notes', 'reports': 'Student Reports'};
+                const titles = {'dashboard': 'Dashboard', 'courses': 'My Courses', 'attendance': 'Mark Attendance', 'syllabus': 'Syllabus Tracker', 'assignments': 'Assignments', 'notes': 'Share Notes', 'reports': 'Student Reports'};
                 pageTitle.textContent = titles[targetId] || 'Dashboard';
             }
         }
@@ -479,6 +578,11 @@
             // Ensure core data is loaded
             if(allTeacherCourses.length === 0) await fetchTeacherCourses();
             
+            // Populate dropdowns if needed
+            if(['#attendance', '#syllabus', '#assignments', '#notes', '#reports'].includes(hash)) {
+                populateDropdowns();
+            }
+            
             switch (hash) {
                 case '#dashboard':
                     fetchDashboardData();
@@ -487,17 +591,14 @@
                     renderCoursesTable();
                     break;
                 case '#attendance':
-                    populateDropdowns();
                     if(allTeacherStudents.length === 0) await fetchAllTeacherStudents();
                     // Don't auto-render table, wait for selection
                     break;
                 case '#notes':
-                    populateDropdowns();
                     fetchTeacherNotes();
                     break;
                 case '#reports':
-                    populateDropdowns(); 
-                    if(allTeacherStudents.length === 0) await fetchAllTeacherStudents(); // Need students for cross-referencing
+                    if(allTeacherStudents.length === 0) await fetchAllTeacherStudents(); 
                     fetchTeacherAttendanceReport();
                     break;
             }
@@ -549,13 +650,10 @@
         }
 
         function populateDropdowns() {
-            const selects = [attendanceCourseSelect, noteCourseSelect, reportCourseSelect];
+            const selects = [attendanceCourseSelect, noteCourseSelect, syllabusCourseSelect, assignmentCourseSelect, reportCourseSelect];
             selects.forEach(select => {
                 if(!select) return;
-                // Preserve value if possible, else reset
                 const currentVal = select.value;
-                
-                // For Report filter, add 'All' option
                 const defaultOption = select.id === 'report-course-select' 
                     ? '<option value="">Show All Students</option>' 
                     : '<option value="">-- Select Course --</option>';
@@ -609,12 +707,14 @@
 
             filteredStudents.forEach(s => {
                 currentAttendanceStatus[s.id] = 'Present'; // Default
+                
+                // FIXED COLUMN ORDER: ID then Name
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition group">
                         <td class="px-6 py-3">
                             <input type="checkbox" class="student-checkbox rounded border-slate-300 text-primary focus:ring-primary w-5 h-5 cursor-pointer" data-id="${s.id}">
                         </td>
-                        <td class="px-6 py-3 text-xs text-slate-400 font-mono">${s.id}</td>
+                        <td class="px-6 py-3 text-xs text-slate-400 font-mono">#${s.id}</td>
                         <td class="px-6 py-3 text-sm font-medium text-slate-900 dark:text-white flex items-center gap-3">
                             <div class="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">${s.name.charAt(0)}</div>
                             ${s.name}
@@ -641,7 +741,6 @@
             markAbsentBtn.disabled = !enableActions;
             submitAttendanceBtn.disabled = !enableSubmit;
             
-            // Visual feedback
             if(enableSubmit) {
                 submitAttendanceBtn.classList.remove('opacity-50', 'cursor-not-allowed');
             } else {
@@ -710,6 +809,24 @@
             }
         });
 
+        // --- ASSIGNMENTS MOCK LOGIC ---
+        assignmentCourseSelect.addEventListener('change', (e) => {
+            const cid = e.target.value;
+            const tbody = document.getElementById('assignment-table-body');
+            tbody.innerHTML = '';
+            if(!cid) { tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-8 text-center text-slate-500">Select a course.</td></tr>'; return; }
+            
+            const filtered = allTeacherStudents.filter(s => s.course_ids && s.course_ids.includes(parseInt(cid)));
+            if(filtered.length === 0) { tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-8 text-center text-slate-500">No students.</td></tr>'; return; }
+
+            filtered.forEach(s => {
+                tbody.innerHTML += `<tr>
+                    <td class="px-6 py-4 font-medium">${s.name}</td>
+                    <td class="px-6 py-4"><span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-bold">Pending</span></td>
+                    <td class="px-6 py-4 text-right"><button class="text-blue-600 hover:underline text-xs" onclick="alert('Marked submitted for ${s.name} (Mock)')">Mark Submitted</button></td>
+                </tr>`;
+            });
+        });
 
         // --- NOTES LOGIC ---
         uploadNoteForm.addEventListener('submit', async (e) => {
@@ -823,7 +940,6 @@
                         ${row.student_name}
                         <div class="text-xs text-slate-400 font-normal">ID: ${row.student_id}</div>
                     </td>
-                    <td class="px-6 py-4 text-sm text-slate-500">${row.phone_number || 'N/A'}</td>
                     <td class="px-6 py-4 text-center">
                         <div class="flex flex-col items-center">
                             <span class="text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">${row.present}/${row.total_classes}</span>
@@ -832,7 +948,9 @@
                             </div>
                         </div>
                     </td>
-                    <td class="px-6 py-4 text-right">
+                    <td class="px-6 py-4 text-right space-x-2">
+                        <button onclick="sendRemark(${row.student_id}, '${row.student_name.replace(/'/g, "\\'")}', 'star')" class="p-1.5 bg-yellow-100 text-yellow-600 rounded-lg hover:bg-yellow-200" title="Send Praise">⭐</button>
+                        <button onclick="sendRemark(${row.student_id}, '${row.student_name.replace(/'/g, "\\'")}', 'warn')" class="p-1.5 bg-red-100 text-red-600 rounded-lg hover:bg-red-200" title="Send Warning">⚠️</button>
                         <button onclick="openMessageModal(${row.student_id}, '${row.student_name.replace(/'/g, "\\'")}')" class="inline-flex items-center gap-1 px-3 py-1.5 bg-primary/10 text-primary text-xs font-bold rounded-lg hover:bg-primary hover:text-white transition">
                             <span class="material-symbols-outlined text-sm">mail</span> Message
                         </button>
@@ -847,12 +965,9 @@
             if (!courseId) {
                 renderReportTable(reportData); // Show all
             } else {
-                // Filter report data based on whether the student is enrolled in the selected course
-                // We use 'allTeacherStudents' cache to check enrollment
                 const enrolledStudentIds = allTeacherStudents
                     .filter(s => s.course_ids && s.course_ids.includes(parseInt(courseId)))
                     .map(s => s.id);
-                
                 const filteredData = reportData.filter(row => enrolledStudentIds.includes(row.student_id));
                 renderReportTable(filteredData);
             }
@@ -864,6 +979,11 @@
             document.getElementById('notify-student-id').value = id;
             document.getElementById('notify-modal-title').textContent = `Message ${name}`;
             notifyModal.classList.remove('hidden');
+        };
+        
+        window.sendRemark = (id, name, type) => {
+            const msg = type === 'star' ? `Great job in class today, ${name}!` : `Please pay more attention in class, ${name}.`;
+            if(confirm(`Send '${msg}' to parent?`)) alert("Remark sent (Mock)!");
         };
 
         const closeModal = () => notifyModal.classList.add('hidden');
@@ -915,10 +1035,6 @@
 
         // --- INIT FIREBASE ---
         function initFirebase() {
-            // Placeholder for Firebase Config - Replace with your actual keys
-            const firebaseConfig = {
-                // ... your firebase config keys ...
-            };
             // Standard Firebase initialization logic here...
         }
 
