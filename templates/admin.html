@@ -457,6 +457,13 @@
                             <input type="hidden" id="fee-structure-id" name="id">
                             <div class="form-group"><label for="fee-structure-name" class="block text-sm font-medium mb-1">Structure Name</label><input type="text" id="fee-structure-name" name="name" required class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800"></div>
                             <div class="form-group"><label for="fee-session-select" class="block text-sm font-medium mb-1">Academic Session</label><select id="fee-session-select" name="academic_session_id" required class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800"></select></div>
+                            <div class="form-group">
+                                <label for="fee-course-select" class="block text-sm font-medium mb-1">Link to Course (Optional)</label>
+                                <select id="fee-course-select" name="course_id" class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800">
+                                    <option value="">Global (All Courses)</option>
+                                </select>
+                                <p class="text-xs text-slate-500 mt-1">If selected, this fee only applies to students enrolled in this course.</p>
+                            </div>
                             <div class="form-group"><label for="fee-total-amount" class="block text-sm font-medium mb-1">Total Amount</label><input type="number" step="0.01" id="fee-total-amount" name="total_amount" required class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800"></div>
                             <div class="form-group"><label for="fee-due-date" class="block text-sm font-medium mb-1">Due Date</label><input type="date" id="fee-due-date" name="due_date" required class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800"></div>
                             <button type="submit" id="save-fee-structure-btn" class="w-full bg-primary text-white font-medium py-2.5 px-4 rounded-lg text-sm hover:bg-opacity-90 transition duration-150">Save Fee Structure</button>
@@ -803,6 +810,7 @@
                         fetchFeeStructures(); 
                         fetchStudentsForPaymentDropdown(); 
                         fetchFeeSessionDropdowns(); 
+                        fetchFeeCourseDropdown(); 
                         fetchFeeStatus(); 
                         resetFeeStructureForm();
                         break;
@@ -1487,6 +1495,30 @@
                  document.getElementById('fee-session-select').innerHTML = '<option value="">Error loading sessions</option>';
             }
         }
+
+        // NEW: Fetch courses for fee structure creation
+        async function fetchFeeCourseDropdown() {
+            try {
+                let courses = allCoursesCache;
+                // If cache is empty, try fetch again (safe fallback)
+                if (!courses || courses.length === 0) {
+                     const response = await fetch(`${API_BASE_URL}/courses`, {credentials: 'include'});
+                     courses = await response.json();
+                     allCoursesCache = courses;
+                }
+
+                const select = document.getElementById('fee-course-select');
+                if(select) {
+                    // Default Option
+                    select.innerHTML = '<option value="">Global (All Courses)</option>';
+                    courses.forEach(c => {
+                        select.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+                    });
+                }
+            } catch (e) {
+                console.error("Error loading fee course dropdown:", e);
+            }
+        }
         
         async function fetchFeeStructures() {
             try {
@@ -1505,9 +1537,10 @@
 
                 paymentFeeStructureSelect.innerHTML = '<option value="">Select a fee structure...</option>';
                 structures.forEach(s => {
+                    const courseName = s.course_name ? `(${s.course_name})` : "(Global)";
                     tableBody.innerHTML += `
                         <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${s.name}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${s.name} <span class="text-xs text-slate-400">${courseName}</span></td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">₹${s.total_amount.toFixed(2)}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${s.due_date}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -1515,7 +1548,7 @@
                                 <button onclick="deleteFeeStructure(${s.id})" class="text-red-600 hover:text-red-900">Delete</button>
                             </td>
                         </tr>`;
-                    paymentFeeStructureSelect.innerHTML += `<option value="${s.id}">${s.name} (Due: ${s.due_date})</option>`;
+                    paymentFeeStructureSelect.innerHTML += `<option value="${s.id}">${s.name} ${courseName} (Due: ${s.due_date})</option>`;
                 });
             } catch (error) {
                 console.error("Error fetching fee structures:", error);
@@ -1536,6 +1569,10 @@
                  document.getElementById('fee-session-select').value = structure.academic_session_id;
                  document.getElementById('fee-total-amount').value = structure.total_amount;
                  document.getElementById('fee-due-date').value = structure.due_date;
+                 // Set selected course
+                 document.getElementById('fee-course-select').value = structure.course_id || "";
+             } else {
+                 document.getElementById('fee-course-select').value = "";
              }
          }
 
@@ -1756,6 +1793,7 @@
                 id: feeId || undefined,
                 name: document.getElementById('fee-structure-name').value, 
                 academic_session_id: parseInt(document.getElementById('fee-session-select').value),
+                course_id: document.getElementById('fee-course-select').value || null, // NEW: Include Course ID
                 total_amount: parseFloat(document.getElementById('fee-total-amount').value),
                 due_date: document.getElementById('fee-due-date').value
             };
