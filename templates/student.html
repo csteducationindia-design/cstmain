@@ -6,13 +6,11 @@
     <title>Student Portal</title>
     <link rel="manifest" href="/static/manifest.json">
 
-    <!-- Fonts & Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet" />
 
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -29,13 +27,21 @@
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         .material-symbols-rounded { font-size: 24px; }
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+        
+        /* Toast Notification Animation */
+        @keyframes slideIn {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .toast-enter { animation: slideIn 0.3s ease-out forwards; }
     </style>
 </head>
 <body class="h-full bg-gray-50 text-gray-900 font-sans selection:bg-blue-100">
 
+<div id="toast-container" class="fixed top-4 left-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
 <div id="app-container" class="max-w-md mx-auto min-h-screen bg-gray-50 relative shadow-2xl flex flex-col hidden">
     
-    <!-- HEADER -->
     <header class="bg-blue-600 text-white p-4 sticky top-0 z-30 shadow-md flex justify-between items-center transition-all">
         <h1 id="header-title" class="text-xl font-bold tracking-tight">Student Portal</h1>
         <button onclick="switchView('notifications')" class="relative p-2 rounded-full hover:bg-blue-700 transition-colors">
@@ -44,12 +50,9 @@
         </button>
     </header>
 
-    <!-- MAIN CONTENT AREA -->
     <main id="main-content" class="flex-1 overflow-y-auto scrollbar-hide p-5 pb-24 space-y-6">
         
-        <!-- 1. DASHBOARD VIEW -->
         <div id="view-dashboard" class="view-section animate-fade">
-            <!-- Profile Card -->
             <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-3xl p-6 text-white shadow-lg shadow-blue-200 mb-6 relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-xl"></div>
                 <div class="flex items-center gap-4 mb-6 relative z-10">
@@ -74,7 +77,17 @@
                 </div>
             </div>
 
-            <!-- Quick Actions -->
+            <button id="enable-notif-btn" class="hidden w-full bg-indigo-100 text-indigo-700 p-4 rounded-2xl mb-6 flex items-center justify-between shadow-sm border border-indigo-200" onclick="requestNotificationPermission()">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-rounded">notifications_active</span>
+                    <div class="text-left">
+                        <p class="font-bold text-sm">Enable Notifications</p>
+                        <p class="text-xs opacity-80">Get alerts for notes & attendance</p>
+                    </div>
+                </div>
+                <span class="material-symbols-rounded">arrow_forward</span>
+            </button>
+
             <div class="grid grid-cols-2 gap-4 mb-6">
                 <button onclick="switchView('academics')" class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 hover:bg-gray-50 transition-all group">
                     <div class="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center text-orange-500 group-hover:scale-110 transition-transform">
@@ -90,7 +103,6 @@
                 </button>
             </div>
 
-            <!-- Fee Alert -->
             <div id="fee-alert" class="hidden bg-red-50 p-5 rounded-2xl border border-red-100 flex gap-4">
                 <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center text-red-500 flex-shrink-0">
                     <span class="material-symbols-rounded">attach_money</span>
@@ -102,7 +114,6 @@
             </div>
         </div>
 
-        <!-- 2. ACADEMICS VIEW -->
         <div id="view-academics" class="view-section hidden animate-fade">
             <div class="bg-blue-600 rounded-2xl p-6 text-white shadow-lg shadow-blue-200 mb-6">
                 <h2 class="text-2xl font-bold mb-1">Study Material</h2>
@@ -113,7 +124,6 @@
             </div>
         </div>
 
-        <!-- 3. RESULTS VIEW -->
         <div id="view-results" class="view-section hidden animate-fade">
             <div class="flex items-center gap-3 text-gray-800 mb-6">
                 <span class="material-symbols-rounded text-blue-600">assignment_turned_in</span>
@@ -124,7 +134,6 @@
             </div>
         </div>
 
-        <!-- 4. ATTENDANCE VIEW -->
         <div id="view-attendance" class="view-section hidden animate-fade">
             <div class="flex items-center gap-3 text-gray-800 mb-6">
                 <span class="material-symbols-rounded text-blue-600">calendar_month</span>
@@ -135,7 +144,6 @@
             </div>
         </div>
 
-        <!-- 5. NOTIFICATIONS VIEW -->
         <div id="view-notifications" class="view-section hidden animate-fade">
             <h3 class="font-bold text-gray-800 text-xl mb-6">Announcements</h3>
             <div id="notifications-list" class="space-y-4">
@@ -143,7 +151,6 @@
             </div>
         </div>
 
-        <!-- 6. PROFILE VIEW -->
         <div id="view-profile" class="view-section hidden animate-fade flex flex-col items-center pt-8">
             <div class="w-28 h-28 bg-gray-100 rounded-full flex items-center justify-center text-4xl font-bold text-gray-400 mb-6 overflow-hidden border-4 border-white shadow-xl">
                 <img id="profile-view-img" src="" alt="Profile" class="w-full h-full object-cover hidden">
@@ -175,7 +182,6 @@
 
     </main>
 
-    <!-- BOTTOM NAVIGATION -->
     <nav class="bg-white border-t border-gray-200 fixed bottom-0 w-full max-w-md pb-safe pt-2 px-6 flex justify-between items-center z-40 h-16 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
         <button onclick="switchView('dashboard')" class="nav-btn flex flex-col items-center justify-center w-full h-full space-y-1 text-blue-600" data-target="dashboard">
             <span class="material-symbols-rounded text-[26px]">home</span>
@@ -200,13 +206,11 @@
     </nav>
 </div>
 
-<!-- LOADING SCREEN -->
 <div id="loading-screen" class="fixed inset-0 bg-blue-600 z-50 flex flex-col items-center justify-center text-white transition-opacity duration-500">
     <div class="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin mb-4"></div>
     <p class="font-medium animate-pulse" id="loading-text">Loading Student Portal...</p>
 </div>
 
-<!-- SCRIPTS -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
 
@@ -221,9 +225,9 @@
     const headerTitle = document.getElementById('header-title');
     const navButtons = document.querySelectorAll('.nav-btn');
     const viewSections = document.querySelectorAll('.view-section');
+    const toastContainer = document.getElementById('toast-container');
 
     // --- SAFETY TIMER ---
-    // Force hide loader after 5 seconds if connection is slow/broken
     setTimeout(() => {
         if (!loadingScreen.classList.contains('hidden')) {
             console.warn("Forcing app load after timeout");
@@ -293,7 +297,6 @@
             }
         } catch (error) {
             console.error('Session check failed', error);
-            // If check fails, we still try to redirect to login
             window.location.href = API_ORIGIN + '/';
         }
     }
@@ -301,15 +304,19 @@
     async function initApp(user) {
         try {
             updateProfileUI(user);
-            // Fetch initial data but don't let failures block the UI
             await Promise.allSettled([fetchFees(), fetchAttendanceSummary()]);
         } catch (error) {
             console.error("Initialization error:", error);
         } finally {
-            // ALWAYS hide loader
             if(loadingScreen) loadingScreen.classList.add('hidden');
             if(appContainer) appContainer.classList.remove('hidden');
-            setTimeout(initFirebase, 2000);
+            
+            // Check Notification Permission
+            if (Notification.permission !== 'granted') {
+                document.getElementById('enable-notif-btn').classList.remove('hidden');
+            } else {
+                initFirebase();
+            }
         }
     }
 
@@ -346,7 +353,41 @@
         }
     }
 
-    // --- DATA FETCHING ---
+    // --- NOTIFICATION TOAST LOGIC ---
+    function showToast(payload) {
+        const title = payload.notification.title;
+        const body = payload.notification.body;
+        
+        const toast = document.createElement('div');
+        toast.className = 'toast-enter pointer-events-auto bg-white border border-blue-100 shadow-lg rounded-2xl p-4 flex items-start gap-3 w-full max-w-sm transform transition-all duration-300';
+        toast.innerHTML = `
+            <div class="bg-blue-100 text-blue-600 rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-rounded text-sm">notifications</span>
+            </div>
+            <div class="flex-1">
+                <h4 class="text-sm font-bold text-gray-900">${title}</h4>
+                <p class="text-xs text-gray-500 mt-0.5">${body}</p>
+            </div>
+            <button onclick="this.parentElement.remove()" class="text-gray-400 hover:text-gray-600">
+                <span class="material-symbols-rounded text-lg">close</span>
+            </button>
+        `;
+        
+        toastContainer.appendChild(toast);
+        
+        // Auto remove after 5s
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(-10px)';
+            setTimeout(() => toast.remove(), 300);
+        }, 5000);
+        
+        // Refresh views if applicable
+        if (title.toLowerCase().includes('attendance')) fetchAttendance();
+        if (title.toLowerCase().includes('note')) fetchNotes();
+    }
+
+    // --- DATA FETCHING FUNCTIONS ---
     async function fetchFees() {
         try {
             const res = await fetch(`${API_BASE_URL}/student/fees`, { credentials: 'include' });
@@ -354,14 +395,12 @@
             const data = await res.json();
             
             const balance = data.balance || 0;
-            const balanceFormatted = `₹${balance}`;
-            
             const dashFees = document.getElementById('dash-fees');
-            if(dashFees) dashFees.textContent = balanceFormatted;
+            if(dashFees) dashFees.textContent = `₹${balance}`;
             
             const profileBal = document.getElementById('profile-view-balance');
             if(profileBal) {
-                profileBal.textContent = balanceFormatted;
+                profileBal.textContent = `₹${balance}`;
                 profileBal.className = balance > 0 ? "text-4xl font-bold text-red-500" : "text-4xl font-bold text-green-600";
             }
 
@@ -370,7 +409,7 @@
             if(alertBox && alertText) {
                 if (balance > 0) {
                     alertBox.classList.remove('hidden');
-                    alertText.innerHTML = `You have a balance of <span class="font-bold">₹${balance}</span>. Please clear it before ${data.due_date}.`;
+                    alertText.innerHTML = `You have a balance of <span class="font-bold">₹${balance}</span>.`;
                 } else {
                     alertBox.classList.add('hidden');
                 }
@@ -380,7 +419,6 @@
 
     async function fetchAttendanceSummary() {
         try {
-            // Try fetching from reports endpoint first, generic fallback if fails
             const res = await fetch(`${API_BASE_URL}/student/attendance`, { credentials: 'include' });
             if(res.ok) {
                 const data = await res.json();
@@ -398,7 +436,7 @@
     async function fetchAttendance() {
         const container = document.getElementById('attendance-list');
         if(!container) return;
-        container.innerHTML = '<div class="flex justify-center"><div class="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div></div>';
+        container.innerHTML = '<div class="text-center py-4 text-gray-400">Loading...</div>';
         
         try {
             const res = await fetch(`${API_BASE_URL}/student/attendance`, { credentials: 'include' });
@@ -439,7 +477,7 @@
     async function fetchGrades() {
         const container = document.getElementById('grades-list');
         if(!container) return;
-        container.innerHTML = '<div class="flex justify-center"><div class="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div></div>';
+        container.innerHTML = '<div class="text-center py-4 text-gray-400">Loading...</div>';
 
         try {
             const res = await fetch(`${API_BASE_URL}/student/grades`, { credentials: 'include' });
@@ -484,7 +522,7 @@
     async function fetchNotes() {
         const container = document.getElementById('notes-list');
         if(!container) return;
-        container.innerHTML = '<div class="flex justify-center"><div class="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div></div>';
+        container.innerHTML = '<div class="text-center py-4 text-gray-400">Loading...</div>';
 
         try {
             const res = await fetch(`${API_BASE_URL}/student/notes`, { credentials: 'include' });
@@ -589,10 +627,14 @@
         });
     }
 
-    // --- FIREBASE ---
+    // --- FIREBASE CLIENT LOGIC ---
+    window.requestNotificationPermission = function() {
+        initFirebase();
+    }
+
     function initFirebase() {
         try {
-            // FIREBASE CONFIG - REPLACE WITH YOUR KEYS
+            // REPLACE WITH YOUR ACTUAL FIREBASE CONFIG
             const firebaseConfig = {
                 apiKey: "AIzaSyBkZEHM9fXRoCYSgEW-hk_lN7sL_nSLDfU",
                 authDomain: "cst-institute-app.firebaseapp.com",
@@ -606,19 +648,42 @@
                 firebase.initializeApp(firebaseConfig);
                 const messaging = firebase.messaging();
 
+                // 1. Foreground Message Handler (Shows Toast)
+                messaging.onMessage((payload) => {
+                    console.log('Message received. ', payload);
+                    showToast(payload);
+                });
+
+                // 2. Token Registration
                 if ('serviceWorker' in navigator) {
                     navigator.serviceWorker.register('/firebase-messaging-sw.js').then((reg) => {
                         return Notification.requestPermission().then((permission) => {
                             if (permission === 'granted') {
-                                return messaging.getToken({ vapidKey: 'BBOMxvKvbEs_t9ykKBa2zIewzCzD6FCbm9rxc8a9eWl2kjjH5vyTSH6TeQMksZ_OGl5jZyQpU2wBcf-KsZN1uko', serviceWorkerRegistration: reg });
+                                document.getElementById('enable-notif-btn').classList.add('hidden');
+                                // REPLACE VAPID KEY
+                                return messaging.getToken({ 
+                                    vapidKey: 'BBOMxvKvbEs_t9ykKBa2zIewzCzD6FCbm9rxc8a9eWl2kjjH5vyTSH6TeQMksZ_OGl5jZyQpU2wBcf-KsZN1uko', 
+                                    serviceWorkerRegistration: reg 
+                                });
+                            } else {
+                                console.log("Permission denied for notifications");
                             }
                         });
                     }).then((token) => {
-                        if (token) fetch('/api/save_fcm_token', { method: 'POST', headers: {'Content-Type': 'application/json'}, credentials: 'include', body: JSON.stringify({token}) });
+                        if (token) {
+                            console.log('FCM Token:', token);
+                            // Send token to backend
+                            fetch('/api/save_fcm_token', { 
+                                method: 'POST', 
+                                headers: {'Content-Type': 'application/json'}, 
+                                credentials: 'include', 
+                                body: JSON.stringify({token}) 
+                            });
+                        }
                     }).catch(err => console.log('Firebase error', err));
                 }
             }
-        } catch (e) { console.log('Firebase init skipped'); }
+        } catch (e) { console.log('Firebase init skipped or error', e); }
     }
 </script>
 </body>
