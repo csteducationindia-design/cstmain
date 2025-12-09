@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teacher Portal</title>
+    <title>Teacher Portal - CST Institute</title>
     
     <link rel="manifest" href="/static/manifest.json">
 
     <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
-    <link as="style" href="https://fonts.googleapis.com/css2?display=swap&family=Inter:wght@400;500;700;900" onload="this.rel='stylesheet'" rel="stylesheet"/>
+    <link as="style" href="https://fonts.googleapis.com/css2?display=swap&family=Inter:wght@400;500;600;700;900" onload="this.rel='stylesheet'" rel="stylesheet"/>
+    
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <script>
         tailwind.config = {
@@ -17,247 +18,324 @@
                 extend: {
                     colors: {
                         "primary": "#1173d4",
+                        "primary-hover": "#0e5ea8",
                         "background-light": "#f6f7f8",
                         "background-dark": "#101922",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#1e293b",
                     },
                     fontFamily: {
-                        "display": ["Inter"]
-                    },
-                    borderRadius: {
-                        "DEFAULT": "0.25rem",
-                        "lg": "0.5rem",
-                        "xl": "0.75rem",
-                        "full": "9999px"
+                        "display": ["Inter", "sans-serif"]
                     },
                 },
             },
         }
     </script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+    
     <style>
-        /* Ensures table is readable and fits content */
-        .table-auto-layout {
-            table-layout: auto;
+        /* Custom Scrollbar for Sidebar */
+        .scrollbar-thin::-webkit-scrollbar {
+            width: 6px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 20px;
+        }
+        .dark .scrollbar-thin::-webkit-scrollbar-thumb {
+            background-color: #475569;
+        }
+        
+        /* Table Styles */
+        .table-container {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
         }
     </style>
 </head>
-<body class="bg-background-light dark:bg-background-dark font-display text-slate-800 dark:text-slate-200">
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-800 dark:text-slate-200 antialiased">
 
-<div class="flex min-h-screen">
-    <aside class="w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col shadow-lg">
-        <div class="p-6">
-            <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Institute Teacher</h1>
-            <p class="text-sm text-slate-500 dark:text-slate-400">Teacher Portal</p>
+<div class="flex h-screen overflow-hidden">
+    
+    <aside class="w-64 bg-surface-light dark:bg-surface-dark border-r border-slate-200 dark:border-slate-800 flex flex-col shadow-lg z-20">
+        <div class="p-6 border-b border-slate-100 dark:border-slate-700">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-xl">T</div>
+                <div>
+                    <h1 class="text-lg font-bold text-slate-900 dark:text-white leading-tight">Teacher Portal</h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">CST Institute</p>
+                </div>
+            </div>
         </div>
-        <nav class="flex-1 px-4 py-2 space-y-1">
-            <a href="#courses" class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg bg-primary/10 dark:bg-primary/20 text-primary">
-                <span class="material-symbols-outlined">book</span>
-                <span class="text-sm font-medium">My Courses</span>
-            </a>
-            <a href="#attendance" class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-primary/10 dark:hover:bg-primary/20">
-                <span class="material-symbols-outlined">how_to_reg</span>
-                <span class="text-sm font-medium">Mark Attendance</span>
-            </a>
-            <a href="#notifications" class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-primary/10 dark:hover:bg-primary/20">
-                <span class="material-symbols-outlined">notifications_active</span>
-                <span class="text-sm font-medium">Notifications</span>
-            </a>
-            <a href="#share-notes" class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-primary/10 dark:hover:bg-primary/20">
-                <span class="material-symbols-outlined">upload_file</span>
-                <span class="text-sm font-medium">Share Notes</span>
-            </a>
-            <a href="#reports" class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-primary/10 dark:hover:bg-primary/20">
-                <span class="material-symbols-outlined">analytics</span>
-                <span class="text-sm font-medium">View Reports</span>
-            </a>
-            <a href="#announcements" class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-primary/10 dark:hover:bg-primary/20">
-                <span class="material-symbols-outlined">campaign</span>
-                <span class="text-sm font-medium">Announcements</span>
+
+        <nav class="flex-1 px-4 py-4 space-y-1 overflow-y-auto scrollbar-thin">
+            <a href="#dashboard" class="nav-link group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-primary/5 dark:hover:bg-primary/10">
+                <span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">dashboard</span>
+                <span class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-primary dark:group-hover:text-primary-400">Dashboard</span>
             </a>
             
-            <button id="install-app-btn" class="hidden w-full flex items-center gap-3 px-4 py-2 rounded-lg text-green-600 hover:bg-green-50 font-medium mt-4">
+            <a href="#courses" class="nav-link group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-primary/5 dark:hover:bg-primary/10">
+                <span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">book</span>
+                <span class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-primary dark:group-hover:text-primary-400">My Courses</span>
+            </a>
+            
+            <a href="#attendance" class="nav-link group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-primary/5 dark:hover:bg-primary/10">
+                <span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">fact_check</span>
+                <span class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-primary dark:group-hover:text-primary-400">Mark Attendance</span>
+            </a>
+            
+            <a href="#notes" class="nav-link group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-primary/5 dark:hover:bg-primary/10">
+                <span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">upload_file</span>
+                <span class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-primary dark:group-hover:text-primary-400">Share Notes</span>
+            </a>
+            
+            <a href="#reports" class="nav-link group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-primary/5 dark:hover:bg-primary/10">
+                <span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">analytics</span>
+                <span class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-primary dark:group-hover:text-primary-400">Student Reports</span>
+            </a>
+
+            <button id="install-app-btn" class="hidden w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-green-50 text-green-700 hover:bg-green-100 transition-colors mt-4">
                 <span class="material-symbols-outlined">download</span>
-                <span class="text-sm">Install Mobile App</span>
+                <span class="text-sm font-medium">Install App</span>
             </button>
         </nav>
-        <div class="p-6 border-t border-slate-200 dark:border-slate-800">
-            <button id="logout-btn" class="w-full bg-red-600 text-white font-medium py-2 px-4 rounded-lg text-sm hover:bg-red-700 transition duration-150">
+
+        <div class="p-4 border-t border-slate-200 dark:border-slate-800">
+            <button id="logout-btn" class="flex items-center justify-center gap-2 w-full bg-red-50 text-red-600 hover:bg-red-100 font-medium py-2.5 px-4 rounded-lg text-sm transition duration-150">
+                <span class="material-symbols-outlined text-lg">logout</span>
                 Logout
             </button>
         </div>
     </aside>
 
-    <main class="flex-1 p-8">
-        <div class="max-w-7xl mx-auto">
-            <header class="mb-8">
-                <h1 id="teacher-welcome" class="text-4xl font-bold text-slate-900 dark:text-white">Welcome, Teacher!</h1>
-                <p class="text-slate-500 dark:text-slate-400 mt-2">Manage your courses, students, and communication.</p>
+    <main class="flex-1 overflow-y-auto bg-background-light dark:bg-background-dark p-4 md:p-8">
+        <div class="max-w-6xl mx-auto space-y-8">
+            
+            <header class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-slate-900 dark:text-white" id="page-title">Dashboard</h1>
+                    <p class="text-slate-500 dark:text-slate-400 mt-1" id="welcome-message">Welcome back, Teacher.</p>
+                </div>
+                <div class="hidden md:block">
+                    <span class="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full dark:bg-blue-900 dark:text-blue-200">Instructor Account</span>
+                </div>
             </header>
 
-            <div id="content-courses" class="content-section">
-                <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">My Courses</h2>
-                <div id="courses-list" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div id="no-courses" class="col-span-2 bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6">
-                        <p class="text-slate-500">You are not currently assigned to any courses.</p>
+            <div id="content-dashboard" class="content-section animate-fade-in">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm p-6 border border-slate-100 dark:border-slate-700">
+                        <div class="flex items-center gap-4">
+                            <div class="p-3 bg-blue-50 text-blue-600 rounded-xl dark:bg-blue-900/30 dark:text-blue-400">
+                                <span class="material-symbols-outlined">book</span>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Assigned Courses</p>
+                                <p class="text-2xl font-bold text-slate-900 dark:text-white mt-1" id="total-my-courses">0</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm p-6 border border-slate-100 dark:border-slate-700">
+                        <div class="flex items-center gap-4">
+                            <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl dark:bg-emerald-900/30 dark:text-emerald-400">
+                                <span class="material-symbols-outlined">groups</span>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Total Students</p>
+                                <p class="text-2xl font-bold text-slate-900 dark:text-white mt-1" id="total-my-students">0</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm p-6 border border-slate-100 dark:border-slate-700">
+                        <div class="flex items-center gap-4">
+                            <div class="p-3 bg-purple-50 text-purple-600 rounded-xl dark:bg-purple-900/30 dark:text-purple-400">
+                                <span class="material-symbols-outlined">description</span>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Shared Notes</p>
+                                <p class="text-2xl font-bold text-slate-900 dark:text-white mt-1" id="total-shared-notes">0</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div id="content-attendance" class="content-section hidden">
-                <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">Mark Attendance</h2>
-                <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6 mb-8">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="form-group">
-                            <label for="course-select" class="block text-sm font-medium mb-1">Select Course</label>
-                            <select id="course-select" class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800"></select>
-                        </div>
-                        <div class="form-group">
-                            <label for="attendance-date" class="block text-sm font-medium mb-1">Select Date</label>
-                            <input type="date" id="attendance-date" class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800">
-                        </div>
-                        <div class="form-group self-end">
-                            <button id="fetch-students-btn" class="w-full bg-primary text-white font-medium py-2.5 px-4 rounded-lg text-sm hover:bg-opacity-90 transition duration-150">
-                                Fetch Students
-                            </button>
-                        </div>
+            <div id="content-courses" class="content-section hidden animate-fade-in">
+                <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+                    <div class="p-6 border-b border-slate-100 dark:border-slate-700">
+                        <h2 class="text-lg font-bold text-slate-900 dark:text-white">Assigned Subjects</h2>
                     </div>
-                </div>
-
-                <form id="attendance-form" class="hidden">
-                    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                            <thead>
+                            <thead class="bg-slate-50 dark:bg-slate-800">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Student Name</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Course Name</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Subjects / Topics</th>
                                 </tr>
                             </thead>
-                            <tbody id="student-list-body" class="divide-y divide-slate-200 dark:divide-slate-700">
-                                </tbody>
+                            <tbody id="teacher-courses-body" class="divide-y divide-slate-200 dark:divide-slate-700 bg-white dark:bg-surface-dark">
+                                <tr><td colspan="2" class="px-6 py-8 text-center text-slate-500">Loading courses...</td></tr>
+                            </tbody>
                         </table>
                     </div>
-                    <button type="submit" id="submit-attendance-btn" class="mt-4 w-full bg-green-600 text-white font-medium py-2.5 px-4 rounded-lg text-sm hover:bg-green-700 transition duration-150">
-                        Submit Attendance
-                    </button>
-                </form>
+                </div>
             </div>
 
-            <div id="content-notifications" class="content-section hidden">
-                <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">Send Notification to Student(s)</h2>
-                <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6">
-                    <form id="notification-form">
-                        <div class="mb-4">
-                            <label for="student-select" class="block text-sm font-medium mb-1">Select Target Student(s)</label>
-                            <select id="student-select" required class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800">
-                                <option value="all">Send to ALL Students</option>
+            <div id="content-attendance" class="content-section hidden animate-fade-in">
+                <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm p-6 border border-slate-100 dark:border-slate-700 mb-6">
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4">Step 1: Select Class</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div>
+                            <label for="attendance-course-select" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Select Course</label>
+                            <select id="attendance-course-select" class="w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-primary focus:border-primary">
+                                <option value="">-- Choose Course --</option>
                             </select>
+                            <p class="text-xs text-slate-500 mt-1">Only students in this course will appear.</p>
                         </div>
-                        <div class="mb-4">
-                            <label for="notification-subject" class="block text-sm font-medium mb-1">Subject</label>
-                            <input type="text" id="notification-subject" required class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800">
+                        <div>
+                            <label for="attendance-date" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Select Date</label>
+                            <input type="date" id="attendance-date" class="w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-primary focus:border-primary">
                         </div>
-                        <div class="mb-4">
-                            <label for="notification-body" class="block text-sm font-medium mb-1">Message</label>
-                            <textarea id="notification-body" rows="5" required class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800"></textarea>
+                        <div class="flex items-end">
+                            <div class="text-sm text-slate-500 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg w-full">
+                                <span class="font-bold text-blue-600">Tip:</span> Ensure you select the correct course to avoid mixing students.
+                            </div>
                         </div>
-                        <div class="grid grid-cols-4 gap-4">
-                            <button type="button" data-type="email" class="send-notification-btn w-full bg-primary text-white font-medium py-2.5 px-4 rounded-lg text-sm hover:bg-opacity-90 transition duration-150">
-                                Send Email
-                            </button>
-                            <button type="button" data-type="sms" class="send-notification-btn w-full bg-yellow-600 text-white font-medium py-2.5 px-4 rounded-lg text-sm hover:bg-yellow-700 transition duration-150">
-                                Send SMS
-                            </button>
-                            <button type="button" data-type="whatsapp" class="send-notification-btn w-full bg-green-600 text-white font-medium py-2.5 px-4 rounded-lg text-sm hover:bg-green-700 transition duration-150">
-                                WhatsApp
-                            </button>
-                            <button type="button" data-type="push" class="send-notification-btn w-full bg-purple-600 text-white font-medium py-2.5 px-4 rounded-lg text-sm hover:bg-purple-700 transition duration-150">
-                                Send App Push
-                            </button>
-                        </div>
-                        <p id="notification-status" class="mt-4 text-sm font-medium text-center text-slate-500 dark:text-slate-400 hidden"></p>
-                    </form>
+                    </div>
                 </div>
-            </div>
-            
-            <div id="content-share-notes" class="content-section hidden">
-                <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">Share Course Notes</h2>
-                <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6 mb-8">
-                    <form id="notes-upload-form">
-                        <div class="mb-4">
-                            <label for="note-course-select" class="block text-sm font-medium mb-1">Select Course</label>
-                            <select id="note-course-select" required class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800"></select>
+
+                <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm overflow-hidden border border-slate-100 dark:border-slate-700 mb-6">
+                    <div class="p-4 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-700 dark:text-slate-200">Student List</h3>
+                        <div class="space-x-2">
+                            <button id="mark-present-btn" disabled class="px-4 py-2 bg-green-100 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 disabled:opacity-50 disabled:cursor-not-allowed transition">Mark Selected Present</button>
+                            <button id="mark-absent-btn" disabled class="px-4 py-2 bg-red-100 text-red-700 rounded-lg text-sm font-medium hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed transition">Mark Selected Absent</button>
                         </div>
-                        <div class="mb-4">
-                            <label for="note-title" class="block text-sm font-medium mb-1">Note Title / Subject</label>
-                            <input type="text" id="note-title" required class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800">
-                        </div>
-                        <div class="mb-4">
-                            <label for="note-description" class="block text-sm font-medium mb-1">Description (Optional)</label>
-                            <textarea id="note-description" rows="2" class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800"></textarea>
-                        </div>
-                        <div class="mb-4">
-                            <label for="note-file-input" class="block text-sm font-medium mb-1">Select File (PDF, DOCX, TXT, JPG, PNG)</label>
-                            <input type="file" id="note-file-input" required class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 p-2">
-                        </div>
-                        <button type="submit" id="upload-note-btn" class="w-full bg-primary text-white font-medium py-2.5 px-4 rounded-lg text-sm hover:bg-opacity-90 transition duration-150">
-                            Upload & Share Note
-                        </button>
-                        <p id="upload-status" class="mt-4 text-sm font-medium text-center text-slate-500 dark:text-slate-400 hidden"></p>
-                    </form>
-                </div>
-                
-                <h3 class="text-2xl font-bold text-slate-900 dark:text-white mb-4">My Uploaded Notes</h3>
-                <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm overflow-hidden">
-                    <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                        <thead>
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Title</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Course</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Filename</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="my-notes-table-body" class="divide-y divide-slate-200 dark:divide-slate-700">
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                            <thead class="bg-slate-50 dark:bg-slate-800">
+                                <tr>
+                                    <th class="px-6 py-3 text-left w-16">
+                                        <input type="checkbox" id="select-all-students" class="rounded border-slate-300 text-primary focus:ring-primary" disabled>
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Student Name</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">ID</th>
+                                    <th class="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider">Current Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="attendance-table-body" class="divide-y divide-slate-200 dark:divide-slate-700 bg-white dark:bg-surface-dark">
+                                <tr><td colspan="4" class="px-6 py-12 text-center text-slate-400">Please select a course to load students.</td></tr>
                             </tbody>
-                    </table>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="flex justify-end pb-8">
+                    <button id="submit-attendance-btn" disabled class="bg-primary text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-blue-200 dark:shadow-none hover:bg-primary-hover transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                        <span class="material-symbols-outlined">save</span>
+                        Submit Attendance
+                    </button>
                 </div>
             </div>
-            <div id="content-reports" class="content-section hidden">
-                <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">Student Attendance Report</h2>
-                <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm overflow-hidden">
-                    <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                        <thead>
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Student Name</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Total Classes</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-green-600 uppercase tracking-wider">Present</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-red-600 uppercase tracking-wider">Absent</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">SMS</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">WhatsApp</th>
-                            </tr>
-                        </thead>
-                        <tbody id="attendance-report-body" class="divide-y divide-slate-200 dark:divide-slate-700">
-                             <tr><td colspan="6" class="px-6 py-4 text-center">Loading student data...</td></tr>
-                        </tbody>
-                    </table>
-                    <p id="report-status" class="p-4 text-sm text-red-500 hidden">Error loading attendance data.</p>
+
+            <div id="content-notes" class="content-section hidden animate-fade-in">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-1">
+                        <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm p-6 border border-slate-100 dark:border-slate-700 sticky top-4">
+                            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4">Upload Material</h3>
+                            <form id="upload-note-form" class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Title</label>
+                                    <input type="text" name="title" required class="w-full rounded-lg border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-sm focus:ring-primary">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Course</label>
+                                    <select id="note-course-select" name="course_id" required class="w-full rounded-lg border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-sm focus:ring-primary"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Description</label>
+                                    <textarea name="description" rows="3" class="w-full rounded-lg border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-sm focus:ring-primary"></textarea>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">File</label>
+                                    <input type="file" id="note-file" name="file" required accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.jpg,.png" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20">
+                                    <p class="text-xs text-slate-400 mt-1">Max size: 16MB</p>
+                                </div>
+                                <button type="submit" id="upload-note-btn" class="w-full bg-primary text-white font-bold py-2.5 rounded-lg hover:bg-primary-hover transition shadow-md">Upload Note</button>
+                            </form>
+                            <div id="upload-progress" class="hidden mt-4">
+                                <div class="w-full bg-slate-200 rounded-full h-1.5"><div id="upload-bar" class="bg-green-500 h-1.5 rounded-full" style="width: 0%"></div></div>
+                                <p id="upload-status" class="text-xs text-center mt-1 text-slate-500">Uploading...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-2">
+                        <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+                            <div class="p-6 border-b border-slate-100 dark:border-slate-700">
+                                <h3 class="font-bold text-slate-900 dark:text-white">My Uploaded Notes</h3>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                                    <thead class="bg-slate-50 dark:bg-slate-800">
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Title</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Course</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Date</th>
+                                            <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="teacher-notes-body" class="divide-y divide-slate-200 dark:divide-slate-700">
+                                        <tr><td colspan="4" class="px-6 py-8 text-center text-slate-500">No notes found.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div id="content-announcements" class="content-section hidden">
-                <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">Institute Announcements</h2>
-                <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm overflow-hidden">
-                    <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                        <thead>
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Title</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Content</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
-                            </tr>
-                        </thead>
-                        <tbody id="announcements-table-body" class="divide-y divide-slate-200 dark:divide-slate-700">
+
+            <div id="content-reports" class="content-section hidden animate-fade-in">
+                <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm p-6 mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900 dark:text-white">Student Reports</h2>
+                        <p class="text-sm text-slate-500">View attendance and contact details.</p>
+                    </div>
+                    <div class="w-full md:w-64">
+                        <label for="report-course-select" class="block text-xs font-bold uppercase text-slate-400 mb-1">Filter by Course</label>
+                        <select id="report-course-select" class="w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm">
+                            <option value="">Show All Students</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm overflow-hidden border border-slate-100 dark:border-slate-700">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                            <thead class="bg-slate-50 dark:bg-slate-800">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Photo</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Student Name</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Phone</th>
+                                    <th class="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider">Attendance</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="teacher-reports-body" class="divide-y divide-slate-200 dark:divide-slate-700 bg-white dark:bg-surface-dark">
+                                <tr><td colspan="5" class="px-6 py-8 text-center text-slate-500">Loading reports...</td></tr>
                             </tbody>
-                    </table>
+                        </table>
+                    </div>
                 </div>
             </div>
 
@@ -265,672 +343,588 @@
     </main>
 </div>
 
+<div id="notify-modal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-slate-900 bg-opacity-75 transition-opacity" aria-hidden="true" id="modal-backdrop"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        <div class="inline-block align-bottom bg-white dark:bg-surface-dark rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <div class="px-6 py-6">
+                <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2" id="notify-modal-title">Send Message</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">Send a notification directly to this student.</p>
+                
+                <form class="space-y-4">
+                    <input type="hidden" id="notify-student-id">
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Subject</label>
+                        <input type="text" id="notify-subject" class="w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm focus:ring-primary">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Message Body</label>
+                        <textarea id="notify-body" rows="4" class="w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm focus:ring-primary"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Channel</label>
+                        <select id="notify-type" class="w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm focus:ring-primary">
+                            <option value="portal">App Notification</option>
+                            <option value="sms">SMS</option>
+                            <option value="whatsapp">WhatsApp (Direct Link)</option>
+                            <option value="email">Email</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="bg-slate-50 dark:bg-slate-800/50 px-6 py-4 flex flex-row-reverse gap-3">
+                <button type="button" id="send-notify-btn" class="w-full sm:w-auto inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-primary text-base font-medium text-white hover:bg-primary-hover sm:text-sm transition">Send Message</button>
+                <button type="button" id="cancel-notify-btn" class="w-full sm:w-auto inline-flex justify-center rounded-lg border border-slate-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-slate-700 hover:bg-slate-50 sm:text-sm dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600 dark:hover:bg-slate-600 transition">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
 
 <script>
-    // Define the base URL explicitly using the current location origin 
+    // --- APP CONFIGURATION ---
     const API_ORIGIN = window.location.origin;
     const API_BASE_URL = API_ORIGIN + '/api';
-    let allStudents = []; // Global variable to store all students
+    
+    // --- CACHE ---
+    let allTeacherCourses = [];
+    let allTeacherStudents = []; // Contains ALL students of this teacher
+    let currentAttendanceStatus = {};
+    let reportData = []; // Cache for report data to allow filtering
 
-    // --- PWA INSTALL LOGIC ---
+    // --- PWA INSTALL ---
     let deferredPrompt;
     const installBtn = document.getElementById('install-app-btn');
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
-        installBtn.classList.remove('hidden'); 
+        if(installBtn) installBtn.classList.remove('hidden');
     });
-    installBtn.addEventListener('click', async () => {
-        if (deferredPrompt) {
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            if (outcome === 'accepted') installBtn.classList.add('hidden');
-            deferredPrompt = null;
-        }
-    });
+    if(installBtn) {
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') installBtn.classList.add('hidden');
+                deferredPrompt = null;
+            }
+        });
+    }
 
     document.addEventListener('DOMContentLoaded', () => {
-        
-        // --- GLOBAL UI & NAVIGATION ---
+        // Elements
         const logoutBtn = document.getElementById('logout-btn');
         const contentSections = document.querySelectorAll('.content-section');
         const navLinks = document.querySelectorAll('.nav-link');
-        const courseSelect = document.getElementById('course-select');
-        const attendanceReportBody = document.getElementById('attendance-report-body');
-        // NEW: Note upload elements
-        const noteCourseSelect = document.getElementById('note-course-select');
-        const notesUploadForm = document.getElementById('notes-upload-form');
-        const myNotesTableBody = document.getElementById('my-notes-table-body');
-        const uploadStatus = document.getElementById('upload-status');
-
-
-        function showSection(hash) {
-            contentSections.forEach(section => {
-                section.classList.add('hidden');
-            });
-            navLinks.forEach(link => {
-                link.classList.remove('bg-primary/10', 'dark:bg-primary/20', 'text-primary');
-                link.classList.add('text-slate-700', 'dark:text-slate-300', 'hover:bg-primary/10', 'dark:hover:bg-primary/20');
-            });
-
-            // Handle navigation hash change
-            let targetId = hash.substring(1) || 'courses';
-            if (targetId === 'email') targetId = 'notifications'; 
-            
-            let targetSection = document.getElementById(`content-${targetId}`);
-            let targetLink = document.querySelector(`.nav-link[href="#${targetId}"]`);
-            if (!targetLink) { 
-                 targetLink = document.querySelector(`.nav-link[href="#notifications"]`);
-            }
-
-
-            if (targetSection) {
-                targetSection.classList.remove('hidden');
-                if (targetLink) {
-                    targetLink.classList.add('bg-primary/10', 'dark:bg-primary/20', 'text-primary');
-                    targetLink.classList.remove('text-slate-700', 'dark:text-slate-300', 'hover:bg-primary/10', 'dark:hover:bg-primary/20');
-                }
-            }
-        }
-
-        window.addEventListener('hashchange', () => {
-            showSection(window.location.hash);
-            const currentHash = window.location.hash.substring(1) || 'courses';
-            if (currentHash === 'courses') loadTeacherCourses();
-            if (currentHash === 'announcements') fetchAnnouncements();
-            if (currentHash === 'notifications') populateStudentDropdown(); 
-            if (currentHash === 'reports') fetchAttendanceReportData(); 
-            if (currentHash === 'share-notes') {
-                // We call loadTeacherCourses() because it populates the dropdowns
-                loadTeacherCourses();
-                fetchMyUploadedNotes();
-            }
-        });
+        const pageTitle = document.getElementById('page-title');
         
-        // Initial load based on hash or default to courses
-        showSection(window.location.hash);
+        // Attendance Elements
+        const attendanceCourseSelect = document.getElementById('attendance-course-select');
+        const attendanceDateInput = document.getElementById('attendance-date');
+        const markPresentBtn = document.getElementById('mark-present-btn');
+        const markAbsentBtn = document.getElementById('mark-absent-btn');
+        const submitAttendanceBtn = document.getElementById('submit-attendance-btn');
+        const selectAllCheckbox = document.getElementById('select-all-students');
+        
+        // Note Elements
+        const uploadNoteForm = document.getElementById('upload-note-form');
+        const noteCourseSelect = document.getElementById('note-course-select');
+        
+        // Report Elements
+        const reportCourseSelect = document.getElementById('report-course-select');
+        
+        // Modal Elements
+        const notifyModal = document.getElementById('notify-modal');
+        const notifyBackdrop = document.getElementById('modal-backdrop');
+        const sendNotifyBtn = document.getElementById('send-notify-btn');
+        const cancelNotifyBtn = document.getElementById('cancel-notify-btn');
 
+        // --- NAVIGATION LOGIC ---
+        function showSection(hash) {
+            const targetId = hash.substring(1) || 'dashboard';
+            contentSections.forEach(section => section.classList.add('hidden'));
+            const targetSection = document.getElementById(`content-${targetId}`);
+            if(targetSection) {
+                targetSection.classList.remove('hidden');
+                
+                // Update Nav Styles
+                navLinks.forEach(link => {
+                    link.classList.remove('bg-primary/10', 'dark:bg-primary/20', 'text-primary');
+                    link.classList.add('text-slate-600', 'dark:text-slate-300');
+                    const icon = link.querySelector('span');
+                    if(icon) icon.classList.remove('text-primary');
+                });
+                
+                const activeLink = document.querySelector(`.nav-link[href="${hash}"]`) || document.querySelector(`.nav-link[href="#dashboard"]`);
+                if(activeLink) {
+                    activeLink.classList.remove('text-slate-600', 'dark:text-slate-300');
+                    activeLink.classList.add('bg-primary/10', 'dark:bg-primary/20', 'text-primary');
+                    const icon = activeLink.querySelector('span');
+                    if(icon) icon.classList.add('text-primary');
+                }
 
-        // --- AUTHENTICATION ---
-        async function checkTeacherSession() {
-            try {
-                // FIX: Check response.status explicitly before proceeding
-                const response = await fetch(`${API_ORIGIN}/api/check_session`, {credentials: 'include'});
-                
-                if (response.status === 401 || !response.ok) { 
-                    throw new Error('Session check failed');
-                }
-                
-                const result = await response.json();
-                if (!result.logged_in || result.user.role !== 'teacher') {
-                    // FIX: Use absolute URL for navigation
-                    window.location.href = API_ORIGIN + '/'; 
-                } else {
-                    document.getElementById('teacher-welcome').textContent = `Welcome, ${result.user.name}!`;
-                    loadTeacherCourses();
-                    populateStudentDropdown(); 
-                    
-                    // !!! INITIALIZE FIREBASE AFTER LOGIN !!!
-                    setTimeout(initFirebase, 2000);
-                }
-            } catch (error) { 
-                console.error("Session check failed:", error);
-                // FIX: Use absolute URL for navigation
-                window.location.href = API_ORIGIN + '/'; 
+                // Update Title
+                const titles = {'dashboard': 'Dashboard', 'courses': 'My Courses', 'attendance': 'Mark Attendance', 'notes': 'Share Notes', 'reports': 'Student Reports'};
+                pageTitle.textContent = titles[targetId] || 'Dashboard';
             }
         }
+
+        async function loadContent() {
+            const hash = window.location.hash || '#dashboard';
+            showSection(hash);
+            
+            // Ensure core data is loaded
+            if(allTeacherCourses.length === 0) await fetchTeacherCourses();
+            
+            switch (hash) {
+                case '#dashboard':
+                    fetchDashboardData();
+                    break;
+                case '#courses':
+                    renderCoursesTable();
+                    break;
+                case '#attendance':
+                    populateDropdowns();
+                    if(allTeacherStudents.length === 0) await fetchAllTeacherStudents();
+                    // Don't auto-render table, wait for selection
+                    break;
+                case '#notes':
+                    populateDropdowns();
+                    fetchTeacherNotes();
+                    break;
+                case '#reports':
+                    populateDropdowns(); 
+                    if(allTeacherStudents.length === 0) await fetchAllTeacherStudents(); // Need students for cross-referencing
+                    fetchTeacherAttendanceReport();
+                    break;
+            }
+        }
+
+        window.addEventListener('hashchange', loadContent);
+
+        // --- AUTH & INITIAL DATA ---
+        async function checkSessionAndInit() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/check_session`, {credentials: 'include'});
+                const result = await response.json();
+                if (!response.ok || !result.logged_in || result.user.role !== 'teacher') {
+                    window.location.href = API_ORIGIN + '/';
+                    return;
+                }
+                
+                // Init
+                document.getElementById('welcome-message').textContent = `Welcome back, ${result.user.name.split(' ')[0]}.`;
+                loadContent();
+                
+                // Lazy load Firebase
+                setTimeout(initFirebase, 2000);
+
+            } catch (error) {
+                console.error("Session Check Failed:", error);
+                window.location.href = API_ORIGIN + '/';
+            }
+        }
+
         logoutBtn.addEventListener('click', async () => {
             await fetch(`${API_BASE_URL}/logout`, { method: 'POST', credentials: 'include' });
             window.location.href = API_ORIGIN + '/';
         });
 
-        // --- COURSES LOGIC ---
-        async function loadTeacherCourses() {
+        // --- DATA FETCHING ---
+        async function fetchTeacherCourses() {
             try {
-                const response = await fetch(`${API_BASE_URL}/teacher/courses`, {credentials: 'include'});
-                const courses = await response.json();
-                
-                const coursesList = document.getElementById('courses-list');
-                const noCoursesMessage = document.getElementById('no-courses');
-                
-                coursesList.innerHTML = '';
-                
-                if (courses.length === 0) {
-                    coursesList.appendChild(noCoursesMessage);
-                    noCoursesMessage.classList.remove('hidden');
-                } else {
-                    noCoursesMessage.classList.add('hidden');
-                    
-                    const colors = ['bg-blue-600', 'bg-green-600', 'bg-purple-600'];
-                    
-                    courses.forEach((course, index) => {
-                        const subjects = course.subjects.join(', ');
-                        const firstSubject = course.subjects[0];
-                        const colorClass = colors[index % colors.length];
+                const res = await fetch(`${API_BASE_URL}/teacher/courses`, { credentials: 'include' });
+                allTeacherCourses = await res.json();
+            } catch (e) { console.error(e); }
+        }
 
-                        const cardHtml = `
-                            <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm overflow-hidden flex">
-                                <div class="w-24 flex items-center justify-center ${colorClass} text-white text-xl font-bold">${firstSubject.substring(0, 3).toUpperCase()}</div>
-                                <div class="p-4 flex flex-col justify-between flex-1">
-                                    <div>
-                                        <h3 class="text-lg font-bold text-slate-900 dark:text-white">${course.name}</h3>
-                                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">${subjects}</p>
-                                    </div>
-                                    <a href="#course-details-${course.id}" class="mt-3 w-fit self-start bg-primary text-white font-medium py-1.5 px-3 rounded-lg text-xs hover:bg-opacity-90">
-                                        Manage
-                                    </a>
-                                </div>
-                            </div>
-                        `;
-                        coursesList.innerHTML += cardHtml;
-                    });
-                }
-                
-                // MODIFIED: Populate both dropdowns
-                const courseOptions = courses.map(c => `<option value="${c.id}">${c.name}</option>`).join('') || '<option value="">No Courses Assigned</option>';
-                courseSelect.innerHTML = courseOptions;
-                noteCourseSelect.innerHTML = courseOptions;
+        async function fetchAllTeacherStudents() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/teacher/students`, { credentials: 'include' });
+                allTeacherStudents = await res.json();
+            } catch (e) { console.error(e); }
+        }
 
-            } catch (error) {
-                console.error("Failed to load teacher courses:", error);
-                document.getElementById('courses-list').innerHTML = `<div class="col-span-2 bg-red-100 dark:bg-red-900 rounded-xl shadow-sm p-6"><p class="text-red-500">Error loading courses.</p></div>`;
+        function populateDropdowns() {
+            const selects = [attendanceCourseSelect, noteCourseSelect, reportCourseSelect];
+            selects.forEach(select => {
+                if(!select) return;
+                // Preserve value if possible, else reset
+                const currentVal = select.value;
+                
+                // For Report filter, add 'All' option
+                const defaultOption = select.id === 'report-course-select' 
+                    ? '<option value="">Show All Students</option>' 
+                    : '<option value="">-- Select Course --</option>';
+                
+                select.innerHTML = defaultOption + allTeacherCourses.map(c => 
+                    `<option value="${c.id}">${c.name}</option>`
+                ).join('');
+                
+                if(currentVal) select.value = currentVal;
+            });
+        }
+
+        async function fetchDashboardData() {
+            document.getElementById('total-my-courses').textContent = allTeacherCourses.length;
+            if(allTeacherStudents.length === 0) await fetchAllTeacherStudents();
+            document.getElementById('total-my-students').textContent = allTeacherStudents.length;
+            // Notes count fetched via separate call if needed, simple placeholder for now
+        }
+
+        function renderCoursesTable() {
+            const tbody = document.getElementById('teacher-courses-body');
+            tbody.innerHTML = allTeacherCourses.length ? allTeacherCourses.map(c => `
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition">
+                    <td class="px-6 py-4 font-medium text-slate-900 dark:text-white">${c.name}</td>
+                    <td class="px-6 py-4 text-slate-500 dark:text-slate-400">${c.subjects.join(', ')}</td>
+                </tr>
+            `).join('') : '<tr><td colspan="2" class="px-6 py-8 text-center text-slate-500">No courses found.</td></tr>';
+        }
+
+        // --- ATTENDANCE LOGIC (Course-Wise Filter) ---
+        
+        function renderAttendanceTable(courseId) {
+            const tbody = document.getElementById('attendance-table-body');
+            tbody.innerHTML = '';
+            currentAttendanceStatus = {};
+            
+            if(!courseId) {
+                tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-12 text-center text-slate-400">Please select a course above to load student list.</td></tr>';
+                updateAttendanceButtons();
+                return;
+            }
+
+            // Filter students by Course ID using the cached 'course_ids' array in student objects
+            const filteredStudents = allTeacherStudents.filter(s => s.course_ids && s.course_ids.includes(parseInt(courseId)));
+
+            if(filteredStudents.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-12 text-center text-slate-400">No students found enrolled in this course.</td></tr>';
+                updateAttendanceButtons();
+                return;
+            }
+
+            filteredStudents.forEach(s => {
+                currentAttendanceStatus[s.id] = 'Present'; // Default
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition group">
+                        <td class="px-6 py-3">
+                            <input type="checkbox" class="student-checkbox rounded border-slate-300 text-primary focus:ring-primary w-5 h-5 cursor-pointer" data-id="${s.id}">
+                        </td>
+                        <td class="px-6 py-3 text-xs text-slate-400 font-mono">${s.id}</td>
+                        <td class="px-6 py-3 text-sm font-medium text-slate-900 dark:text-white flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">${s.name.charAt(0)}</div>
+                            ${s.name}
+                        </td>
+                        <td class="px-6 py-3 text-center">
+                            <span id="status-${s.id}" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Present</span>
+                        </td>
+                    </tr>
+                `;
+            });
+            updateAttendanceButtons();
+        }
+
+        function updateAttendanceButtons() {
+            const hasStudents = Object.keys(currentAttendanceStatus).length > 0;
+            const dateSet = !!attendanceDateInput.value;
+            const courseSet = !!attendanceCourseSelect.value;
+            
+            const enableActions = hasStudents;
+            const enableSubmit = hasStudents && dateSet && courseSet;
+
+            selectAllCheckbox.disabled = !hasStudents;
+            markPresentBtn.disabled = !enableActions;
+            markAbsentBtn.disabled = !enableActions;
+            submitAttendanceBtn.disabled = !enableSubmit;
+            
+            // Visual feedback
+            if(enableSubmit) {
+                submitAttendanceBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                submitAttendanceBtn.classList.add('opacity-50', 'cursor-not-allowed');
             }
         }
 
+        attendanceCourseSelect.addEventListener('change', (e) => {
+            renderAttendanceTable(e.target.value);
+        });
+        
+        attendanceDateInput.valueAsDate = new Date(); // Default today
+        attendanceDateInput.addEventListener('change', updateAttendanceButtons);
 
-        // --- ATTENDANCE MARKING LOGIC ---
-        const attendanceDate = document.getElementById('attendance-date');
-        const fetchStudentsBtn = document.getElementById('fetch-students-btn');
-        const studentListBody = document.getElementById('student-list-body');
-        const attendanceForm = document.getElementById('attendance-form');
-        const studentsTable = attendanceForm; 
-
-        fetchStudentsBtn.addEventListener('click', async () => {
-            const date = attendanceDate.value;
-            const courseId = courseSelect.value;
-            if (!courseId || !date) {
-                alert("Please select a course and a date.");
-                return;
-            }
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/teacher/students`, {credentials: 'include'});
-                if (!response.ok) throw new Error(`Server status: ${response.status}`);
-                const students = await response.json();
-                
-                studentListBody.innerHTML = '';
-                if (students.length === 0) {
-                    studentListBody.innerHTML = '<tr><td colspan="2" class="px-6 py-4 text-center">No students found. Please add students in the admin portal first.</td></tr>';
-                } else {
-                    students.forEach(student => {
-                        studentListBody.innerHTML += `
-                            <tr class="even:bg-slate-50 dark:even:bg-slate-800">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${student.name}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                    <div class="flex gap-4">
-                                        <label class="inline-flex items-center">
-                                            <input type="radio" class="form-radio text-green-600" name="status_${student.id}" value="Present" required> 
-                                            <span class="ml-2">Present</span>
-                                        </label>
-                                        <label class="inline-flex items-center">
-                                            <input type="radio" class="form-radio text-red-600" name="status_${student.id}" value="Absent"> 
-                                            <span class="ml-2">Absent</span>
-                                        </label>
-                                    </div>
-                                </td>
-                            </tr>
-                        `;
-                    });
-                }
-
-                studentsTable.classList.remove('hidden');
-            } catch (error) {
-                console.error("Failed to fetch students:", error);
-                alert("An error occurred while fetching students.");
-                studentsTable.classList.add('hidden');
-            }
+        selectAllCheckbox.addEventListener('change', (e) => {
+            document.querySelectorAll('.student-checkbox').forEach(cb => cb.checked = e.target.checked);
         });
 
-        attendanceForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
+        function bulkMark(status) {
+            const selected = document.querySelectorAll('.student-checkbox:checked');
+            if(selected.length === 0) return alert("Select at least one student.");
             
-            const attendanceData = Array.from(studentListBody.querySelectorAll('input[type="radio"]:checked')).map(radio => {
-                return {
-                    student_id: parseInt(radio.name.split('_')[1]),
-                    status: radio.value
+            selected.forEach(cb => {
+                const id = cb.dataset.id;
+                currentAttendanceStatus[id] = status;
+                const badge = document.getElementById(`status-${id}`);
+                badge.textContent = status;
+                if(status === 'Present') {
+                    badge.className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800";
+                } else {
+                    badge.className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800";
                 }
+                cb.checked = false; 
             });
+            selectAllCheckbox.checked = false;
+        }
 
-            if (attendanceData.length === 0) {
-                alert("Please mark the status for at least one student.");
-                return;
-            }
+        markPresentBtn.addEventListener('click', () => bulkMark('Present'));
+        markAbsentBtn.addEventListener('click', () => bulkMark('Absent'));
+
+        submitAttendanceBtn.addEventListener('click', async () => {
+            submitAttendanceBtn.textContent = "Submitting...";
+            submitAttendanceBtn.disabled = true;
+            
+            const payload = {
+                date: attendanceDateInput.value,
+                attendance_data: Object.entries(currentAttendanceStatus).map(([sid, stat]) => ({
+                    student_id: parseInt(sid), status: stat
+                }))
+            };
 
             try {
-                const response = await fetch(`${API_BASE_URL}/teacher/attendance`, {
+                const res = await fetch(`${API_BASE_URL}/teacher/attendance`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     credentials: 'include',
-                    body: JSON.stringify({
-                        date: attendanceDate.value,
-                        attendance_data: attendanceData
-                    })
+                    body: JSON.stringify(payload)
                 });
-
-                const result = await response.json();
-                if (response.ok) {
-                    alert(result.message);
-                    studentsTable.classList.add('hidden');
-                    attendanceForm.reset();
-                    attendanceDate.valueAsDate = new Date();
-                } else {
-                    alert(`Attendance submission failed: ${result.message || 'Server Error'}`);
-                }
-            } catch (error) {
-                console.error("Attendance submission error:", error);
-                alert("An unexpected error occurred during attendance submission.");
-            }
-        });
-        
-        // --- NOTIFICATION LOGIC (Email, SMS, WhatsApp) ---
-        const notificationForm = document.getElementById('notification-form');
-        const studentSelect = document.getElementById('student-select');
-        const notificationButtons = document.querySelectorAll('.send-notification-btn');
-        const notificationStatus = document.getElementById('notification-status');
-
-
-        async function populateStudentDropdown() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/teacher/students`, {credentials: 'include'});
-                allStudents = await response.json();
-                
-                // Keep the 'Send to ALL Students' option
-                studentSelect.innerHTML = '<option value="all">Send to ALL Students (' + allStudents.length + ')</option>';
-                
-                allStudents.forEach(student => {
-                    studentSelect.innerHTML += `<option value="${student.id}">${student.name} (${student.email})</option>`;
-                });
-            } catch (error) {
-                console.error("Failed to load students for notification dropdown:", error);
-                studentSelect.innerHTML = '<option value="">Error loading students</option>';
-            }
-        }
-        
-        notificationButtons.forEach(button => {
-            button.addEventListener('click', async (e) => {
-                e.preventDefault();
-                notificationStatus.classList.add('hidden');
-                
-                const targetId = studentSelect.value;
-                const subject = document.getElementById('notification-subject').value;
-                const body = document.getElementById('notification-body').value;
-                const notificationType = button.getAttribute('data-type');
-                
-                if (!targetId || !subject || !body) {
-                    alert('Please fill out the student selection, subject, and message fields.');
-                    return;
-                }
-                
-                let studentsToSendTo = [];
-                if (targetId === 'all') {
-                    studentsToSendTo = allStudents;
-                } else {
-                    const singleStudent = allStudents.find(s => s.id == targetId);
-                    if (singleStudent) studentsToSendTo.push(singleStudent);
-                }
-
-                if (studentsToSendTo.length === 0) {
-                     alert("No students selected or found to send the notification.");
-                     return;
-                }
-
-                try {
-                    // Disable buttons while sending
-                    notificationButtons.forEach(btn => btn.disabled = true);
-                    notificationStatus.textContent = `Preparing to send ${studentsToSendTo.length} message(s) via ${notificationType.toUpperCase()}...`;
-                    notificationStatus.classList.remove('hidden');
-                    
-                    const totalRecipients = studentsToSendTo.length;
-                    let successCount = 0;
-                    let failureCount = 0;
-                    let finalMessage = "";
-
-                    // For bulk, iterate and call the API for each student
-                    for (const student of studentsToSendTo) {
-                        notificationStatus.textContent = `Sending message ${successCount + failureCount + 1} of ${totalRecipients} to ${student.name}...`;
-
-                        // Reuse the centralized notification endpoint
-                        const response = await fetch(`${API_BASE_URL}/teacher/notify`, {
-                            method: 'POST',
-                            headers: {'Content-Type': 'application/json'},
-                            credentials: 'include',
-                            body: JSON.stringify({ 
-                                student_id: student.id, 
-                                subject: subject, 
-                                body: body,
-                                type: notificationType
-                            })
-                        });
-                        
-                        if (response.ok) {
-                            successCount++;
-                        } else {
-                            failureCount++;
-                        }
-                    }
-                    
-                    finalMessage = `Notification sent via ${notificationType.toUpperCase()} to ${successCount} recipient(s). ${failureCount} failed (Check console and student phone numbers).`;
-                    
-                    alert(finalMessage);
-                    notificationStatus.textContent = finalMessage;
-                    
-                    if (successCount > 0) {
-                        notificationForm.reset();
-                    }
-                } catch (error) {
-                    console.error("Notification submission error:", error);
-                    alert("An unexpected error occurred during message submission.");
-                    notificationStatus.textContent = "Error sending message(s). Check console.";
-                    notificationStatus.classList.add('text-red-500');
-                } finally {
-                    // Re-enable buttons and reset status styling
-                    notificationButtons.forEach(btn => btn.disabled = false);
-                    notificationStatus.classList.remove('text-red-500');
-                }
-            });
-        });
-
-
-        // --- REPORTS LOGIC ---
-
-        // Centralized Quick Notification function for reports buttons
-        window.sendQuickReportNotification = async function(studentId, studentName, status, type) {
-            
-            // If the user chooses WhatsApp from the report table, use the direct link method
-            if (type === 'whatsapp') {
-                const student = allStudents.find(s => s.id === studentId);
-                const phoneNumber = student ? student.phone_number : null;
-                
-                if (!phoneNumber) {
-                    alert(`WhatsApp failed: No phone number available for ${studentName}.`);
-                    return;
-                }
-                const encodedMessage = encodeURIComponent(`Dear ${studentName}, your current attendance summary is: ${status}. Please ensure timely attendance.`);
-                
-                // Use the wa.me deep link to open WhatsApp
-                window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, '_blank');
-                return;
-            }
-
-            // Fallback for SMS (uses the API)
-            const subject = `${status} Attendance Alert`;
-            const body = `Dear ${studentName}, your current attendance status is marked as ${status}. Please ensure timely attendance.`;
-            
-            try {
-                if (confirm(`Send quick ${type.toUpperCase()} notification to ${studentName}?`)) {
-                    const response = await fetch(`${API_BASE_URL}/teacher/notify`, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        credentials: 'include',
-                        body: JSON.stringify({ 
-                            student_id: studentId, 
-                            subject: subject, 
-                            body: body,
-                            type: type
-                        })
-                    });
-                    const result = await response.json();
-                    alert(result.message);
-                }
-            } catch (error) {
-                console.error(`Quick ${type} error:`, error);
-                alert(`Failed to send quick ${type} notification.`);
-            }
-        }
-        
-        // Function to fetch attendance report data
-        async function fetchAttendanceReportData() {
-             attendanceReportBody.innerHTML = `<tr><td colspan="6" class="px-6 py-4 text-center">Fetching attendance data...</td></tr>`;
-             const reportStatus = document.getElementById('report-status');
-             reportStatus.classList.add('hidden');
-             
-             try {
-                // Call the new, teacher-accessible endpoint
-                const response = await fetch(`${API_BASE_URL}/teacher/reports/attendance`, {credentials: 'include'});
-                
-                if (response.status === 403) {
-                     throw new Error("Access Denied. You are not authorized to view this report.");
-                }
-                
-                if (!response.ok) {
-                    const errorJson = await response.json();
-                    throw new Error(errorJson.message || `Server Error (${response.status})`);
-                }
-                
-                const report = await response.json();
-                
-                // Store student data globally if not already fetched
-                if (allStudents.length === 0) {
-                    allStudents = report.map(r => ({ id: r.student_id, name: r.student_name, phone_number: r.phone_number }));
-                }
-
-                attendanceReportBody.innerHTML = '';
-
-                if (report.length === 0) {
-                    attendanceReportBody.innerHTML = `<tr><td colspan="6" class="px-6 py-4 text-center">No student attendance records found.</td></tr>`;
-                    return;
-                }
-
-                report.forEach(data => {
-                    const isPhoneAvailable = !!data.phone_number;
-                    const attendanceSummary = `Present: ${data.present} / ${data.total_classes}`;
-                    const quickStatusText = `Attendance ${data.present}/${data.total_classes}`;
-
-
-                    attendanceReportBody.innerHTML += `
-                        <tr class="even:bg-slate-50 dark:even:bg-slate-800">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${data.student_name}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${data.total_classes}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600">${data.present}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600">${data.absent}</td>
-                            
-                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
-                                <button onclick="sendQuickReportNotification(${data.student_id}, '${data.student_name}', '${quickStatusText}', 'sms')" class="text-yellow-600 hover:text-yellow-700 disabled:text-slate-400" ${isPhoneAvailable ? '' : 'disabled'}>
-                                    <span class="material-symbols-outlined align-middle text-lg">sms</span>
-                                </button>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
-                                <button onclick="sendQuickReportNotification(${data.student_id}, '${data.student_name}', '${quickStatusText}', 'whatsapp')" class="text-green-600 hover:text-green-700 disabled:text-slate-400" ${isPhoneAvailable ? '' : 'disabled'}>
-                                    <span class="material-symbols-outlined align-middle text-lg">call</span>
-                                </button>
-                            </td>
-                        </tr>`;
-                });
-
-             } catch (error) {
-                 console.error("Error fetching attendance report:", error);
-                 reportStatus.textContent = `Failed to load report data. Reason: ${error.message}`;
-                 reportStatus.classList.remove('hidden');
-                 attendanceReportBody.innerHTML = `<tr><td colspan="6" class="px-6 py-4 text-center text-red-500">Failed to load report. Check console for details.</td></tr>`;
-             }
-        }
-
-
-        // --- ANNOUNCEMENTS LOGIC ---
-        async function fetchAnnouncements() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/announcements`, {credentials: 'include'});
-                const announcements = await response.json();
-                const tableBody = document.getElementById('announcements-table-body');
-                tableBody.innerHTML = '';
-                
-                const relevantAnnouncements = announcements.filter(a => a.target_group === 'all' || a.target_group === 'teachers');
-
-                if (relevantAnnouncements.length === 0) {
-                    tableBody.innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-center">No announcements for teachers.</td></tr>`;
-                    return;
-                }
-
-                relevantAnnouncements.forEach(announcement => {
-                    tableBody.innerHTML += `
-                        <tr class="even:bg-slate-50 dark:even:bg-slate-800">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${announcement.title}</td>
-                            <td class="px-6 py-4 text-sm text-slate-500 dark:text-slate-400 max-w-lg truncate">${announcement.content}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${announcement.created_at.split(' ')[0]}</td>
-                        </tr>`;
-                });
-            } catch (error) {
-                console.error("Error loading announcements:", error);
-                document.getElementById('announcements-table-body').innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-center text-red-500">Error loading announcements.</td></tr>`;
-            }
-        }
-        
-        // --- NEW: SHARE NOTES LOGIC ---
-        async function fetchMyUploadedNotes() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/teacher/notes`, {credentials: 'include'});
-                if (!response.ok) throw new Error('Failed to fetch notes');
-                
-                const notes = await response.json();
-                myNotesTableBody.innerHTML = '';
-                
-                if (notes.length === 0) {
-                    myNotesTableBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center">You have not uploaded any notes yet.</td></tr>`;
-                    return;
-                }
-                
-                notes.forEach(note => {
-                    myNotesTableBody.innerHTML += `
-                        <tr class="even:bg-slate-50 dark:even:bg-slate-800">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${note.title}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${note.course_name}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 truncate" style="max-width: 200px;">${note.original_filename}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${note.created_at.split(' ')[0]}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <button onclick="deleteNote(${note.id})" class="text-red-600 hover:text-red-900">Delete</button>
-                            </td>
-                        </tr>
-                    `;
-                });
-            } catch (error) {
-                 console.error("Error fetching uploaded notes:", error);
-                 myNotesTableBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-red-500">Error loading your notes.</td></tr>`;
-            }
-        }
-
-        window.deleteNote = async function(noteId) {
-            if (!confirm("Are you sure you want to delete this note? This will remove the file permanently.")) {
-                return;
-            }
-            try {
-                const response = await fetch(`${API_BASE_URL}/teacher/notes?id=${noteId}`, {
-                    method: 'DELETE',
-                    credentials: 'include'
-                });
-                const result = await response.json();
+                const result = await res.json();
                 alert(result.message);
-                if (response.ok) {
-                    fetchMyUploadedNotes(); // Refresh the list
-                }
-            } catch (error) {
-                console.error("Error deleting note:", error);
-                alert("An error occurred while deleting the note.");
-            }
-        }
-
-        notesUploadForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            uploadStatus.classList.remove('hidden');
-            uploadStatus.textContent = "Uploading file, please wait...";
-            uploadStatus.classList.remove('text-red-500', 'text-green-600');
-            
-            const formData = new FormData();
-            formData.append('file', document.getElementById('note-file-input').files[0]);
-            formData.append('title', document.getElementById('note-title').value);
-            formData.append('course_id', document.getElementById('note-course-select').value);
-            formData.append('description', document.getElementById('note-description').value);
-            
-            try {
-                const response = await fetch(`${API_BASE_URL}/teacher/upload_note`, {
-                    method: 'POST',
-                    credentials: 'include',
-                    body: formData // No 'Content-Type' header needed for FormData
-                });
-                
-                const result = await response.json();
-                
-                if (response.ok) {
-                    uploadStatus.textContent = result.message;
-                    uploadStatus.classList.add('text-green-600');
-                    notesUploadForm.reset();
-                    fetchMyUploadedNotes(); // Refresh the list
-                } else {
-                    uploadStatus.textContent = `Error: ${result.message}`;
-                    uploadStatus.classList.add('text-red-500');
-                }
-            } catch (error) {
-                console.error("File upload error:", error);
-                uploadStatus.textContent = "A network error occurred. Please try again.";
-                uploadStatus.classList.add('text-red-500');
+            } catch(e) {
+                alert("Submission error.");
+            } finally {
+                submitAttendanceBtn.textContent = "Submit Attendance";
+                submitAttendanceBtn.disabled = false;
             }
         });
 
 
-        // --- INITIAL PAGE LOAD ---
-        checkTeacherSession();
-        attendanceDate.valueAsDate = new Date();
-    });
+        // --- NOTES LOGIC ---
+        uploadNoteForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('upload-note-btn');
+            const progress = document.getElementById('upload-progress');
+            const bar = document.getElementById('upload-bar');
+            const status = document.getElementById('upload-status');
+            
+            btn.disabled = true;
+            progress.classList.remove('hidden');
+            bar.style.width = '0%';
+            
+            const formData = new FormData(uploadNoteForm);
+            
+            try {
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', `${API_BASE_URL}/teacher/upload_note`, true);
+                xhr.withCredentials = true;
+                
+                xhr.upload.onprogress = (evt) => {
+                    if (evt.lengthComputable) {
+                        const percent = (evt.loaded / evt.total) * 100;
+                        bar.style.width = percent + '%';
+                    }
+                };
+                
+                xhr.onload = () => {
+                    if (xhr.status === 201) {
+                        status.textContent = "Uploaded Successfully!";
+                        status.className = "text-xs text-center mt-1 text-green-600";
+                        uploadNoteForm.reset();
+                        fetchTeacherNotes();
+                    } else {
+                        status.textContent = "Upload Failed.";
+                        status.className = "text-xs text-center mt-1 text-red-600";
+                    }
+                    setTimeout(() => { progress.classList.add('hidden'); btn.disabled = false; }, 2000);
+                };
+                
+                xhr.send(formData);
+            } catch(e) {
+                btn.disabled = false;
+                alert("Upload error.");
+            }
+        });
 
-    // --- FIREBASE LOGIC ---
-    function initFirebase() {
-        // ============================================================
-        // 1. PASTE YOUR COPIED "const firebaseConfig = { ... }" HERE
-        // ============================================================
-        const firebaseConfig = {
-            apiKey: "AIzaSyBkZEHM9fXRoCYSgEW-hk_lN7sL_nSLDfU",
-                authDomain: "cst-institute-app.firebaseapp.com",
-                projectId: "cst-institute-app",
-                storageBucket: "cst-institute-app.firebasestorage.app",
-                messagingSenderId: "485166460200",
-                appId: "1:485166460200:web:4eae20e2010ab92baeb41d"
+        async function fetchTeacherNotes() {
+            const tbody = document.getElementById('teacher-notes-body');
+            try {
+                const res = await fetch(`${API_BASE_URL}/teacher/notes`, { credentials: 'include' });
+                const notes = await res.json();
+                
+                tbody.innerHTML = notes.length ? notes.map(n => `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition">
+                        <td class="px-6 py-4 font-medium">${n.title}</td>
+                        <td class="px-6 py-4 text-slate-500">${n.course_name}</td>
+                        <td class="px-6 py-4"><a href="${API_ORIGIN}/uploads/${n.filename}" class="text-primary hover:underline text-sm flex items-center gap-1"><span class="material-symbols-outlined text-sm">attachment</span> ${n.original_filename}</a></td>
+                        <td class="px-6 py-4 text-xs text-slate-400">${n.created_at.split(' ')[0]}</td>
+                        <td class="px-6 py-4 text-right">
+                            <button onclick="deleteNote(${n.id})" class="text-red-500 hover:text-red-700 text-sm font-medium">Delete</button>
+                        </td>
+                    </tr>
+                `).join('') : '<tr><td colspan="5" class="px-6 py-8 text-center text-slate-500">No notes found.</td></tr>';
+            } catch(e) { tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-red-500">Error loading notes.</td></tr>'; }
+        }
+
+        window.deleteNote = async (id) => {
+            if(!confirm("Delete this note?")) return;
+            try {
+                await fetch(`${API_BASE_URL}/teacher/notes?id=${id}`, { method: 'DELETE', credentials: 'include' });
+                fetchTeacherNotes();
+            } catch(e) { alert("Deletion failed."); }
         };
 
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
+
+        // --- REPORTS LOGIC (Updated with Photo & Messaging) ---
+        async function fetchTeacherAttendanceReport() {
+            const tbody = document.getElementById('teacher-reports-body');
+            try {
+                const res = await fetch(`${API_BASE_URL}/teacher/reports/attendance`, { credentials: 'include' });
+                reportData = await res.json(); // Cache data for filtering
+                renderReportTable(reportData);
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-red-500">Error loading report.</td></tr>';
+            }
         }
 
-        const messaging = firebase.messaging();
+        function renderReportTable(data) {
+            const tbody = document.getElementById('teacher-reports-body');
+            
+            if(!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-slate-500">No student data found.</td></tr>';
+                return;
+            }
 
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/firebase-messaging-sw.js')
-            .then((registration) => {
-                Notification.requestPermission().then((permission) => {
-                    if (permission === 'granted') {
-                        console.log('Notification permission granted.');
-                        
-                        // ========================================================
-                        // 2. PASTE YOUR "VAPID KEY" HERE (from Cloud Messaging tab)
-                        // ========================================================
-                        return messaging.getToken({ 
-                            vapidKey: 'BBOMxvKvbEs_t9ykKBa2zIewzCzD6FCbm9rxc8a9eWl2kjjH5vyTSH6TeQMksZ_OGl5jZyQpU2wBcf-KsZN1uko', 
-                            serviceWorkerRegistration: registration 
-                        });
-                    }
-                }).then((token) => {
-                    if (token) {
-                        console.log('FCM Token:', token);
-                        fetch('/api/save_fcm_token', {
-                            method: 'POST',
-                            headers: {'Content-Type': 'application/json'},
-                            body: JSON.stringify({ token: token })
-                        });
-                    }
+            tbody.innerHTML = data.map(row => {
+                // Get Full Student Object from cache to get photo url properly
+                const studentDetails = allTeacherStudents.find(s => s.id === row.student_id);
+                // Use photo from student details, fallback to generic
+                const photoUrl = (studentDetails && studentDetails.profile_photo_url) 
+                                 ? `${API_ORIGIN}${studentDetails.profile_photo_url}` 
+                                 : `https://placehold.co/40x40/e2e8f0/475569?text=${row.student_name.charAt(0)}`;
+
+                return `
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition">
+                    <td class="px-6 py-4">
+                        <img src="${photoUrl}" alt="${row.student_name}" class="w-10 h-10 rounded-full object-cover border border-slate-200 shadow-sm">
+                    </td>
+                    <td class="px-6 py-4 font-medium text-slate-900 dark:text-white">
+                        ${row.student_name}
+                        <div class="text-xs text-slate-400 font-normal">ID: ${row.student_id}</div>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-slate-500">${row.phone_number || 'N/A'}</td>
+                    <td class="px-6 py-4 text-center">
+                        <div class="flex flex-col items-center">
+                            <span class="text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">${row.present}/${row.total_classes}</span>
+                            <div class="w-16 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                                <div class="bg-green-500 h-full" style="width: ${(row.present/row.total_classes)*100 || 0}%"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <button onclick="openMessageModal(${row.student_id}, '${row.student_name.replace(/'/g, "\\'")}')" class="inline-flex items-center gap-1 px-3 py-1.5 bg-primary/10 text-primary text-xs font-bold rounded-lg hover:bg-primary hover:text-white transition">
+                            <span class="material-symbols-outlined text-sm">mail</span> Message
+                        </button>
+                    </td>
+                </tr>
+            `}).join('');
+        }
+
+        // Report Filter Logic
+        reportCourseSelect.addEventListener('change', (e) => {
+            const courseId = e.target.value;
+            if (!courseId) {
+                renderReportTable(reportData); // Show all
+            } else {
+                // Filter report data based on whether the student is enrolled in the selected course
+                // We use 'allTeacherStudents' cache to check enrollment
+                const enrolledStudentIds = allTeacherStudents
+                    .filter(s => s.course_ids && s.course_ids.includes(parseInt(courseId)))
+                    .map(s => s.id);
+                
+                const filteredData = reportData.filter(row => enrolledStudentIds.includes(row.student_id));
+                renderReportTable(filteredData);
+            }
+        });
+
+
+        // --- MESSAGING MODAL LOGIC ---
+        window.openMessageModal = function(id, name) {
+            document.getElementById('notify-student-id').value = id;
+            document.getElementById('notify-modal-title').textContent = `Message ${name}`;
+            notifyModal.classList.remove('hidden');
+        };
+
+        const closeModal = () => notifyModal.classList.add('hidden');
+        cancelNotifyBtn.addEventListener('click', closeModal);
+        notifyBackdrop.addEventListener('click', closeModal);
+
+        sendNotifyBtn.addEventListener('click', async () => {
+            const btn = sendNotifyBtn;
+            const sid = document.getElementById('notify-student-id').value;
+            const sub = document.getElementById('notify-subject').value;
+            const body = document.getElementById('notify-body').value;
+            const type = document.getElementById('notify-type').value;
+
+            if(!sub || !body) return alert("Subject and message are required.");
+
+            // WhatsApp Direct Link (Client Side)
+            if (type === 'whatsapp') {
+                const student = allTeacherStudents.find(s => s.id == sid);
+                if (student && student.phone_number) {
+                    window.open(`https://wa.me/${student.phone_number}?text=${encodeURIComponent(sub + ": " + body)}`, '_blank');
+                    closeModal();
+                } else {
+                    alert("Student phone number not found.");
+                }
+                return;
+            }
+
+            // Server Side Sending (Email/SMS/Portal)
+            btn.disabled = true;
+            btn.textContent = "Sending...";
+            
+            try {
+                const res = await fetch(`${API_BASE_URL}/teacher/notify`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    credentials: 'include',
+                    body: JSON.stringify({ student_id: sid, subject: sub, body: body, type: type })
                 });
-            });
+                const result = await res.json();
+                alert(result.message);
+                if(res.ok) closeModal();
+            } catch(e) {
+                alert("Failed to send message.");
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "Send Message";
+            }
+        });
+
+        // --- INIT FIREBASE ---
+        function initFirebase() {
+            // Placeholder for Firebase Config - Replace with your actual keys
+            const firebaseConfig = {
+                // ... your firebase config keys ...
+            };
+            // Standard Firebase initialization logic here...
         }
-    }
+
+        // Start
+        checkSessionAndInit();
+    });
 </script>
 </body>
 </html>
