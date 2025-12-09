@@ -54,6 +54,41 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(data_dir, 'i
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
+# --- FIREBASE INITIALIZATION HELPER ---
+def init_firebase():
+    """Initializes Firebase from Env Var OR JSON File"""
+    if not firebase_admin._apps:
+        try:
+            # 1. Try Environment Variable first
+            firebase_env = os.environ.get('FIREBASE_CREDENTIALS_JSON')
+            if firebase_env:
+                cred_dict = json.loads(firebase_env.strip("'").strip('"'))
+                cred = credentials.Certificate(cred_dict)
+                firebase_admin.initialize_app(cred)
+                logger.info("--- Firebase Initialized from ENV VAR ---")
+                return True
+            
+            # 2. Try Local File (fallback)
+            # Look for the specific filename you uploaded
+            cred_path = os.path.join(basedir, 'firebase_credentials.json.json') 
+            if not os.path.exists(cred_path):
+                # Try the standard name just in case
+                cred_path = os.path.join(basedir, 'firebase_credentials.json')
+                
+            if os.path.exists(cred_path):
+                cred = credentials.Certificate(cred_path)
+                firebase_admin.initialize_app(cred)
+                logger.info(f"--- Firebase Initialized from FILE: {cred_path} ---")
+                return True
+            else:
+                logger.warning("--- Firebase Credentials NOT FOUND (Env or File) ---")
+                return False
+                
+        except Exception as e:
+            logger.error(f"--- Firebase Init FAILED: {e} ---")
+            return False
+    return True
+
 # --- MIGRATION UTILITY ---
 def check_and_upgrade_db():
     """Checks for missing columns and adds them if necessary."""
@@ -101,6 +136,7 @@ UPLOAD_FOLDER = os.path.join(basedir, 'uploads')
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+# Separate allowed extensions for notes vs images
 ALLOWED_NOTE_EXTENSIONS = {'txt', 'pdf', 'doc', 'docx', 'ppt', 'pptx'}
 ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
@@ -109,8 +145,11 @@ bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'serve_login_page'
 
+# --- Third-Party SMS API Configuration (Uses Env Vars defined above) ---
+
 @login_manager.user_loader
 def load_user(user_id):
+    """Loads user for Flask-Login."""
     try:
         user_id_int = int(user_id)
     except (ValueError, TypeError):
@@ -119,6 +158,7 @@ def load_user(user_id):
 
 
 # --- NEW ASSOCIATION TABLE ---
+# Table to link Students (User) to Courses (Many-to-Many)
 student_course_association = db.Table('student_course',
     db.Column('student_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
     db.Column('course_id', db.Integer, db.ForeignKey('course.id'), primary_key=True)
@@ -137,7 +177,7 @@ class User(db.Model, UserMixin):
     
     parent_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True) 
     
-    can_edit = db.Column(db.Boolean, default=True) 
+    can_edit = db.Column(db.Boolean, default=True) # Admin permission flag
     
     # --- EXPANDED STUDENT FIELDS ---
     dob = db.Column(db.String(20), nullable=True) 
@@ -150,12 +190,16 @@ class User(db.Model, UserMixin):
     state = db.Column(db.String(100), nullable=True)
     pincode = db.Column(db.String(20), nullable=True)
     fcm_token = db.Column(db.String(500), nullable=True)
+    # --- END EXPANDED FIELDS ---
     
     children = db.relationship('User', foreign_keys=[parent_id], backref=db.backref('parent', remote_side=[id]))
+
+    # NEW: Relationship for many-to-many courses
     courses_enrolled = db.relationship('Course', secondary=student_course_association, lazy='subquery',
                                        backref=db.backref('students', lazy=True))
 
     def to_dict(self):
+        """Serializes User object to dictionary."""
         return {
             "id": self.id, "name": self.name, "email": self.email, "role": self.role,
             "created_at": self.created_at.strftime('%Y-%m-%d'),
@@ -163,6 +207,8 @@ class User(db.Model, UserMixin):
             "can_edit": self.can_edit,
             "dob": self.dob,
             "profile_photo_url": self.profile_photo_url,
+            
+            # --- NEW EXPANDED FIELDS ---
             "gender": self.gender,
             "father_name": self.father_name,
             "mother_name": self.mother_name,
@@ -170,19 +216,22 @@ class User(db.Model, UserMixin):
             "city": self.city,
             "state": self.state,
             "pincode": self.pincode,
+            # Pass course IDs for frontend edit forms
             "course_ids": [c.id for c in self.courses_enrolled] if self.role == 'student' else []
         }
 
 class Course(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150), nullable=False)
-    subjects = db.Column(db.String(300), nullable=False)
+    subjects = db.Column(db.String(300), nullable=False) # Comma-separated
     teacher_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     teacher = db.relationship('User', backref=db.backref('courses', lazy=True))
 
     def to_dict(self):
+        """Serializes Course object to dictionary."""
         return {
             "id": self.id, "name": self.name,
+            # FIX: Ensure subjects field is split only if not None
             "subjects": [s.strip() for s in self.subjects.split(',')] if self.subjects else [],
             "teacher_id": self.teacher_id,
             "teacher_name": self.teacher.name if self.teacher else "Unassigned"
@@ -191,11 +240,12 @@ class Course(db.Model):
 class AcademicSession(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    start_date = db.Column(db.String(20), nullable=False)
-    end_date = db.Column(db.String(20), nullable=False)
-    status = db.Column(db.String(20), nullable=False)
+    start_date = db.Column(db.String(20), nullable=False) # Storing as string YYYY-MM-DD
+    end_date = db.Column(db.String(20), nullable=False)   # Storing as string YYYY-MM-DD
+    status = db.Column(db.String(20), nullable=False) # 'Active', 'Inactive'
 
     def to_dict(self):
+        """Serializes AcademicSession object to dictionary."""
         return {
             "id": self.id, "name": self.name, "start_date": self.start_date,
             "end_date": self.end_date, "status": self.status
@@ -205,10 +255,11 @@ class Announcement(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(150), nullable=False)
     content = db.Column(db.Text, nullable=False)
-    target_group = db.Column(db.String(50), nullable=False)
+    target_group = db.Column(db.String(50), nullable=False) # 'all', 'teachers', 'students', 'parents', 'admin'
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def to_dict(self):
+        """Serializes Announcement object to dictionary."""
         return {
             "id": self.id, "title": self.title, "content": self.content,
             "target_group": self.target_group,
@@ -225,6 +276,7 @@ class FeeStructure(db.Model):
     due_date = db.Column(db.Date, nullable=False, default=date.today)
 
     def to_dict(self):
+        """Serializes FeeStructure object to dictionary."""
         session = db.session.get(AcademicSession, self.academic_session_id)
         # NEW: Get course name for display
         course = db.session.get(Course, self.course_id) if self.course_id else None
@@ -244,9 +296,10 @@ class Payment(db.Model):
     fee_structure_id = db.Column(db.Integer, db.ForeignKey('fee_structure.id'), nullable=False)
     amount_paid = db.Column(db.Float, nullable=False)
     payment_date = db.Column(db.DateTime, default=datetime.utcnow)
-    payment_method = db.Column(db.String(50), nullable=False)
+    payment_method = db.Column(db.String(50), nullable=False) # 'Cash', 'Card', 'Bank Transfer'
 
     def to_dict(self):
+        """Serializes Payment object to dictionary."""
         return {
             "id": self.id, "student_id": self.student_id,
             "fee_structure_id": self.fee_structure_id,
@@ -258,8 +311,8 @@ class Payment(db.Model):
 class Attendance(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     student_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    check_in_time = db.Column(db.DateTime, default=datetime.utcnow)
-    status = db.Column(db.String(10), nullable=False)
+    check_in_time = db.Column(db.DateTime, default=datetime.utcnow) # Stores date and time
+    status = db.Column(db.String(10), nullable=False) # 'Present', 'Absent', 'Checked-In'
 
 class Grade(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -277,6 +330,7 @@ class Message(db.Model):
     sent_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def to_dict(self):
+        """Serializes Message object to dictionary."""
         sender = db.session.get(User, self.sender_id)
         return {
             "id": self.id,
@@ -289,8 +343,8 @@ class Message(db.Model):
 
 class SharedNote(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    filename = db.Column(db.String(300), nullable=False)
-    original_filename = db.Column(db.String(300), nullable=False)
+    filename = db.Column(db.String(300), nullable=False) # Unique saved name (e.g., UUID.pdf)
+    original_filename = db.Column(db.String(300), nullable=False) # Original upload name (e.g., notes.pdf)
     title = db.Column(db.String(150), nullable=False)
     description = db.Column(db.Text, nullable=True)
     course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
@@ -301,6 +355,7 @@ class SharedNote(db.Model):
     teacher = db.relationship('User', backref=db.backref('notes', lazy=True))
 
     def to_dict(self):
+        """Serializes SharedNote object to dictionary."""
         return {
             "id": self.id,
             "filename": self.filename, 
@@ -317,10 +372,13 @@ class SharedNote(db.Model):
 # --- Utility Functions ---
 
 def allowed_file(filename, extension_set):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in extension_set
+    """Checks if file extension is in the allowed set."""
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in extension_set
 
 def send_fee_alert_sms(user, balance, due_date):
     if user and user.phone_number:
+        # 1. Format Date 
         if isinstance(due_date, str):
             try:
                 d_obj = datetime.strptime(due_date, '%Y-%m-%d')
@@ -330,69 +388,80 @@ def send_fee_alert_sms(user, balance, due_date):
         else:
             formatted_date = due_date.strftime('%d-%b-%Y') if due_date else "N/A"
 
+        # 2. Format Amount
         clean_balance = int(balance) 
+
+        # 3. Institute Phone Number (Update with actual support number)
         institute_phone = "9822826307" 
+
+        # 4. Construct Message
+        # Template: "Dear {#var#}, your fee of Rs {#var#} is pending. Due: {#var#}. CST Institute {#var#}"
         message = f"Dear {user.name}, your fee of Rs {clean_balance} is pending. Due: {formatted_date}. CST Institute {institute_phone}"
-        fee_template_id = os.environ.get('SMS_API_FEE_TEMPLATE_ID', "1707176388002841408") 
+        
+        # Fee Template ID
+        fee_template_id = os.environ.get('SMS_API_FEE_TEMPLATE_ID', "1707176388002841408") # Default ID
         
         return send_actual_sms(user.phone_number, message, template_id=fee_template_id)
     return False
 
 def send_actual_sms(phone_number, message_body, template_id=None):
+    """
+    Sends an SMS using ServerMSG API (Indian DLT Compliant).
+    """
+    # 1. Get Credentials from Environment Variables
     base_url = os.environ.get('SMS_API_URL', 'http://servermsg.com/api/SmsApi/SendSingleApi')
     user_id = os.environ.get('SMS_API_USER_ID')
     password = os.environ.get('SMS_API_PASSWORD')
     sender_id = os.environ.get('SMS_API_SENDER_ID')
     entity_id = os.environ.get('SMS_API_ENTITY_ID')
     
+    # If no specific template ID is passed, try to use a default one 
     if not template_id:
         template_id = os.environ.get('SMS_API_DEFAULT_TEMPLATE_ID', '1707176388002841408')
 
     if not all([user_id, password, sender_id, entity_id, template_id, phone_number]):
-        print(f"--- [SMS ERROR] Missing Config. ---")
+        print(f"--- [SMS ERROR] Missing Config. Checked: UserID={bool(user_id)}, Pass={bool(password)}, Sender={bool(sender_id)}, Entity={bool(entity_id)}, Template={bool(template_id)} ---")
         return False
 
+    # 2. Prepare Parameters
     payload = {
-        'UserID': user_id, 'Password': password, 'SenderID': sender_id,
-        'Phno': phone_number, 'Msg': message_body, 'EntityID': entity_id, 'TemplateID': template_id
+        'UserID': user_id,
+        'Password': password,
+        'SenderID': sender_id,
+        'Phno': phone_number,
+        'Msg': message_body,
+        'EntityID': entity_id,
+        'TemplateID': template_id
     }
 
     try:
+        print(f"--- [SMS] Sending to {phone_number} via ServerMSG ---")
         response = requests.get(base_url, params=payload, timeout=10)
+        
         if response.status_code == 200:
+            print(f"--- [SMS SUCCESS] Response: {response.text} ---")
             return True
         else:
-            print(f"--- [SMS FAILED] Status {response.status_code} ---")
+            print(f"--- [SMS FAILED] Status {response.status_code}: {response.text} ---")
             return False
     except Exception as e:
         print(f"--- [SMS EXCEPTION] {e} ---")
         return False
 
 def send_mock_whatsapp(user, subject, body):
+    """Mocks sending a WhatsApp message."""
     if user and user.phone_number:
         sender_role = current_user.role if current_user and current_user.is_authenticated else "System"
         sender_name = current_user.name if current_user and current_user.is_authenticated else "Admin"
-        print(f"--- [MOCK WHATSAPP] to {user.name} ({user.phone_number}) ---")
+        message = f"WhatsApp from {sender_role} ({sender_name}): {subject} - {body}"
+        print(f"--- [MOCK WHATSAPP] to {user.name} ({user.phone_number}) ---\n{message}\n--------------------------------")
         return True
     return False
 
 def send_push_notification(user_id, title, body):
     # 1. LAZY INITIALIZATION
-    if not firebase_admin._apps:
-        firebase_env = os.environ.get('FIREBASE_CREDENTIALS_JSON')
-        if firebase_env:
-            try:
-                firebase_env = firebase_env.strip("'").strip('"')
-                cred_dict = json.loads(firebase_env)
-                cred = credentials.Certificate(cred_dict)
-                firebase_admin.initialize_app(cred)
-                logger.info("--- Firebase Lazily Initialized Successfully ---")
-            except Exception as e:
-                logger.error(f"--- FIREBASE INIT FAILED: {e} ---")
-                return False
-        else:
-            logger.warning("--- WARNING: No Firebase Credentials Found ---")
-            return False
+    if not init_firebase():
+        return False
 
     # 2. SEND PUSH
     with app.app_context(): # Ensure we are in app context to access DB
@@ -403,7 +472,7 @@ def send_push_notification(user_id, title, body):
             return False
             
         if not user.fcm_token:
-            # logger.warning(f"Push Failed: User {user.name} has NO FCM Token.")
+            # logger.warning(f"Push Failed: User {user.name} (ID: {user.id}) has NO FCM Token. They must log in to the App once.")
             return False
 
         try:
@@ -416,7 +485,9 @@ def send_push_notification(user_id, title, body):
             return True
         except Exception as e:
             logger.error(f"Push Error for {user.name}: {e}")
+            # If token is invalid (stale), maybe clear it?
             if 'registration-token-not-registered' in str(e):
+                logger.info(f"Token invalid for {user.name}, clearing it.")
                 user.fcm_token = None
                 db.session.commit()
             return False
@@ -424,7 +495,8 @@ def send_push_notification(user_id, title, body):
 def calculate_fee_status(student_id):
     """
     Calculates fee status based on enrolled courses.
-    FIX: Fees are now summed based on the courses the student is actually enrolled in.
+    This fixes the issue where one fee structure overwrites another.
+    Fees are now summed based on the courses the student is actually enrolled in.
     """
     student = db.session.get(User, student_id)
     if not student:
@@ -437,6 +509,7 @@ def calculate_fee_status(student_id):
     due_dates = []
 
     # 1. Calculate fee based on Enrolled Courses
+    # Iterates through student's courses and finds the fee structure assigned to each course.
     if student.courses_enrolled:
         for course in student.courses_enrolled:
             # Find the most recent fee structure assigned to this specific course
@@ -446,7 +519,8 @@ def calculate_fee_status(student_id):
                 if fee_struct.due_date:
                     due_dates.append(fee_struct.due_date)
     
-    # 2. Check for Global Fees (Fees with no course_id, applicable to everyone if needed)
+    # 2. Optional: Check for Global Fees (Fees with no course_id, if any)
+    # This ensures backward compatibility or miscellaneous fees
     global_fees = FeeStructure.query.filter(FeeStructure.course_id == None).all()
     # Uncomment next line if you want global fees to be added ON TOP of course fees
     # for gf in global_fees: total_due += gf.total_amount 
@@ -482,10 +556,12 @@ def send_fee_alert_notifications(student_id):
     status = calculate_fee_status(student_id)
     parent = db.session.get(User, student.parent_id) if student.parent_id else None
     
+    # Send SMS (using existing logic from send_fee_alert_sms)
     student_alerted = send_fee_alert_sms(student, status['balance'], status['due_date'])
     if parent:
         parent_alerted = send_fee_alert_sms(parent, status['balance'], status['due_date'])
 
+    # Send Push Notification
     push_title = "Fee Reminder"
     push_body = f"Fee of Rs {status['balance']:.2f} pending. Due: {status['due_date']}."
     
@@ -507,6 +583,7 @@ def process_bulk_users(file_stream):
 
     rows_to_process = list(reader) 
 
+    # 1. Process Parents, Teachers, Admins (non-students) first
     for row in rows_to_process:
         role = row.get('role', '').strip().lower()
         if role in ['parent', 'teacher', 'admin']:
@@ -541,8 +618,9 @@ def process_bulk_users(file_stream):
     except Exception as e:
         db.session.rollback()
         users_failed.append(f"Database commit error for non-students: {str(e)}")
-        return {"added": users_added, "failed": users_failed} 
+        return {"added": users_added, "failed": users_failed} # Early return to prevent running step 2 on error
 
+    # 2. Process Students, linking to parents created above or existing parents
     for row in rows_to_process:
         role = row.get('role', '').strip().lower()
         if role == 'student':
@@ -599,6 +677,7 @@ def process_bulk_users(file_stream):
                 )
                 db.session.add(new_user)
                 
+                # Enroll student in courses
                 if course_ids_str:
                     course_ids = [int(cid.strip()) for cid in course_ids_str.split(',') if cid.strip().isdigit()]
                     courses = Course.query.filter(Course.id.in_(course_ids)).all()
@@ -611,7 +690,7 @@ def process_bulk_users(file_stream):
                 db.session.rollback() 
 
     try:
-        db.session.commit()
+        db.session.commit() # Commit all successfully processed students
     except Exception as e:
         db.session.rollback()
         users_failed.append(f"Database commit error for students: {str(e)}")
@@ -658,6 +737,7 @@ def manage_users():
             
         hashed_password = bcrypt.generate_password_hash(data['password']).decode('utf-8')
         
+        # Handle file upload for profile photo
         profile_photo_url = None
         if 'profile_photo_file' in request.files:
             file = request.files['profile_photo_file']
@@ -686,6 +766,7 @@ def manage_users():
         )
         db.session.add(new_user)
         
+        # FIX: Ensure course assignment works for POST
         if new_user.role == 'student':
             course_id_str = request.form.get('course_ids') 
             if course_id_str and course_id_str.isdigit():
@@ -694,7 +775,7 @@ def manage_users():
                     if course:
                         new_user.courses_enrolled.append(course)
                 except ValueError:
-                    pass 
+                    pass # Ignore if course_id is not a valid integer
                 
         try:
             db.session.commit()
@@ -725,21 +806,28 @@ def manage_users():
         user.phone_number = data.get('phone_number', user.phone_number)
         user.role = data.get('role', user.role)
         
+        # --- FIX 1: Safely handle Parent ID and empty strings ---
         parent_id_str = data.get('parent_id')
         user.parent_id = int(parent_id_str) if parent_id_str and parent_id_str.isdigit() else None
         
+        # Student-specific fields
         user.dob = data.get('dob', user.dob)
         user.gender = data.get('gender', user.gender)
         user.father_name = data.get('father_name', user.father_name)
         user.mother_name = data.get('mother_name', user.mother_name)
         
+        # Ensure address fields are correctly pulled or retain old value if key not present
         user.address_line1 = data.get('address_line1', user.address_line1)
         user.city = data.get('city', user.city)
         user.state = data.get('state', user.state)
         user.pincode = data.get('pincode', user.pincode)
 
+
+        # FIX: Ensure course assignment works for PUT
         if user.role == 'student':
             course_id_str = request.form.get('course_ids')
+            
+            # Clear existing enrollments
             user.courses_enrolled = []
             
             if course_id_str and course_id_str.isdigit():
@@ -776,12 +864,15 @@ def manage_users():
     users = query.all()
     return jsonify([user.to_dict() for user in users])
 
+# NEW: Endpoint to handle profile photo upload separately (used for PUT requests)
+
 @app.route('/api/user/upload_photo/<int:user_id>', methods=['POST'])
 @login_required
 def upload_profile_photo(user_id):
     if current_user.role != 'admin':
         return jsonify({"message": "Access denied"}), 403
 
+    # FIX: use db.session.get instead of get_or_404
     user = db.session.get(User, user_id)
     if not user:
         return jsonify({"message": "User not found"}), 404
@@ -803,6 +894,7 @@ def upload_profile_photo(user_id):
         try:
             file.save(file_path)
 
+            # Delete old photo if it exists and is a local file
             if user.profile_photo_url and user.profile_photo_url.startswith('/uploads/'):
                 old_path = os.path.join(basedir, user.profile_photo_url.lstrip('/'))
                 if os.path.exists(old_path):
@@ -811,6 +903,7 @@ def upload_profile_photo(user_id):
                     except Exception as e:
                         print(f"Warning: Could not delete old photo {old_path}: {e}")
 
+            # Save the new file path
             user.profile_photo_url = f"/uploads/{unique_filename}"
             db.session.commit()
 
@@ -822,6 +915,8 @@ def upload_profile_photo(user_id):
     else:
         return jsonify({"message": "File type not allowed. Use png, jpg, jpeg, or gif."}), 400
 
+
+
 @app.route('/api/users/<int:user_id>', methods=['DELETE'])
 @login_required
 def delete_user(user_id):
@@ -832,12 +927,13 @@ def delete_user(user_id):
         return jsonify({'message': 'Cannot delete your own admin account'}), 403
 
     try:
+        # Manually delete dependent records to ensure clean deletion (Cascading)
         if user.role == 'student':
             Payment.query.filter_by(student_id=user_id).delete()
             Grade.query.filter_by(student_id=user_id).delete()
             Attendance.query.filter_by(student_id=user_id).delete()
             Message.query.filter(or_(Message.recipient_id == user_id, Message.sender_id == user_id)).delete()
-            user.courses_enrolled = [] 
+            user.courses_enrolled = [] # Remove course associations
         elif user.role == 'parent':
             User.query.filter_by(parent_id=user_id).update({"parent_id": None})
             Message.query.filter(or_(Message.recipient_id == user_id, Message.sender_id == user_id)).delete()
@@ -850,6 +946,7 @@ def delete_user(user_id):
         return jsonify({'message': 'User deleted'})
     except Exception as e:
         db.session.rollback()
+        print(f"--- ERROR DELETING USER {user_id}: {e} ---")
         return jsonify({'message': f'Failed to delete user due to internal error. Check logs: {e}'}), 500
 
 @app.route('/api/bulk_upload/users', methods=['POST'])
@@ -887,6 +984,7 @@ def bulk_upload_users():
                 "details": results
             })
 
+
 @app.route('/api/admin/bulk_notify', methods=['POST'])
 @login_required
 def admin_bulk_notify():
@@ -896,8 +994,8 @@ def admin_bulk_notify():
     data = request.get_json()
     subject = data.get('subject', 'Important Notification')
     body = data.get('body')
-    notify_type = data.get('type') 
-    target_role = data.get('target_role') 
+    notify_type = data.get('type') # 'sms', 'whatsapp'
+    target_role = data.get('target_role') # 'all', 'teachers', 'students', 'parents'
 
     if not body or notify_type not in ['sms', 'whatsapp']:
         return jsonify({"message": "Missing body or invalid notification type."}), 400
@@ -925,6 +1023,7 @@ def admin_bulk_notify():
         db.session.add(new_message)
 
         if notify_type == 'sms':
+            # Use a generic template ID for bulk SMS
             bulk_template_id = os.environ.get('SMS_API_BULK_TEMPLATE_ID', '1707176388002841408')
             if send_actual_sms(user.phone_number, f"{subject}: {body}", template_id=bulk_template_id):
                 notification_sent = True
@@ -932,6 +1031,7 @@ def admin_bulk_notify():
             if send_mock_whatsapp(user, subject, body):
                 notification_sent = True
         
+        # Always send push notification if token is available
         send_push_notification(user.id, subject, body)
 
         if notification_sent:
@@ -964,6 +1064,7 @@ def admin_bulk_notify():
             "failed_count": final_fail_count
         }), 400
 
+
 @app.route('/api/parents', methods=['GET'])
 @login_required
 def get_parents():
@@ -984,6 +1085,7 @@ def manage_courses():
         data = request.get_json()
         teacher_id = data.get('teacher_id')
         
+        # FIX: Ensure teacher_id is None if empty string
         teacher_id_int = int(teacher_id) if teacher_id and str(teacher_id).isdigit() else None
         
         try:
@@ -997,6 +1099,7 @@ def manage_courses():
             return jsonify(new_course.to_dict()), 201
         except Exception as e:
             db.session.rollback()
+            print(f"--- ERROR SAVING COURSE (POST): {e} ---")
             return jsonify({"message": f"Failed to save course. Check logs for details: {e}"}), 500
     
     if request.method == 'PUT':
@@ -1011,6 +1114,7 @@ def manage_courses():
             return jsonify({"message": "Course not found"}), 404
 
         teacher_id = data.get('teacher_id')
+        # FIX: Ensure teacher_id is None if empty string
         teacher_id_int = int(teacher_id) if teacher_id and str(teacher_id).isdigit() else None
         
         try:
@@ -1022,6 +1126,7 @@ def manage_courses():
             return jsonify(course.to_dict()), 200
         except Exception as e:
             db.session.rollback()
+            print(f"--- ERROR SAVING COURSE (PUT): {e} ---")
             return jsonify({"message": f"Failed to update course. Check logs for details: {e}"}), 500
         
     return jsonify([c.to_dict() for c in Course.query.all()])
@@ -1038,7 +1143,9 @@ def delete_course(course_id):
         return jsonify({'message': 'Course deleted successfully'})
     except Exception as e:
         db.session.rollback()
+        print(f"--- ERROR DELETING COURSE: {e} ---")
         return jsonify({'message': f'Failed to delete course due to internal error. Check logs: {e}'}), 500
+
 
 @app.route('/api/sessions', methods=['GET', 'POST', 'PUT']) 
 @login_required
@@ -1059,6 +1166,7 @@ def manage_sessions():
             return jsonify(new_session.to_dict()), 201
         except Exception as e:
             db.session.rollback()
+            print(f"--- ERROR SAVING SESSION (POST): {e} ---")
             return jsonify({"message": f"Failed to save session due to DB error: {e}"}), 500
 
     if request.method == 'PUT': 
@@ -1082,7 +1190,9 @@ def manage_sessions():
             return jsonify(session.to_dict()), 200
         except Exception as e:
             db.session.rollback()
+            print(f"--- ERROR SAVING SESSION (PUT): {e} ---")
             return jsonify({"message": f"Failed to update session due to DB error: {e}"}), 500
+
 
     return jsonify([s.to_dict() for s in AcademicSession.query.all()])
 
@@ -1101,7 +1211,9 @@ def delete_session(session_id):
         return jsonify({'message': 'Academic session deleted successfully'})
     except Exception as e:
         db.session.rollback()
+        print(f"--- ERROR DELETING SESSION: {e} ---")
         return jsonify({'message': f'Failed to delete session due to internal error. Check logs: {e}'}), 500
+
 
 @app.route('/api/announcements', methods=['GET', 'POST'])
 @login_required
@@ -1118,6 +1230,7 @@ def manage_announcements():
         db.session.add(new_announcement)
         db.session.commit()
 
+        # Send Push Notification
         try:
             target = data['target_group']
             recipients = []
@@ -1135,6 +1248,7 @@ def manage_announcements():
 
         return jsonify(new_announcement.to_dict()), 201
     
+    # GET request logic...
     return jsonify([a.to_dict() for a in Announcement.query.order_by(Announcement.created_at.desc()).all()])
 
 @app.route('/api/announcements/<int:announcement_id>', methods=['DELETE'])
@@ -1151,22 +1265,23 @@ def delete_announcement(announcement_id):
 def manage_fee_structures():
     if current_user.role != 'admin': return jsonify({"message": "Access denied"}), 403
     
-    # POST: Create a new fee structure
     if request.method == 'POST':
         data = request.get_json()
         try:
+            # FIX: Ensure all required fields exist before date parsing
             if not all([data.get('due_date'), data.get('academic_session_id'), data.get('total_amount'), data.get('name')]):
                 return jsonify({"message": "Missing required fee structure fields."}), 400
 
             due_date_obj = datetime.strptime(data['due_date'], '%Y-%m-%d').date()
             
+            # Handle Course ID (Optional but recommended for specific fees)
             c_id = data.get('course_id')
             course_id_int = int(c_id) if c_id and str(c_id).isdigit() else None
 
             new_structure = FeeStructure(
                 name=data['name'],
                 academic_session_id=data['academic_session_id'],
-                course_id=course_id_int, 
+                course_id=course_id_int,  # Save course ID here
                 total_amount=data['total_amount'],
                 due_date=due_date_obj
             )
@@ -1177,7 +1292,6 @@ def manage_fee_structures():
             db.session.rollback()
             return jsonify({"message": f"Database error creating fee structure: {e}"}), 500
 
-    # PUT: Update existing fee structure
     if request.method == 'PUT':
         data = request.get_json()
         fee_id = data.get('id')
@@ -1200,6 +1314,7 @@ def manage_fee_structures():
         structure.name = data.get('name', structure.name)
         structure.academic_session_id = data.get('academic_session_id', structure.academic_session_id)
         
+        # Update course_id if provided (allows changing assignment)
         c_id = data.get('course_id')
         structure.course_id = int(c_id) if c_id and str(c_id).isdigit() else None
         
@@ -1211,6 +1326,7 @@ def manage_fee_structures():
             return jsonify(structure.to_dict()), 200
         except Exception as e:
             db.session.rollback()
+            print(f"--- ERROR SAVING COURSE (PUT): {e} ---")
             return jsonify({"message": f"Failed to update fee structure. Check logs: {e}"}), 500
         
     return jsonify([s.to_dict() for s in FeeStructure.query.order_by(FeeStructure.id.desc()).all()])
@@ -1233,21 +1349,25 @@ def record_payment():
     db.session.add(new_payment)
     
     try:
-        db.session.commit() 
+        db.session.commit() # Commit the new payment first
 
         receipt_message = "Receipt link available." 
 
+        # Send Fee Alert (handles SMS and Push for both student and parent)
         student = db.session.get(User, data['student_id'])
         if student:
             status = calculate_fee_status(student.id)
             if status['balance'] > 0: 
+                # Send push/sms reminders if balance is still > 0
                 send_fee_alert_notifications(student.id) 
 
         return jsonify({"message": f"Payment recorded. {receipt_message}", "payment_id": new_payment.id}), 201
 
     except Exception as e:
         db.session.rollback()
+        # FIX 2: Return a guaranteed JSON response on failure
         return jsonify({"message": f"Internal Error Recording Payment: {e}"}), 500
+
 
 @app.route('/api/fee_status', methods=['GET'])
 @login_required
@@ -1285,12 +1405,15 @@ def send_fee_alert():
     if status['balance'] <= 0:
         return jsonify({"message": f"{student.name} has no pending fee."}), 200
 
+    # Send SMS
     student_alerted = send_fee_alert_sms(student, status['balance'], status['due_date'])
 
+    parent_alerted = False
     parent = db.session.get(User, student.parent_id) if student and student.parent_id else None
     if parent:
-        send_fee_alert_sms(parent, status['balance'], status['due_date'])
+        parent_alerted = send_fee_alert_sms(parent, status['balance'], status['due_date'])
 
+    # Send Push Notification
     push_title = "Fee Reminder"
     push_body = f"Fee of Rs {status['balance']:.2f} is pending. Due: {status['due_date']}."
     
@@ -1299,9 +1422,13 @@ def send_fee_alert():
         send_push_notification(parent.id, f"Child Alert: {push_title}", push_body)
 
     message = f"Alert sent to Student ({'Yes' if student_alerted else 'No SMS Phone'})."
+    if parent:
+        message += f" Alert sent to Parent ({'Yes' if parent_alerted else 'No SMS Phone'})."
 
     return jsonify({"message": message}), 200
 
+
+# --- Report Endpoints ---
 @app.route('/api/reports/admissions', methods=['GET'])
 @login_required
 def admissions_report():
@@ -1382,12 +1509,14 @@ def fee_pending_report():
 
     return jsonify(pending_list)
 
+
+# --- Student API Endpoints (FIXED WITH TRY/EXCEPT) ---
 @app.route('/api/student/fees', methods=['GET'])
 @login_required
 def get_student_fees():
     if current_user.role != 'student': return jsonify({"message": "Access denied"}), 403
     
-    try:
+    try: # FIX: Added Try Block for Robust Error Handling
         status = calculate_fee_status(current_user.id)
         payments = Payment.query.filter_by(student_id=current_user.id).order_by(Payment.payment_date.desc()).all()
 
@@ -1401,22 +1530,23 @@ def get_student_fees():
             **status,
             "history": history
         })
-    except Exception as e:
+    except Exception as e: # Catch all errors and return 500 JSON response
         print(f"ERROR fetching fees for student {current_user.id}: {e}")
         return jsonify({"message": f"Internal Server Error: Failed to load fee data. Error: {e}"}), 500
+
 
 @app.route('/api/student/attendance', methods=['GET'])
 @login_required
 def get_student_attendance():
     if current_user.role != 'student': return jsonify({"message": "Access denied"}), 403
-    try:
+    try: # FIX: Added Try Block for Robust Error Handling
         attendance_records = Attendance.query.filter_by(student_id=current_user.id).order_by(Attendance.check_in_time.desc()).limit(10).all()
         return jsonify([{
             "date": r.check_in_time.strftime('%Y-%m-%d'),
             "time": r.check_in_time.strftime('%I:%M %p'),
             "status": r.status
         } for r in attendance_records])
-    except Exception as e:
+    except Exception as e: # Catch all errors and return 500 JSON response
         print(f"ERROR fetching attendance for student {current_user.id}: {e}")
         return jsonify({"message": f"Internal Server Error: Failed to load attendance data. Error: {e}"}), 500
 
@@ -1424,7 +1554,7 @@ def get_student_attendance():
 @login_required
 def get_student_grades():
     if current_user.role != 'student': return jsonify({"message": "Access denied"}), 403
-    try:
+    try: # FIX: Added Try Block for Robust Error Handling
         grades = Grade.query.filter_by(student_id=current_user.id).all()
         grade_data = []
         for grade in grades:
@@ -1436,7 +1566,7 @@ def get_student_grades():
                 "total_marks": grade.total_marks
             })
         return jsonify(grade_data)
-    except Exception as e:
+    except Exception as e: # Catch all errors and return 500 JSON response
         print(f"ERROR fetching grades for student {current_user.id}: {e}")
         return jsonify({"message": f"Internal Server Error: Failed to load grades data. Error: {e}"}), 500
 
@@ -1446,15 +1576,18 @@ def get_student_notes():
     if current_user.role != 'student':
         return jsonify({"message": "Access denied"}), 403
     
-    try:
+    try: # FIX: Added Try Block for Robust Error Handling
+        # Students now see notes for courses they are enrolled in
         student_course_ids = [c.id for c in current_user.courses_enrolled]
         notes = SharedNote.query.filter(SharedNote.course_id.in_(student_course_ids)).order_by(SharedNote.created_at.desc()).all()
         
         return jsonify([note.to_dict() for note in notes])
-    except Exception as e:
+    except Exception as e: # Catch all errors and return 500 JSON response
         print(f"ERROR fetching notes for student {current_user.id}: {e}")
         return jsonify({"message": f"Internal Server Error: Failed to load notes data. Error: {e}"}), 500
 
+
+# --- Teacher API Endpoints ---
 @app.route('/api/teacher/courses', methods=['GET'])
 @login_required
 def get_teacher_courses():
@@ -1467,11 +1600,13 @@ def get_teacher_courses():
 def get_teacher_students():
     if current_user.role != 'teacher': return jsonify({"message": "Access denied"}), 403
     
+    # 1. Get the IDs of courses taught by the current teacher
     teacher_course_ids = [c.id for c in Course.query.filter_by(teacher_id=current_user.id).all()]
 
     if not teacher_course_ids:
         return jsonify([])
 
+    # 2. Query the association table to find students enrolled in those courses
     enrolled_students = User.query.join(student_course_association).join(Course).filter(
         User.role == 'student',
         Course.id.in_(teacher_course_ids)
@@ -1494,6 +1629,7 @@ def record_attendance():
     except ValueError:
         return jsonify({"message": "Invalid date format."}), 400
         
+    # DLT Template ID for Attendance Absent
     attendance_template_id = os.environ.get('SMS_API_ATTENDANCE_TEMPLATE_ID', "1707176388022694296")
     sms_count = 0
 
@@ -1512,10 +1648,12 @@ def record_attendance():
             )
             db.session.add(new_record)
         
+        # --- NOTIFICATION LOGIC ---
         student = db.session.get(User, record['student_id'])
         parent = db.session.get(User, student.parent_id) if student and student.parent_id else None
         
         if record['status'] == 'Absent':
+            # SMS Logic
             if student and student.phone_number and attendance_template_id:
                 try:
                     d_obj = datetime.strptime(attendance_date_str, '%Y-%m-%d')
@@ -1526,10 +1664,12 @@ def record_attendance():
                 if send_actual_sms(student.phone_number, msg, template_id=attendance_template_id): sms_count += 1
                 if parent and parent.phone_number: send_actual_sms(parent.phone_number, msg, template_id=attendance_template_id)
 
+            # Push Logic
             if student: send_push_notification(student.id, "Attendance Alert", f"Marked ABSENT for {attendance_date_str}.")
             if parent: send_push_notification(parent.id, "Child Attendance", f"{student.name} marked ABSENT for {attendance_date_str}.")
 
         elif record['status'] == 'Present':
+            # Push Logic Only (No SMS for Present)
             if student: send_push_notification(student.id, "Attendance", f"Marked PRESENT for {attendance_date_str}.")
             if parent: send_push_notification(parent.id, "Child Attendance", f"{student.name} marked PRESENT for {attendance_date_str}.")
 
@@ -1545,7 +1685,7 @@ def send_notification_to_student():
     student_id = data.get('student_id')
     subject = data.get('subject')
     body = data.get('body')
-    notify_type = data.get('type')
+    notify_type = data.get('type') # 'email', 'sms', 'whatsapp', 'push'
 
     student = db.session.get(User, student_id)
     if not student or student.role != 'student':
@@ -1555,6 +1695,7 @@ def send_notification_to_student():
 
     result_messages = []
 
+    # 1. Store as a Message (Database Record - Always happens)
     message_content = f"Subject: {subject}\n\n{body}"
     new_message_student = Message(sender_id=current_user.id, recipient_id=student_id, content=message_content)
     db.session.add(new_message_student)
@@ -1568,6 +1709,8 @@ def send_notification_to_student():
 
     db.session.commit()
 
+    # 2. External Notification Logic
+    
     if notify_type == 'email':
         try:
             msg = MailMessage(subject=subject,
@@ -1576,6 +1719,8 @@ def send_notification_to_student():
             if parent and parent.email:
                 msg.recipients.append(parent.email)
             msg.body = body
+            # mail.send(msg) 
+            print(f"--- [MOCK EMAIL SENT] to {student.email} ---")
             result_messages.append("Email sent successfully (mocked).")
         except Exception as e:
             print(f"Flask-Mail Error: {e}")
@@ -1605,13 +1750,13 @@ def send_notification_to_student():
             else:
                 result_messages.append(f"WhatsApp to Parent failed.")
 
-    elif notify_type == 'push':
-        if send_push_notification(student.id, subject, body):
+    elif notify_type == 'portal': # Replaced 'push' with 'portal' for generic notifications
+         if send_push_notification(student.id, subject, body):
             result_messages.append("Push Notification sent to Student.")
-        else:
+         else:
             result_messages.append("Push to Student failed (App not installed/No Token).")
         
-        if parent:
+         if parent:
             if send_push_notification(parent.id, f"Child Alert: {subject}", body):
                 result_messages.append("Push Notification sent to Parent.")
 
@@ -1620,19 +1765,23 @@ def send_notification_to_student():
 
     return jsonify({"message": " | ".join(result_messages)}), 200
 
+
 @app.route('/api/teacher/reports/attendance', methods=['GET'])
 @login_required
 def teacher_attendance_report():
     if current_user.role != 'teacher':
         return jsonify({"message": "Access denied"}), 403
 
+    # 1. Get IDs of courses taught by this teacher
     teacher_course_ids = [
         c.id for c in Course.query.filter_by(teacher_id=current_user.id).all()
     ]
 
     if not teacher_course_ids:
+        # No courses assigned to this teacher
         return jsonify([])
 
+    # 2. Get distinct students enrolled in those courses
     students = (
         User.query
         .join(student_course_association)
@@ -1645,6 +1794,7 @@ def teacher_attendance_report():
         .all()
     )
 
+    # 3. Build attendance summary per student
     report = []
     for student in students:
         total_classes = Attendance.query.filter_by(student_id=student.id).count()
@@ -1728,8 +1878,10 @@ def upload_note():
         unique_filename = f"{uuid.uuid4()}{ext}"
         
         try:
+            # Save file to uploads folder
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], unique_filename))
             
+            # Create DB record
             new_note = SharedNote(
                 filename=unique_filename,
                 original_filename=original_filename,
@@ -1741,6 +1893,7 @@ def upload_note():
             db.session.add(new_note)
             db.session.commit()
 
+            # Notify Students about New Note via PUSH
             try:
                 course = db.session.get(Course, int(course_id))
                 if course and course.students:
@@ -1761,16 +1914,19 @@ def upload_note():
     else:
         return jsonify({"message": "File type not allowed"}), 400
 
+
 @app.route('/uploads/<filename>')
 @login_required
 def serve_uploaded_file(filename):
     if current_user.role not in ['student', 'parent', 'teacher', 'admin']:
         return "Access denied", 403
 
+    # SECURITY: block path traversal (../etc), but allow normal filenames with dots
     if '..' in filename or filename.startswith('/'):
         return "Invalid filename", 400
 
     try:
+        # Ensure file is referenced either as a SharedNote or as a profile photo
         note = SharedNote.query.filter_by(filename=filename).first()
         user = User.query.filter_by(profile_photo_url=f"/uploads/{filename}").first()
         
@@ -1782,17 +1938,19 @@ def serve_uploaded_file(filename):
         return send_from_directory(
             app.config['UPLOAD_FOLDER'],
             filename,
-            as_attachment=True if note else False,
+            as_attachment=True if note else False,  # Download notes, inline for photos
             download_name=download_name if note else None
         )
     except FileNotFoundError:
         return "File not found.", 404
 
+# --- Parent API Endpoints (FIXED WITH TRY/EXCEPT) ---
 @app.route('/api/parent/children', methods=['GET'])
 @login_required
 def get_parent_children():
     if current_user.role != 'parent': return jsonify({"message": "Access denied"}), 403
-    try:
+    try: # FIX: Added Try Block for Robust Error Handling
+        # FIX: Ensure children filtering is correct
         children = User.query.filter(User.parent_id == current_user.id).all() 
         return jsonify([c.to_dict() for c in children])
     except Exception as e:
@@ -1803,7 +1961,7 @@ def get_parent_children():
 @login_required
 def get_parent_messages():
     if current_user.role != 'parent': return jsonify({"message": "Access denied"}), 403
-    try:
+    try: # FIX: Added Try Block for Robust Error Handling
         messages_to_parent = Message.query.filter_by(recipient_id=current_user.id).order_by(Message.sent_at.desc()).all()
 
         child_ids = [c.id for c in User.query.filter_by(parent_id=current_user.id).all()]
@@ -1823,6 +1981,7 @@ def get_parent_messages():
         print(f"ERROR fetching messages for parent {current_user.id}: {e}")
         return jsonify({"message": f"Internal Server Error: Failed to load messages. Error: {e}"}), 500
 
+
 @app.route('/api/parent/child_data/<int:student_id>', methods=['GET'])
 @login_required
 def get_child_data(student_id):
@@ -1830,15 +1989,18 @@ def get_child_data(student_id):
         return jsonify({"message": "Access denied"}), 403
 
     try:
+        # FIX: use db.session.get instead of get_or_404
         student = db.session.get(User, student_id)
         if not student:
             return jsonify({"message": "Student not found"}), 404
 
+        # Authorization: must be an actual child of this parent (unless admin)
         if student.role != 'student' or (
             current_user.role == 'parent' and student.parent_id != current_user.id
         ):
             return jsonify({"message": "Authorization error or not a valid child."}), 403
 
+        # Recent attendance
         attendance_records = (
             Attendance.query
             .filter_by(student_id=student.id)
@@ -1852,6 +2014,7 @@ def get_child_data(student_id):
             "status": r.status
         } for r in attendance_records]
 
+        # Grades
         grades = Grade.query.filter_by(student_id=student.id).all()
         grade_data = []
         for grade in grades:
@@ -1863,6 +2026,7 @@ def get_child_data(student_id):
                 "total_marks": grade.total_marks
             })
 
+        # Fees
         fee_status = calculate_fee_status(student.id)
 
         return jsonify({
@@ -1875,10 +2039,14 @@ def get_child_data(student_id):
         print(f"ERROR fetching child data for parent {current_user.id} and student {student_id}: {e}")
         return jsonify({"message": f"Internal Server Error: Failed to load child data. Error: {e}"}), 500
 
+
+
+# --- Receipt Route ---
 @app.route('/api/receipt/<int:payment_id>', methods=['GET'])
 @login_required
 def serve_receipt(payment_id):
     try:
+        # FIX: use db.session.get instead of get_or_404
         payment = db.session.get(Payment, payment_id)
         if not payment:
             return "Payment not found.", 404
@@ -1889,6 +2057,7 @@ def serve_receipt(payment_id):
         if not student:
             return "Student record not found for this payment.", 404
 
+        # Authorization Check (Admin, Student paying, or Parent of Student)
         is_authorized = (
             current_user.role == 'admin' or
             current_user.id == student.id or
@@ -1898,6 +2067,7 @@ def serve_receipt(payment_id):
         if not is_authorized:
             return "Access Denied", 403
 
+        # --- Safety Checks for Receipt Variables ---
         student_name = student.name if student and student.name else "N/A"
         fee_name = fee_structure.name if fee_structure and fee_structure.name else "Fee Payment"
         payment_amount = f"₹ {payment.amount_paid:.2f}"
@@ -1909,6 +2079,7 @@ def serve_receipt(payment_id):
         else:
             fee_due_date_fmt = "N/A"
 
+        # Mock Institute Details
         institute_address = "CST Institute Address, Plot No 43 Om Park, Jalgaon"
         institute_city_state = "Jalgaon, Maharashtra"
         institute_contact = "9822826307"
@@ -2053,6 +2224,9 @@ def serve_receipt(payment_id):
         print(f"ERROR generating receipt for payment {payment_id}: {e}")
         return "Internal Server Error while generating receipt.", 500
 
+
+
+# --- Routes to Serve Frontend Pages ---
 @app.route('/')
 def serve_login_page():
     if current_user.is_authenticated:
@@ -2112,19 +2286,87 @@ def save_fcm_token():
 def service_worker():
     return send_from_directory(app.static_folder, 'firebase-messaging-sw.js')
 
+# Helper function to send notifications
+def send_fee_alert_notifications(student_id):
+    student = db.session.get(User, student_id)
+    if not student: return False
+    
+    status = calculate_fee_status(student_id)
+    parent = db.session.get(User, student.parent_id) if student.parent_id else None
+    
+    # Send SMS (using existing logic from send_fee_alert_sms)
+    student_alerted = send_fee_alert_sms(student, status['balance'], status['due_date'])
+    if parent:
+        parent_alerted = send_fee_alert_sms(parent, status['balance'], status['due_date'])
+
+    # Send Push Notification
+    push_title = "Fee Reminder"
+    push_body = f"Fee of Rs {status['balance']:.2f} pending. Due: {status['due_date']}."
+    
+    send_push_notification(student.id, push_title, push_body)
+    if parent:
+        send_push_notification(parent.id, f"Child Alert: {push_title}", push_body)
+    
+    return student_alerted or (parent_alerted if parent else False)
+
+# Helper function to use later
+def send_push_notification(user_id, title, body):
+    # 1. LAZY INITIALIZATION: Only initialize Firebase if it hasn't been already
+    if not init_firebase():
+        return False
+
+    # 2. SEND PUSH
+    with app.app_context(): # Ensure we are in app context to access DB
+        user = db.session.get(User, user_id)
+        
+        if not user:
+            logger.warning(f"Push Failed: User ID {user_id} not found.")
+            return False
+            
+        if not user.fcm_token:
+            # logger.warning(f"Push Failed: User {user.name} (ID: {user.id}) has NO FCM Token. They must log in to the App once.")
+            return False
+
+        try:
+            message = messaging.Message(
+                notification=messaging.Notification(title=title, body=body),
+                token=user.fcm_token,
+            )
+            response = messaging.send(message)
+            logger.info(f"Push Sent to {user.name}: {response}")
+            return True
+        except Exception as e:
+            logger.error(f"Push Error for {user.name}: {e}")
+            # If token is invalid (stale), maybe clear it?
+            if 'registration-token-not-registered' in str(e):
+                logger.info(f"Token invalid for {user.name}, clearing it.")
+                user.fcm_token = None
+                db.session.commit()
+            return False
+    return False
+
+# --- NEW HEALTH CHECK ENDPOINT (Needed for Coolify) ---
 @app.route('/healthz', methods=['GET'])
 def health_check():
+    """A simple, unprotected endpoint for external health monitoring."""
     return "OK", 200
 
 # --- Run Application ---
+# NEW: Define a dedicated function for database setup
 def initialize_database():
+    # FIX: Must import all necessary items inside the function scope for Python 3.x
+    # in environments where the script might be executed via command line.
     from flask import Flask, request, jsonify, render_template, redirect, url_for, send_from_directory
     from flask_sqlalchemy import SQLAlchemy
     from sqlalchemy import inspect
     
+    # Create a temporary Flask context for database operations
     with app.app_context():
+        # Create tables if they don't exist
         db.create_all()
         print("--- Database Tables Created/Verified ---\r\n")
+        
+        # Run migration check just in case
         check_and_upgrade_db()
         print("--- Database Schema Upgraded/Verified ---\r\n")
 
