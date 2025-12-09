@@ -121,9 +121,7 @@
                 <p class="text-slate-500 dark:text-slate-400 mt-2">Welcome back, Admin! Here's an overview of your institute.</p>
             </header>
 
-            
-
-<div id="content-dashboard" class="content-section">
+            <div id="content-dashboard" class="content-section">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6">
                         <p class="text-slate-500 dark:text-slate-400 text-sm">Total Teachers</p>
@@ -148,9 +146,7 @@
                     <div class="flex gap-4">
                         <a href="#teachers" class="bg-primary text-white font-medium py-2.5 px-6 rounded-lg text-sm hover:bg-opacity-90 transition duration-150">Manage Teachers</a>
                         <a href="#students" class="bg-primary text-white font-medium py-2.5 px-6 rounded-lg text-sm hover:bg-opacity-90 transition duration-150">Manage Students</a>
-                        
-
-</div>
+                    </div>
                 </div>
 
                 <div>
@@ -171,12 +167,10 @@
                 </div>
             </div>
 
-            
-
-<div id="content-teachers" class="content-section hidden">
+            <div id="content-teachers" class="content-section hidden">
                 <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">Manage Teachers</h2>
                 <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6 mb-8">
-	<h3 id="teacher-form-title" class="text-xl font-bold mb-4">Add/Edit Teacher</h3>
+	                <h3 id="teacher-form-title" class="text-xl font-bold mb-4">Add/Edit Teacher</h3>
                     <form id="teacher-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <input type="hidden" id="teacher-id" name="id">
                         <input type="hidden" id="teacher-role" name="role" value="teacher">
@@ -469,7 +463,7 @@
                             <button type="submit" id="save-fee-structure-btn" class="w-full bg-primary text-white font-medium py-2.5 px-4 rounded-lg text-sm hover:bg-opacity-90 transition duration-150">Save Fee Structure</button>
                         </form>
                         <h4 class="text-lg font-bold mt-8 mb-4">Existing Fee Structures</h4>
-                        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm overflow-hidden">
+                        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm overflow-x-auto">
                             <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                                 <thead>
                                     <tr>
@@ -487,7 +481,13 @@
                     <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6">
                         <h3 class="text-xl font-bold mb-4">Record Payment</h3>
                         <form id="payment-form" class="space-y-4">
-                            <div class="form-group"><label for="payment-student-select" class="block text-sm font-medium mb-1">Student</label><select id="payment-student-select" required class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800"></select></div>
+                            <div class="form-group">
+                                <label for="payment-course-filter" class="block text-sm font-medium mb-1 text-primary font-bold">1. Filter Students by Course</label>
+                                <select id="payment-course-filter" class="w-full border-primary dark:border-primary rounded-lg bg-blue-50 dark:bg-slate-800 mb-2">
+                                    <option value="">Show All Students</option>
+                                </select>
+                            </div>
+                            <div class="form-group"><label for="payment-student-select" class="block text-sm font-medium mb-1">2. Select Student</label><select id="payment-student-select" required class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800"></select></div>
                             <div class="form-group"><label for="payment-fee-structure-select" class="block text-sm font-medium mb-1">Fee Structure</label><select id="payment-fee-structure-select" required class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800"></select></div>
                             <div class="form-group"><label for="payment-amount" class="block text-sm font-medium mb-1">Amount Paid</label><input type="number" step="0.01" id="payment-amount" required class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800"></div>
                             <div class="form-group"><label for="payment-method" class="block text-sm font-medium mb-1">Payment Method</label><select id="payment-method" required class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800"><option value="Cash">Cash</option><option value="Card">Card</option><option value="Bank Transfer">Bank Transfer</option></select></div>
@@ -808,9 +808,10 @@
                         break;
                     case 'fees': 
                         fetchFeeStructures(); 
+                        fetchFeeCourseDropdown(); // For fee creation
+                        fetchPaymentCourseDropdown(); // For payment recording filter
                         fetchStudentsForPaymentDropdown(); 
                         fetchFeeSessionDropdowns(); 
-                        fetchFeeCourseDropdown(); 
                         fetchFeeStatus(); 
                         resetFeeStructureForm();
                         break;
@@ -1519,6 +1520,31 @@
                 console.error("Error loading fee course dropdown:", e);
             }
         }
+
+        // NEW: Fetch courses for filtering Payment Students
+        async function fetchPaymentCourseDropdown() {
+            try {
+                let courses = allCoursesCache;
+                if (!courses || courses.length === 0) {
+                     const response = await fetch(`${API_BASE_URL}/courses`, {credentials: 'include'});
+                     courses = await response.json();
+                     allCoursesCache = courses;
+                }
+
+                const select = document.getElementById('payment-course-filter');
+                if(select) {
+                    select.innerHTML = '<option value="">Show All Students</option>';
+                    courses.forEach(c => {
+                        select.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+                    });
+                    
+                    // Add listener to re-populate student list on change
+                    select.addEventListener('change', fetchStudentsForPaymentDropdown);
+                }
+            } catch (e) {
+                console.error("Error loading payment course filter:", e);
+            }
+        }
         
         async function fetchFeeStructures() {
             try {
@@ -1538,9 +1564,11 @@
                 paymentFeeStructureSelect.innerHTML = '<option value="">Select a fee structure...</option>';
                 structures.forEach(s => {
                     const courseName = s.course_name ? `(${s.course_name})` : "(Global)";
+                    
+                    // FIXED: Removed whitespace-nowrap from NAME column to allow wrapping
                     tableBody.innerHTML += `
                         <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${s.name} <span class="text-xs text-slate-400">${courseName}</span></td>
+                            <td class="px-6 py-4 text-sm font-medium whitespace-normal">${s.name} <span class="text-xs text-slate-400 block">${courseName}</span></td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">₹${s.total_amount.toFixed(2)}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${s.due_date}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -1821,6 +1849,38 @@
             }
         });
 
+        // --- NEW: Populate Student Dropdown with Optional Course Filtering ---
+        async function fetchStudentsForPaymentDropdown() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/users`, {credentials: 'include'});
+                const users = await response.json();
+                const students = users.filter(u => u.role === 'student');
+                
+                const selectElement = document.getElementById('payment-student-select');
+                const courseFilter = document.getElementById('payment-course-filter').value;
+                
+                selectElement.innerHTML = '<option value="">Select a student...</option>';
+                
+                let filteredStudents = students;
+                if (courseFilter) {
+                    // Filter students who are enrolled in the selected course ID
+                    filteredStudents = students.filter(s => s.course_ids && s.course_ids.includes(parseInt(courseFilter)));
+                }
+
+                if (filteredStudents.length === 0) {
+                     selectElement.innerHTML = '<option value="">No students found.</option>';
+                } else {
+                    filteredStudents.forEach(s => { 
+                        selectElement.innerHTML += `<option value="${s.id}">${s.name} (${s.email})</option>`; 
+                    });
+                }
+            } catch (error) {
+                 console.error("Error fetching students for payment dropdown:", error);
+                 const selectElement = document.getElementById('payment-student-select');
+                 if(selectElement) selectElement.innerHTML = '<option value="">Error loading students</option>';
+            }
+        }
+
         paymentForm.addEventListener('submit', async (event) => {
             event.preventDefault();
             const paymentData = {
@@ -2012,21 +2072,6 @@
                 if (selectElement) {
                     selectElement.innerHTML = '<option value="">Error loading parents</option>';
                 }
-            }
-        }
-
-        async function fetchStudentsForPaymentDropdown() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/users`, {credentials: 'include'});
-                const users = await response.json();
-                const students = users.filter(u => u.role === 'student');
-                const selectElement = document.getElementById('payment-student-select');
-                selectElement.innerHTML = '<option value="">Select a student...</option>';
-                students.forEach(s => { selectElement.innerHTML += `<option value="${s.id}">${s.name} (${s.email})</option>`; });
-            } catch (error) {
-                 console.error("Error fetching students for payment dropdown:", error);
-                 const selectElement = document.getElementById('payment-student-select');
-                 if(selectElement) selectElement.innerHTML = '<option value="">Error loading students</option>';
             }
         }
 
