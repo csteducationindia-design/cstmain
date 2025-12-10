@@ -2370,6 +2370,39 @@ def initialize_database():
         check_and_upgrade_db()
         print("--- Database Schema Upgraded/Verified ---\r\n")
 
+# --- PASTE THIS AT THE BOTTOM OF app.py (Before the 'if __name__' line) ---
+@app.route('/debug/firebase')
+@login_required
+def debug_firebase():
+    # 1. Check if Credential File Exists
+    files = os.listdir(basedir)
+    cred_file = 'firebase_credentials.json.json'
+    file_exists = cred_file in files
+    
+    # 2. Check if Firebase App is Initialized
+    app_status = "Not Initialized"
+    if firebase_admin._apps:
+        app_status = "Running"
+    else:
+        # Try to init to see error
+        try:
+            init_firebase()
+            app_status = "Started Just Now"
+        except Exception as e:
+            app_status = f"Error: {str(e)}"
+            
+    # 3. Check Current User's Token
+    token_status = "Missing"
+    if current_user.fcm_token:
+        token_status = f"Present ({current_user.fcm_token[:15]}...)"
+        
+    return jsonify({
+        "Credential File Found": file_exists,
+        "File Path Checked": os.path.join(basedir, cred_file),
+        "Firebase Status": app_status,
+        "Your Name": current_user.name,
+        "Your Saved Token": token_status
+    })
 if __name__ == '__main__':
     initialize_database() 
     app.run(debug=True, host='0.0.0.0', port=5000)
