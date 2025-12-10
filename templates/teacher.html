@@ -1034,13 +1034,60 @@
         });
 
         // --- INIT FIREBASE ---
-        function initFirebase() {
-            // Standard Firebase initialization logic here...
-        }
+       
+function initFirebase() {
+        try {
+            const firebaseConfig = {
+                apiKey: "AIzaSyBkzEHM9fXRoCYSgEW-hk_lN7sL_nSLDfU",
+                authDomain: "cst-institute-app.firebaseapp.com",
+                projectId: "cst-institute-app",
+                storageBucket: "cst-institute-app.firebasestorage.app",
+                messagingSenderId: "485166460200",
+                appId: "1:485166460200:web:4eae20e2010ab92baeb41d"
+            };
 
-        // Start
-        checkSessionAndInit();
-    });
+            if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+                const messaging = firebase.messaging();
+
+                // 1. Foreground Message Handler (Shows Toast if teacher is looking at the screen)
+                messaging.onMessage((payload) => {
+                    console.log('Message received. ', payload);
+                    // Optional: You can add a toast/alert here if you want teachers to see incoming messages too
+                    alert(`Notification: ${payload.notification.title}\n${payload.notification.body}`);
+                });
+
+                // 2. Token Registration
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.register('/firebase-messaging-sw.js').then((reg) => {
+                        return Notification.requestPermission().then((permission) => {
+                            if (permission === 'granted') {
+                                // REPLACE VAPID KEY HERE
+                                return messaging.getToken({ 
+                                    vapidKey: 'BBOMxvKvbEs_t9ykKBa2zIewzCzD6FCbm9rxc8a9eWl2kjjH5vyTSH6TeQMksZ_OGl5jZyQpU2wBcf-KsZN1uko', 
+                                    serviceWorkerRegistration: reg 
+                                });
+                            }
+                        });
+                    }).then((token) => {
+                        if (token) {
+                            console.log('FCM Token:', token);
+                            // Send token to backend
+                            fetch('/api/save_fcm_token', { 
+                                method: 'POST', 
+                                headers: {'Content-Type': 'application/json'}, 
+                                credentials: 'include', 
+                                body: JSON.stringify({token}) 
+                            });
+                        }
+                    }).catch(err => console.log('Firebase error', err));
+                }
+            }
+        } catch (e) { console.log('Firebase init skipped or error', e); }
+    }
+    
+    // Start the app
+    checkSessionAndInit();
 </script>
 </body>
 </html>
