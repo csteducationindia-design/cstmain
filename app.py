@@ -994,7 +994,7 @@ def serve_receipt(id):
 # --- DEBUG & SETUP ---
 @app.route('/debug/firebase')
 def debug_fb():
-    f = os.path.exists(os.path.join(basedir, 'firebase_credentials.json.json'))
+    f = os.path.exists(os.path.join(basedir, 'firebase_credentials.json'))
     return jsonify({"Credential File Exists": f, "Firebase Init": bool(firebase_admin._apps)})
 
 def check_and_upgrade_db():
