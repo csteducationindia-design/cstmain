@@ -76,7 +76,7 @@ def load_user(user_id):
 # =========================================================
 
 def init_firebase():
-    """Initializes Firebase with aggressive string cleaning."""
+    """Initializes Firebase. Robustly handles Coolify/Env formatting."""
     if firebase_admin._apps:
         return True
 
@@ -84,30 +84,33 @@ def init_firebase():
     firebase_env = os.environ.get('FIREBASE_CREDENTIALS_JSON')
     if firebase_env:
         try:
-            # --- START CLEANING ---
             val = firebase_env.strip()
             
-            # Remove wrapping quotes if Coolify added them
-            if val.startswith('"') and val.endswith('"'):
-                val = val[1:-1]
-            elif val.startswith("'") and val.endswith("'"):
+            # Remove wrapping quotes if they exist
+            if (val.startswith('"') and val.endswith('"')) or (val.startswith("'") and val.endswith("'")):
                 val = val[1:-1]
 
-            # FIX THE SPECIFIC ERROR: Remove backslashes before quotes
+            # Fix: Un-escape quotes (Fixes "Expecting property name" error)
             val = val.replace('\\"', '"')
-            # Fix escaped newlines
-            val = val.replace('\\n', '\n')
-            # --- END CLEANING ---
+            
+            # CRITICAL FIX: DO NOT replace newlines here. 
+            # The previous code broke the private key by changing \n. I have removed that line.
 
-            # Now try to parse it as standard JSON
-            cred_dict = json.loads(val)
+            try:
+                # Attempt 1: Standard JSON
+                cred_dict = json.loads(val)
+            except Exception:
+                # Attempt 2: Python Dictionary format (Backup plan)
+                import ast
+                cred_dict = ast.literal_eval(val)
 
             cred = credentials.Certificate(cred_dict)
             firebase_admin.initialize_app(cred)
             logger.info("Firebase initialized from Environment Variable.")
             return True
         except Exception as e:
-            logger.error(f"Firebase Env Init Failed. Cleaned start: {val[:30]}... Error: {e}")
+            # Log the error but don't crash, let it try the file next
+            logger.error(f"Firebase Env Init Failed. Error: {e}")
 
     # 2. Try Local File (Backup)
     possible_paths = [
@@ -127,6 +130,7 @@ def init_firebase():
 
     logger.warning("Firebase credentials not found. Push notifications will not work.")
     return False
+
 def send_push_notification(user_id, title, body):
     """Sends a Push Notification via Firebase Cloud Messaging."""
     if not init_firebase():
