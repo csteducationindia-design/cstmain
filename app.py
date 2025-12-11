@@ -76,28 +76,37 @@ def load_user(user_id):
 # =========================================================
 
 def init_firebase():
-    """Initializes Firebase. Checks multiple paths for the credential file."""
+    """Initializes Firebase. Checks Environment Variable first, then files."""
     if firebase_admin._apps:
         return True
 
-    # 1. Try Environment Variable
+    # 1. Try Environment Variable (Robust Fix)
     firebase_env = os.environ.get('FIREBASE_CREDENTIALS_JSON')
     if firebase_env:
         try:
-            cred_dict = json.loads(firebase_env.strip("'").strip('"'))
+            # Clean outer whitespace/quotes
+            val = firebase_env.strip().strip("'").strip('"')
+            
+            # Try 1: Standard JSON loading
+            try:
+                cred_dict = json.loads(val)
+            except json.JSONDecodeError:
+                # Try 2: Fallback for Single Quotes (Common Copy/Paste issue)
+                import ast
+                cred_dict = ast.literal_eval(val)
+
             cred = credentials.Certificate(cred_dict)
             firebase_admin.initialize_app(cred)
             logger.info("Firebase initialized from Environment Variable.")
             return True
         except Exception as e:
-            logger.error(f"Firebase Env Init Failed: {e}")
+            # Log what we actually received to help debug
+            logger.error(f"Firebase Env Init Failed. Content starts with: {str(firebase_env)[:20]}... Error: {e}")
 
     # 2. Try Local File (Check multiple likely locations)
     possible_paths = [
-        os.path.join(basedir, 'firebase_credentials.json.json'), # Double extension from your upload
         os.path.join(basedir, 'firebase_credentials.json'),
-        os.path.join(basedir, 'cstmain', 'firebase_credentials.json.json'),
-        'firebase_credentials.json.json'
+        'firebase_credentials.json'
     ]
 
     for path in possible_paths:
@@ -109,7 +118,6 @@ def init_firebase():
                 return True
             except Exception as e:
                 logger.error(f"Firebase File Init Failed ({path}): {e}")
-                return False
 
     logger.warning("Firebase credentials not found. Push notifications will not work.")
     return False
