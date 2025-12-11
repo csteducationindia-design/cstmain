@@ -76,7 +76,7 @@ def load_user(user_id):
 # =========================================================
 
 def init_firebase():
-    """Initializes Firebase. Robustly handles Coolify/Env formatting."""
+    """Initializes Firebase. Auto-repairs the Private Key newlines."""
     if firebase_admin._apps:
         return True
 
@@ -86,30 +86,33 @@ def init_firebase():
         try:
             val = firebase_env.strip()
             
-            # Remove wrapping quotes if they exist
+            # Remove wrapping quotes if they exist (common Coolify issue)
             if (val.startswith('"') and val.endswith('"')) or (val.startswith("'") and val.endswith("'")):
                 val = val[1:-1]
 
-            # Fix: Un-escape quotes (Fixes "Expecting property name" error)
+            # Fix 1: Un-escape quotes so JSON parsing works
             val = val.replace('\\"', '"')
-            
-            # CRITICAL FIX: DO NOT replace newlines here. 
-            # The previous code broke the private key by changing \n. I have removed that line.
 
+            # Parse the JSON
             try:
-                # Attempt 1: Standard JSON
                 cred_dict = json.loads(val)
             except Exception:
-                # Attempt 2: Python Dictionary format (Backup plan)
+                # Fallback for Python-style dictionaries
                 import ast
                 cred_dict = ast.literal_eval(val)
+
+            # --- THE CRITICAL FIX ---
+            # The Private Key must have REAL newlines, not string "\n" characters.
+            # We fix this AFTER parsing the JSON to avoid breaking the file format.
+            if 'private_key' in cred_dict:
+                cred_dict['private_key'] = cred_dict['private_key'].replace('\\n', '\n')
+            # ------------------------
 
             cred = credentials.Certificate(cred_dict)
             firebase_admin.initialize_app(cred)
             logger.info("Firebase initialized from Environment Variable.")
             return True
         except Exception as e:
-            # Log the error but don't crash, let it try the file next
             logger.error(f"Firebase Env Init Failed. Error: {e}")
 
     # 2. Try Local File (Backup)
