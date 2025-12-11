@@ -76,34 +76,40 @@ def load_user(user_id):
 # =========================================================
 
 def init_firebase():
-    """Initializes Firebase. Checks Environment Variable first, then files."""
+    """Initializes Firebase with aggressive string cleaning."""
     if firebase_admin._apps:
         return True
 
-    # 1. Try Environment Variable (Robust Fix)
+    # 1. Try Environment Variable
     firebase_env = os.environ.get('FIREBASE_CREDENTIALS_JSON')
     if firebase_env:
         try:
-            # Clean outer whitespace/quotes
-            val = firebase_env.strip().strip("'").strip('"')
+            # --- START CLEANING ---
+            val = firebase_env.strip()
             
-            # Try 1: Standard JSON loading
-            try:
-                cred_dict = json.loads(val)
-            except json.JSONDecodeError:
-                # Try 2: Fallback for Single Quotes (Common Copy/Paste issue)
-                import ast
-                cred_dict = ast.literal_eval(val)
+            # Remove wrapping quotes if Coolify added them
+            if val.startswith('"') and val.endswith('"'):
+                val = val[1:-1]
+            elif val.startswith("'") and val.endswith("'"):
+                val = val[1:-1]
+
+            # FIX THE SPECIFIC ERROR: Remove backslashes before quotes
+            val = val.replace('\\"', '"')
+            # Fix escaped newlines
+            val = val.replace('\\n', '\n')
+            # --- END CLEANING ---
+
+            # Now try to parse it as standard JSON
+            cred_dict = json.loads(val)
 
             cred = credentials.Certificate(cred_dict)
             firebase_admin.initialize_app(cred)
             logger.info("Firebase initialized from Environment Variable.")
             return True
         except Exception as e:
-            # Log what we actually received to help debug
-            logger.error(f"Firebase Env Init Failed. Content starts with: {str(firebase_env)[:20]}... Error: {e}")
+            logger.error(f"Firebase Env Init Failed. Cleaned start: {val[:30]}... Error: {e}")
 
-    # 2. Try Local File (Check multiple likely locations)
+    # 2. Try Local File (Backup)
     possible_paths = [
         os.path.join(basedir, 'firebase_credentials.json'),
         'firebase_credentials.json'
@@ -121,7 +127,6 @@ def init_firebase():
 
     logger.warning("Firebase credentials not found. Push notifications will not work.")
     return False
-
 def send_push_notification(user_id, title, body):
     """Sends a Push Notification via Firebase Cloud Messaging."""
     if not init_firebase():
