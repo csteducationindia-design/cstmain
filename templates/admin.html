@@ -151,19 +151,20 @@
 
                 <div>
                     <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-4">Recent Announcements</h2>
-                    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm overflow-hidden">
-                        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                            <thead>
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Title</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Target Group</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="recent-announcements-body" class="divide-y divide-slate-200 dark:divide-slate-700"></tbody>
-                        </table>
-                    </div>
+          <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm overflow-hidden">
+    <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+        <thead>
+            <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Title</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Content</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Target Group</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
+                <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
+            </tr>
+        </thead>
+        <tbody id="management-announcements-body" class="divide-y divide-slate-200 dark:divide-slate-700"></tbody>
+    </table>
+</div>
                 </div>
             </div>
 
@@ -1394,51 +1395,64 @@
         // --- ANNOUNCEMENT LOGIC ---
         
         async function fetchAnnouncements(isManagementPage) {
-            try {
-                const response = await fetch(`${API_BASE_URL}/announcements`, {credentials: 'include'});
-                const announcements = await response.json();
-                const mainAnnouncementsBody = document.getElementById('recent-announcements-body'); 
-                
-                if (mainAnnouncementsBody) mainAnnouncementsBody.innerHTML = '';
-                
-                // Filter announcements shown in the dashboard view (last 5, only 'all' or 'admin')
-                const dashboardAnnouncements = announcements.filter(a => a.target_group === 'all' || a.target_group === 'admin').slice(0, 5);
+    try {
+        const response = await fetch(`${API_BASE_URL}/announcements`, { credentials: 'include' });
+        const announcements = await response.json();
 
-                const announcementsToShow = isManagementPage ? announcements : dashboardAnnouncements;
+        // FIX 1: Determine which table to update based on the page
+        // If isManagementPage is true, we look for the NEW ID we created above.
+        // If false, we look for the Dashboard table ID.
+        const targetId = isManagementPage ? 'management-announcements-body' : 'recent-announcements-body';
+        const tableBody = document.getElementById(targetId);
 
-                if (announcementsToShow.length === 0) {
-                    if (mainAnnouncementsBody) mainAnnouncementsBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center">No announcements found.</td></tr>`;
-                    return;
-                }
+        if (!tableBody) return; // Stop if table doesn't exist on this view
 
-                announcementsToShow.forEach((announcement) => {
-                    const contentDisplay = isManagementPage ? announcement.content : announcement.content.substring(0, 50) + (announcement.content.length > 50 ? '...' : '');
-                    
-                    const actionsHtml = isManagementPage ? `
-                        <button onclick="deleteAnnouncement(${announcement.id})" class="text-red-600 hover:text-red-900 ml-4">Delete</button>
-                    ` : '';
+        tableBody.innerHTML = '';
 
+        // FIX 2: Decide which data to show
+        // Dashboard = Last 5 announcements only (Read only)
+        // Management Page = All announcements (Editable)
+        const dashboardAnnouncements = announcements.filter(a => a.target_group === 'all' || a.target_group === 'admin').slice(0, 5);
+        const announcementsToShow = isManagementPage ? announcements : dashboardAnnouncements;
 
-                    const row = `
-                        <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${announcement.title}</td>
-                            <td class="px-6 py-4 text-sm text-slate-500 dark:text-slate-400 max-w-xs truncate">${contentDisplay}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${announcement.target_group.charAt(0).toUpperCase() + announcement.target_group.slice(1)}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${announcement.created_at.split(' ')[0]}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">${actionsHtml}</td>
-                        </tr>`;
-                    
-                    if (mainAnnouncementsBody) {
-                        mainAnnouncementsBody.innerHTML += row;
-                    }
-                });
-            } catch (error) {
-                console.error("Error fetching announcements:", error);
-                const tableBody = document.getElementById('recent-announcements-body');
-                if (tableBody) tableBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
-            }
+        if (announcementsToShow.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center">No announcements found.</td></tr>`;
+            return;
         }
-        
+
+        announcementsToShow.forEach((announcement) => {
+            // Shorten content for the table view
+            const contentDisplay = isManagementPage 
+                ? announcement.content 
+                : announcement.content.substring(0, 50) + (announcement.content.length > 50 ? '...' : '');
+
+            // FIX 3: Add the Delete Button HTML ONLY if we are on the management page
+            const actionsHtml = isManagementPage ? `
+                <button onclick="deleteAnnouncement(${announcement.id})" class="text-red-600 hover:text-red-900 font-bold border border-red-200 bg-red-50 px-3 py-1 rounded hover:bg-red-100 transition">
+                    Delete
+                </button>
+            ` : '';
+
+            const dateStr = announcement.created_at ? announcement.created_at.split(' ')[0] : 'N/A';
+
+            const row = `
+                <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${announcement.title}</td>
+                    <td class="px-6 py-4 text-sm text-slate-500 dark:text-slate-400 max-w-xs truncate">${contentDisplay}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${announcement.target_group.charAt(0).toUpperCase() + announcement.target_group.slice(1)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${dateStr}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">${actionsHtml}</td>
+                </tr>`;
+
+            tableBody.innerHTML += row;
+        });
+    } catch (error) {
+        console.error("Error fetching announcements:", error);
+        // Fallback error message (tries to find the management body first)
+        const errTable = document.getElementById('management-announcements-body') || document.getElementById('recent-announcements-body');
+        if (errTable) errTable.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
+    }
+}        
         window.deleteAnnouncement = async function(id) {
             if (confirm('Are you sure you want to delete this announcement?')) {
                 try {
