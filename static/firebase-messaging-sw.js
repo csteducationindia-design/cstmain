@@ -1,7 +1,6 @@
 importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js');
 
-// 1. Firebase Config (Must match your project)
 const firebaseConfig = {
     apiKey: "AIzaSyBkzEHM9fXRoCYSgEW-hk_lN7sL_nSLDfU",
     authDomain: "cst-institute-app.firebaseapp.com",
@@ -11,46 +10,46 @@ const firebaseConfig = {
     appId: "1:485166460200:web:4eae20e2010ab92baeb41d"
 };
 
-// 2. Initialize
 firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
 
-// 3. Handle Background Notifications (Display)
+// 1. Handle Background Notifications
 messaging.onBackgroundMessage((payload) => {
-    console.log('[Service Worker] Background Message:', payload);
+    console.log('[SW] Background Message:', payload);
     
+    // Construct the FULL URL to ensure mobile finds it
+    const fullUrl = self.location.origin + '/student';
+
     const notificationTitle = payload.notification.title;
     const notificationOptions = {
         body: payload.notification.body,
-        icon: '/static/icons/icon-192x192.png', // Ensure this icon exists
+        icon: '/static/icons/icon-192x192.png',
         badge: '/static/icons/badge.png',
-        data: { url: '/student' } // <--- IMPORTANT: We store the URL here
+        data: { url: fullUrl }, // Store the Full URL
+        tag: 'cst-notification' // Replaces old notifications with new ones
     };
 
     self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
-// 4. Handle Notification CLICK (The Fix)
+// 2. Handle CLICK (The Fix)
 self.addEventListener('notificationclick', function(event) {
-    console.log('[Service Worker] Notification Clicked');
-    
-    // A. Close the notification immediately
+    console.log('[SW] Notification Clicked');
     event.notification.close();
 
-    // B. Determine where to go (Default to /student if no URL provided)
-    const targetUrl = (event.notification.data && event.notification.data.url) ? event.notification.data.url : '/student';
+    // Get the Full URL we stored above
+    const targetUrl = event.notification.data.url || (self.location.origin + '/student');
 
-    // C. Focus existing tab or open new one
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
-            // 1. If the app is already open, focus it and refresh
+            // A. If app is open, refresh it
             for (let i = 0; i < clientList.length; i++) {
                 const client = clientList[i];
-                if (client.url.includes(targetUrl) && 'focus' in client) {
-                    return client.focus().then(c => c.navigate(targetUrl)); 
+                if (client.url.includes('/student') && 'focus' in client) {
+                    return client.focus().then(c => c.navigate(targetUrl));
                 }
             }
-            // 2. If app is closed, open a new window/app instance
+            // B. If app is closed, open it
             if (clients.openWindow) {
                 return clients.openWindow(targetUrl);
             }
