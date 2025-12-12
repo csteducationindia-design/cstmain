@@ -690,36 +690,37 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
 <script>
    <script>
+    <script>
     // ==========================================
     // 1. GLOBAL CONFIGURATION & CACHE
     // ==========================================
     const API_ORIGIN = window.location.origin;
     const API_BASE_URL = API_ORIGIN + '/api';
 
-    // Store data in memory to avoid constant reloading
+    // Store data in memory
     let allUsersCache = [];
     let allCoursesCache = [];
     let allSessionsCache = [];
 
     // ==========================================
-    // 2. GLOBAL HELPERS (Must be outside DOMContentLoaded for HTML onclicks)
+    // 2. GLOBAL HELPERS (Must be accessible by HTML onclick)
     // ==========================================
     
     // --- Report Tab Switcher ---
     function switchReportTab(tabName) {
-        // 1. Hide all report views
+        // Hide all report views
         document.querySelectorAll('.report-view').forEach(el => el.classList.add('hidden'));
-        // 2. Show the selected view
+        // Show selected view
         const target = document.getElementById(`report-view-${tabName}`);
         if(target) target.classList.remove('hidden');
 
-        // 3. Update Tab Button Styles (Active vs Inactive)
+        // Update Button Styles
         document.querySelectorAll('.report-tab').forEach(btn => {
-            btn.classList.remove('bg-white', 'shadow-sm', 'text-slate-900', 'ring-1', 'ring-black/5');
+            btn.classList.remove('bg-white', 'shadow-sm', 'text-primary', 'ring-1', 'ring-black/5');
             btn.classList.add('text-slate-500', 'hover:text-primary');
         });
         
-        // Highlight the active button
+        // Highlight active button
         const activeBtn = document.getElementById(`tab-${tabName}`);
         if(activeBtn) {
             activeBtn.classList.remove('text-slate-500', 'hover:text-primary');
@@ -746,7 +747,6 @@
         const announcementForm = document.getElementById('announcement-form'); 
         const searchInput = document.getElementById('student-search-input'); 
         const bulkUploadForm = document.getElementById('bulk-upload-form');
-        const adminBulkMessageForm = document.getElementById('admin-bulk-message-form');
 
         let searchTimeout;
 
@@ -815,8 +815,8 @@
                         break;
                     case 'fees': 
                         fetchFeeStructures(); 
-                        fetchFeeCourseDropdown(); // For fee creation
-                        fetchPaymentCourseDropdown(); // For payment recording filter
+                        fetchFeeCourseDropdown(); 
+                        fetchPaymentCourseDropdown(); 
                         fetchStudentsForPaymentDropdown(); 
                         fetchFeeSessionDropdowns(); 
                         fetchFeeStatus(); 
@@ -831,18 +831,11 @@
                         fetchPerformanceReport(); 
                         break;
                     case 'admin-message': 
-                        // logic for bulk message if needed
-                        break;
                     case 'bulk-upload': 
-                        // logic for bulk upload if needed
-                        break;
-                    default: 
-                        console.warn(`Unknown hash: ${currentHash}`); 
                         break;
                 }
             } catch(e) {
                 console.error("Content Loading Error:", e);
-                alert("An error occurred loading content. Please check the console.");
             }
         }
 
@@ -865,20 +858,14 @@
                     window.location.href = API_ORIGIN + '/'; 
                 }
             } catch (error) {
-                console.error("Could not verify session. Redirecting to login.", error);
                 window.location.href = API_ORIGIN + '/';
             }
         }
         
         if (logoutBtn) {
             logoutBtn.addEventListener('click', async () => {
-                try {
-                    await fetch(`${API_BASE_URL}/logout`, { method: 'POST', credentials: 'include' });
-                    window.location.href = API_ORIGIN + '/';
-                } catch (error) {
-                    console.error("Logout Error:", error);
-                    alert("Logout failed. Please try refreshing the page.");
-                }
+                await fetch(`${API_BASE_URL}/logout`, { method: 'POST', credentials: 'include' });
+                window.location.href = API_ORIGIN + '/';
             });
         }
 
@@ -891,12 +878,10 @@
                 const announcements = await response.json();
 
                 // 1. CHOOSE THE CORRECT TABLE ID
-                // If we are editing (Manage Page), look for the NEW ID "management-announcements-body"
-                // If we are viewing (Dashboard), look for the OLD ID "recent-announcements-body"
                 const targetId = isManagementPage ? 'management-announcements-body' : 'recent-announcements-body';
                 const tableBody = document.getElementById(targetId);
 
-                if (!tableBody) return; // Stop if the table doesn't exist on this screen
+                if (!tableBody) return; 
 
                 tableBody.innerHTML = '';
 
@@ -921,22 +906,18 @@
                     if (isManagementPage) {
                         actionsHtml = `
                             <div class="flex justify-end gap-2">
-                                <button onclick="alert('Edit functionality coming soon!')" class="text-blue-600 hover:text-blue-900 font-bold border border-blue-200 bg-blue-50 px-3 py-1 rounded hover:bg-blue-100 transition text-xs">
-                                    Edit
-                                </button>
-                                <button onclick="deleteAnnouncement(${announcement.id})" class="text-red-600 hover:text-red-900 font-bold border border-red-200 bg-red-50 px-3 py-1 rounded hover:bg-red-100 transition text-xs">
-                                    Delete
-                                </button>
+                                <button onclick="alert('Edit functionality coming soon!')" class="text-blue-600 hover:text-blue-900 font-bold border border-blue-200 bg-blue-50 px-3 py-1 rounded hover:bg-blue-100 transition text-xs">Edit</button>
+                                <button onclick="deleteAnnouncement(${announcement.id})" class="text-red-600 hover:text-red-900 font-bold border border-red-200 bg-red-50 px-3 py-1 rounded hover:bg-red-100 transition text-xs">Delete</button>
                             </div>
                         `;
                     }
 
                     const row = `
                         <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50 hover:bg-slate-50 transition">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white">${announcement.title}</td>
-                            <td class="px-6 py-4 text-sm text-slate-500 dark:text-slate-400 max-w-xs truncate" title="${announcement.content}">${contentDisplay}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${announcement.target_group.charAt(0).toUpperCase() + announcement.target_group.slice(1)}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${dateStr}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${announcement.title}</td>
+                            <td class="px-6 py-4 text-sm text-slate-500 max-w-xs truncate" title="${announcement.content}">${contentDisplay}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${announcement.target_group}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${dateStr}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">${actionsHtml}</td>
                         </tr>`;
 
@@ -953,16 +934,12 @@
                     const response = await fetch(`${API_BASE_URL}/announcements/${id}`, { method: 'DELETE', credentials: 'include' });
                     if (response.ok) {
                         alert('Announcement deleted successfully!');
-                        fetchAnnouncements(true); // Refresh table
-                        // Also refresh dashboard if it's visible
+                        fetchAnnouncements(true); 
                         fetchAnnouncements(false); 
                     } else {
-                        const error = await response.json();
-                        alert(`Delete failed: ${error.message || 'An unknown error occurred.'}`);
+                        alert('Delete failed.');
                     }
-                } catch (error) {
-                    alert(`An error occurred: ${error.message}`);
-                }
+                } catch (error) { alert('An error occurred.'); }
             }
         };
 
@@ -976,18 +953,12 @@
                 };
                 try {
                     const response = await fetch(API_BASE_URL + '/announcements', { method: 'POST', headers: {'Content-Type': 'application/json'}, credentials: 'include', body: JSON.stringify(announcementData) });
-                    const result = await response.json();
-
                     if (response.ok) {
                         announcementForm.reset();
                         alert('Announcement published successfully!');
                         fetchAnnouncements(true);
-                    } else {
-                        alert(`Save failed: ${result.message || 'An unknown error occurred.'}`);
-                    }
-                } catch (error) {
-                    alert(`An error occurred: ${error.message}`);
-                }
+                    } else { alert('Save failed.'); }
+                } catch (error) { alert('An error occurred.'); }
             });
         }
 
@@ -1016,11 +987,7 @@
                 if (detailsEl) detailsEl.innerHTML = '';
 
                 try {
-                    const response = await fetch(`${API_BASE_URL}/bulk_upload/users`, {
-                        method: 'POST',
-                        credentials: 'include',
-                        body: formData
-                    });
+                    const response = await fetch(`${API_BASE_URL}/bulk_upload/users`, { method: 'POST', credentials: 'include', body: formData });
                     const result = await response.json();
 
                     if (messageEl) {
@@ -1626,7 +1593,7 @@
                         <tr class="even:bg-slate-500/5">
                             <td class="px-6 py-4 text-sm font-medium">${s.student_name}</td>
                             <td class="px-6 py-4 text-sm font-bold ${color}">₹${s.balance}</td>
-                            <td class="px-6 py-4 text-sm">${s.pending_days} days</td>
+                            <td class="px-6 py-4 text-sm text-slate-500">${s.pending_days} days</td>
                             <td class="px-6 py-4 text-center"><button onclick="alert('SMS Sent')" class="text-amber-500 material-symbols-outlined">sms</button></td>
                             <td class="px-6 py-4 text-right"><button onclick="printReceipt(${s.latest_payment_id})" class="text-primary material-symbols-outlined">print</button></td>
                         </tr>`;
@@ -1712,4 +1679,3 @@
         checkAdminSession();
     });
 </script>
-</html>
