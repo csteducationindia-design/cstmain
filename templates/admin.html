@@ -575,61 +575,89 @@
                     <p id="admin-message-status" class="mt-4 text-sm font-medium text-center text-slate-500 dark:text-slate-400 hidden"></p>
                 </div>
             </div>
-            <div id="content-reports" class="content-section hidden">
-                <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">General Reports</h2>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6">
-                        <h3 class="text-xl font-bold mb-4">Recent Admissions Report (Last 30 Days)</h3>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700 table-auto-layout">
-                                <thead>
-                                    <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Student Name</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Email</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Admission Date</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="admissions-report-body" class="divide-y divide-slate-200 dark:divide-slate-700"></tbody>
-                            </table>
-                        </div>
-                    </div>
+<div id="content-reports" class="content-section hidden">
+    <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+        <div>
+            <h2 class="text-3xl font-bold text-slate-900 dark:text-white">Analytics & Reports</h2>
+            <p class="text-slate-500 dark:text-slate-400 mt-1">Deep dive into institute performance.</p>
+        </div>
+        <button onclick="alert('Exporting PDF...')" class="mt-4 md:mt-0 flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg hover:bg-indigo-700 transition">
+            <span class="material-symbols-outlined">download</span> Download Report
+        </button>
+    </div>
 
-                    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6">
-                        <h3 class="text-xl font-bold mb-4">Student Attendance Report</h3>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700 table-auto-layout">
-                                <thead>
-                                    <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Student Name</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Total Classes</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Present</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Absent</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Percentage</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="attendance-report-body" class="divide-y divide-slate-200 dark:divide-slate-700"></tbody>
-                            </table>
-                        </div>
-                    </div>
+    <div class="flex space-x-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl mb-8 w-fit">
+        <button onclick="switchReportTab('admissions')" id="tab-admissions" class="report-tab px-6 py-2.5 rounded-lg text-sm font-bold text-slate-600 hover:text-primary transition bg-white shadow-sm ring-1 ring-black/5">Admissions</button>
+        <button onclick="switchReportTab('attendance')" id="tab-attendance" class="report-tab px-6 py-2.5 rounded-lg text-sm font-bold text-slate-500 hover:text-primary transition">Attendance</button>
+        <button onclick="switchReportTab('performance')" id="tab-performance" class="report-tab px-6 py-2.5 rounded-lg text-sm font-bold text-slate-500 hover:text-primary transition">Performance</button>
+    </div>
 
-                    <div class="lg:col-span-2 bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6">
-                        <h3 class="text-xl font-bold mb-4">Student Performance Report</h3>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700 table-auto-layout">
-                                <thead>
-                                    <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Student Name</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Assessments Taken</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Total Score</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Overall Percentage</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="performance-report-body" class="divide-y divide-slate-200 dark:divide-slate-700"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+    <div id="report-view-admissions" class="report-view">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div class="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                <h3 class="font-bold text-lg">New Admissions (Last 30 Days)</h3>
+                <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">Live Data</span>
             </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                    <thead class="bg-slate-50 dark:bg-slate-800">
+                        <tr>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Student Name</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Email Contact</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Join Date</th>
+                            <th class="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admissions-report-body" class="divide-y divide-slate-200 dark:divide-slate-700 bg-white dark:bg-slate-900">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="report-view-attendance" class="report-view hidden">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div class="p-6 border-b border-slate-100 dark:border-slate-800">
+                <h3 class="font-bold text-lg">Student Attendance Overview</h3>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                    <thead class="bg-slate-50 dark:bg-slate-800">
+                        <tr>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Student</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Total Classes</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Present</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Percentage</th>
+                            <th class="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Health</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendance-report-body" class="divide-y divide-slate-200 dark:divide-slate-700 bg-white dark:bg-slate-900"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="report-view-performance" class="report-view hidden">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div class="p-6 border-b border-slate-100 dark:border-slate-800">
+                <h3 class="font-bold text-lg">Academic Performance</h3>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                    <thead class="bg-slate-50 dark:bg-slate-800">
+                        <tr>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Student</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Tests Taken</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Avg Score</th>
+                            <th class="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Grade</th>
+                        </tr>
+                    </thead>
+                    <tbody id="performance-report-body" class="divide-y divide-slate-200 dark:divide-slate-700 bg-white dark:bg-slate-900"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 
             <div id="content-bulk-upload" class="content-section hidden">
                 <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">Bulk Data Upload</h2>
@@ -665,6 +693,25 @@
     const API_ORIGIN = window.location.origin;
     const API_BASE_URL = API_ORIGIN + '/api';
 
+function switchReportTab(tabName) {
+        // 1. Hide all report views
+        document.querySelectorAll('.report-view').forEach(el => el.classList.add('hidden'));
+        // 2. Show the selected view
+        document.getElementById(`report-view-${tabName}`).classList.remove('hidden');
+
+        // 3. Update Tab Button Styles (Active vs Inactive)
+        document.querySelectorAll('.report-tab').forEach(btn => {
+            btn.classList.remove('bg-white', 'shadow-sm', 'text-slate-900', 'ring-1', 'ring-black/5');
+            btn.classList.add('text-slate-500', 'hover:text-primary');
+        });
+        
+        // Highlight the active button
+        const activeBtn = document.getElementById(`tab-${tabName}`);
+        if(activeBtn) {
+            activeBtn.classList.remove('text-slate-500', 'hover:text-primary');
+            activeBtn.classList.add('bg-white', 'shadow-sm', 'text-primary', 'ring-1', 'ring-black/5');
+        }
+    }
     // Store all users in memory for searching
     let allUsersCache = [];
     let allCoursesCache = []; // NEW: Cache courses globally
