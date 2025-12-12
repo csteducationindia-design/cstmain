@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Portal - CST Institute</title>
     <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
-    <link as="style" href="https://fonts.googleapis.com/css2?display=swap&family=Inter:wght@400;500;700;900" onload="this.rel='stylesheet'" rel="stylesheet"/>
+    <link as="style" href="https://fonts.googleapis.com/css2?display=swap&family=Inter:wght@400;500;600;700;900" onload="this.rel='stylesheet'" rel="stylesheet"/>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <script>
         tailwind.config = {
@@ -24,258 +24,323 @@
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
     <style>
+        /* Modern Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
+        .dark ::-webkit-scrollbar-thumb { background-color: #475569; }
         .table-auto-layout { table-layout: auto; }
-        .overdue { color: #ef4444; font-weight: 600; }
+        .overdue { color: #ef4444; font-weight: 700; }
         .pending { color: #f59e0b; font-weight: 600; }
         .paid { color: #10b981; font-weight: 600; }
     </style>
 </head>
-<body class="bg-background-light dark:bg-background-dark font-display text-slate-800 dark:text-slate-200">
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-800 dark:text-slate-200 h-screen overflow-hidden flex">
 
-<div class="flex min-h-screen">
-    <aside class="w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col shadow-lg z-20">
-        <div class="p-6">
-            <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Institute Admin</h1>
-            <p class="text-sm text-slate-500 dark:text-slate-400">Admin Portal</p>
+    <aside class="w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col shadow-xl z-20">
+        <div class="p-6 border-b border-slate-100 dark:border-slate-800">
+            <h1 class="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <span class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white text-lg">A</span>
+                Admin Portal
+            </h1>
         </div>
-        <nav class="flex-1 px-4 py-2 space-y-1 overflow-y-auto">
-            <a href="#dashboard" class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg bg-primary/10 dark:bg-primary/20 text-primary">
-                <span class="material-symbols-outlined">dashboard</span>
-                <span class="text-sm font-medium">Dashboard</span>
+        <nav class="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
+            <a href="#dashboard" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl bg-primary/10 text-primary font-bold transition-all">
+                <span class="material-symbols-outlined">dashboard</span> Dashboard
             </a>
-            <a href="#teachers" class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg text-slate-700 hover:bg-primary/10">
-                <span class="material-symbols-outlined">person</span><span class="text-sm font-medium">Teachers</span>
+            <div class="pt-4 pb-1 pl-4 text-xs font-bold text-slate-400 uppercase tracking-wider">People</div>
+            <a href="#students" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-50 transition-all">
+                <span class="material-symbols-outlined">school</span> Students
             </a>
-            <a href="#students" class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg text-slate-700 hover:bg-primary/10">
-                <span class="material-symbols-outlined">school</span><span class="text-sm font-medium">Students</span>
+            <a href="#teachers" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-50 transition-all">
+                <span class="material-symbols-outlined">person</span> Teachers
             </a>
-            <a href="#parents" class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg text-slate-700 hover:bg-primary/10">
-                <span class="material-symbols-outlined">groups</span><span class="text-sm font-medium">Parents</span>
+            <a href="#parents" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-50 transition-all">
+                <span class="material-symbols-outlined">groups</span> Parents
             </a>
-            <a href="#courses" class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg text-slate-700 hover:bg-primary/10">
-                <span class="material-symbols-outlined">book</span><span class="text-sm font-medium">Courses</span>
+            <div class="pt-4 pb-1 pl-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Academic</div>
+            <a href="#courses" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-50 transition-all">
+                <span class="material-symbols-outlined">book</span> Courses
             </a>
-            <a href="#sessions" class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg text-slate-700 hover:bg-primary/10">
-                <span class="material-symbols-outlined">calendar_month</span><span class="text-sm font-medium">Sessions</span>
+            <a href="#sessions" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-50 transition-all">
+                <span class="material-symbols-outlined">calendar_month</span> Sessions
             </a>
-            <a href="#announcements" class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg text-slate-700 hover:bg-primary/10">
-                <span class="material-symbols-outlined">campaign</span><span class="text-sm font-medium">Announcements</span>
+            <a href="#announcements" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-50 transition-all">
+                <span class="material-symbols-outlined">campaign</span> Announcements
             </a>
-            <a href="#fees" class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg text-slate-700 hover:bg-primary/10">
-                <span class="material-symbols-outlined">payments</span><span class="text-sm font-medium">Fees & Payments</span>
+            <div class="pt-4 pb-1 pl-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Finance & Data</div>
+            <a href="#fees" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-50 transition-all">
+                <span class="material-symbols-outlined">payments</span> Fees & Payments
             </a>
-            <a href="#fee-pending-report" class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg text-slate-700 hover:bg-primary/10">
-                <span class="material-symbols-outlined">receipt_long</span><span class="text-sm font-medium">Fee Pending Report</span>
+            <a href="#reports" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-50 transition-all">
+                <span class="material-symbols-outlined">analytics</span> Reports
             </a>
-            <a href="#reports" class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg text-slate-700 hover:bg-primary/10">
-                <span class="material-symbols-outlined">analytics</span><span class="text-sm font-medium">Reports</span>
-            </a>
-            <a href="#bulk-upload" class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg text-slate-700 hover:bg-primary/10">
-                <span class="material-symbols-outlined">upload_file</span><span class="text-sm font-medium">Bulk Upload</span>
+            <a href="#bulk-upload" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-50 transition-all">
+                <span class="material-symbols-outlined">upload_file</span> Bulk Upload
             </a>
         </nav>
-        <div class="p-6 border-t border-slate-200 dark:border-slate-800">
-            <button id="logout-btn" class="w-full bg-red-600 text-white font-medium py-2 px-4 rounded-lg text-sm hover:bg-red-700 transition duration-150">Logout</button>
+        <div class="p-4 border-t border-slate-200 dark:border-slate-800">
+            <button id="logout-btn" class="w-full flex items-center justify-center gap-2 bg-red-50 text-red-600 font-bold py-3 rounded-xl hover:bg-red-100 transition">
+                <span class="material-symbols-outlined">logout</span> Logout
+            </button>
         </div>
     </aside>
 
-    <main class="flex-1 p-8 overflow-y-auto h-screen">
-        <div class="max-w-7xl mx-auto pb-20">
+    <main class="flex-1 overflow-y-auto bg-background-light dark:bg-background-dark p-6 lg:p-10">
+        <div class="max-w-7xl mx-auto space-y-8 pb-20">
             
             <div id="content-dashboard" class="content-section">
-                <header class="mb-8">
-                    <h1 class="text-4xl font-bold text-slate-900 dark:text-white">Admin Dashboard</h1>
-                    <p class="text-slate-500 dark:text-slate-400 mt-2">Welcome back, Admin! Here's an overview of your institute.</p>
-                </header>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6"><p class="text-slate-500 text-sm">Total Teachers</p><p id="total-teachers" class="text-3xl font-bold mt-1">...</p></div>
-                    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6"><p class="text-slate-500 text-sm">Total Students</p><p id="total-students" class="text-3xl font-bold mt-1">...</p></div>
-                    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6"><p class="text-slate-500 text-sm">Total Parents</p><p id="total-parents" class="text-3xl font-bold mt-1">...</p></div>
-                    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6"><p class="text-slate-500 text-sm">Total Courses</p><p id="total-courses" class="text-3xl font-bold mt-1">...</p></div>
-                </div>
-                <div>
-                    <h2 class="text-2xl font-bold text-slate-900 mb-4">Recent Announcements</h2>
-                    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm overflow-hidden">
-                        <table class="min-w-full divide-y divide-slate-200"><tbody id="recent-announcements-body"></tbody></table>
+                <header class="flex justify-between items-end mb-8 border-b border-slate-200 pb-6">
+                    <div>
+                        <h1 class="text-3xl font-bold text-slate-900 dark:text-white">Admin Dashboard</h1>
+                        <p class="text-slate-500 mt-1">Overview of institute performance.</p>
                     </div>
+                    <span class="text-sm font-medium bg-blue-100 text-blue-700 px-3 py-1 rounded-full">Administrator</span>
+                </header>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                        <p class="text-xs font-bold text-slate-400 uppercase">Teachers</p>
+                        <p id="total-teachers" class="text-3xl font-bold text-slate-800 mt-2">0</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                        <p class="text-xs font-bold text-slate-400 uppercase">Students</p>
+                        <p id="total-students" class="text-3xl font-bold text-slate-800 mt-2">0</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                        <p class="text-xs font-bold text-slate-400 uppercase">Courses</p>
+                        <p id="total-courses" class="text-3xl font-bold text-slate-800 mt-2">0</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                        <p class="text-xs font-bold text-slate-400 uppercase">Parents</p>
+                        <p id="total-parents" class="text-3xl font-bold text-slate-800 mt-2">0</p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="p-6 border-b border-slate-100">
+                        <h3 class="font-bold text-lg">Recent Announcements</h3>
+                    </div>
+                    <table class="min-w-full divide-y divide-slate-100">
+                        <tbody id="recent-announcements-body"></tbody>
+                    </table>
                 </div>
             </div>
 
             <div id="content-teachers" class="content-section hidden">
-                <h2 class="text-3xl font-bold mb-6">Manage Teachers</h2>
-                <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6 mb-8">
-                    <h3 id="teacher-form-title" class="text-xl font-bold mb-4">Add/Edit Teacher</h3>
-                    <form id="teacher-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-slate-900">Manage Teachers</h2>
+                </div>
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-8">
+                    <h3 id="teacher-form-title" class="font-bold text-lg mb-4 text-primary">Add/Edit Teacher</h3>
+                    <form id="teacher-form" class="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <input type="hidden" id="teacher-id" name="id"><input type="hidden" name="role" value="teacher">
-                        <input type="text" id="teacher-name-input" name="name" required placeholder="Full Name" class="border-slate-300 rounded-lg">
-                        <input type="email" id="teacher-email-input" name="email" required placeholder="Email" class="border-slate-300 rounded-lg">
-                        <input type="tel" id="teacher-phone-input" name="phone_number" placeholder="Phone" class="border-slate-300 rounded-lg">
-                        <input type="password" id="teacher-password-input" name="password" placeholder="Password" class="border-slate-300 rounded-lg">
-                        <button type="submit" id="teacher-form-btn" class="bg-primary text-white py-2 rounded-lg md:col-span-2">Save Teacher</button>
+                        <div><label class="block text-xs font-bold text-slate-500 mb-1">Full Name</label><input type="text" id="teacher-name-input" name="name" required class="w-full rounded-xl border-slate-300"></div>
+                        <div><label class="block text-xs font-bold text-slate-500 mb-1">Email</label><input type="email" id="teacher-email-input" name="email" required class="w-full rounded-xl border-slate-300"></div>
+                        <div><label class="block text-xs font-bold text-slate-500 mb-1">Phone</label><input type="tel" id="teacher-phone-input" name="phone_number" class="w-full rounded-xl border-slate-300"></div>
+                        <div><label class="block text-xs font-bold text-slate-500 mb-1">Password</label><input type="password" id="teacher-password-input" name="password" placeholder="Set new password" class="w-full rounded-xl border-slate-300"></div>
+                        <div class="md:col-span-2 pt-2"><button type="submit" id="teacher-form-btn" class="w-full bg-primary text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition">Save Teacher</button></div>
                     </form>
                 </div>
-                <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm overflow-hidden"><table class="min-w-full divide-y divide-slate-200"><tbody id="teacher-table-body"></tbody></table></div>
+                <div class="bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-100"><table class="w-full text-left"><tbody id="teacher-table-body"></tbody></table></div>
             </div>
 
             <div id="content-students" class="content-section hidden">
-                <h2 class="text-3xl font-bold mb-6">Manage Students</h2>
-                <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6 mb-8">
-                    <h3 id="student-form-title" class="text-xl font-bold mb-4">Add/Edit Student</h3>
-                    <form id="student-form" class="space-y-4" enctype="multipart/form-data">
-                        <input type="hidden" id="student-id" name="id"><input type="hidden" name="role" value="student">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <input type="text" id="student-name-input" name="name" required placeholder="Name" class="border-slate-300 rounded-lg">
-                            <input type="email" id="student-email-input" name="email" required placeholder="Email" class="border-slate-300 rounded-lg">
-                            <input type="tel" id="student-phone-input" name="phone_number" placeholder="Phone" class="border-slate-300 rounded-lg">
-                            <input type="password" id="student-password-input" name="password" placeholder="Password" class="border-slate-300 rounded-lg">
-                            <select id="student-course-select" name="course_ids" required class="border-slate-300 rounded-lg"><option value="">Select Course</option></select>
-                            <select id="student-parent-select" name="parent_id" class="border-slate-300 rounded-lg"><option value="">Link Parent</option></select>
-                            <input type="file" id="student-photo-file-input" name="profile_photo_file" accept="image/*" class="border-slate-300 rounded-lg">
-                        </div>
-                        <div class="flex gap-4 items-center">
-                            <img id="student-photo-preview" src="" class="w-12 h-12 rounded-full bg-gray-200">
-                            <button type="submit" id="student-form-btn" class="bg-primary text-white py-2 px-6 rounded-lg">Save Student</button>
-                        </div>
-                    </form>
-                </div>
-                <input type="text" id="student-search-input" placeholder="Search students..." class="w-full border-slate-300 rounded-lg mb-4 p-2">
-                <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm overflow-hidden"><table class="min-w-full divide-y divide-slate-200"><tbody id="student-table-body"></tbody></table></div>
-            </div>
+                <h2 class="text-2xl font-bold text-slate-900 mb-6">Manage Students</h2>
+                
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 mb-8">
+                    <div class="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
+                        <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600"><span class="material-symbols-outlined">person_add</span></div>
+                        <h3 id="student-form-title" class="font-bold text-xl text-slate-900">Add New Student</h3>
+                    </div>
 
-            <div id="content-parents" class="content-section hidden">
-                <h2 class="text-3xl font-bold mb-6">Manage Parents</h2>
-                <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6 mb-8">
-                    <form id="parent-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <input type="hidden" id="parent-id" name="id"><input type="hidden" name="role" value="parent">
-                        <input type="text" id="parent-name-input" name="name" required placeholder="Name" class="border-slate-300 rounded-lg">
-                        <input type="email" id="parent-email-input" name="email" required placeholder="Email" class="border-slate-300 rounded-lg">
-                        <input type="tel" id="parent-phone-input" name="phone_number" placeholder="Phone" class="border-slate-300 rounded-lg">
-                        <input type="password" id="parent-password-input" name="password" placeholder="Password" class="border-slate-300 rounded-lg">
-                        <button type="submit" id="parent-form-btn" class="bg-primary text-white py-2 rounded-lg md:col-span-2">Save Parent</button>
+                    <form id="student-form" class="space-y-8" enctype="multipart/form-data">
+                        <input type="hidden" id="student-id" name="id"><input type="hidden" name="role" value="student">
+                        
+                        <div>
+                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Personal Information</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                <div><label class="block text-xs font-bold text-slate-500 mb-1">Full Name *</label><input type="text" id="student-name-input" name="name" required class="w-full rounded-xl border-slate-300"></div>
+                                <div><label class="block text-xs font-bold text-slate-500 mb-1">Email *</label><input type="email" id="student-email-input" name="email" required class="w-full rounded-xl border-slate-300"></div>
+                                <div><label class="block text-xs font-bold text-slate-500 mb-1">Phone Number</label><input type="tel" id="student-phone-input" name="phone_number" class="w-full rounded-xl border-slate-300"></div>
+                                <div><label class="block text-xs font-bold text-slate-500 mb-1">Date of Birth</label><input type="date" id="student-dob-input" name="dob" class="w-full rounded-xl border-slate-300"></div>
+                                <div><label class="block text-xs font-bold text-slate-500 mb-1">Gender</label><select id="student-gender-select" name="gender" class="w-full rounded-xl border-slate-300"><option value="">Select</option><option>Male</option><option>Female</option><option>Other</option></select></div>
+                                <div><label class="block text-xs font-bold text-slate-500 mb-1">Login Password</label><input type="password" id="student-password-input" name="password" placeholder="New password" class="w-full rounded-xl border-slate-300"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 border-t border-slate-100 pt-6">Academic & Family</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                                <div class="lg:col-span-2"><label class="block text-xs font-bold text-slate-500 mb-1">Enrolled Course *</label><select id="student-course-select" name="course_ids" required class="w-full rounded-xl border-slate-300 bg-blue-50/50"></select></div>
+                                <div class="lg:col-span-2"><label class="block text-xs font-bold text-slate-500 mb-1">Link Parent Account</label><select id="student-parent-select" name="parent_id" class="w-full rounded-xl border-slate-300"></select></div>
+                                <div><label class="block text-xs font-bold text-slate-500 mb-1">Father's Name</label><input type="text" id="student-father-name-input" name="father_name" class="w-full rounded-xl border-slate-300"></div>
+                                <div><label class="block text-xs font-bold text-slate-500 mb-1">Mother's Name</label><input type="text" id="student-mother-name-input" name="mother_name" class="w-full rounded-xl border-slate-300"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 border-t border-slate-100 pt-6">Address Details</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-6 gap-5">
+                                <div class="md:col-span-6"><label class="block text-xs font-bold text-slate-500 mb-1">Address Line 1</label><input type="text" id="student-address-input" name="address_line1" class="w-full rounded-xl border-slate-300"></div>
+                                <div class="md:col-span-2"><label class="block text-xs font-bold text-slate-500 mb-1">City</label><input type="text" id="student-city-input" name="city" class="w-full rounded-xl border-slate-300"></div>
+                                <div class="md:col-span-2"><label class="block text-xs font-bold text-slate-500 mb-1">State</label><input type="text" id="student-state-input" name="state" class="w-full rounded-xl border-slate-300"></div>
+                                <div class="md:col-span-2"><label class="block text-xs font-bold text-slate-500 mb-1">Pincode</label><input type="text" id="student-pincode-input" name="pincode" class="w-full rounded-xl border-slate-300"></div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-6 border-t border-slate-100 pt-6">
+                            <img id="student-photo-preview" src="https://placehold.co/100" class="w-20 h-20 rounded-xl object-cover shadow-sm border border-slate-200">
+                            <div class="flex-1">
+                                <label class="block text-xs font-bold text-slate-500 mb-1">Profile Photo</label>
+                                <input type="file" id="student-photo-file-input" name="profile_photo_file" accept="image/*" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition">
+                            </div>
+                        </div>
+
+                        <div class="pt-4">
+                            <button type="submit" id="student-form-btn" class="w-full bg-primary text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-none transition-all transform active:scale-95">Save Complete Student Profile</button>
+                        </div>
                     </form>
                 </div>
-                <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm overflow-hidden"><table class="min-w-full divide-y divide-slate-200"><tbody id="parent-table-body"></tbody></table></div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="p-4 border-b border-slate-100 bg-slate-50">
+                        <input type="text" id="student-search-input" placeholder="Search students by name..." class="w-full border-slate-300 rounded-xl p-2.5">
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="bg-slate-50 text-xs font-bold text-slate-500 uppercase">
+                                <tr><th class="px-6 py-4">Name</th><th class="px-6 py-4">Contact</th><th class="px-6 py-4">Parent</th><th class="px-6 py-4 text-right">Actions</th></tr>
+                            </thead>
+                            <tbody id="student-table-body" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
 
             <div id="content-courses" class="content-section hidden">
-                <h2 class="text-3xl font-bold mb-6">Manage Courses</h2>
-                <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6 mb-8">
-                    <form id="course-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <h2 class="text-2xl font-bold mb-6">Manage Courses</h2>
+                <div class="bg-white rounded-2xl shadow-sm p-6 mb-8 border border-slate-100">
+                    <form id="course-form" class="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <input type="hidden" id="course-id" name="id">
-                        <input type="text" id="course-name" required placeholder="Course Name" class="border-slate-300 rounded-lg">
-                        <input type="text" id="course-subjects" required placeholder="Subjects (comma separated)" class="border-slate-300 rounded-lg">
-                        <select id="course-teacher" class="border-slate-300 rounded-lg md:col-span-2"></select>
-                        <button type="submit" id="save-course-btn" class="bg-primary text-white py-2 rounded-lg md:col-span-2">Save Course</button>
+                        <input type="text" id="course-name" required placeholder="Course Name" class="w-full rounded-xl border-slate-300">
+                        <input type="text" id="course-subjects" required placeholder="Subjects" class="w-full rounded-xl border-slate-300">
+                        <select id="course-teacher" class="w-full rounded-xl border-slate-300 md:col-span-2"></select>
+                        <button type="submit" id="save-course-btn" class="w-full bg-primary text-white font-bold py-3 rounded-xl md:col-span-2">Save Course</button>
                     </form>
                 </div>
-                <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm overflow-hidden"><table class="min-w-full divide-y divide-slate-200"><tbody id="course-table-body"></tbody></table></div>
+                <div class="bg-white rounded-2xl shadow-sm overflow-hidden"><table class="w-full"><tbody id="course-table-body"></tbody></table></div>
+            </div>
+
+            <div id="content-parents" class="content-section hidden">
+                <h2 class="text-2xl font-bold mb-6">Manage Parents</h2>
+                <div class="bg-white rounded-2xl shadow-sm p-6 mb-8 border border-slate-100">
+                    <form id="parent-form" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <input type="hidden" id="parent-id" name="id"><input type="hidden" name="role" value="parent">
+                        <input type="text" id="parent-name-input" required placeholder="Name" class="w-full rounded-xl border-slate-300">
+                        <input type="email" id="parent-email-input" required placeholder="Email" class="w-full rounded-xl border-slate-300">
+                        <input type="tel" id="parent-phone-input" placeholder="Phone" class="w-full rounded-xl border-slate-300">
+                        <input type="password" id="parent-password-input" placeholder="Password" class="w-full rounded-xl border-slate-300">
+                        <button type="submit" id="parent-form-btn" class="w-full bg-primary text-white font-bold py-3 rounded-xl md:col-span-2">Save Parent</button>
+                    </form>
+                </div>
+                <div class="bg-white rounded-2xl shadow-sm overflow-hidden"><table class="w-full"><tbody id="parent-table-body"></tbody></table></div>
             </div>
 
             <div id="content-sessions" class="content-section hidden">
-                <h2 class="text-3xl font-bold mb-6">Academic Sessions</h2>
-                <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6 mb-8">
-                    <form id="session-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <h2 class="text-2xl font-bold mb-6">Academic Sessions</h2>
+                <div class="bg-white rounded-2xl shadow-sm p-6 mb-8 border border-slate-100">
+                    <form id="session-form" class="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <input type="hidden" id="session-id" name="id">
-                        <input type="text" id="session-name" required placeholder="Session Name" class="border-slate-300 rounded-lg">
-                        <select id="session-status" class="border-slate-300 rounded-lg"><option value="Active">Active</option><option value="Inactive">Inactive</option></select>
-                        <input type="date" id="session-start-date" required class="border-slate-300 rounded-lg">
-                        <input type="date" id="session-end-date" required class="border-slate-300 rounded-lg">
-                        <button type="submit" id="save-session-btn" class="bg-primary text-white py-2 rounded-lg md:col-span-2">Save Session</button>
+                        <input type="text" id="session-name" required placeholder="Session Name (e.g. 2025-26)" class="w-full rounded-xl border-slate-300">
+                        <select id="session-status" class="w-full rounded-xl border-slate-300"><option>Active</option><option>Inactive</option></select>
+                        <input type="date" id="session-start-date" required class="w-full rounded-xl border-slate-300">
+                        <input type="date" id="session-end-date" required class="w-full rounded-xl border-slate-300">
+                        <button type="submit" id="save-session-btn" class="w-full bg-primary text-white font-bold py-3 rounded-xl md:col-span-2">Save Session</button>
                     </form>
                 </div>
-                <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm overflow-hidden"><table class="min-w-full divide-y divide-slate-200"><tbody id="session-table-body"></tbody></table></div>
+                <div class="bg-white rounded-2xl shadow-sm overflow-hidden"><table class="w-full"><tbody id="session-table-body"></tbody></table></div>
             </div>
 
             <div id="content-announcements" class="content-section hidden">
-                <h2 class="text-3xl font-bold mb-6">Manage Announcements</h2>
-                <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6 mb-8">
-                    <form id="announcement-form">
-                        <div class="mb-4"><input type="text" id="announcement-title" required placeholder="Title" class="w-full border-slate-300 rounded-lg"></div>
-                        <div class="mb-4"><textarea id="announcement-content" rows="4" required placeholder="Content" class="w-full border-slate-300 rounded-lg"></textarea></div>
-                        <div class="mb-4"><select id="announcement-target-group" class="w-full border-slate-300 rounded-lg"><option value="all">All Users</option><option value="students">Students</option><option value="teachers">Teachers</option></select></div>
-                        <button type="submit" class="bg-primary text-white py-2 px-6 rounded-lg">Publish</button>
+                <h2 class="text-2xl font-bold mb-6">Manage Announcements</h2>
+                <div class="bg-white rounded-2xl shadow-sm p-6 mb-8 border border-slate-100">
+                    <form id="announcement-form" class="space-y-4">
+                        <input type="text" id="announcement-title" required placeholder="Title" class="w-full rounded-xl border-slate-300">
+                        <textarea id="announcement-content" rows="4" required placeholder="Message content..." class="w-full rounded-xl border-slate-300"></textarea>
+                        <select id="announcement-target-group" class="w-full rounded-xl border-slate-300"><option value="all">All Users</option><option value="students">Students</option></select>
+                        <button type="submit" class="w-full bg-primary text-white font-bold py-3 rounded-xl">Publish Announcement</button>
                     </form>
                 </div>
-                <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm overflow-hidden">
-                    <table class="min-w-full divide-y divide-slate-200">
-                        <thead>
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Title</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Content</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Group</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="management-announcements-body" class="divide-y divide-slate-200"></tbody>
+                <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-50 text-xs uppercase font-bold text-slate-500"><tr><th class="px-6 py-4">Title</th><th class="px-6 py-4">Content</th><th class="px-6 py-4">Group</th><th class="px-6 py-4 text-right">Actions</th></tr></thead>
+                        <tbody id="management-announcements-body" class="divide-y divide-slate-100"></tbody>
                     </table>
                 </div>
             </div>
 
             <div id="content-fees" class="content-section hidden">
-                <h2 class="text-3xl font-bold mb-6">Fees & Payments</h2>
+                <h2 class="text-2xl font-bold mb-6">Fees & Payments</h2>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6">
-                        <h3 class="font-bold mb-4">Fee Structure</h3>
+                    <div class="bg-white rounded-2xl shadow-sm p-6 border border-slate-100">
+                        <h3 class="font-bold mb-4">Create Fee Structure</h3>
                         <form id="fee-structure-form" class="space-y-4">
                             <input type="hidden" id="fee-structure-id">
-                            <input type="text" id="fee-structure-name" required placeholder="Fee Name" class="w-full border-slate-300 rounded-lg">
-                            <select id="fee-session-select" required class="w-full border-slate-300 rounded-lg"></select>
-                            <select id="fee-course-select" class="w-full border-slate-300 rounded-lg"></select>
-                            <input type="number" id="fee-total-amount" required placeholder="Amount" class="w-full border-slate-300 rounded-lg">
-                            <input type="date" id="fee-due-date" required class="w-full border-slate-300 rounded-lg">
-                            <button type="submit" id="save-fee-structure-btn" class="bg-primary text-white w-full py-2 rounded-lg">Save Structure</button>
+                            <input type="text" id="fee-structure-name" required placeholder="Fee Name" class="w-full rounded-xl border-slate-300">
+                            <div class="grid grid-cols-2 gap-4">
+                                <select id="fee-session-select" required class="w-full rounded-xl border-slate-300"></select>
+                                <select id="fee-course-select" class="w-full rounded-xl border-slate-300"></select>
+                            </div>
+                            <input type="number" id="fee-total-amount" required placeholder="Total Amount" class="w-full rounded-xl border-slate-300">
+                            <input type="date" id="fee-due-date" required class="w-full rounded-xl border-slate-300">
+                            <button type="submit" id="save-fee-structure-btn" class="w-full bg-primary text-white font-bold py-3 rounded-xl">Save Fee</button>
                         </form>
-                        <div class="mt-4"><table class="w-full"><tbody id="fee-structure-table-body"></tbody></table></div>
+                        <div class="mt-6 border-t pt-4"><table class="w-full text-sm"><tbody id="fee-structure-table-body"></tbody></table></div>
                     </div>
-                    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6">
+                    <div class="bg-white rounded-2xl shadow-sm p-6 border border-slate-100">
                         <h3 class="font-bold mb-4">Record Payment</h3>
                         <form id="payment-form" class="space-y-4">
-                            <select id="payment-course-filter" class="w-full border-blue-300 bg-blue-50 rounded-lg"><option value="">Show All</option></select>
-                            <select id="payment-student-select" required class="w-full border-slate-300 rounded-lg"></select>
-                            <select id="payment-fee-structure-select" required class="w-full border-slate-300 rounded-lg"></select>
-                            <input type="number" id="payment-amount" required placeholder="Amount Paid" class="w-full border-slate-300 rounded-lg">
-                            <select id="payment-method" class="w-full border-slate-300 rounded-lg"><option>Cash</option><option>Online</option></select>
-                            <button type="submit" class="bg-green-600 text-white w-full py-2 rounded-lg">Record & Print</button>
+                            <select id="payment-course-filter" class="w-full rounded-xl border-blue-200 bg-blue-50 text-blue-700 font-bold"><option value="">Filter by Course</option></select>
+                            <select id="payment-student-select" required class="w-full rounded-xl border-slate-300"></select>
+                            <select id="payment-fee-structure-select" required class="w-full rounded-xl border-slate-300"></select>
+                            <div class="grid grid-cols-2 gap-4">
+                                <input type="number" id="payment-amount" required placeholder="Amount" class="w-full rounded-xl border-slate-300">
+                                <select id="payment-method" class="w-full rounded-xl border-slate-300"><option>Cash</option><option>Online</option></select>
+                            </div>
+                            <button type="submit" class="w-full bg-green-600 text-white font-bold py-3 rounded-xl hover:bg-green-700">Record & Print Receipt</button>
                         </form>
-                        <div class="mt-4"><table class="w-full"><tbody id="fee-status-table-body"></tbody></table></div>
+                        <div class="mt-6 border-t pt-4"><table class="w-full text-sm"><tbody id="fee-status-table-body"></tbody></table></div>
                     </div>
-                </div>
-            </div>
-
-            <div id="content-fee-pending-report" class="content-section hidden">
-                <h2 class="text-3xl font-bold mb-6">Fee Pending Report</h2>
-                <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm overflow-hidden">
-                    <table class="min-w-full divide-y divide-slate-200">
-                        <thead class="bg-slate-50"><tr><th class="px-6 py-3 text-left">Student</th><th class="px-6 py-3 text-left">Balance</th><th class="px-6 py-3 text-left">Due</th><th class="px-6 py-3 text-center">Alerts</th></tr></thead>
-                        <tbody id="fee-pending-report-body"></tbody>
-                    </table>
                 </div>
             </div>
 
             <div id="content-reports" class="content-section hidden">
                 <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-3xl font-bold">Analytics</h2>
-                    <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Download PDF</button>
+                    <h2 class="text-2xl font-bold">Analytics</h2>
                 </div>
                 <div class="flex space-x-1 bg-slate-100 p-1 rounded-xl mb-6 w-fit">
-                    <button onclick="switchReportTab('admissions')" id="tab-admissions" class="report-tab px-6 py-2 rounded-lg font-bold">Admissions</button>
-                    <button onclick="switchReportTab('attendance')" id="tab-attendance" class="report-tab px-6 py-2 rounded-lg font-bold">Attendance</button>
-                    <button onclick="switchReportTab('performance')" id="tab-performance" class="report-tab px-6 py-2 rounded-lg font-bold">Performance</button>
+                    <button onclick="switchReportTab('admissions')" id="tab-admissions" class="report-tab px-6 py-2 rounded-lg font-bold text-sm">Admissions</button>
+                    <button onclick="switchReportTab('attendance')" id="tab-attendance" class="report-tab px-6 py-2 rounded-lg font-bold text-sm">Attendance</button>
+                    <button onclick="switchReportTab('performance')" id="tab-performance" class="report-tab px-6 py-2 rounded-lg font-bold text-sm">Performance</button>
                 </div>
-                <div id="report-view-admissions" class="report-view"><table class="w-full bg-white rounded-xl shadow-sm"><tbody id="admissions-report-body"></tbody></table></div>
-                <div id="report-view-attendance" class="report-view hidden"><table class="w-full bg-white rounded-xl shadow-sm"><tbody id="attendance-report-body"></tbody></table></div>
-                <div id="report-view-performance" class="report-view hidden"><table class="w-full bg-white rounded-xl shadow-sm"><tbody id="performance-report-body"></tbody></table></div>
+                <div id="report-view-admissions" class="report-view"><div class="bg-white rounded-2xl shadow-sm p-4"><table class="w-full"><tbody id="admissions-report-body"></tbody></table></div></div>
+                <div id="report-view-attendance" class="report-view hidden"><div class="bg-white rounded-2xl shadow-sm p-4"><table class="w-full"><tbody id="attendance-report-body"></tbody></table></div></div>
+                <div id="report-view-performance" class="report-view hidden"><div class="bg-white rounded-2xl shadow-sm p-4"><table class="w-full"><tbody id="performance-report-body"></tbody></table></div></div>
             </div>
 
             <div id="content-bulk-upload" class="content-section hidden">
-                <h2 class="text-3xl font-bold mb-6">Bulk Upload</h2>
-                <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6">
-                    <form id="bulk-upload-form" class="space-y-4">
-                        <label class="block">Upload CSV (name, email, password, role...)</label>
-                        <input type="file" id="bulk-file-input" accept=".csv" required class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                        <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded-lg">Upload</button>
+                <h2 class="text-2xl font-bold mb-6">Bulk Data Upload</h2>
+                <div class="bg-white rounded-2xl shadow-sm p-8 border border-slate-100 max-w-2xl">
+                    <form id="bulk-upload-form" class="space-y-6">
+                        <div class="border-2 border-dashed border-slate-300 rounded-2xl p-8 text-center">
+                            <span class="material-symbols-outlined text-4xl text-slate-400 mb-2">cloud_upload</span>
+                            <label class="block text-sm font-bold text-slate-600 mb-2">Upload CSV File</label>
+                            <input type="file" id="bulk-file-input" accept=".csv" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                        </div>
+                        <button type="submit" class="w-full bg-slate-900 text-white font-bold py-3 rounded-xl hover:bg-slate-800 transition">Start Import</button>
                     </form>
-                    <div id="bulk-upload-results" class="mt-4 hidden p-4 bg-gray-50 rounded"><p id="bulk-upload-message"></p><div id="bulk-upload-details"></div></div>
+                    <div id="bulk-upload-results" class="mt-6 hidden p-4 bg-slate-50 rounded-xl text-sm"><p id="bulk-upload-message" class="font-bold mb-2"></p><div id="bulk-upload-details"></div></div>
                 </div>
             </div>
 
@@ -284,16 +349,11 @@
 </div>
 
 <script>
-    // ==========================================
-    // 1. CONFIGURATION & CACHE
-    // ==========================================
     const API_ORIGIN = window.location.origin;
     const API_BASE_URL = API_ORIGIN + '/api';
     let allUsersCache = [], allCoursesCache = [], allSessionsCache = [];
 
-    // ==========================================
-    // 2. CORE FUNCTIONS
-    // ==========================================
+    // --- GLOBAL HELPERS ---
     function switchReportTab(tabName) {
         document.querySelectorAll('.report-view').forEach(el => el.classList.add('hidden'));
         document.getElementById(`report-view-${tabName}`).classList.remove('hidden');
@@ -304,74 +364,66 @@
         document.getElementById(`tab-${tabName}`).classList.add('bg-white', 'shadow-sm', 'text-primary');
     }
 
-    // --- Announcement Logic ---
+    // --- ANNOUNCEMENT FETCH ---
     async function fetchAnnouncements(isManagementPage) {
         try {
-            const response = await fetch(`${API_BASE_URL}/announcements`, { credentials: 'include' });
-            const announcements = await response.json();
-            
+            const res = await fetch(`${API_BASE_URL}/announcements`, { credentials: 'include' });
+            const list = await res.json();
             const targetId = isManagementPage ? 'management-announcements-body' : 'recent-announcements-body';
-            const tableBody = document.getElementById(targetId);
-            if (!tableBody) return;
+            const tbody = document.getElementById(targetId);
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            
+            const displayList = isManagementPage ? list : list.slice(0, 5);
+            if(displayList.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400">No announcements found.</td></tr>'; return; }
 
-            tableBody.innerHTML = '';
-            const list = isManagementPage ? announcements : announcements.slice(0, 5);
-
-            if (list.length === 0) { tableBody.innerHTML = '<tr><td colspan="5" class="p-4 text-center">No announcements.</td></tr>'; return; }
-
-            list.forEach(a => {
-                const actions = isManagementPage ? `<button onclick="deleteAnnouncement(${a.id})" class="text-red-600 font-bold border border-red-200 px-2 rounded">Delete</button>` : '';
-                tableBody.innerHTML += `
-                    <tr class="even:bg-slate-50 border-b">
-                        <td class="p-4 font-medium">${a.title}</td>
-                        <td class="p-4 text-slate-500 truncate max-w-xs">${a.content}</td>
-                        <td class="p-4 text-slate-500">${a.target_group}</td>
-                        <td class="p-4 text-right">${actions}</td>
+            displayList.forEach(a => {
+                const actions = isManagementPage ? `<div class="flex justify-end gap-2"><button onclick="deleteAnnouncement(${a.id})" class="px-3 py-1 rounded-lg bg-red-50 text-red-600 font-bold text-xs border border-red-100 hover:bg-red-100">Delete</button></div>` : '';
+                tbody.innerHTML += `
+                    <tr class="border-b border-slate-50 hover:bg-slate-50 transition">
+                        <td class="px-6 py-4 font-bold text-slate-800">${a.title}</td>
+                        <td class="px-6 py-4 text-slate-500 truncate max-w-xs">${a.content}</td>
+                        <td class="px-6 py-4 text-slate-500 text-sm">${a.target_group}</td>
+                        <td class="px-6 py-4 text-right">${actions}</td>
                     </tr>`;
             });
-        } catch (e) { console.error(e); }
+        } catch(e) { console.error(e); }
     }
+    
+    async function deleteAnnouncement(id) { if(confirm('Delete?')) { await fetch(`${API_BASE_URL}/announcements/${id}`, {method:'DELETE', credentials:'include'}); fetchAnnouncements(true); } }
 
-    async function deleteAnnouncement(id) {
-        if(confirm('Delete?')) {
-            await fetch(`${API_BASE_URL}/announcements/${id}`, { method: 'DELETE', credentials: 'include' });
-            fetchAnnouncements(true);
-        }
-    }
-
-    // ==========================================
-    // 3. MAIN INITIALIZATION
-    // ==========================================
+    // --- INIT ---
     document.addEventListener('DOMContentLoaded', () => {
         const sections = document.querySelectorAll('.content-section');
-        
-        // Navigation Logic
+        const navLinks = document.querySelectorAll('.nav-link');
+
         function showSection(hash) {
             sections.forEach(s => s.classList.add('hidden'));
             const id = hash.substring(1) || 'dashboard';
-            const target = document.getElementById(`content-${id}`);
-            if(target) target.classList.remove('hidden');
+            document.getElementById(`content-${id}`)?.classList.remove('hidden');
+            
+            navLinks.forEach(l => { l.classList.remove('bg-primary/10', 'text-primary'); l.classList.add('text-slate-600'); });
+            const active = document.querySelector(`.nav-link[href="#${id}"]`);
+            if(active) { active.classList.add('bg-primary/10', 'text-primary'); active.classList.remove('text-slate-600'); }
+            
             loadContent(id);
         }
 
         async function loadContent(id) {
-            try {
-                if(id === 'dashboard') fetchDashboard();
-                if(id === 'teachers') { fetchTeachers(); resetForm('teacher'); }
-                if(id === 'students') { fetchStudents(); resetForm('student'); fetchCourses(); fetchParents(); }
-                if(id === 'parents') { fetchParents(); resetForm('parent'); }
-                if(id === 'courses') { fetchCourses(); fetchTeachers(); resetForm('course'); }
-                if(id === 'sessions') { fetchSessions(); resetForm('session'); }
-                if(id === 'announcements') fetchAnnouncements(true);
-                if(id === 'fees') { fetchFees(); fetchFeeStatus(); fetchSessions(); fetchCourses(); }
-                if(id === 'fee-pending-report') fetchFeePending();
-                if(id === 'reports') { fetchAdmissions(); fetchAttendance(); fetchPerformance(); }
-            } catch(e) { console.error(e); }
+            if(id==='dashboard') fetchDashboard();
+            if(id==='students') { fetchStudents(); populateDropdowns(); resetForm('student'); }
+            if(id==='teachers') { fetchTeachers(); resetForm('teacher'); }
+            if(id==='parents') { fetchParents(); resetForm('parent'); }
+            if(id==='courses') { fetchCourses(); fetchTeachers(); resetForm('course'); }
+            if(id==='sessions') { fetchSessions(); resetForm('session'); }
+            if(id==='announcements') fetchAnnouncements(true);
+            if(id==='fees') { fetchFees(); fetchFeeStatus(); fetchSessions(); fetchCourses(); }
+            if(id==='reports') { fetchAdmissions(); fetchAttendance(); fetchPerformance(); }
         }
 
         window.addEventListener('hashchange', () => showSection(window.location.hash));
 
-        // Auth Check
+        // AUTH
         async function checkAuth() {
             try {
                 const res = await fetch(`${API_ORIGIN}/api/check_session`, {credentials: 'include'});
@@ -380,18 +432,11 @@
                 else showSection(window.location.hash);
             } catch { window.location.href = '/'; }
         }
+        document.getElementById('logout-btn').addEventListener('click', async () => { await fetch(`${API_BASE_URL}/logout`, {method:'POST', credentials:'include'}); window.location.href='/'; });
 
-        document.getElementById('logout-btn').addEventListener('click', async () => {
-            await fetch(`${API_BASE_URL}/logout`, { method: 'POST', credentials: 'include' });
-            window.location.href = '/';
-        });
-
-        // --- FETCHERS ---
+        // FETCHERS
         async function getUsers(role) {
-            if(!allUsersCache.length) {
-                const res = await fetch(`${API_BASE_URL}/users`, {credentials: 'include'});
-                allUsersCache = await res.json();
-            }
+            if(!allUsersCache.length) { const res = await fetch(`${API_BASE_URL}/users`, {credentials:'include'}); allUsersCache = await res.json(); }
             return role ? allUsersCache.filter(u => u.role === role) : allUsersCache;
         }
 
@@ -405,135 +450,147 @@
             fetchAnnouncements(false);
         }
 
+        async function fetchStudents(term='') {
+            const list = await getUsers('student');
+            const filtered = term ? list.filter(s => s.name.toLowerCase().includes(term.toLowerCase())) : list;
+            const tbody = document.getElementById('student-table-body');
+            tbody.innerHTML = filtered.map(s => `
+                <tr class="border-b border-slate-50 hover:bg-slate-50">
+                    <td class="px-6 py-4 font-medium">${s.name}<br><span class="text-xs text-slate-400">${s.email}</span></td>
+                    <td class="px-6 py-4 text-sm text-slate-500">${s.phone_number||'-'}</td>
+                    <td class="px-6 py-4 text-sm text-slate-500">${s.parent_id ? 'Linked' : '-'}</td>
+                    <td class="px-6 py-4 text-right">
+                        <button onclick="editUser(${s.id}, 'student')" class="text-primary font-bold text-xs mr-2">Edit</button>
+                        <button onclick="deleteUser(${s.id})" class="text-red-500 font-bold text-xs">Delete</button>
+                    </td>
+                </tr>`).join('');
+        }
+        document.getElementById('student-search-input')?.addEventListener('input', (e) => fetchStudents(e.target.value));
+
         async function fetchTeachers() {
             const list = await getUsers('teacher');
-            document.getElementById('teacher-table-body').innerHTML = list.map(t => 
-                `<tr class="border-b"><td class="p-4">${t.name}</td><td class="p-4">${t.email}</td><td class="p-4">${t.phone_number||'-'}</td><td class="p-4 text-right"><button onclick="deleteUser(${t.id}, 'teacher')" class="text-red-600">Delete</button></td></tr>`
-            ).join('');
+            document.getElementById('teacher-table-body').innerHTML = list.map(t => `<tr class="border-b border-slate-50 hover:bg-slate-50"><td class="px-6 py-4 font-bold">${t.name}</td><td class="px-6 py-4 text-sm">${t.email}</td><td class="px-6 py-4 text-sm">${t.phone_number||'-'}</td><td class="px-6 py-4 text-right"><button onclick="editUser(${t.id}, 'teacher')" class="text-primary font-bold text-xs mr-2">Edit</button><button onclick="deleteUser(${t.id})" class="text-red-500 font-bold text-xs">Delete</button></td></tr>`).join('');
         }
-
-        async function fetchStudents() {
-            const list = await getUsers('student');
-            document.getElementById('student-table-body').innerHTML = list.map(s => 
-                `<tr class="border-b"><td class="p-4">${s.name}</td><td class="p-4">${s.email}</td><td class="p-4 text-right"><button onclick="deleteUser(${s.id}, 'student')" class="text-red-600">Delete</button></td></tr>`
-            ).join('');
-        }
-
         async function fetchParents() {
             const list = await getUsers('parent');
-            document.getElementById('parent-table-body').innerHTML = list.map(p => 
-                `<tr class="border-b"><td class="p-4">${p.name}</td><td class="p-4">${p.email}</td><td class="p-4 text-right"><button onclick="deleteUser(${p.id}, 'parent')" class="text-red-600">Delete</button></td></tr>`
-            ).join('');
-            // Populate dropdown
-            document.getElementById('student-parent-select').innerHTML = '<option value="">Link Parent</option>' + list.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+            document.getElementById('parent-table-body').innerHTML = list.map(p => `<tr class="border-b border-slate-50 hover:bg-slate-50"><td class="px-6 py-4 font-bold">${p.name}</td><td class="px-6 py-4 text-sm">${p.email}</td><td class="px-6 py-4 text-sm">${p.phone_number||'-'}</td><td class="px-6 py-4 text-right"><button onclick="editUser(${p.id}, 'parent')" class="text-primary font-bold text-xs mr-2">Edit</button><button onclick="deleteUser(${p.id})" class="text-red-500 font-bold text-xs">Delete</button></td></tr>`).join('');
         }
 
         async function fetchCourses() {
             const res = await fetch(`${API_BASE_URL}/courses`, {credentials:'include'});
             allCoursesCache = await res.json();
-            document.getElementById('course-table-body').innerHTML = allCoursesCache.map(c => 
-                `<tr class="border-b"><td class="p-4">${c.name}</td><td class="p-4">${c.subjects}</td><td class="p-4 text-right"><button onclick="deleteData('courses', ${c.id})" class="text-red-600">Delete</button></td></tr>`
-            ).join('');
-            // Populate dropdowns
-            const opts = allCoursesCache.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-            document.getElementById('student-course-select').innerHTML = '<option value="">Select Course</option>' + opts;
-            document.getElementById('fee-course-select').innerHTML = '<option value="">Global</option>' + opts;
-            document.getElementById('payment-course-filter').innerHTML = '<option value="">Show All</option>' + opts;
+            document.getElementById('course-table-body').innerHTML = allCoursesCache.map(c => `<tr class="border-b border-slate-50"><td class="px-6 py-4 font-bold">${c.name}</td><td class="px-6 py-4 text-sm">${c.subjects}</td><td class="px-6 py-4 text-right"><button onclick="deleteData('courses', ${c.id})" class="text-red-500 font-bold text-xs">Delete</button></td></tr>`).join('');
         }
-
         async function fetchSessions() {
             const res = await fetch(`${API_BASE_URL}/sessions`, {credentials:'include'});
             const list = await res.json();
-            document.getElementById('session-table-body').innerHTML = list.map(s => 
-                `<tr class="border-b"><td class="p-4">${s.name}</td><td class="p-4">${s.status}</td><td class="p-4 text-right"><button onclick="deleteData('sessions', ${s.id})" class="text-red-600">Delete</button></td></tr>`
-            ).join('');
-            document.getElementById('fee-session-select').innerHTML = '<option value="">Select Session</option>' + list.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+            allSessionsCache = list;
+            document.getElementById('session-table-body').innerHTML = list.map(s => `<tr class="border-b border-slate-50"><td class="px-6 py-4 font-bold">${s.name}</td><td class="px-6 py-4 text-sm">${s.status}</td><td class="px-6 py-4 text-right"><button onclick="deleteData('sessions', ${s.id})" class="text-red-500 font-bold text-xs">Delete</button></td></tr>`).join('');
         }
 
+        // --- FORM LOGIC ---
+        const forms = { 'student-form': '/users', 'teacher-form': '/users', 'parent-form': '/users', 'course-form': '/courses', 'session-form': '/sessions', 'announcement-form': '/announcements', 'fee-structure-form': '/fee_structures', 'payment-form': '/payments' };
+        
+        Object.keys(forms).forEach(id => {
+            document.getElementById(id)?.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const form = e.target;
+                const formData = new FormData(form);
+                const isFile = document.getElementById('student-photo-file-input')?.files?.length > 0;
+                
+                // Special handling for photo upload on EDIT
+                if(id === 'student-form' && formData.get('id')) {
+                    if(isFile) {
+                       const photoData = new FormData();
+                       photoData.append('profile_photo_file', formData.get('profile_photo_file'));
+                       await fetch(`${API_BASE_URL}/user/upload_photo/${formData.get('id')}`, { method: 'POST', credentials: 'include', body: photoData });
+                       formData.delete('profile_photo_file'); // Don't send file in main update
+                    }
+                }
+
+                // Check password
+                if(formData.get('password') === '') formData.delete('password');
+
+                const body = isFile && !formData.get('id') ? formData : JSON.stringify(Object.fromEntries(formData));
+                const headers = isFile && !formData.get('id') ? {} : {'Content-Type': 'application/json'};
+                const method = formData.get('id') ? 'PUT' : 'POST';
+
+                try {
+                    const res = await fetch(`${API_BASE_URL}${forms[id]}`, { method, headers, credentials: 'include', body });
+                    if(res.ok) { alert('Saved!'); form.reset(); allUsersCache=[]; loadContent(window.location.hash.substring(1)); }
+                    else alert('Failed.');
+                } catch(err) { alert('Error: ' + err); }
+            });
+        });
+
+        // EDIT POPULATE
+        window.editUser = async (id, role) => {
+            const user = (await getUsers(role)).find(u => u.id === id);
+            if(!user) return;
+            const form = document.getElementById(`${role}-form`);
+            form.querySelector('[name="id"]').value = user.id;
+            form.querySelector('[name="name"]').value = user.name;
+            form.querySelector('[name="email"]').value = user.email;
+            if(role === 'student') {
+                form.querySelector('[name="phone_number"]').value = user.phone_number || '';
+                form.querySelector('[name="dob"]').value = user.dob || '';
+                form.querySelector('[name="gender"]').value = user.gender || '';
+                form.querySelector('[name="father_name"]').value = user.father_name || '';
+                form.querySelector('[name="mother_name"]').value = user.mother_name || '';
+                form.querySelector('[name="address_line1"]').value = user.address_line1 || '';
+                form.querySelector('[name="city"]').value = user.city || '';
+                form.querySelector('[name="state"]').value = user.state || '';
+                form.querySelector('[name="pincode"]').value = user.pincode || '';
+                if(user.course_ids?.length) document.getElementById('student-course-select').value = user.course_ids[0];
+                if(user.parent_id) document.getElementById('student-parent-select').value = user.parent_id;
+                document.getElementById('student-photo-preview').src = user.profile_photo_url ? `${API_ORIGIN}${user.profile_photo_url}` : 'https://placehold.co/100';
+            }
+            window.location.hash = role + 's';
+        };
+
+        window.deleteUser = async (id) => { if(confirm('Delete?')) { await fetch(`${API_BASE_URL}/users/${id}`, {method:'DELETE', credentials:'include'}); allUsersCache=[]; loadContent(window.location.hash.substring(1)); } };
+        window.deleteData = async (type, id) => { if(confirm('Delete?')) { await fetch(`${API_BASE_URL}/${type}/${id}`, {method:'DELETE', credentials:'include'}); loadContent(window.location.hash.substring(1)); } };
+        window.resetForm = (type) => document.getElementById(`${type}-form`)?.reset();
+
+        // HELPERS
+        async function populateDropdowns() {
+            const courses = allCoursesCache.length ? allCoursesCache : await (await fetch(`${API_BASE_URL}/courses`, {credentials:'include'})).json();
+            const parents = await getUsers('parent');
+            
+            document.getElementById('student-course-select').innerHTML = '<option value="">Select Course</option>' + courses.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            document.getElementById('student-parent-select').innerHTML = '<option value="">Link Parent</option>' + parents.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+            
+            // Fee/Payment dropdowns
+            document.getElementById('fee-course-select').innerHTML = '<option value="">Global</option>' + courses.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            document.getElementById('payment-course-filter').innerHTML = '<option value="">Show All</option>' + courses.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            document.getElementById('fee-session-select').innerHTML = '<option value="">Select Session</option>' + allSessionsCache.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+        }
+
+        // FEES & REPORTS (Keep simple for brevity as logic is same as before)
         async function fetchFees() {
             const res = await fetch(`${API_BASE_URL}/fee_structures`, {credentials:'include'});
             const list = await res.json();
-            document.getElementById('fee-structure-table-body').innerHTML = list.map(f => 
-                `<tr class="border-b"><td class="p-4">${f.name}</td><td class="p-4">${f.total_amount}</td><td class="p-4 text-right"><button onclick="deleteData('fee_structures', ${f.id})" class="text-red-600">Delete</button></td></tr>`
-            ).join('');
+            document.getElementById('fee-structure-table-body').innerHTML = list.map(f => `<tr class="border-b border-slate-50"><td class="px-6 py-4 font-bold">${f.name}</td><td class="px-6 py-4">₹${f.total_amount}</td><td class="px-6 py-4">${f.due_date}</td><td class="px-6 py-4 text-right"><button onclick="deleteData('fee_structures', ${f.id})" class="text-red-500 font-bold text-xs">Delete</button></td></tr>`).join('');
             document.getElementById('payment-fee-structure-select').innerHTML = '<option value="">Select Fee</option>' + list.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
         }
-
         async function fetchFeeStatus() {
             const res = await fetch(`${API_BASE_URL}/fee_status`, {credentials:'include'});
             const list = await res.json();
-            document.getElementById('fee-status-table-body').innerHTML = list.map(s => 
-                `<tr class="border-b"><td class="p-4">${s.student_name}</td><td class="p-4 font-bold ${s.balance>0?'text-red-600':'text-green-600'}">${s.balance}</td><td class="p-4 text-right"><button onclick="window.open('${API_BASE_URL}/receipt/${s.latest_payment_id}')" class="text-blue-600">Print</button></td></tr>`
-            ).join('');
-            // Populate student payment dropdown
+            document.getElementById('fee-status-table-body').innerHTML = list.map(s => `<tr class="border-b border-slate-50"><td class="px-6 py-4 font-bold">${s.student_name}</td><td class="px-6 py-4 font-bold ${s.balance>0?'text-red-500':'text-green-500'}">₹${s.balance}</td><td class="px-6 py-4 text-sm text-slate-500">${s.pending_days} days</td><td class="px-6 py-4 text-right"><button onclick="window.open('${API_BASE_URL}/receipt/${s.latest_payment_id}')" class="text-blue-600 font-bold text-xs">Print</button></td></tr>`).join('');
             document.getElementById('payment-student-select').innerHTML = '<option value="">Select Student</option>' + list.map(s => `<option value="${s.student_id}">${s.student_name}</option>`).join('');
         }
-
-        async function fetchFeePending() {
-            const res = await fetch(`${API_BASE_URL}/reports/fee_pending`, {credentials:'include'});
-            const list = await res.json();
-            document.getElementById('fee-pending-report-body').innerHTML = list.map(s => 
-                `<tr class="border-b"><td class="p-4">${s.student_name}</td><td class="p-4 text-red-600 font-bold">${s.balance}</td><td class="p-4">${s.due_date}</td><td class="p-4 text-center"><button class="text-amber-600 material-symbols-outlined">sms</button></td></tr>`
-            ).join('');
-        }
-
-        // --- REPORTS ---
         async function fetchAdmissions() {
             const res = await fetch(`${API_BASE_URL}/reports/admissions`, {credentials:'include'});
-            const list = await res.json();
-            document.getElementById('admissions-report-body').innerHTML = list.map(d => `<tr class="border-b"><td class="p-4">${d.name}</td><td class="p-4">${d.email}</td><td class="p-4">${d.created_at}</td><td class="p-4 text-green-600">Active</td></tr>`).join('');
+            document.getElementById('admissions-report-body').innerHTML = (await res.json()).map(d => `<tr class="border-b border-slate-50"><td class="px-6 py-4 font-bold">${d.name}</td><td class="px-6 py-4">${d.email}</td><td class="px-6 py-4">${d.created_at}</td><td class="px-6 py-4 text-green-600 font-bold">Active</td></tr>`).join('');
         }
         async function fetchAttendance() {
             const res = await fetch(`${API_BASE_URL}/reports/attendance`, {credentials:'include'});
-            const list = await res.json();
-            document.getElementById('attendance-report-body').innerHTML = list.map(d => `<tr class="border-b"><td class="p-4">${d.student_name}</td><td class="p-4 text-center">${d.total_classes}</td><td class="p-4 text-center font-bold">${d.percentage}%</td></tr>`).join('');
+            document.getElementById('attendance-report-body').innerHTML = (await res.json()).map(d => `<tr class="border-b border-slate-50"><td class="px-6 py-4 font-bold">${d.student_name}</td><td class="px-6 py-4 text-center">${d.total_classes}</td><td class="px-6 py-4 text-center text-green-600">${d.present}</td><td class="px-6 py-4 text-center font-bold">${d.percentage}%</td></tr>`).join('');
         }
         async function fetchPerformance() {
             const res = await fetch(`${API_BASE_URL}/reports/performance`, {credentials:'include'});
-            const list = await res.json();
-            document.getElementById('performance-report-body').innerHTML = list.map(d => `<tr class="border-b"><td class="p-4">${d.student_name}</td><td class="p-4 text-center">${d.total_score}</td><td class="p-4 text-right font-bold">${d.overall_percentage}%</td></tr>`).join('');
+            document.getElementById('performance-report-body').innerHTML = (await res.json()).map(d => `<tr class="border-b border-slate-50"><td class="px-6 py-4 font-bold">${d.student_name}</td><td class="px-6 py-4 text-center">${d.assessments_taken}</td><td class="px-6 py-4 text-center font-bold">${d.overall_percentage}%</td></tr>`).join('');
         }
-
-        // --- GENERIC FORM HANDLER ---
-        const forms = {
-            'teacher-form': '/users', 'student-form': '/users', 'parent-form': '/users',
-            'course-form': '/courses', 'session-form': '/sessions', 
-            'announcement-form': '/announcements', 'fee-structure-form': '/fee_structures', 'payment-form': '/payments'
-        };
-
-        Object.keys(forms).forEach(id => {
-            const form = document.getElementById(id);
-            if(form) {
-                form.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    const formData = new FormData(form);
-                    // Convert to JSON if not file upload
-                    const isFile = document.getElementById('student-photo-file-input')?.files?.length > 0;
-                    const body = isFile ? formData : JSON.stringify(Object.fromEntries(formData));
-                    const headers = isFile ? {} : {'Content-Type': 'application/json'};
-                    
-                    try {
-                        const res = await fetch(`${API_BASE_URL}${forms[id]}`, { method: 'POST', headers, credentials: 'include', body });
-                        if(res.ok) { alert('Saved!'); form.reset(); allUsersCache=[]; loadContent(window.location.hash.substring(1)); }
-                        else alert('Failed.');
-                    } catch(err) { alert('Error: ' + err); }
-                });
-            }
-        });
-
-        // Bulk Upload
-        document.getElementById('bulk-upload-form')?.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(document.getElementById('bulk-upload-form'));
-            const res = await fetch(`${API_BASE_URL}/bulk_upload/users`, { method: 'POST', credentials: 'include', body: formData });
-            const data = await res.json();
-            alert(data.message || 'Done');
-        });
-
-        // Helpers
-        window.deleteUser = async (id) => { if(confirm('Delete?')) { await fetch(`${API_BASE_URL}/users/${id}`, {method:'DELETE', credentials:'include'}); allUsersCache=[]; fetchTeachers(); fetchStudents(); fetchParents(); } };
-        window.deleteData = async (endpoint, id) => { if(confirm('Delete?')) { await fetch(`${API_BASE_URL}/${endpoint}/${id}`, {method:'DELETE', credentials:'include'}); loadContent(window.location.hash.substring(1)); } };
-        window.resetForm = (type) => document.getElementById(`${type}-form`)?.reset();
 
         checkAuth();
     });
