@@ -438,22 +438,21 @@
         </form>
     </div>
 
-    <div>
-        <h3 class="text-xl font-bold mb-4">Existing Announcements</h3>
-        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm overflow-hidden">
-            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                <thead>
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Title</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Content</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Target Group</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
-                        <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="management-announcements-body" class="divide-y divide-slate-200 dark:divide-slate-700"></tbody>
-            </table>
-        </div>
+           <div>
+    <h3 class="text-xl font-bold mb-4">Existing Announcements</h3>
+    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm overflow-hidden">
+        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+            <thead>
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Title</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Content</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Target Group</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="management-announcements-body" class="divide-y divide-slate-200 dark:divide-slate-700"></tbody>
+        </table>
     </div>
 </div>
 
@@ -1415,19 +1414,19 @@ async function fetchAnnouncements(isManagementPage) {
         const response = await fetch(`${API_BASE_URL}/announcements`, { credentials: 'include' });
         const announcements = await response.json();
 
-        // 1. Target the correct table based on the page view
-        // Dashboard = 'recent-announcements-body'
-        // Management Page = 'management-announcements-body'
+        // 1. CHOOSE THE CORRECT TABLE ID
+        // If we are editing (Manage Page), look for the NEW ID "management-announcements-body"
+        // If we are viewing (Dashboard), look for the OLD ID "recent-announcements-body"
         const targetId = isManagementPage ? 'management-announcements-body' : 'recent-announcements-body';
         const tableBody = document.getElementById(targetId);
 
-        if (!tableBody) return; // Exit if table doesn't exist on current view
+        if (!tableBody) return; // Stop if the table doesn't exist on this screen
 
         tableBody.innerHTML = '';
 
-        // 2. Determine which data to show
+        // 2. FILTER DATA
         // Dashboard = Last 5 announcements only
-        // Management Page = All announcements
+        // Manage Page = All announcements
         const dashboardAnnouncements = announcements.filter(a => a.target_group === 'all' || a.target_group === 'admin').slice(0, 5);
         const announcementsToShow = isManagementPage ? announcements : dashboardAnnouncements;
 
@@ -1437,12 +1436,13 @@ async function fetchAnnouncements(isManagementPage) {
         }
 
         announcementsToShow.forEach((announcement) => {
-            // Shorten content for display
-            const contentDisplay = announcement.content.length > 50 ? announcement.content.substring(0, 50) + '...' : announcement.content;
+            const contentDisplay = isManagementPage 
+                ? announcement.content 
+                : announcement.content.substring(0, 50) + (announcement.content.length > 50 ? '...' : '');
+            
             const dateStr = announcement.created_at ? announcement.created_at.split(' ')[0] : 'N/A';
 
-            // 3. Define Actions Buttons (Edit & Delete)
-            // These appear ONLY if isManagementPage is true (Manage Announcements section)
+            // 3. SHOW BUTTONS ONLY IF isManagementPage IS TRUE
             let actionsHtml = '';
             if (isManagementPage) {
                 actionsHtml = `
@@ -1458,7 +1458,7 @@ async function fetchAnnouncements(isManagementPage) {
             }
 
             const row = `
-                <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50 hover:bg-slate-100 transition">
+                <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50 hover:bg-slate-50 transition">
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white">${announcement.title}</td>
                     <td class="px-6 py-4 text-sm text-slate-500 dark:text-slate-400 max-w-xs truncate" title="${announcement.content}">${contentDisplay}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${announcement.target_group.charAt(0).toUpperCase() + announcement.target_group.slice(1)}</td>
@@ -1471,7 +1471,8 @@ async function fetchAnnouncements(isManagementPage) {
     } catch (error) {
         console.error("Error fetching announcements:", error);
     }
-}      
+}
+   
         window.deleteAnnouncement = async function(id) {
             if (confirm('Are you sure you want to delete this announcement?')) {
                 try {
