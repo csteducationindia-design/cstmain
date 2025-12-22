@@ -503,14 +503,17 @@ def calculate_fee_status(student_id):
     # 1. Get IDs of courses the student is enrolled in
     enrolled_course_ids = [c.id for c in student.courses_enrolled]
 
-    # 2. Sum Fees that match these courses OR are Global (None)
-    # This ensures Tally students only get Tally fees
-    applicable_fees = FeeStructure.query.filter(
-        or_(
-            FeeStructure.course_id.in_(enrolled_course_ids),
-            FeeStructure.course_id == None
-        )
-    ).all()
+    # 2. Sum Fees that match these courses OR are Global (course_id is NULL)
+    if enrolled_course_ids:
+        applicable_fees = FeeStructure.query.filter(
+            or_(
+                FeeStructure.course_id.in_(enrolled_course_ids),
+                FeeStructure.course_id == None
+            )
+        ).all()
+    else:
+        # If student has no courses, only show Global fees
+        applicable_fees = FeeStructure.query.filter(FeeStructure.course_id == None).all()
 
     total_due = sum(f.total_amount for f in applicable_fees)
 
@@ -521,22 +524,22 @@ def calculate_fee_status(student_id):
     # 4. Final Balance
     balance = total_due - total_paid
 
-    # 5. Due Date Calculation
-    last_fee = None
+    # 5. Due Date Calculation (Use the latest relevant due date)
+    due_date = date.today()
     if applicable_fees:
-        # Sort to find the relevant due date
+        # Sort to find the latest due date
         applicable_fees.sort(key=lambda x: x.due_date, reverse=True)
-        last_fee = applicable_fees[0]
-    
-    due_date = last_fee.due_date if last_fee else date.today()
+        if applicable_fees[0].due_date:
+            due_date = applicable_fees[0].due_date
 
+    # 6. Calculate Days Status
     try:
         if balance > 0 and isinstance(due_date, date):
             today = date.today()
             if today > due_date:
-                pending_days = (today - due_date).days * -1
+                pending_days = (today - due_date).days * -1 # Negative for overdue
             else:
-                pending_days = (due_date - today).days
+                pending_days = (due_date - today).days # Positive for pending
         else:
             pending_days = 0 
     except TypeError: 
