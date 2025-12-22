@@ -1010,39 +1010,7 @@ def admin_bulk_notify():
         }), 400
 
 
-# --- ADD THIS TO app.py ---
 
-@app.route('/api/student/balance', methods=['GET'])
-@login_required
-def get_student_balance():
-    if current_user.role != 'student':
-        return jsonify({'error': 'Unauthorized'}), 403
-
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    # This query sums up ALL fee structures assigned to the student's course
-    # And subtracts ALL payments made by this student
-    query = """
-        SELECT 
-            (SELECT COALESCE(SUM(total_amount), 0) 
-             FROM fee_structures 
-             WHERE course_id IN (
-                 SELECT course_id FROM enrollments WHERE student_id = ?
-             ) OR course_id IS NULL) 
-            - 
-            (SELECT COALESCE(SUM(amount_paid), 0) 
-             FROM payments 
-             WHERE student_id = ?) 
-        as current_balance
-    """
-    
-    result = cursor.execute(query, (current_user.id, current_user.id)).fetchone()
-    conn.close()
-    
-    balance = result['current_balance'] if result else 0.0
-    
-    return jsonify({'balance': balance})
 # --- ADD OR REPLACE THIS ROUTE IN app.py ---
 
 @app.route('/api/student/balance', methods=['GET'])
