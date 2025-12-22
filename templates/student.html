@@ -387,34 +387,45 @@
         if (title.toLowerCase().includes('note')) fetchNotes();
     }
 
-    // --- DATA FETCHING FUNCTIONS ---
+
+// --- REPLACE YOUR EXISTING fetchFees FUNCTION WITH THIS ---
     async function fetchFees() {
         try {
-            const res = await fetch(`${API_BASE_URL}/student/fees`, { credentials: 'include' });
+            // Updated to call the new calculation endpoint
+            const res = await fetch(`${API_BASE_URL}/student/balance`, { credentials: 'include' });
             if (!res.ok) return;
             const data = await res.json();
             
             const balance = data.balance || 0;
+            
+            // 1. Update Dashboard Card
             const dashFees = document.getElementById('dash-fees');
             if(dashFees) dashFees.textContent = `₹${balance}`;
             
+            // 2. Update Profile View Balance
             const profileBal = document.getElementById('profile-view-balance');
             if(profileBal) {
                 profileBal.textContent = `₹${balance}`;
-                profileBal.className = balance > 0 ? "text-4xl font-bold text-red-500" : "text-4xl font-bold text-green-600";
+                // Red if they owe money, Green if paid
+                profileBal.className = balance > 0 
+                    ? "text-4xl font-bold text-red-500" 
+                    : "text-4xl font-bold text-green-600";
             }
 
+            // 3. Show Alert on Dashboard if Fees Pending
             const alertBox = document.getElementById('fee-alert');
             const alertText = document.getElementById('fee-alert-text');
             if(alertBox && alertText) {
                 if (balance > 0) {
                     alertBox.classList.remove('hidden');
-                    alertText.innerHTML = `You have a balance of <span class="font-bold">₹${balance}</span>.`;
+                    alertText.innerHTML = `You have a total pending balance of <span class="font-bold">₹${balance}</span>.`;
                 } else {
                     alertBox.classList.add('hidden');
                 }
             }
-        } catch (e) { console.error('Fee fetch error', e); }
+        } catch (e) { 
+            console.error('Fee fetch error', e); 
+        }
     }
 
     async function fetchAttendanceSummary() {
