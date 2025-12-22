@@ -1640,6 +1640,8 @@ async function fetchAnnouncements(isManagementPage) {
             }
         }
         
+        // --- REPLACEMENT CODE FOR FEE PENDING REPORT ---
+        
         async function fetchFeePendingReport() {
             const feePendingReportBody = document.getElementById('fee-pending-report-body');
             if (!feePendingReportBody) return; 
@@ -1664,7 +1666,8 @@ async function fetchAnnouncements(isManagementPage) {
                     const isOverdue = status.pending_days < 0;
                     const balanceClass = isOverdue ? 'overdue' : 'pending';
                     const balanceText = status.balance.toFixed(2);
-                    const isPhoneAvailable = !!status.phone_number;
+                    
+                    // Force Enable Buttons (Ignore isPhoneAvailable check to ensure buttons actve)
                     
                     let dueText;
                     if (isOverdue) {
@@ -1680,12 +1683,12 @@ async function fetchAnnouncements(isManagementPage) {
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${status.due_date}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm ${isOverdue ? 'text-red-600' : 'text-slate-500'}">${dueText}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
-                                <button onclick="sendFeeReminderSms(${status.student_id}, '${status.student_name}', ${status.balance}, '${status.due_date}')" class="text-yellow-600 hover:text-yellow-700 disabled:text-slate-400" ${isPhoneAvailable ? '' : 'disabled'} title="Send Fee Reminder SMS">
+                                <button onclick="sendFeeReminderSms(${status.student_id}, '${status.student_name}')" class="text-yellow-600 hover:text-yellow-700 transition duration-150" title="Send Fee Reminder SMS">
                                     <span class="material-symbols-outlined align-middle text-lg">sms</span>
                                 </button>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
-                                <button onclick="sendFeeReminderWhatsapp(${status.student_id}, '${status.student_name}', ${status.balance}, '${status.due_date}')" class="text-green-600 hover:text-green-700 disabled:text-slate-400" ${isPhoneAvailable ? '' : 'disabled'} title="Send Fee Reminder WhatsApp">
+                                <button onclick="sendFeeReminderWhatsapp(${status.student_id}, '${status.student_name}')" class="text-green-600 hover:text-green-700 transition duration-150" title="Send Fee Reminder WhatsApp">
                                     <span class="material-symbols-outlined align-middle text-lg">call</span>
                                 </button>
                             </td>
@@ -1698,9 +1701,11 @@ async function fetchAnnouncements(isManagementPage) {
             }
         }
         
-        window.sendFeeReminderSms = async function(studentId, studentName, balance, dueDate) {
+        // --- UPDATED SEND FUNCTIONS (Real API Calls) ---
+
+        window.sendFeeReminderSms = async function(studentId, studentName) {
             if (confirm(`Send SMS fee reminder to ${studentName}?`)) {
-                try { // CRITICAL: Added try...catch for stability
+                try {
                     const response = await fetch(`${API_BASE_URL}/send_sms_alert`, {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
@@ -1709,28 +1714,41 @@ async function fetchAnnouncements(isManagementPage) {
                     });
                     
                     const result = await response.json();
-                    
                     if (response.ok) {
-                        alert(result.message);
+                        alert(`Success: ${result.message}`);
                     } else {
                         alert(`Failed: ${result.message}`);
                     }
                 } catch(error) {
                     console.error('SMS Alert Error:', error);
-                    alert('Failed to send alert due to a server error.');
+                    alert('Failed to send SMS due to a network error.');
                 }
             }
         }
 
-        window.sendFeeReminderWhatsapp = function(studentId, studentName, balance, dueDate) {
-            const subject = "Fee Reminder";
-            const body = `Dear ${studentName}, your fee payment of INR ${balance.toFixed(2)} is pending. The due date is ${dueDate}. Please pay soon.`;
-             if (confirm(`Send WhatsApp fee reminder to ${studentName}? (Mock)`)) {
-                 // CRITICAL: Ensure sendQuickNotification function exists or use a mock logic.
-                alert(`[MOCK] WhatsApp sent to ${studentName}: ${body}`);
+        window.sendFeeReminderWhatsapp = async function(studentId, studentName) {
+             if (confirm(`Send WhatsApp fee reminder to ${studentName}?`)) {
+                try {
+                    // Calls the real backend endpoint for WhatsApp
+                    const response = await fetch(`${API_BASE_URL}/send_whatsapp_alert`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        credentials: 'include',
+                        body: JSON.stringify({ student_id: studentId })
+                    });
+                    
+                    const result = await response.json();
+                    if (response.ok) {
+                        alert(`Success: ${result.message}`);
+                    } else {
+                        alert(`Failed: ${result.message}`);
+                    }
+                } catch(error) {
+                    console.error('WhatsApp Alert Error:', error);
+                    alert('Failed to send WhatsApp message. Check console for details.');
+                }
             }
-        }
-        
+        }        
         window.sendFeeAlert = async function(studentId) {
             if (confirm('Send fee pending alert via SMS? (Uses configured API)')) {
                 try { // CRITICAL: Added try...catch for stability
