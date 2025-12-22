@@ -454,13 +454,38 @@
                     <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6">
                         <h3 class="text-xl font-bold mb-4">Manage Fee Structures</h3>
                         <form id="fee-structure-form" class="space-y-4">
-                            <input type="hidden" id="fee-structure-id" name="id">
-                            <div class="form-group"><label for="fee-structure-name" class="block text-sm font-medium mb-1">Structure Name</label><input type="text" id="fee-structure-name" name="name" required class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800"></div>
-                            <div class="form-group"><label for="fee-session-select" class="block text-sm font-medium mb-1">Academic Session</label><select id="fee-session-select" name="academic_session_id" required class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800"></select></div>
-                            <div class="form-group"><label for="fee-total-amount" class="block text-sm font-medium mb-1">Total Amount</label><input type="number" step="0.01" id="fee-total-amount" name="total_amount" required class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800"></div>
-                            <div class="form-group"><label for="fee-due-date" class="block text-sm font-medium mb-1">Due Date</label><input type="date" id="fee-due-date" name="due_date" required class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800"></div>
-                            <button type="submit" id="save-fee-structure-btn" class="w-full bg-primary text-white font-medium py-2.5 px-4 rounded-lg text-sm hover:bg-opacity-90 transition duration-150">Save Fee Structure</button>
-                        </form>
+    <input type="hidden" id="fee-structure-id" name="id">
+    
+    <div class="form-group">
+        <label for="fee-structure-name" class="block text-sm font-medium mb-1">Structure Name</label>
+        <input type="text" id="fee-structure-name" name="name" required class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800">
+    </div>
+
+    <div class="form-group">
+        <label for="fee-course-select" class="block text-sm font-medium mb-1">Link to Course (Optional)</label>
+        <select id="fee-course-select" name="course_id" class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800">
+            <option value="">Global (All Students)</option>
+            </select>
+        <p class="text-xs text-slate-500 mt-1">Select "Global" for common fees like Admission.</p>
+    </div>
+
+    <div class="form-group">
+        <label for="fee-session-select" class="block text-sm font-medium mb-1">Academic Session</label>
+        <select id="fee-session-select" name="academic_session_id" required class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800"></select>
+    </div>
+
+    <div class="form-group">
+        <label for="fee-total-amount" class="block text-sm font-medium mb-1">Total Amount</label>
+        <input type="number" step="0.01" id="fee-total-amount" name="total_amount" required class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800">
+    </div>
+
+    <div class="form-group">
+        <label for="fee-due-date" class="block text-sm font-medium mb-1">Due Date</label>
+        <input type="date" id="fee-due-date" name="due_date" required class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800">
+    </div>
+
+    <button type="submit" id="save-fee-structure-btn" class="w-full bg-primary text-white font-medium py-2.5 px-4 rounded-lg text-sm hover:bg-opacity-90 transition duration-150">Save Fee Structure</button>
+</form>
                         <h4 class="text-lg font-bold mt-8 mb-4">Existing Fee Structures</h4>
                         <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm overflow-hidden">
                             <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
@@ -799,12 +824,13 @@
                         fetchAnnouncements(true); 
                         break;
                     case 'fees': 
-                        fetchFeeStructures(); 
-                        fetchStudentsForPaymentDropdown(); 
-                        fetchFeeSessionDropdowns(); 
-                        fetchFeeStatus(); 
-                        resetFeeStructureForm();
-                        break;
+    			fetchFeeStructures(); 
+    			fetchStudentsForPaymentDropdown(); 
+    			fetchFeeSessionDropdowns(); 
+    			populateFeeCourseDropdown(); // <--- ADD THIS LINE
+    			fetchFeeStatus(); 
+    			resetFeeStructureForm();
+    			break;
                     case 'fee-pending-report': 
                         fetchFeePendingReport(); 
                         break; 
@@ -864,6 +890,22 @@
                 alert("Logout failed. Please try refreshing the page.");
             }
         });
+// --- NEW FUNCTION TO POPULATE FEE COURSE DROPDOWN ---
+async function populateFeeCourseDropdown() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/courses`, {credentials: 'include'});
+        const courses = await response.json();
+        const select = document.getElementById('fee-course-select');
+        
+        // Keep the first option (Global) and add courses
+        select.innerHTML = '<option value="">Global (All Students)</option>';
+        courses.forEach(c => {
+            select.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+        });
+    } catch (e) {
+        console.error("Error loading fee courses", e);
+    }
+}
 
         // --- DASHBOARD SUMMARY ---
         async function fetchDashboardSummary() {
@@ -1537,19 +1579,21 @@ async function fetchAnnouncements(isManagementPage) {
 
         // --- NEW: Fee structure delete/edit handlers ---
         function resetFeeStructureForm(structure = null) {
-             const feeStructureForm = document.getElementById('fee-structure-form');
-             if (feeStructureForm) feeStructureForm.reset();
-             
-             document.getElementById('fee-structure-id').value = structure ? structure.id : '';
-             document.getElementById('save-fee-structure-btn').textContent = structure ? 'Update Fee Structure' : 'Save Fee Structure';
-             
-             if (structure) {
-                 document.getElementById('fee-structure-name').value = structure.name;
-                 document.getElementById('fee-session-select').value = structure.academic_session_id;
-                 document.getElementById('fee-total-amount').value = structure.total_amount;
-                 document.getElementById('fee-due-date').value = structure.due_date;
-             }
-         }
+     const feeStructureForm = document.getElementById('fee-structure-form');
+     if (feeStructureForm) feeStructureForm.reset();
+     
+     document.getElementById('fee-structure-id').value = structure ? structure.id : '';
+     document.getElementById('save-fee-structure-btn').textContent = structure ? 'Update Fee Structure' : 'Save Fee Structure';
+     
+     if (structure) {
+         document.getElementById('fee-structure-name').value = structure.name;
+         // NEW: Set the course ID
+         document.getElementById('fee-course-select').value = structure.course_id || ""; 
+         document.getElementById('fee-session-select').value = structure.academic_session_id;
+         document.getElementById('fee-total-amount').value = structure.total_amount;
+         document.getElementById('fee-due-date').value = structure.due_date;
+     }
+ }
 
         window.editFeeStructure = async function(id) {
             if (!id) return alert('Invalid Fee Structure ID.');
@@ -1776,19 +1820,23 @@ async function fetchAnnouncements(isManagementPage) {
         }
 
         feeStructureForm.addEventListener('submit', async (event) => {
-            event.preventDefault();
-            
-            const feeId = document.getElementById('fee-structure-id').value;
-            const method = feeId ? 'PUT' : 'POST';
-            const endpoint = `${API_BASE_URL}/fee_structures`;
+    event.preventDefault();
+    
+    const feeId = document.getElementById('fee-structure-id').value;
+    const method = feeId ? 'PUT' : 'POST';
+    const endpoint = `${API_BASE_URL}/fee_structures`;
 
-            const feeData = { 
-                id: feeId || undefined,
-                name: document.getElementById('fee-structure-name').value, 
-                academic_session_id: parseInt(document.getElementById('fee-session-select').value),
-                total_amount: parseFloat(document.getElementById('fee-total-amount').value),
-                due_date: document.getElementById('fee-due-date').value
-            };
+    const feeData = { 
+        id: feeId || undefined,
+        name: document.getElementById('fee-structure-name').value,
+        // NEW: Send the selected course ID
+        course_id: document.getElementById('fee-course-select').value, 
+        academic_session_id: parseInt(document.getElementById('fee-session-select').value),
+        total_amount: parseFloat(document.getElementById('fee-total-amount').value),
+        due_date: document.getElementById('fee-due-date').value
+    };
+    
+    // ... (rest of the fetch logic stays the same) ...
             
             try {
                 const response = await fetch(endpoint, { 
