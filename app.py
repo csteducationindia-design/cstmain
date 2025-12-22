@@ -124,35 +124,43 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(data_dir, 'i
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
+
 # --- MIGRATION UTILITY ---
 def check_and_upgrade_db():
     """Checks for missing columns and adds them if necessary."""
-# ... existing columns ...
-                add_column(conn, 'fee_structure', 'course_id', 'INTEGER') # Add this line!
     try:
         inspector = inspect(db.engine)
+        
+        # 1. Upgrade USER table
         if inspector.has_table("user"):
-            columns = [col['name'] for col in inspector.get_columns('user')]
-            
-            # Use raw connection to perform ALTER TABLE
+            user_columns = [col['name'] for col in inspector.get_columns('user')]
             with db.engine.connect() as conn:
-                def add_column(conn, table, column, type):
-                    if column not in columns:
-                        print(f"--- MIGRATING DB: Adding {column} column to {table}... ---")
-                        conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {type}"))
-                        conn.commit() # Commit each column addition immediately
+                def add_user_col(column, type):
+                    if column not in user_columns:
+                        print(f"--- MIGRATING DB: Adding {column} to user... ---")
+                        conn.execute(text(f"ALTER TABLE user ADD COLUMN {column} {type}"))
+                        conn.commit()
 
-                # Ensure these columns exist, as they were added in recent fixes
-                add_column(conn, 'user', 'fcm_token', 'VARCHAR(500)')
-                add_column(conn, 'user', 'pincode', 'VARCHAR(20)')
-                add_column(conn, 'user', 'dob', 'VARCHAR(20)') 
-                add_column(conn, 'user', 'profile_photo_url', 'VARCHAR(300)')
-                add_column(conn, 'user', 'gender', 'VARCHAR(20)')
-                add_column(conn, 'user', 'father_name', 'VARCHAR(100)')
-                add_column(conn, 'user', 'mother_name', 'VARCHAR(100)')
-                add_column(conn, 'user', 'address_line1', 'VARCHAR(200)')
-                add_column(conn, 'user', 'city', 'VARCHAR(100)')
-                add_column(conn, 'user', 'state', 'VARCHAR(100)')
+                # Add User Columns
+                add_user_col('fcm_token', 'VARCHAR(500)')
+                add_user_col('pincode', 'VARCHAR(20)')
+                add_user_col('dob', 'VARCHAR(20)') 
+                add_user_col('profile_photo_url', 'VARCHAR(300)')
+                add_user_col('gender', 'VARCHAR(20)')
+                add_user_col('father_name', 'VARCHAR(100)')
+                add_user_col('mother_name', 'VARCHAR(100)')
+                add_user_col('address_line1', 'VARCHAR(200)')
+                add_user_col('city', 'VARCHAR(100)')
+                add_user_col('state', 'VARCHAR(100)')
+
+        # 2. Upgrade FEE_STRUCTURE table (Fix for the Fee Issue)
+        if inspector.has_table("fee_structure"):
+            fee_columns = [col['name'] for col in inspector.get_columns('fee_structure')]
+            if 'course_id' not in fee_columns:
+                with db.engine.connect() as conn:
+                    print("--- MIGRATING DB: Adding course_id to fee_structure... ---")
+                    conn.execute(text("ALTER TABLE fee_structure ADD COLUMN course_id INTEGER"))
+                    conn.commit()
 
     except Exception as e:
         print(f"--- MIGRATION WARNING: {e} ---")
