@@ -127,6 +127,8 @@ db = SQLAlchemy(app)
 # --- MIGRATION UTILITY ---
 def check_and_upgrade_db():
     """Checks for missing columns and adds them if necessary."""
+# ... existing columns ...
+                add_column(conn, 'fee_structure', 'course_id', 'INTEGER') # Add this line!
     try:
         inspector = inspect(db.engine)
         if inspector.has_table("user"):
@@ -296,18 +298,23 @@ class FeeStructure(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150), nullable=False)
     academic_session_id = db.Column(db.Integer, db.ForeignKey('academic_session.id'), nullable=False)
+    # NEW: Link fee to a specific course
+    course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=True) 
     total_amount = db.Column(db.Float, nullable=False)
     due_date = db.Column(db.Date, nullable=False, default=date.today)
 
     def to_dict(self):
-        """Serializes FeeStructure object to dictionary."""
         session = db.session.get(AcademicSession, self.academic_session_id)
+        # Get course name for display
+        course = db.session.get(Course, self.course_id) if self.course_id else None
         return {
             "id": self.id, "name": self.name,
             "academic_session_id": self.academic_session_id,
             "session_name": session.name if session else "N/A",
+            "course_id": self.course_id,
+            "course_name": course.name if course else "All Courses (Global)",
             "total_amount": self.total_amount,
-            "due_date": self.due_date.strftime('%Y-%m-%d') if self.due_date else None # FIX: Ensure date is safe
+            "due_date": self.due_date.strftime('%Y-%m-%d') if self.due_date else None
         }
 
 class Payment(db.Model):
@@ -480,29 +487,48 @@ def send_mock_whatsapp(user, subject, body):
 
 
 def calculate_fee_status(student_id):
-    """Calculates fee status including pending days."""
+    """Calculates fee status based on Enrolled Courses."""
+    student = db.session.get(User, student_id)
+    if not student:
+        return {"total_due": 0, "total_paid": 0, "balance": 0, "due_date": "N/A", "pending_days": 0}
+
+    # 1. Get IDs of courses the student is enrolled in
+    enrolled_course_ids = [c.id for c in student.courses_enrolled]
+
+    # 2. Sum Fees that match these courses OR are Global (None)
+    # This ensures Tally students only get Tally fees
+    applicable_fees = FeeStructure.query.filter(
+        or_(
+            FeeStructure.course_id.in_(enrolled_course_ids),
+            FeeStructure.course_id == None
+        )
+    ).all()
+
+    total_due = sum(f.total_amount for f in applicable_fees)
+
+    # 3. Calculate Total Paid
     payments = Payment.query.filter_by(student_id=student_id).all()
     total_paid = sum(p.amount_paid for p in payments)
 
-    # Use the latest fee structure
-    active_fee_structure = FeeStructure.query.order_by(FeeStructure.id.desc()).first()
-
-    if active_fee_structure:
-        total_due = active_fee_structure.total_amount
-        due_date = active_fee_structure.due_date
-    else:
-        total_due = 0.00
-        due_date = date.today() 
-
+    # 4. Final Balance
     balance = total_due - total_paid
+
+    # 5. Due Date Calculation
+    last_fee = None
+    if applicable_fees:
+        # Sort to find the relevant due date
+        applicable_fees.sort(key=lambda x: x.due_date, reverse=True)
+        last_fee = applicable_fees[0]
+    
+    due_date = last_fee.due_date if last_fee else date.today()
 
     try:
         if balance > 0 and isinstance(due_date, date):
             today = date.today()
             if today > due_date:
-                pending_days = (today - due_date).days * -1 # Negative for overdue
+                pending_days = (today - due_date).days * -1
             else:
-                pending_days = (due_date - today).days # Positive for pending
+                pending_days = (due_date - today).days
         else:
             pending_days = 0 
     except TypeError: 
@@ -512,7 +538,7 @@ def calculate_fee_status(student_id):
         "total_due": total_due,
         "total_paid": total_paid,
         "balance": balance,
-        "due_date": due_date.strftime('%Y-%m-%d') if due_date else "N/A", # FIX: Ensure date is safe
+        "due_date": due_date.strftime('%Y-%m-%d') if isinstance(due_date, date) else "N/A",
         "pending_days": pending_days
     }
 
@@ -1255,60 +1281,53 @@ def manage_fee_structures():
     if request.method == 'POST':
         data = request.get_json()
         try:
-            # FIX: Ensure all required fields exist before date parsing
             if not all([data.get('due_date'), data.get('academic_session_id'), data.get('total_amount'), data.get('name')]):
                 return jsonify({"message": "Missing required fee structure fields."}), 400
 
             due_date_obj = datetime.strptime(data['due_date'], '%Y-%m-%d').date()
-        except ValueError:
-            return jsonify({"message": "Invalid date format. Use YYYY-MM-DD."}), 400
+            
+            # Handle Course ID (Empty string means None/Global)
+            c_id = data.get('course_id')
+            course_id_val = int(c_id) if c_id and str(c_id).isdigit() else None
 
-        new_structure = FeeStructure(
-            name=data['name'],
-            academic_session_id=data['academic_session_id'],
-            total_amount=data['total_amount'],
-            due_date=due_date_obj
-        )
-        try:
+            new_structure = FeeStructure(
+                name=data['name'],
+                academic_session_id=data['academic_session_id'],
+                course_id=course_id_val,  # <--- SAVING COURSE ID
+                total_amount=data['total_amount'],
+                due_date=due_date_obj
+            )
             db.session.add(new_structure)
             db.session.commit()
             return jsonify(new_structure.to_dict()), 201
         except Exception as e:
             db.session.rollback()
-            return jsonify({"message": f"Database error creating fee structure: {e}"}), 500
-
+            return jsonify({"message": f"Database error: {e}"}), 500
 
     if request.method == 'PUT':
         data = request.get_json()
         fee_id = data.get('id')
-        try:
-            structure = db.session.get(FeeStructure, int(fee_id))
-        except (ValueError, TypeError):
-             return jsonify({"message": "Invalid Fee Structure ID"}), 400
-             
-        if not structure:
-            return jsonify({"message": "Fee structure not found"}), 404
+        structure = db.session.get(FeeStructure, int(fee_id))
+        
+        if not structure: return jsonify({"message": "Not found"}), 404
             
         try:
             if data.get('due_date'):
-                due_date_obj = datetime.strptime(data['due_date'], '%Y-%m-%d').date()
-            else:
-                 due_date_obj = structure.due_date # Retain existing date if not provided
-        except ValueError:
-            return jsonify({"message": "Invalid date format. Use YYYY-MM-DD."}), 400
+                structure.due_date = datetime.strptime(data['due_date'], '%Y-%m-%d').date()
 
-        structure.name = data.get('name', structure.name)
-        structure.academic_session_id = data.get('academic_session_id', structure.academic_session_id)
-        structure.total_amount = data.get('total_amount', structure.total_amount)
-        structure.due_date = due_date_obj
+            structure.name = data.get('name', structure.name)
+            structure.academic_session_id = data.get('academic_session_id', structure.academic_session_id)
+            structure.total_amount = data.get('total_amount', structure.total_amount)
+            
+            # Handle Course ID Update
+            c_id = data.get('course_id')
+            structure.course_id = int(c_id) if c_id and str(c_id).isdigit() else None
 
-        try:
             db.session.commit()
             return jsonify(structure.to_dict()), 200
         except Exception as e:
             db.session.rollback()
-            print(f"--- ERROR SAVING COURSE (PUT): {e} ---")
-            return jsonify({"message": f"Failed to update course. Check logs for details: {e}"}), 500
+            return jsonify({"message": f"Error: {e}"}), 500
         
     return jsonify([s.to_dict() for s in FeeStructure.query.order_by(FeeStructure.id.desc()).all()])
 
