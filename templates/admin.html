@@ -374,31 +374,29 @@
 
     // --- 2. UPDATED: Fee Pending Report (Fixed Buttons & Added Photos) ---
 // --- UPDATED: Fee Pending Report (Fixes Buttons & Adds Photos) ---
+   // --- UPDATED: Fee Pending Report (Enables SMS & WhatsApp Buttons) ---
     async function fetchFeePendingReport() {
         const tbody = document.getElementById('fee-pending-report-body');
         if(!tbody) return;
-        tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center">Loading pending fees...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center">Loading pending fees...</td></tr>';
 
         try {
-            // 1. Fetch the Fee Report
             const list = await (await fetch(`${API_BASE_URL}/reports/fee_pending`, {credentials:'include'})).json();
             
             if(list.length === 0) { 
-                tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center">No pending fees found.</td></tr>'; 
+                tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center">No pending fees found.</td></tr>'; 
                 return; 
             }
 
-            // 2. Ensure we have User Data (for Photos)
-            // If the cache is empty, fetch all users so we can find their photos
+            // Ensure we have User Data (for Photos)
             if(!allUsersCache.length) {
                 const res = await fetch(`${API_BASE_URL}/users`, {credentials:'include'});
                 allUsersCache = await res.json();
             }
 
             tbody.innerHTML = list.map(s => {
-                // Find the full user object to get the photo URL
+                // Get Student Photo
                 const user = allUsersCache.find(u => u.id === s.student_id);
-                // Create the photo URL or use a placeholder
                 const photoUrl = user && user.profile_photo_url 
                     ? `${API_ORIGIN}${user.profile_photo_url}` 
                     : `https://placehold.co/100x100/f6f7f8/666?text=${s.student_name.charAt(0)}`;
@@ -408,11 +406,11 @@
                 const daysClass = isOverdue ? 'text-red-500 font-bold' : 'text-slate-500';
 
                 return `
-                <tr class="border-b border-gray-50 hover:bg-gray-50">
-                    <td class="px-6 py-4">
-                        <div class="flex items-center">
-                            <img class="h-10 w-10 rounded-full object-cover border border-gray-200 mr-3" src="${photoUrl}" alt="">
-                            <div class="font-bold text-slate-800">${s.student_name}</div>
+                <tr class="border-b border-gray-50 hover:bg-gray-50 transition">
+                    <td class="px-6 py-4 w-16">
+                         <div class="flex items-center gap-3">
+                            <img src="${photoUrl}" class="w-10 h-10 rounded-full object-cover border border-gray-200">
+                            <span class="font-bold text-slate-800">${s.student_name}</span>
                         </div>
                     </td>
                     
@@ -423,23 +421,23 @@
                     <td class="px-6 py-4 text-xs ${daysClass}">${daysText}</td>
                     
                     <td class="px-6 py-4 text-center">
-                        <button onclick="sendFeeAlert(${s.student_id})" class="text-amber-500 hover:text-amber-700 hover:bg-amber-50 p-2 rounded-full transition" title="Send SMS">
-                            <span class="material-symbols-outlined align-middle">sms</span>
+                        <button onclick="sendFeeAlert(${s.student_id})" class="text-amber-500 hover:text-amber-700 hover:scale-110 transition duration-150" title="Send SMS">
+                            <span class="material-symbols-outlined text-2xl">sms</span>
                         </button>
                     </td>
                     
                     <td class="px-6 py-4 text-center">
-                        <button onclick="sendFeeReminderWhatsapp(${s.student_id}, '${s.student_name}')" class="text-green-600 hover:text-green-800 hover:bg-green-50 p-2 rounded-full transition" title="Send WhatsApp">
-                            <span class="material-symbols-outlined align-middle">chat</span>
+                        <button onclick="sendFeeReminderWhatsapp(${s.student_id}, '${s.student_name}')" class="text-green-600 hover:text-green-800 hover:scale-110 transition duration-150" title="Send WhatsApp">
+                            <span class="material-symbols-outlined text-2xl">chat</span>
                         </button>
                     </td>
                 </tr>`;
             }).join('');
         } catch(e) { 
             console.error(e); 
-            tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-red-500">Error loading report.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-red-500">Error loading report.</td></tr>';
         }
-    }   
+    }
     // --- 3. UPDATED: Admissions Report (Fixed Logic & Added Photos) ---
 async function fetchAdmissionsReport() {
         const tbody = document.getElementById('admissions-report-body');
