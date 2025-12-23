@@ -2282,61 +2282,159 @@ async function fetchAnnouncements(isManagementPage) {
             }
         }
 
-        function fetchAttendanceReport() {
-            try {
-                const reportBody = document.getElementById('attendance-report-body');
-                fetch(`${API_BASE_URL}/reports/attendance`, {credentials: 'include'})
-                    .then(res => res.json())
-                    .then(report => {
-                        reportBody.innerHTML = '';
-                        if (report.length === 0) {
-                            reportBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center">No attendance data available.</td></tr>`;
-                            return;
-                        }
-                        report.forEach(data => {
-                            const percentClass = data.percentage < 75 ? 'text-red-600 font-bold' : 'text-green-600 font-bold';
-                            reportBody.innerHTML += `
-                                <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${data.student_name}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${data.total_classes}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 dark:text-green-400">${data.present}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 dark:text-red-400">${data.absent}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm ${percentClass}">${data.percentage}%</td>
-                                </tr>`;
-                        });
-                    }).catch(error => { throw error; });
-            } catch (error) {
-                console.error("Error fetching attendance report:", error);
-                document.getElementById('attendance-report-body').innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
-            }
-        }
+       // --- 1. UPDATED TAB SWITCHER (Now loads data!) ---
+    window.switchReportTab = function(reportName) {
+        // 1. Update UI (Hide/Show Tabs)
+        document.querySelectorAll('.report-view').forEach(el => el.classList.add('hidden'));
+        document.getElementById(`report-view-${reportName}`).classList.remove('hidden');
+        
+        ['admissions', 'attendance', 'performance'].forEach(r => {
+            const btn = document.getElementById(`tab-rep-${r}`);
+            if(btn) btn.className = "px-5 py-2 rounded-lg font-medium text-slate-500 hover:text-slate-800 transition";
+        });
+        const activeBtn = document.getElementById(`tab-rep-${reportName}`);
+        if(activeBtn) activeBtn.className = "px-5 py-2 rounded-lg font-bold bg-slate-100 text-slate-800 shadow-sm transition";
 
-        function fetchPerformanceReport() {
-            try {
-                const reportBody = document.getElementById('performance-report-body');
-                fetch(`${API_BASE_URL}/reports/performance`, {credentials: 'include'})
-                    .then(res => res.json())
-                    .then(report => {
-                        reportBody.innerHTML = '';
-                        if (report.length === 0) {
-                            reportBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center">No performance data available.</td></tr>`;
-                            return;
-                        }
-                        report.forEach(data => {
-                            reportBody.innerHTML += `
-                                <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${data.student_name}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${data.assessments_taken}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${data.total_score}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-bold">${data.overall_percentage}%</td>
-                                </tr>`;
-                        });
-                    }).catch(error => { throw error; });
-            } catch (error) {
-                console.error("Error fetching performance report:", error);
-                document.getElementById('performance-report-body').innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
-            }
+        // 2. TRIGGER DATA FETCH (This was missing!)
+        if (reportName === 'admissions') fetchAdmissionsReport();
+        if (reportName === 'attendance') fetchAttendanceReport();
+        if (reportName === 'performance') fetchPerformanceReport();
+    }
+
+    // --- 2. UPDATED REFRESH LOGIC (Handles Dropdown Changes) ---
+    window.refreshReports = function() {
+        // Check which tab is currently visible and refresh only that one
+        if (!document.getElementById('report-view-admissions').classList.contains('hidden')) {
+            fetchAdmissionsReport();
+        } else if (!document.getElementById('report-view-attendance').classList.contains('hidden')) {
+            fetchAttendanceReport();
+        } else if (!document.getElementById('report-view-performance').classList.contains('hidden')) {
+            fetchPerformanceReport();
         }
+    }
+
+    // --- 3. UPDATED ATTENDANCE REPORT (With Session Filter) ---
+    async function fetchAttendanceReport() {
+        const tbody = document.getElementById('attendance-report-body');
+        tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400">Loading attendance data...</td></tr>';
+
+        try {
+            // Fetch Report Data
+            const reportData = await (await fetch(`${API_BASE_URL}/reports/attendance`, {credentials:'include'})).json();
+            
+            // Ensure we have User Data for Filtering (Dates)
+            if(!allUsersCache.length) {
+                const usersRes = await fetch(`${API_BASE_URL}/users`, {credentials:'include'});
+                allUsersCache = await usersRes.json();
+            }
+
+            // Get Filter Dates
+            const sessionSelect = document.getElementById('report-session-filter');
+            let sessionStart = null, sessionEnd = null;
+            if (sessionSelect && sessionSelect.value) {
+                const sess = allSessionsCache.find(s => s.id == sessionSelect.value);
+                if(sess) { sessionStart = new Date(sess.start_date); sessionEnd = new Date(sess.end_date); }
+            }
+
+            // FILTER: Show only students who joined during this session
+            const filteredData = reportData.filter(row => {
+                // Find student in cache to check their join date
+                const student = allUsersCache.find(u => u.id === row.student_id);
+                if (!student) return true; // Keep if unknown (safe fallback)
+
+                if (sessionStart && sessionEnd) {
+                    const joined = new Date(student.created_at);
+                    // Filter Logic: Keep if student joined ON or BEFORE the session ended
+                    // (Adjust logic if you strictly want admission within session dates)
+                    return joined <= sessionEnd; 
+                }
+                return true;
+            });
+
+            if (filteredData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">No attendance records for this session.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filteredData.map(a => `
+                <tr class="border-b border-slate-50 hover:bg-slate-50 transition">
+                    <td class="p-6 font-bold text-slate-800">${a.student_name}</td>
+                    <td class="p-6 text-slate-600">${a.total_classes}</td>
+                    <td class="p-6 text-emerald-600 font-bold">${a.present}</td>
+                    <td class="p-6 text-rose-600 font-bold">${a.absent}</td>
+                    <td class="p-6">
+                        <span class="px-3 py-1 rounded-full text-xs font-bold ${a.percentage >= 75 ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'}">
+                            ${a.percentage}%
+                        </span>
+                    </td>
+                </tr>`).join('');
+
+        } catch (e) {
+            console.error(e);
+            tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-rose-500">Error loading data.</td></tr>';
+        }
+    }
+
+    // --- 4. UPDATED PERFORMANCE REPORT (With Session Filter) ---
+    async function fetchPerformanceReport() {
+        const tbody = document.getElementById('performance-report-body');
+        tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-slate-400">Loading performance data...</td></tr>';
+
+        try {
+            const reportData = await (await fetch(`${API_BASE_URL}/reports/performance`, {credentials:'include'})).json();
+            
+            if(!allUsersCache.length) {
+                const usersRes = await fetch(`${API_BASE_URL}/users`, {credentials:'include'});
+                allUsersCache = await usersRes.json();
+            }
+
+            // Get Filter Dates
+            const sessionSelect = document.getElementById('report-session-filter');
+            let sessionStart = null, sessionEnd = null;
+            if (sessionSelect && sessionSelect.value) {
+                const sess = allSessionsCache.find(s => s.id == sessionSelect.value);
+                if(sess) { sessionStart = new Date(sess.start_date); sessionEnd = new Date(sess.end_date); }
+            }
+
+            // FILTER
+            const filteredData = reportData.filter(row => {
+                // Note: Performance API doesn't send student_id, so we match by Name (Not ideal but works for now)
+                // Ideally, update app.py to send student_id in performance_report
+                const student = allUsersCache.find(u => u.name === row.student_name);
+                if (!student) return true;
+
+                if (sessionStart && sessionEnd) {
+                    const joined = new Date(student.created_at);
+                    return joined <= sessionEnd;
+                }
+                return true;
+            });
+
+            if (filteredData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-slate-400">No performance records for this session.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filteredData.map(a => `
+                <tr class="border-b border-slate-50 hover:bg-slate-50 transition">
+                    <td class="p-6 font-bold text-slate-800">${a.student_name}</td>
+                    <td class="p-6 text-slate-600">${a.assessments_taken} Tests</td>
+                    <td class="p-6 text-slate-600">${a.total_score}</td>
+                    <td class="p-6">
+                        <div class="flex items-center gap-2">
+                            <div class="w-24 bg-slate-200 rounded-full h-2.5">
+                                <div class="bg-blue-600 h-2.5 rounded-full" style="width: ${a.overall_percentage}%"></div>
+                            </div>
+                            <span class="text-sm font-bold text-slate-700">${a.overall_percentage}%</span>
+                        </div>
+                    </td>
+                </tr>`).join('');
+
+        } catch (e) {
+            console.error(e);
+            tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-rose-500">Error loading data.</td></tr>';
+        }
+    }
 
 
         // --- FINAL INITIALIZATION CALLS ---
