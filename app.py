@@ -1056,37 +1056,14 @@ def get_student_balance():
     if current_user.role != 'student':
         return jsonify({'error': 'Unauthorized'}), 403
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    # 1. Calculate Total Fees assigned to this student's course
-    # (Matches Admin "Fee Pending Report" logic)
-    total_fees_query = """
-        SELECT COALESCE(SUM(total_amount), 0) 
-        FROM fee_structures 
-        WHERE course_id IN (
-            SELECT course_id FROM enrollments WHERE student_id = ?
-        ) OR course_id IS NULL
-    """
-    total_fees = cursor.execute(total_fees_query, (current_user.id,)).fetchone()[0]
-
-    # 2. Calculate Total Paid by this student
-    total_paid_query = """
-        SELECT COALESCE(SUM(amount_paid), 0) 
-        FROM payments 
-        WHERE student_id = ?
-    """
-    total_paid = cursor.execute(total_paid_query, (current_user.id,)).fetchone()[0]
-    
-    conn.close()
-    
-    # 3. Final Balance
-    current_balance = total_fees - total_paid
+    # Use the shared helper function that we know works correctly
+    # This ensures Admin and Student portals ALWAYS show the exact same number
+    status = calculate_fee_status(current_user.id)
     
     return jsonify({
-        'balance': current_balance,
-        'total_fees': total_fees,
-        'total_paid': total_paid
+        'balance': status['balance'],
+        'total_due': status['total_due'],
+        'total_paid': status['total_paid']
     })
 
 @app.route('/api/parents', methods=['GET'])
