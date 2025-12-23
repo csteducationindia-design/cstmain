@@ -294,23 +294,13 @@
 
     // --- STUDENT FETCHING & FILTERING ---
 // --- 1. UPDATED: Fetch Students (Fixed Filtering & Added Photos) ---
-    window.fetchStudents = async function(term = '') {
+window.fetchStudents = async function(term = '') {
         const tbody = document.getElementById('student-table-body');
-        tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center">Loading...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center">Loading...</td></tr>';
         
         term = term || document.getElementById('student-search-input')?.value || '';
         const sessionSelect = document.getElementById('student-session-filter');
-        const courseSelect = document.getElementById('student-course-filter');
-        
         const sessionId = sessionSelect ? sessionSelect.value : '';
-        const courseId = courseSelect ? courseSelect.value : '';
-
-        // Get users
-        if(!allUsersCache.length) {
-             const res = await fetch(`${API_BASE_URL}/users`, {credentials:'include'});
-             allUsersCache = await res.json();
-        }
-        let list = allUsersCache.filter(u => u.role === 'student');
 
         // Session Date Logic
         let sessionStart = null, sessionEnd = null;
@@ -319,65 +309,66 @@
             if(sess) { sessionStart = new Date(sess.start_date); sessionEnd = new Date(sess.end_date); }
         }
 
-        const filtered = list.filter(s => {
+        if(!allUsersCache.length) {
+             const res = await fetch(`${API_BASE_URL}/users`, {credentials:'include'});
+             allUsersCache = await res.json();
+        }
+        
+        const filtered = allUsersCache.filter(s => {
+            if (s.role !== 'student') return false;
+
             // 1. Text Search
-            const matchText = s.name.toLowerCase().includes(term.toLowerCase()) || (s.email||'').toLowerCase().includes(term.toLowerCase());
+            const matchText = s.name.toLowerCase().includes(term.toLowerCase()) || 
+                              (s.email||'').toLowerCase().includes(term.toLowerCase()) ||
+                              (s.phone_number||'').includes(term);
             if (!matchText) return false;
 
-            // 2. Session Filter (Date Range)
+            // 2. Session Filter
             if (sessionStart && sessionEnd) {
                 const joined = new Date(s.created_at);
                 if (joined < sessionStart || joined > sessionEnd) return false;
             }
-
-            // 3. Course Filter (Strict Match)
-            if (courseId) {
-                if (!s.course_ids || !s.course_ids.includes(parseInt(courseId))) return false;
-            }
-
             return true;
         });
 
-        if(!filtered.length) { tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-400">No students found.</td></tr>'; return; }
+        if(!filtered.length) { tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center">No students found.</td></tr>'; return; }
 
         tbody.innerHTML = filtered.map(s => {
-            // Profile Photo Logic
             const photoUrl = s.profile_photo_url ? `${API_ORIGIN}${s.profile_photo_url}` : `https://placehold.co/100x100/f6f7f8/666?text=${s.name.charAt(0)}`;
+            const parentName = allUsersCache.find(u => u.id === s.parent_id)?.name || '-';
             
             return `
             <tr class="border-b border-gray-50 hover:bg-gray-50">
-                <td class="p-4 w-16">
-                    <img src="${photoUrl}" class="w-10 h-10 rounded-full object-cover border border-gray-200">
-                </td>
-                <td class="p-4 font-bold">${s.name}<div class="text-xs font-normal text-gray-400">${s.email}</div></td>
-                <td class="p-4 text-sm">${s.phone_number||'-'}</td>
-                <td class="p-4 text-sm text-gray-500">${s.parent_id ? 'Linked' : '-'}</td>
-                <td class="p-4 text-sm text-gray-500">${s.created_at}</td>
-                <td class="p-4 text-center"><button onclick="sendQuickSms(${s.id}, '${s.name}')" class="text-amber-500 material-symbols-outlined hover:scale-110 transition">sms</button></td>
-                <td class="p-4 text-center"><button onclick="sendQuickWhatsapp(${s.id}, '${s.name}')" class="text-green-600 material-symbols-outlined hover:scale-110 transition">chat</button></td>
-                <td class="p-4 text-right">
-                    <button onclick="editUser(${s.id}, 'student')" class="text-primary font-bold mr-2 text-sm">Edit</button>
-                    <button onclick="deleteUser(${s.id})" class="text-red-500 font-bold text-sm">Delete</button>
+                <td class="px-6 py-4 w-16"><img src="${photoUrl}" class="w-10 h-10 rounded-full object-cover border"></td>
+                <td class="px-6 py-4 font-bold">${s.name}<div class="text-xs font-normal text-gray-400">${s.email}</div></td>
+                <td class="px-6 py-4 text-sm text-slate-500">${parentName}</td>
+                <td class="px-6 py-4 text-sm text-slate-500">${s.phone_number||'-'}</td>
+                <td class="px-6 py-4 text-center"><button onclick="sendQuickSms(${s.id}, '${s.name}')" class="text-amber-500 hover:scale-110 material-symbols-outlined">sms</button></td>
+                <td class="px-6 py-4 text-center"><button onclick="sendQuickWhatsapp(${s.id}, '${s.name}')" class="text-green-600 hover:scale-110 material-symbols-outlined">chat</button></td>
+                <td class="px-6 py-4 text-right">
+                    <button onclick="editUser(${s.id}, 'student')" class="text-primary font-bold mr-2">Edit</button>
+                    <button onclick="deleteUser(${s.id})" class="text-red-500 font-bold">Delete</button>
                 </td>
             </tr>`;
         }).join('');
     }
 
     // --- 2. UPDATED: Fee Pending Report (Fixed Buttons & Added Photos) ---
-    async function fetchFeePendingReport() {
+   async function fetchFeePendingReport() {
         const tbody = document.getElementById('fee-pending-report-body');
         if(!tbody) return;
-        tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center">Loading...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center">Loading pending fees...</td></tr>';
 
         try {
             const list = await (await fetch(`${API_BASE_URL}/reports/fee_pending`, {credentials:'include'})).json();
             
             if(list.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center">No pending fees found.</td></tr>'; return; }
 
-            // Fetch users to match photos since report API might not send photo URL
+            // Ensure we have user data for photos
             if(!allUsersCache.length) allUsersCache = await (await fetch(`${API_BASE_URL}/users`, {credentials:'include'})).json();
 
             tbody.innerHTML = list.map(s => {
+                // Find user to get photo
                 const user = allUsersCache.find(u => u.id === s.student_id);
                 const photoUrl = user && user.profile_photo_url ? `${API_ORIGIN}${user.profile_photo_url}` : `https://placehold.co/100x100/f6f7f8/666?text=${s.student_name.charAt(0)}`;
 
@@ -387,38 +378,34 @@
 
                 return `
                 <tr class="border-b border-gray-50 hover:bg-gray-50">
-                    <td class="p-4 w-16">
+                    <td class="px-6 py-4 whitespace-nowrap w-16">
                         <img src="${photoUrl}" class="w-10 h-10 rounded-full object-cover border border-gray-200">
                     </td>
-                    <td class="p-4 font-bold text-slate-800">${s.student_name}</td>
-                    <td class="p-4 text-red-600 font-bold">₹${s.balance}</td>
-                    <td class="p-4 text-sm text-slate-500">${s.due_date}</td>
-                    <td class="p-4 text-xs ${daysClass}">${daysText}</td>
-                    <td class="p-4 text-center">
-                        <button onclick="sendFeeAlert(${s.student_id})" class="bg-amber-100 text-amber-700 p-2 rounded-full hover:bg-amber-200 transition" title="Send SMS">
-                            <span class="material-symbols-outlined text-base">sms</span>
+                    <td class="px-6 py-4 whitespace-nowrap font-bold text-slate-800">${s.student_name}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-red-600 font-bold">₹${s.balance}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${s.due_date}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-xs ${daysClass}">${daysText}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                        <button onclick="sendFeeAlert(${s.student_id})" class="text-amber-500 hover:text-amber-700 transition transform hover:scale-110" title="Send SMS">
+                            <span class="material-symbols-outlined text-2xl">sms</span>
                         </button>
                     </td>
-                    <td class="p-4 text-center">
-                        <button onclick="sendFeeReminderWhatsapp(${s.student_id}, '${s.student_name}')" class="bg-green-100 text-green-700 p-2 rounded-full hover:bg-green-200 transition" title="Send WhatsApp">
-                            <span class="material-symbols-outlined text-base">chat</span>
+                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                        <button onclick="sendFeeReminderWhatsapp(${s.student_id}, '${s.student_name}')" class="text-green-600 hover:text-green-800 transition transform hover:scale-110" title="Send WhatsApp">
+                            <span class="material-symbols-outlined text-2xl">chat</span>
                         </button>
                     </td>
                 </tr>`;
             }).join('');
         } catch(e) { console.error(e); }
     }
-
     // --- 3. UPDATED: Admissions Report (Fixed Logic & Added Photos) ---
-    async function fetchAdmissionsReport() {
+async function fetchAdmissionsReport() {
         const tbody = document.getElementById('admissions-report-body');
         tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center">Loading...</td></tr>';
 
-        // Get filter values from Report Session Filter
+        // Get Session Filter
         const sessionSelect = document.getElementById('report-session-filter');
-        // NOTE: You might need to add a course dropdown for reports specifically if you want to filter reports by course too.
-        // For now, I will use the Global Student Course Filter if it exists, or just filter by Session.
-        
         let sessionStart = null, sessionEnd = null;
         if (sessionSelect && sessionSelect.value) {
             const sess = allSessionsCache.find(s => s.id == sessionSelect.value);
@@ -426,23 +413,17 @@
         }
 
         try {
-            // Fetch all users
             if(!allUsersCache.length) allUsersCache = await (await fetch(`${API_BASE_URL}/users`, {credentials: 'include'})).json();
             
-            // Filter
+            // Filter Logic
             const admissions = allUsersCache.filter(s => {
                 if (s.role !== 'student') return false;
                 
-                // Date Filter
+                // Date Filter (If a session is selected)
                 if (sessionStart && sessionEnd) {
                     const joined = new Date(s.created_at);
                     if (joined < sessionStart || joined > sessionEnd) return false;
                 }
-                
-                // Note: If you want to filter this report by course, you need to check s.course_ids
-                // Currently, the "Reports" section only has a "Session" dropdown in your HTML.
-                // If you want to filter by course here, select the course dropdown value from the student tab (if visible) or add a new one.
-                
                 return true; 
             });
 
@@ -454,13 +435,13 @@
             tbody.innerHTML = admissions.map(a => {
                 const photoUrl = a.profile_photo_url ? `${API_ORIGIN}${a.profile_photo_url}` : `https://placehold.co/100x100/f6f7f8/666?text=${a.name.charAt(0)}`;
                 return `
-                <tr class="border-b border-gray-50">
-                    <td class="p-4 w-16">
+                <tr class="border-b border-gray-50 hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap w-16">
                         <img src="${photoUrl}" class="w-10 h-10 rounded-full object-cover border border-gray-200">
                     </td>
-                    <td class="p-4 font-bold text-slate-800">${a.name}</td>
-                    <td class="p-4 text-sm text-slate-500">${a.email}</td>
-                    <td class="p-4 text-sm text-slate-500">${a.created_at}</td>
+                    <td class="px-6 py-4 whitespace-nowrap font-bold text-slate-800">${a.name}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${a.email}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${a.created_at}</td>
                 </tr>`;
             }).join('');
                 
