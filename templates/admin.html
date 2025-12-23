@@ -94,15 +94,25 @@
                 <h2 class="text-3xl font-bold mb-6">Manage Students</h2>
                 
                 <div class="flex flex-col md:flex-row gap-4 mb-6">
-                    <div class="flex-1">
-                        <input type="text" id="student-search-input" placeholder="Search students..." oninput="window.fetchStudents(this.value)" class="w-full rounded-xl border-gray-300 p-3">
-                    </div>
-                    <div class="w-full md:w-64">
-                        <select id="student-session-filter" onchange="window.fetchStudents()" class="w-full rounded-xl border-gray-300 p-3 bg-white font-bold">
-                            <option value="">Loading Sessions...</option>
-                        </select>
-                    </div>
-                </div>
+    <div class="flex-1">
+        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Search</label>
+        <input type="text" id="student-search-input" placeholder="Search Name, Phone..." oninput="window.fetchStudents()" class="w-full rounded-xl border-gray-300 p-2.5">
+    </div>
+    
+    <div class="w-full md:w-48">
+        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Filter by Course</label>
+        <select id="student-course-filter" onchange="window.fetchStudents()" class="w-full rounded-xl border-gray-300 p-2.5 font-bold text-slate-700">
+            <option value="">All Courses</option>
+            </select>
+    </div>
+
+    <div class="w-full md:w-48">
+        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Filter by Session</label>
+        <select id="student-session-filter" onchange="window.fetchStudents()" class="w-full rounded-xl border-gray-300 p-2.5 font-bold text-slate-700">
+            <option value="">All Time</option>
+            </select>
+    </div>
+</div>
 
                 <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
                     <h3 id="student-form-title" class="text-xl font-bold mb-4">Add/Edit Student</h3>
@@ -283,22 +293,25 @@
     }
 
     // --- STUDENT FETCHING & FILTERING ---
-    window.fetchStudents = async function(term = '') {
+window.fetchStudents = async function(term = '') {
         const tbody = document.getElementById('student-table-body');
         tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center">Loading...</td></tr>';
         
         term = term || document.getElementById('student-search-input')?.value || '';
         const sessionSelect = document.getElementById('student-session-filter');
-        const sessionId = sessionSelect ? sessionSelect.value : '';
+        const courseSelect = document.getElementById('student-course-filter'); // NEW
         
-        // Use cached users if available to speed up search
-        let list = allUsersCache.filter(u => u.role === 'student');
-        if(!list.length) {
+        const sessionId = sessionSelect ? sessionSelect.value : '';
+        const courseId = courseSelect ? courseSelect.value : '';
+
+        // Get users
+        if(!allUsersCache.length) {
              const res = await fetch(`${API_BASE_URL}/users`, {credentials:'include'});
              allUsersCache = await res.json();
-             list = allUsersCache.filter(u => u.role === 'student');
         }
+        let list = allUsersCache.filter(u => u.role === 'student');
 
+        // Session Date Logic
         let sessionStart = null, sessionEnd = null;
         if (sessionId && allSessionsCache.length) {
             const sess = allSessionsCache.find(s => s.id == sessionId);
@@ -306,34 +319,122 @@
         }
 
         const filtered = list.filter(s => {
+            // 1. Text Search
             const matchText = s.name.toLowerCase().includes(term.toLowerCase()) || (s.email||'').toLowerCase().includes(term.toLowerCase());
             if (!matchText) return false;
+
+            // 2. Session Filter (Date Range)
             if (sessionStart && sessionEnd) {
                 const joined = new Date(s.created_at);
-                return joined >= sessionStart && joined <= sessionEnd;
+                if (joined < sessionStart || joined > sessionEnd) return false;
             }
+
+            // 3. Course Filter (Strict Match)
+            if (courseId) {
+                // Check if student's course_ids array includes the selected courseId
+                // Note: Ensure course_ids are numbers or strings to match properly
+                if (!s.course_ids || !s.course_ids.includes(parseInt(courseId))) return false;
+            }
+
             return true;
         });
 
-        if(!filtered.length) { tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center">No students found.</td></tr>'; return; }
+        if(!filtered.length) { tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-400">No students found for this filter.</td></tr>'; return; }
 
         tbody.innerHTML = filtered.map(s => `
             <tr class="border-b border-gray-50 hover:bg-gray-50">
                 <td class="p-4 font-bold">${s.name}<div class="text-xs font-normal text-gray-400">${s.email}</div></td>
                 <td class="p-4 text-sm">${s.phone_number||'-'}</td>
-                <td class="p-4 text-sm">${s.parent_id ? 'Linked' : '-'}</td>
-                <td class="p-4 text-sm">${s.created_at}</td>
-                <td class="p-4 text-center"><button onclick="alert('SMS Sent')" class="text-amber-500 material-symbols-outlined">sms</button></td>
-                <td class="p-4 text-center"><button onclick="alert('WA Sent')" class="text-green-600 material-symbols-outlined">chat</button></td>
+                <td class="p-4 text-sm text-gray-500">${s.parent_id ? 'Linked' : '-'}</td>
+                <td class="p-4 text-sm text-gray-500">${s.created_at}</td>
+                <td class="p-4 text-center"><button onclick="sendQuickSms(${s.id}, '${s.name}')" class="text-amber-500 material-symbols-outlined hover:scale-110 transition">sms</button></td>
+                <td class="p-4 text-center"><button onclick="sendQuickWhatsapp(${s.id}, '${s.name}')" class="text-green-600 material-symbols-outlined hover:scale-110 transition">chat</button></td>
                 <td class="p-4 text-right">
-                    <button onclick="editUser(${s.id}, 'student')" class="text-primary font-bold mr-2">Edit</button>
-                    <button onclick="deleteUser(${s.id})" class="text-red-500 font-bold">Delete</button>
+                    <button onclick="editUser(${s.id}, 'student')" class="text-primary font-bold mr-2 text-sm">Edit</button>
+                    <button onclick="deleteUser(${s.id})" class="text-red-500 font-bold text-sm">Delete</button>
                 </td>
             </tr>`).join('');
     }
 
     window.refreshReports = function() { fetchAdmissions(); fetchAttendance(); fetchPerformance(); }
+async function fetchAdmissionsReport() {
+        const tbody = document.getElementById('admissions-report-body');
+        tbody.innerHTML = '<tr><td colspan="3" class="p-4 text-center">Loading...</td></tr>';
 
+        // Get filter dates
+        const sessionSelect = document.getElementById('report-session-filter');
+        let sessionStart = null, sessionEnd = null;
+        if (sessionSelect && sessionSelect.value) {
+            const sess = allSessionsCache.find(s => s.id == sessionSelect.value);
+            if(sess) { sessionStart = new Date(sess.start_date); sessionEnd = new Date(sess.end_date); }
+        }
+
+        try {
+            // Fetch all students (since API doesn't filter, we filter client side for speed)
+            const students = await (await fetch(`${API_BASE_URL}/users`, {credentials: 'include'})).json();
+            
+            // Filter by Role AND Date
+            const admissions = students.filter(s => {
+                if (s.role !== 'student') return false;
+                if (sessionStart && sessionEnd) {
+                    const joined = new Date(s.created_at);
+                    return joined >= sessionStart && joined <= sessionEnd;
+                }
+                return true; // Show all if no session selected
+            });
+
+            if (admissions.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-center">No admissions found for this session.</td></tr>`;
+                return;
+            }
+            
+            tbody.innerHTML = admissions.map(a => `
+                <tr class="border-b border-gray-50">
+                    <td class="p-4 font-bold text-slate-800">${a.name}</td>
+                    <td class="p-4 text-sm text-slate-500">${a.email}</td>
+                    <td class="p-4 text-sm text-slate-500">${a.created_at}</td>
+                </tr>`).join('');
+                
+        } catch (error) {
+            console.error("Error fetching admissions:", error);
+            tbody.innerHTML = `<tr><td colspan="3" class="text-center text-red-500">Error loading data.</td></tr>`;
+        }
+    }
+async function fetchFeePendingReport() {
+        const tbody = document.getElementById('fee-pending-report-body');
+        if(!tbody) return;
+        tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center">Loading...</td></tr>';
+
+        try {
+            const list = await (await fetch(`${API_BASE_URL}/reports/fee_pending`, {credentials:'include'})).json();
+            
+            if(list.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center">No pending fees found.</td></tr>'; return; }
+
+            tbody.innerHTML = list.map(s => {
+                const isOverdue = s.pending_days < 0;
+                const daysText = isOverdue ? `${Math.abs(s.pending_days)} Days Overdue` : `${s.pending_days} Days Left`;
+                const daysClass = isOverdue ? 'text-red-500 font-bold' : 'text-slate-500';
+
+                return `
+                <tr class="border-b border-gray-50 hover:bg-gray-50">
+                    <td class="p-4 font-bold text-slate-800">${s.student_name}</td>
+                    <td class="p-4 text-red-600 font-bold">₹${s.balance}</td>
+                    <td class="p-4 text-sm text-slate-500">${s.due_date}</td>
+                    <td class="p-4 text-xs ${daysClass}">${daysText}</td>
+                    <td class="p-4 text-center">
+                        <button onclick="sendFeeAlert(${s.student_id})" class="bg-amber-100 text-amber-700 p-2 rounded-full hover:bg-amber-200 transition" title="Send SMS">
+                            <span class="material-symbols-outlined text-base">sms</span>
+                        </button>
+                    </td>
+                    <td class="p-4 text-center">
+                        <button onclick="sendFeeReminderWhatsapp(${s.student_id}, '${s.student_name}')" class="bg-green-100 text-green-700 p-2 rounded-full hover:bg-green-200 transition" title="Send WhatsApp">
+                            <span class="material-symbols-outlined text-base">chat</span>
+                        </button>
+                    </td>
+                </tr>`;
+            }).join('');
+        } catch(e) { console.error(e); }
+    }
     // --- MAIN INITIALIZATION ---
     document.addEventListener('DOMContentLoaded', async () => {
         // 1. Navigation Logic
@@ -412,9 +513,20 @@
 
     async function populateDropdowns() {
         const courses = await (await fetch(`${API_BASE_URL}/courses`, {credentials:'include'})).json();
-        const parents = allUsersCache.filter(u => u.role === 'parent');
+        allCoursesCache = courses; // Ensure cache is updated
+        
+        // 1. Fill Student Form Dropdowns
+        const parents = await (await fetch(`${API_BASE_URL}/users`, {credentials:'include'})).json();
+        const parentList = parents.filter(u => u.role === 'parent');
+        
         document.getElementById('student-course-select').innerHTML = '<option value="">Select Course</option>' + courses.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-        document.getElementById('student-parent-select').innerHTML = '<option value="">Link Parent</option>' + parents.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+        document.getElementById('student-parent-select').innerHTML = '<option value="">Link Parent</option>' + parentList.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+
+        // 2. NEW: Fill the Filter Dropdown
+        const filterSelect = document.getElementById('student-course-filter');
+        if(filterSelect) {
+            filterSelect.innerHTML = '<option value="">All Courses</option>' + courses.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        }
     }
 
     async function populateFeeCourseDropdown() {
