@@ -231,25 +231,21 @@
                 </div>
             </div>
 
-            <div id="content-students" class="content-section hidden">
-                <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">Manage Students</h2>
-                <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6 mb-8">
-                    <h3 id="student-form-title" class="text-xl font-bold mb-4">Add/Edit Student</h3>
-                    <form id="student-form" class="space-y-6" enctype="multipart/form-data">
-                        <input type="hidden" id="student-id" name="id">
-                        <input type="hidden" id="student-role" name="role" value="student">
-                        
-                        <fieldset>
-                            <legend class="text-lg font-semibold text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-700 pb-2 mb-4">Enrollment Details</legend>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div class="form-group md:col-span-1">
-                                    <label for="student-course-select" class="block text-sm font-medium mb-1">Course Enrollment *</label>
-                                    <select id="student-course-select" name="course_ids" required class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800">
-                                        <option value="">Select Course</option>
-                                    </select>
-                                    <p class="text-xs text-red-500 mt-1">Required for Attendance/Reports</p>
-                                </div>
-                            </div>
+<div class="flex flex-col md:flex-row gap-4 mb-6">
+    <div class="flex-1">
+        <label for="student-search-input" class="block text-xs font-bold text-slate-500 uppercase mb-1">Search</label>
+        <div class="relative">
+            <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400">search</span>
+            <input type="text" id="student-search-input" placeholder="Search by Name, Phone, or Email..." class="w-full pl-10 border-slate-300 rounded-xl p-2.5 focus:ring-primary focus:border-primary">
+        </div>
+    </div>
+    <div class="w-full md:w-64">
+        <label for="student-session-filter" class="block text-xs font-bold text-slate-500 uppercase mb-1">Filter by Batch (Session)</label>
+        <select id="student-session-filter" onchange="fetchStudents()" class="w-full border-slate-300 rounded-xl p-2.5 font-medium text-slate-700 bg-white focus:ring-primary focus:border-primary">
+            <option value="">Show All Sessions</option>
+            </select>
+    </div>
+</div>
                         </fieldset>
 
                         <fieldset>
@@ -643,6 +639,16 @@
                 </div>
             </div>
             <div id="content-reports" class="content-section hidden">
+
+    <div class="flex items-center justify-between mb-6">
+        <h2 class="text-3xl font-bold text-slate-900 dark:text-white">Institute Reports</h2>
+        
+        <div class="w-64">
+            <select id="report-session-filter" onchange="refreshReports()" class="w-full border-slate-300 rounded-xl p-2 text-sm font-bold text-slate-700 bg-white shadow-sm">
+                <option value="">All Time (Show All)</option>
+                </select>
+        </div>
+    </div>
     <div class="flex items-center justify-between mb-6">
         <h2 class="text-3xl font-bold text-slate-900 dark:text-white">Institute Reports</h2>
     </div>
@@ -745,6 +751,9 @@
         const searchInput = document.getElementById('student-search-input'); 
         const bulkUploadForm = document.getElementById('bulk-upload-form');
         const adminBulkMessageForm = document.getElementById('admin-bulk-message-form');
+	await checkAuth(); // existing
+        await fetchSessions(); // Make sure sessions are loaded
+        populateSessionFilters(); // <--- ADD THIS LINE
 
         let searchTimeout;
         // --- BULK UPLOAD USERS (CSV) ---
@@ -2021,61 +2030,125 @@ async function fetchAnnouncements(isManagementPage) {
             }
         }
         
-        async function fetchStudents(searchTerm = '') {
-            const tableBody = document.getElementById('student-table-body');
-            tableBody.innerHTML = '<tr><td colspan="7" class="px-6 py-4 text-center">Loading students...</td></tr>';
+        async function populateSessionFilters() {
+        // Wait for sessions to load
+        if (!allSessionsCache.length) {
+            const res = await fetch(`${API_BASE_URL}/sessions`, {credentials: 'include'});
+            allSessionsCache = await res.json();
+        }
+
+        const studentFilter = document.getElementById('student-session-filter');
+        const reportFilter = document.getElementById('report-session-filter');
+        
+        // Helper to create options
+        const createOptions = () => {
+            let opts = '<option value="">Show All (History)</option>';
+            // Sort sessions: Newest first
+            const sortedSessions = [...allSessionsCache].sort((a, b) => new Date(b.start_date) - new Date(a.start_date));
             
-            try {
-                const users = await fetchAllUsers(searchTerm); 
-                const students = users.filter(u => u.role === 'student');
-                
-                tableBody.innerHTML = '';
-                if (students.length === 0) {
-                    tableBody.innerHTML = `<tr><td colspan="7" class="px-6 py-4 text-center">${searchTerm ? 'No students match your search.' : 'No students found.'}</td></tr>`;
-                    return;
-                }
-                
-                const parents = users.filter(u => u.role === 'parent');
-                const parentMap = new Map(parents.map(p => [p.id, p.name]));
-                
-                students.forEach(student => {
-                    const parentName = parentMap.get(student.parent_id) || 'Unlinked';
-                    const isPhoneAvailable = !!student.phone_number;
-                    
-                    tableBody.innerHTML += `
-                        <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${student.name}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${student.email}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${parentName}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${student.phone_number || 'N/A'}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
-                                <button onclick="sendQuickSms(${student.id}, '${student.name}')" class="text-yellow-600 hover:text-yellow-700 disabled:text-slate-400" ${isPhoneAvailable ? '' : 'disabled'}>SMS</button>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
-                                <button onclick="sendQuickWhatsapp(${student.id}, '${student.name}')" class="text-green-600 hover:text-green-700 disabled:text-slate-400" ${isPhoneAvailable ? '' : 'disabled'}>WA</button>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <button onclick="editStudent(${student.id})" class="text-primary hover:text-blue-700 mr-2">Edit</button>
-                                <button onclick="deleteStudent(${student.id})" class="text-red-600 hover:text-red-900">Delete</button>
-                            </td>
-                        </tr>`;
-                });
-            } catch (error) {
-                console.error("Error fetching students:", error);
-                tableBody.innerHTML = `<tr><td colspan="7" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
-            }
-        }
-        
-        // --- Student Search Event Listener (Add this if missing) ---
-        if (searchInput) {
-            searchInput.addEventListener('input', () => {
-                clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(() => {
-                    fetchStudents(searchInput.value.trim());
-                }, 300); // Debounce search
+            sortedSessions.forEach(s => {
+                // Check if this is the "Current" active session
+                const isCurrent = s.status === 'Active';
+                const label = `${s.name} (${s.status})`;
+                // Select active session by default?
+                opts += `<option value="${s.id}" data-start="${s.start_date}" data-end="${s.end_date}">${label}</option>`;
             });
-        }
+            return opts;
+        };
+
+        if (studentFilter) studentFilter.innerHTML = createOptions();
+        if (reportFilter) reportFilter.innerHTML = createOptions();
         
+        // Auto-select the Active session for better UX
+        const activeSession = allSessionsCache.find(s => s.status === 'Active');
+        if (activeSession) {
+            if (studentFilter) studentFilter.value = activeSession.id;
+            if (reportFilter) reportFilter.value = activeSession.id;
+        }
+    }
+
+    // --- 2. UPDATED: Fetch Students with Session Filtering ---
+    async function fetchStudents(term = '') {
+        const tbody = document.getElementById('student-table-body');
+        tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-400">Filtering students...</td></tr>';
+
+        // Get Search Term
+        term = term || document.getElementById('student-search-input')?.value || '';
+        
+        // Get Selected Session
+        const sessionSelect = document.getElementById('student-session-filter');
+        const sessionId = sessionSelect ? sessionSelect.value : '';
+        let sessionStart = null, sessionEnd = null;
+
+        if (sessionId) {
+            const selectedOption = sessionSelect.options[sessionSelect.selectedIndex];
+            sessionStart = new Date(selectedOption.dataset.start);
+            sessionEnd = new Date(selectedOption.dataset.end);
+        }
+
+        // Fetch or use Cache
+        const list = await getUsers('student');
+        
+        // FILTER LOGIC
+        const filtered = list.filter(s => {
+            // 1. Text Search
+            const matchText = s.name.toLowerCase().includes(term.toLowerCase()) || 
+                              (s.phone_number && s.phone_number.includes(term)) ||
+                              s.email.toLowerCase().includes(term.toLowerCase());
+            
+            if (!matchText) return false;
+
+            // 2. Session Filter (Based on Admission Date)
+            if (sessionId && sessionStart && sessionEnd) {
+                const admissionDate = new Date(s.created_at); // API returns 'YYYY-MM-DD'
+                // Check if student joined ON or AFTER session start
+                // We typically include students who joined during the session
+                return admissionDate >= sessionStart && admissionDate <= sessionEnd;
+            }
+            
+            return true;
+        });
+
+        // RENDER
+        if(filtered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-slate-400">No students found for this session/search.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = filtered.map(s => {
+            const parentName = allUsersCache.find(u => u.id === s.parent_id)?.name || '-';
+            return `
+            <tr class="border-b border-gray-50 hover:bg-gray-50 transition">
+                <td class="p-4">
+                    <div class="font-bold text-slate-800">${s.name}</div>
+                    <div class="text-xs text-slate-400">${s.email}</div>
+                </td>
+                <td class="p-4 text-sm text-slate-500">${s.phone_number||'-'}</td>
+                <td class="p-4 text-sm text-slate-500">${parentName}</td>
+                <td class="p-4 text-sm text-slate-500">${s.created_at}</td> <td class="p-4 text-center">
+                    <button onclick="sendQuickSms(${s.id}, '${s.name}')" class="text-amber-500 hover:text-amber-600"><span class="material-symbols-outlined text-lg">sms</span></button>
+                </td>
+                <td class="p-4 text-center">
+                    <button onclick="sendQuickWhatsapp(${s.id}, '${s.name}')" class="text-green-600 hover:text-green-700"><span class="material-symbols-outlined text-lg">chat</span></button>
+                </td>
+                <td class="p-4 text-right">
+                    <button onclick="editUser(${s.id}, 'student')" class="btn-action text-primary border-blue-100 hover:bg-blue-50 mr-2">Edit</button>
+                    <button onclick="deleteUser(${s.id})" class="btn-action text-red-500 border-red-100 hover:bg-red-50">Delete</button>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    // --- 3. UPDATED: Refresh Reports based on Session ---
+    window.refreshReports = function() {
+        // Simply re-call the report fetchers. 
+        // Note: You might need to update fetchAdmissions/fetchAttendance similarly 
+        // to filter by the 'report-session-filter' dates if you want strict reporting.
+        // For now, this connects the UI.
+        fetchAdmissions();
+        fetchAttendance();
+        fetchPerformance();
+    }   
         async function fetchParents() {
             const tableBody = document.getElementById('parent-table-body');
             tableBody.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center">Loading parents...</td></tr>';
