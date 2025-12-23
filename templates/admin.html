@@ -200,7 +200,7 @@
 <div id="content-teachers" class="content-section hidden">
                 <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">Manage Teachers</h2>
                 <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6 mb-8">
-	<h3 id="teacher-form-title" class="text-xl font-bold mb-4">Add/Edit Teacher</h3>
+                    <h3 id="teacher-form-title" class="text-xl font-bold mb-4">Add/Edit Teacher</h3>
                     <form id="teacher-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <input type="hidden" id="teacher-id" name="id">
                         <input type="hidden" id="teacher-role" name="role" value="teacher">
@@ -231,21 +231,38 @@
                 </div>
             </div>
 
-<div class="flex flex-col md:flex-row gap-4 mb-6">
-    <div class="flex-1">
-        <label for="student-search-input" class="block text-xs font-bold text-slate-500 uppercase mb-1">Search</label>
-        <div class="relative">
-            <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400">search</span>
-            <input type="text" id="student-search-input" placeholder="Search by Name, Phone, or Email..." class="w-full pl-10 border-slate-300 rounded-xl p-2.5 focus:ring-primary focus:border-primary">
-        </div>
-    </div>
-    <div class="w-full md:w-64">
-        <label for="student-session-filter" class="block text-xs font-bold text-slate-500 uppercase mb-1">Filter by Batch (Session)</label>
-        <select id="student-session-filter" onchange="fetchStudents()" class="w-full border-slate-300 rounded-xl p-2.5 font-medium text-slate-700 bg-white focus:ring-primary focus:border-primary">
-            <option value="">Show All Sessions</option>
-            </select>
-    </div>
-</div>
+            <div id="content-students" class="content-section hidden">
+                <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">Manage Students</h2>
+                
+                <div class="flex flex-col md:flex-row gap-4 mb-6">
+                    <div class="flex-1">
+                        <label for="student-search-input" class="block text-xs font-bold text-slate-500 uppercase mb-1">Search</label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400">search</span>
+                            <input type="text" id="student-search-input" placeholder="Search by Name, Phone, or Email..." class="w-full pl-10 border-slate-300 rounded-xl p-2.5 focus:ring-primary focus:border-primary">
+                        </div>
+                    </div>
+                    <div class="w-full md:w-64">
+                        <label for="student-session-filter" class="block text-xs font-bold text-slate-500 uppercase mb-1">Filter by Batch (Session)</label>
+                        <select id="student-session-filter" onchange="fetchStudents()" class="w-full border-slate-300 rounded-xl p-2.5 font-medium text-slate-700 bg-white focus:ring-primary focus:border-primary">
+                            <option value="">Show All Sessions</option>
+                            </select>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6 mb-8">
+                    <h3 id="student-form-title" class="text-xl font-bold mb-4">Add/Edit Student</h3>
+                    
+                    <form id="student-form" class="space-y-6">
+                        <input type="hidden" id="student-id" name="id">
+                        <input type="hidden" name="role" value="student">
+
+                        <fieldset>
+                            <legend class="text-lg font-semibold text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-700 pb-2 mb-4">Enrollment Details</legend>
+                            <div class="form-group">
+                                <label for="student-course-select" class="block text-sm font-medium mb-1">Course Enrollment *</label>
+                                <select id="student-course-select" name="course_ids" required class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800"></select>
+                            </div>
                         </fieldset>
 
                         <fieldset>
@@ -285,7 +302,6 @@
                                 <div class="form-group"><label for="student-pincode-input" class="block text-sm font-medium mb-1">Pincode</label><input type="text" id="student-pincode-input" name="pincode" class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800"></div>
                             </div>
                         </fieldset>
-                        
 
                         <fieldset>
                             <legend class="text-lg font-semibold text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-700 pb-2 mb-4">Profile Photo</legend>
@@ -305,11 +321,6 @@
                     </form>
                 </div>
                 <div>
-                    <div class="mb-4">
-                        <label for="student-search-input" class="block text-sm font-medium mb-1">Search Students (by Name, Email, or Phone)</label>
-                        <input type="text" id="student-search-input" placeholder="Start typing to search..." class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800">
-                    </div>
-
                     <h3 class="text-xl font-bold mb-4">Existing Students</h3>
                     <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm overflow-hidden">
                         <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
