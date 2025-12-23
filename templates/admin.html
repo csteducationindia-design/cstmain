@@ -241,9 +241,9 @@
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-8">
                     <form id="course-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <input type="hidden" id="course-id" name="id">
-                        <input type="text" id="course-name" required placeholder="Course Name" class="w-full rounded-xl border-slate-200">
-                        <input type="text" id="course-subjects" required placeholder="Subjects" class="w-full rounded-xl border-slate-200">
-                        <select id="course-teacher" class="w-full rounded-xl border-slate-200 md:col-span-2"></select>
+                        <input type="text" id="course-name" name="name" required placeholder="Course Name" class="w-full rounded-xl border-slate-200">
+                        <input type="text" id="course-subjects" name="subjects" required placeholder="Subjects" class="w-full rounded-xl border-slate-200">
+                        <select id="course-teacher" name="teacher_id" class="w-full rounded-xl border-slate-200 md:col-span-2"></select>
                         <button type="submit" id="save-course-btn" class="bg-primary hover:bg-primary-dark text-white font-bold py-2.5 rounded-xl md:col-span-2">Save Course</button>
                     </form>
                 </div>
@@ -255,10 +255,10 @@
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-8">
                     <form id="session-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <input type="hidden" id="session-id" name="id">
-                        <input type="text" id="session-name" required placeholder="Name (e.g. 2025-26)" class="w-full rounded-xl border-slate-200">
-                        <select id="session-status" class="w-full rounded-xl border-slate-200"><option>Active</option><option>Inactive</option></select>
-                        <input type="date" id="session-start-date" required class="w-full rounded-xl border-slate-200">
-                        <input type="date" id="session-end-date" required class="w-full rounded-xl border-slate-200">
+                        <input type="text" id="session-name" name="name" required placeholder="Name (e.g. 2025-26)" class="w-full rounded-xl border-slate-200">
+                        <select id="session-status" name="status" class="w-full rounded-xl border-slate-200"><option>Active</option><option>Inactive</option></select>
+                        <input type="date" id="session-start-date" name="start_date" required class="w-full rounded-xl border-slate-200">
+                        <input type="date" id="session-end-date" name="end_date" required class="w-full rounded-xl border-slate-200">
                         <button type="submit" id="save-session-btn" class="bg-primary hover:bg-primary-dark text-white font-bold py-2.5 rounded-xl md:col-span-2">Save Session</button>
                     </form>
                 </div>
@@ -269,10 +269,10 @@
                 <h2 class="text-3xl font-bold mb-6">Announcements</h2>
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-8">
                     <form id="announcement-form" class="space-y-4">
-                        <input type="text" id="announcement-title" required placeholder="Title" class="w-full rounded-xl border-slate-200">
-                        <textarea id="announcement-content" required placeholder="Content" class="w-full rounded-xl border-slate-200 h-32"></textarea>
-                        <select id="announcement-target-group" class="w-full rounded-xl border-slate-200"><option value="all">All</option><option value="students">Students</option></select>
-                        <button type="submit" class="bg-primary hover:bg-primary-dark text-white font-bold py-2.5 px-6 rounded-xl">Publish</button>
+                        <input type="text" id="announcement-title" name="title" required placeholder="Title" class="w-full rounded-xl border-slate-200">
+                        <textarea id="announcement-content" name="content" required placeholder="Content" class="w-full rounded-xl border-slate-200 h-32"></textarea>
+                        <select id="announcement-target-group" name="target_group" class="w-full rounded-xl border-slate-200"><option value="all">All</option><option value="students">Students</option></select>
+                        <button type="submit" class="bg-primary hover:bg-primary-dark text-white font-bold py-2.5 px-6 rounded-xl">Publish Announcement</button>
                     </form>
                 </div>
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden"><table class="min-w-full"><tbody id="management-announcements-body"></tbody></table></div>
@@ -306,10 +306,10 @@
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-8">
                         <h3 class="font-bold text-slate-800 mb-4">Receive Payment</h3>
                         <form id="payment-form" class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <select id="payment-student-select" required class="w-full rounded-xl border-slate-200 md:col-span-2 font-medium p-3"></select>
-                            <select id="payment-fee-structure-select" required class="w-full rounded-xl border-slate-200"></select>
-                            <select id="payment-method" required class="w-full rounded-xl border-slate-200"><option>Cash</option><option>Online</option></select>
-                            <input type="number" id="payment-amount" placeholder="Amount Paid (₹)" required class="w-full rounded-xl border-emerald-500 text-emerald-700 font-bold">
+                            <select id="payment-student-select" name="student_id" required class="w-full rounded-xl border-slate-200 md:col-span-2 font-medium p-3"></select>
+                            <select id="payment-fee-structure-select" name="fee_structure_id" required class="w-full rounded-xl border-slate-200"></select>
+                            <select id="payment-method" name="payment_method" required class="w-full rounded-xl border-slate-200"><option>Cash</option><option>Online</option></select>
+                            <input type="number" id="payment-amount" name="amount_paid" placeholder="Amount Paid (₹)" required class="w-full rounded-xl border-emerald-500 text-emerald-700 font-bold">
                             <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl md:col-span-2 shadow-lg shadow-emerald-100">Record & Print Receipt</button>
                         </form>
                     </div>
@@ -392,6 +392,40 @@
         ['admissions', 'attendance', 'performance'].forEach(r => document.getElementById(`tab-rep-${r}`).className = "px-5 py-2 rounded-lg font-medium text-slate-500 hover:text-slate-800 transition");
         document.getElementById(`tab-rep-${reportName}`).className = "px-5 py-2 rounded-lg font-bold bg-slate-100 text-slate-800 shadow-sm transition";
     }
+
+    // --- COMMUNICATION FUNCTIONS (RESTORED) ---
+    window.sendQuickSms = async (id, name) => {
+        if(!confirm(`Send SMS reminder to ${name}?`)) return;
+        try {
+            const res = await fetch(`${API_BASE_URL}/send_sms/${id}`, {method: 'POST', credentials: 'include'});
+            if(res.ok) alert("SMS Sent Successfully!"); else alert("Failed to send SMS.");
+        } catch(e) { console.error(e); alert("Error sending SMS"); }
+    };
+
+    window.sendQuickWhatsapp = async (id, name) => {
+        if(!confirm(`Send WhatsApp reminder to ${name}?`)) return;
+        try {
+            const res = await fetch(`${API_BASE_URL}/send_whatsapp/${id}`, {method: 'POST', credentials: 'include'});
+            if(res.ok) alert("WhatsApp Sent Successfully!"); else alert("Failed to send WhatsApp.");
+        } catch(e) { console.error(e); alert("Error sending WhatsApp"); }
+    };
+
+    window.sendFeeAlert = async (id) => {
+        if(!confirm("Send Fee Pending SMS?")) return;
+        try {
+            // Using a generic SMS endpoint. If you have a specific fee endpoint, update this path.
+            const res = await fetch(`${API_BASE_URL}/send_sms/${id}?type=fee`, {method: 'POST', credentials: 'include'});
+            if(res.ok) alert("Fee Reminder SMS Sent!"); else alert("Failed to send.");
+        } catch(e) { console.error(e); alert("Error sending SMS"); }
+    };
+
+    window.sendFeeReminderWhatsapp = async (id, name) => {
+        if(!confirm(`Send Fee Pending WhatsApp to ${name}?`)) return;
+        try {
+            const res = await fetch(`${API_BASE_URL}/send_whatsapp/${id}?type=fee`, {method: 'POST', credentials: 'include'});
+            if(res.ok) alert("Fee Reminder WhatsApp Sent!"); else alert("Failed to send.");
+        } catch(e) { console.error(e); alert("Error sending WhatsApp"); }
+    };
 
     // --- FETCH STUDENTS (Fixed Filtering & Photo) ---
     window.fetchStudents = async function(term = '') {
@@ -509,7 +543,6 @@
     // --- MAIN INITIALIZATION ---
     document.addEventListener('DOMContentLoaded', async () => {
         const sections = document.querySelectorAll('.content-section');
-        const navLinks = document.querySelectorAll('.nav-link');
         
         function showSection(hash) {
             sections.forEach(s => s.classList.add('hidden'));
@@ -648,7 +681,7 @@
     }
     window.refreshReports = function() { fetchAdmissionsReport(); }
 
-    // --- FORM SETUP ---
+    // --- FORM SETUP (FIXED) ---
     function setupForms() {
         const forms = { 'student-form': '/users', 'teacher-form': '/users', 'parent-form': '/users', 'course-form': '/courses', 'session-form': '/sessions', 'announcement-form': '/announcements', 'fee-structure-form': '/fee_structures', 'payment-form': '/payments' };
         
