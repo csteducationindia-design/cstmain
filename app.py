@@ -17,6 +17,10 @@ from sqlalchemy import or_, inspect, text
 import firebase_admin
 from firebase_admin import credentials, messaging
 import logging
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # =========================================================
 # CONFIGURATION & SETUP
@@ -27,7 +31,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__, template_folder='templates')
-app.config['SECRET_KEY'] = 'a_very_secret_key_that_should_be_changed_in_production'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'a_very_secret_key_that_should_be_changed_in_production')
 CORS(app, supports_credentials=True)
 
 # Email Configuration
@@ -103,7 +107,6 @@ def init_firebase():
 
             # --- THE CRITICAL FIX ---
             # The Private Key must have REAL newlines, not string "\n" characters.
-            # We fix this AFTER parsing the JSON to avoid breaking the file format.
             if 'private_key' in cred_dict:
                 cred_dict['private_key'] = cred_dict['private_key'].replace('\\n', '\n')
             # ------------------------
@@ -430,7 +433,12 @@ def send_fee_alert_sms(user, balance, due_date):
 
 def process_bulk_users(file_stream):
     """Parses CSV and creates users."""
-    stream = StringIO(file_stream.decode('utf-8'))
+    # Use utf-8-sig to handle potential BOM from Excel
+    try:
+        stream = StringIO(file_stream.decode('utf-8-sig'))
+    except UnicodeDecodeError:
+        stream = StringIO(file_stream.decode('utf-8', errors='ignore'))
+        
     reader = csv.DictReader(stream)
     users_added = []
     users_failed = []
@@ -473,7 +481,12 @@ def process_bulk_users(file_stream):
                 users_added.append(row['email'])
             except Exception as e: users_failed.append(f"{row['email']}: {e}")
     
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return {"added": [], "failed": [f"Database Commit Error: {str(e)}"]}
+        
     return {"added": users_added, "failed": users_failed}
 
 # =========================================================
@@ -553,19 +566,26 @@ def api_users():
                 uid = f"{uuid.uuid4()}{os.path.splitext(fn)[1]}"
                 f.save(os.path.join(app.config['UPLOAD_FOLDER'], uid))
                 photo_url = f"/uploads/{uid}"
-
+        
+        # Handle empty parent_id
+        pid = d.get('parent_id')
+        if pid and pid.strip() == '': pid = None
+        
         u = User(name=d['name'], email=d['email'], password=pw, role=d['role'], phone_number=d.get('phone_number'), 
-                 parent_id=d.get('parent_id'), profile_photo_url=photo_url, dob=d.get('dob'), gender=d.get('gender'),
+                 parent_id=pid, profile_photo_url=photo_url, dob=d.get('dob'), gender=d.get('gender'),
                  father_name=d.get('father_name'), mother_name=d.get('mother_name'), address_line1=d.get('address_line1'),
                  city=d.get('city'), state=d.get('state'), pincode=d.get('pincode'))
         db.session.add(u)
         
+        # Handle comma-separated course IDs
         if u.role == 'student' and d.get('course_ids'):
             try:
-                cid = int(d.get('course_ids'))
-                c = db.session.get(Course, cid)
-                if c: u.courses_enrolled.append(c)
-            except: pass
+                cids = [int(x) for x in d.get('course_ids').split(',') if x.strip().isdigit()]
+                for cid in cids:
+                    c = db.session.get(Course, cid)
+                    if c: u.courses_enrolled.append(c)
+            except Exception as e:
+                logger.error(f"Error adding courses: {e}")
             
         db.session.commit()
         return jsonify(u.to_dict()), 201
@@ -587,16 +607,23 @@ def api_users():
         u.state = d.get('state', u.state)
         u.pincode = d.get('pincode', u.pincode)
         
-        if d.get('parent_id'): u.parent_id = int(d.get('parent_id'))
+        if d.get('parent_id') and d.get('parent_id').strip():
+            u.parent_id = int(d.get('parent_id'))
+        elif 'parent_id' in d and not d.get('parent_id').strip():
+            u.parent_id = None
+            
         if d.get('password'): u.password = bcrypt.generate_password_hash(d.get('password')).decode('utf-8')
         
-        if u.role == 'student' and d.get('course_ids'):
+        if u.role == 'student' and 'course_ids' in d:
+            # Clear existing and add new list
             u.courses_enrolled = []
             try:
-                cid = int(d.get('course_ids'))
-                c = db.session.get(Course, cid)
-                if c: u.courses_enrolled.append(c)
-            except: pass
+                cids = [int(x) for x in d.get('course_ids').split(',') if x.strip().isdigit()]
+                for cid in cids:
+                    c = db.session.get(Course, cid)
+                    if c: u.courses_enrolled.append(c)
+            except Exception as e:
+                logger.error(f"Error updating courses: {e}")
             
         db.session.commit()
         return jsonify(u.to_dict()), 200
@@ -692,7 +719,18 @@ def manage_announcements():
         db.session.commit()
         
         # Notify
-        users = User.query.all() if d['target_group'] == 'all' else User.query.filter_by(role=d['target_group'][:-1]).all()
+        # Logic fix: Handle plurals if sent by frontend
+        role_map = {'students': 'student', 'teachers': 'teacher', 'parents': 'parent'}
+        
+        target_role = d['target_group']
+        # If target_group is 'students', map to 'student'. If 'student', keep 'student'.
+        target_role = role_map.get(target_role.lower(), target_role)
+
+        if target_role == 'all':
+             users = User.query.all()
+        else:
+             users = User.query.filter_by(role=target_role).all()
+
         for u in users: send_push_notification(u.id, d['title'], d['content'][:100])
         
         return jsonify(a.to_dict()), 201
@@ -796,7 +834,11 @@ def manual_sms():
 def bulk_notify():
     if current_user.role != 'admin': return jsonify({"msg": "Denied"}), 403
     d = request.json
-    users = User.query.all() if d['target_role'] == 'all' else User.query.filter_by(role=d['target_role'][:-1]).all()
+    
+    role_map = {'students': 'student', 'teachers': 'teacher', 'parents': 'parent'}
+    target_role = role_map.get(d['target_role'].lower(), d['target_role'])
+    
+    users = User.query.all() if target_role == 'all' else User.query.filter_by(role=target_role).all()
     
     count = 0
     for u in users:
@@ -1031,6 +1073,7 @@ def check_and_upgrade_db():
     except Exception as e: print(f"Migration Error: {e}")
 
 def initialize_database():
+
     with app.app_context():
         db.create_all()
         check_and_upgrade_db()
