@@ -1,12 +1,16 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full bg-slate-100">
+<html lang="en" class="h-full bg-gray-50">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
     <title>Student Portal</title>
     <link rel="manifest" href="/static/manifest.json">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet" />
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -20,18 +24,29 @@
     </script>
     <style>
         .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        .material-symbols-rounded { font-size: 24px; }
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+        
+        /* Toast Notification Animation */
+        @keyframes slideIn {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .toast-enter { animation: slideIn 0.3s ease-out forwards; }
     </style>
 </head>
-<body class="h-full bg-slate-100 text-slate-900 font-sans selection:bg-blue-100 flex justify-center">
+<body class="h-full bg-gray-50 text-gray-900 font-sans selection:bg-blue-100">
 
-<div id="app-container" class="w-full max-w-md bg-white h-full relative shadow-2xl flex flex-col hidden sm:border-x sm:border-slate-200">
+<div id="toast-container" class="fixed top-4 left-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+<div id="app-container" class="max-w-md mx-auto min-h-screen bg-gray-50 relative shadow-2xl flex flex-col hidden">
     
-    <header class="bg-blue-600 text-white p-4 sticky top-0 z-30 shadow-md flex justify-between items-center">
-        <h1 id="header-title" class="text-lg font-bold tracking-tight">Student Portal</h1>
+    <header class="bg-blue-600 text-white p-4 sticky top-0 z-30 shadow-md flex justify-between items-center transition-all">
+        <h1 id="header-title" class="text-xl font-bold tracking-tight">Student Portal</h1>
         <button onclick="switchView('notifications')" class="relative p-2 rounded-full hover:bg-blue-700 transition-colors">
             <span class="material-symbols-rounded">notifications</span>
-            <span id="notif-badge" class="hidden absolute top-2 right-2 bg-red-500 w-2 h-2 rounded-full"></span>
+            <span id="notif-badge" class="hidden absolute top-2 right-2 bg-red-500 text-white text-[10px] font-bold w-2.5 h-2.5 flex items-center justify-center rounded-full"></span>
         </button>
     </header>
 
@@ -41,11 +56,12 @@
             <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-3xl p-6 text-white shadow-lg shadow-blue-200 mb-6 relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-xl"></div>
                 <div class="flex items-center gap-4 mb-6 relative z-10">
-                    <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center text-2xl font-bold border-2 border-white/30 backdrop-blur-sm">
-                        <span id="dash-profile-initial">S</span>
+                    <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center text-2xl font-bold border-2 border-white/30 backdrop-blur-sm overflow-hidden">
+                        <img id="dash-profile-img" src="" alt="Profile" class="w-full h-full object-cover hidden">
+                        <span id="dash-profile-initial">U</span>
                     </div>
                     <div>
-                        <h2 class="text-2xl font-bold leading-tight">Hi, <span id="dash-name">Student</span></h2>
+                        <h2 class="text-2xl font-bold leading-tight">Hi, <span id="dash-name">Student</span>!</h2>
                         <p id="dash-email" class="text-blue-100 text-sm font-medium opacity-90 truncate max-w-[150px]">...</p>
                     </div>
                 </div>
@@ -61,195 +77,625 @@
                 </div>
             </div>
 
+            <button id="enable-notif-btn" class="hidden w-full bg-indigo-100 text-indigo-700 p-4 rounded-2xl mb-6 flex items-center justify-between shadow-sm border border-indigo-200" onclick="requestNotificationPermission()">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-rounded">notifications_active</span>
+                    <div class="text-left">
+                        <p class="font-bold text-sm">Enable Notifications</p>
+                        <p class="text-xs opacity-80">Get alerts for notes & attendance</p>
+                    </div>
+                </div>
+                <span class="material-symbols-rounded">arrow_forward</span>
+            </button>
+
             <div class="grid grid-cols-2 gap-4 mb-6">
-                <button onclick="switchView('academics')" class="bg-slate-50 p-5 rounded-2xl border border-slate-100 flex flex-col items-center justify-center gap-2 hover:bg-slate-100 transition-all">
-                    <div class="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center text-orange-600"><span class="material-symbols-rounded">description</span></div>
-                    <span class="font-bold text-slate-700 text-sm">Notes</span>
+                <button onclick="switchView('academics')" class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 hover:bg-gray-50 transition-all group">
+                    <div class="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center text-orange-500 group-hover:scale-110 transition-transform">
+                        <span class="material-symbols-rounded">description</span>
+                    </div>
+                    <span class="font-bold text-gray-700 text-base">Notes</span>
                 </button>
-                <button onclick="switchView('results')" class="bg-slate-50 p-5 rounded-2xl border border-slate-100 flex flex-col items-center justify-center gap-2 hover:bg-slate-100 transition-all">
-                    <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center text-purple-600"><span class="material-symbols-rounded">assignment_turned_in</span></div>
-                    <span class="font-bold text-slate-700 text-sm">Results</span>
+                <button onclick="switchView('results')" class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 hover:bg-gray-50 transition-all group">
+                    <div class="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center text-purple-500 group-hover:scale-110 transition-transform">
+                        <span class="material-symbols-rounded">assignment_turned_in</span>
+                    </div>
+                    <span class="font-bold text-gray-700 text-base">Results</span>
                 </button>
             </div>
 
-            <div id="fee-alert" class="hidden bg-red-50 p-4 rounded-2xl border border-red-100 flex gap-4 items-center">
-                <span class="material-symbols-rounded text-red-500">warning</span>
-                <p id="fee-alert-text" class="text-sm text-red-700 font-medium">Please clear your dues.</p>
+            <div id="fee-alert" class="hidden bg-red-50 p-5 rounded-2xl border border-red-100 flex gap-4">
+                <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center text-red-500 flex-shrink-0">
+                    <span class="material-symbols-rounded">attach_money</span>
+                </div>
+                <div>
+                    <h4 class="font-bold text-red-900 mb-1">Fee Payment Pending</h4>
+                    <p id="fee-alert-text" class="text-sm text-red-600 leading-snug">Please clear your dues.</p>
+                </div>
             </div>
         </div>
 
-        <div id="view-academics" class="view-section hidden">
-            <h3 class="font-bold text-slate-800 text-lg mb-4">Study Material</h3>
-            <div id="notes-list" class="space-y-4"></div>
+        <div id="view-academics" class="view-section hidden animate-fade">
+            <div class="bg-blue-600 rounded-2xl p-6 text-white shadow-lg shadow-blue-200 mb-6">
+                <h2 class="text-2xl font-bold mb-1">Study Material</h2>
+                <p class="text-blue-100 font-medium text-sm">Download notes shared by your teachers.</p>
+            </div>
+            <div id="notes-list" class="space-y-4">
+                <div class="text-center py-10 text-gray-400">Loading notes...</div>
+            </div>
         </div>
 
-        <div id="view-results" class="view-section hidden">
-            <h3 class="font-bold text-slate-800 text-lg mb-4">Exam Results</h3>
-            <div id="grades-list" class="space-y-4"></div>
+        <div id="view-results" class="view-section hidden animate-fade">
+            <div class="flex items-center gap-3 text-gray-800 mb-6">
+                <span class="material-symbols-rounded text-blue-600">assignment_turned_in</span>
+                <h3 class="font-bold text-xl">Exam Results</h3>
+            </div>
+            <div id="grades-list" class="space-y-4">
+                <div class="text-center py-10 text-gray-400">Loading results...</div>
+            </div>
         </div>
 
-        <div id="view-attendance" class="view-section hidden">
-            <h3 class="font-bold text-slate-800 text-lg mb-4">Attendance History</h3>
-            <div id="attendance-list" class="space-y-4"></div>
+        <div id="view-attendance" class="view-section hidden animate-fade">
+            <div class="flex items-center gap-3 text-gray-800 mb-6">
+                <span class="material-symbols-rounded text-blue-600">calendar_month</span>
+                <h3 class="font-bold text-xl">Attendance History</h3>
+            </div>
+            <div id="attendance-list" class="space-y-4">
+                <div class="text-center py-10 text-gray-400">Loading attendance...</div>
+            </div>
         </div>
 
-        <div id="view-notifications" class="view-section hidden">
-            <h3 class="font-bold text-slate-800 text-lg mb-4">Announcements</h3>
-            <div id="notifications-list" class="space-y-4"></div>
+        <div id="view-notifications" class="view-section hidden animate-fade">
+            <h3 class="font-bold text-gray-800 text-xl mb-6">Announcements</h3>
+            <div id="notifications-list" class="space-y-4">
+                <div class="text-center py-10 text-gray-400">No new announcements.</div>
+            </div>
         </div>
-        
-         <div id="view-profile" class="view-section hidden pt-8 text-center">
-             <div class="w-24 h-24 bg-slate-200 rounded-full mx-auto flex items-center justify-center text-4xl text-slate-500 mb-4 font-bold" id="profile-view-initial">S</div>
-             <h2 id="profile-view-name" class="text-xl font-bold">Student Name</h2>
-             <p id="profile-view-email" class="text-slate-500 text-sm mb-8">student@example.com</p>
-             <button id="logout-btn" class="w-full py-3 text-red-600 font-bold bg-red-50 rounded-xl">Sign Out</button>
-         </div>
+
+        <div id="view-profile" class="view-section hidden animate-fade flex flex-col items-center pt-8">
+            <div class="w-28 h-28 bg-gray-100 rounded-full flex items-center justify-center text-4xl font-bold text-gray-400 mb-6 overflow-hidden border-4 border-white shadow-xl">
+                <img id="profile-view-img" src="" alt="Profile" class="w-full h-full object-cover hidden">
+                <span id="profile-view-initial">U</span>
+            </div>
+            
+            <h2 id="profile-view-name" class="text-2xl font-bold text-gray-800 mb-1 text-center">Student Name</h2>
+            <p id="profile-view-email" class="text-gray-500 text-sm uppercase tracking-wide font-medium mb-8 text-center">STUDENT</p>
+            
+            <div class="w-full bg-blue-50 p-8 rounded-3xl mb-8 text-center border border-blue-100">
+                <h3 class="text-xs font-bold text-blue-400 uppercase mb-2 tracking-widest">Total Fee Balance</h3>
+                <p id="profile-view-balance" class="text-4xl font-bold text-gray-800">...</p>
+            </div>
+
+            <button id="logout-btn" class="flex items-center gap-2 text-red-500 font-bold hover:bg-red-50 px-6 py-3 rounded-xl transition-colors w-full justify-center">
+                <span class="material-symbols-rounded">logout</span>
+                Sign Out
+            </button>
+            
+            <div id="install-pwa-area" class="mt-4 w-full hidden">
+                <button id="install-app-btn" class="flex items-center gap-2 text-green-600 font-bold bg-green-50 hover:bg-green-100 px-6 py-3 rounded-xl transition-colors w-full justify-center">
+                    <span class="material-symbols-rounded">download</span>
+                    Install App
+                </button>
+            </div>
+
+            <p class="mt-auto text-xs text-gray-300 pt-8 pb-4">CST Institute App v2.1</p>
+        </div>
 
     </main>
 
-    <nav class="bg-white border-t border-slate-200 fixed bottom-0 w-full max-w-md pb-safe pt-2 px-6 flex justify-between items-center z-40 h-16">
+    <nav class="bg-white border-t border-gray-200 fixed bottom-0 w-full max-w-md pb-safe pt-2 px-6 flex justify-between items-center z-40 h-16 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
         <button onclick="switchView('dashboard')" class="nav-btn flex flex-col items-center justify-center w-full h-full space-y-1 text-blue-600" data-target="dashboard">
-            <span class="material-symbols-rounded text-2xl">home</span>
+            <span class="material-symbols-rounded text-[26px]">home</span>
             <span class="text-[10px] font-medium">Home</span>
         </button>
-        <button onclick="switchView('academics')" class="nav-btn flex flex-col items-center justify-center w-full h-full space-y-1 text-gray-400" data-target="academics">
-            <span class="material-symbols-rounded text-2xl">menu_book</span>
+        <button onclick="switchView('academics')" class="nav-btn flex flex-col items-center justify-center w-full h-full space-y-1 text-gray-400 hover:text-gray-600" data-target="academics">
+            <span class="material-symbols-rounded text-[26px]">menu_book</span>
             <span class="text-[10px] font-medium">Learn</span>
         </button>
-        <button onclick="switchView('attendance')" class="nav-btn flex flex-col items-center justify-center w-full h-full space-y-1 text-gray-400" data-target="attendance">
-            <span class="material-symbols-rounded text-2xl">calendar_month</span>
+        <button onclick="switchView('results')" class="nav-btn flex flex-col items-center justify-center w-full h-full space-y-1 text-gray-400 hover:text-gray-600" data-target="results">
+            <span class="material-symbols-rounded text-[26px]">assignment</span>
+            <span class="text-[10px] font-medium">Results</span>
+        </button>
+        <button onclick="switchView('attendance')" class="nav-btn flex flex-col items-center justify-center w-full h-full space-y-1 text-gray-400 hover:text-gray-600" data-target="attendance">
+            <span class="material-symbols-rounded text-[26px]">calendar_month</span>
             <span class="text-[10px] font-medium">Attend</span>
         </button>
-        <button onclick="switchView('profile')" class="nav-btn flex flex-col items-center justify-center w-full h-full space-y-1 text-gray-400" data-target="profile">
-            <span class="material-symbols-rounded text-2xl">person</span>
+        <button onclick="switchView('profile')" class="nav-btn flex flex-col items-center justify-center w-full h-full space-y-1 text-gray-400 hover:text-gray-600" data-target="profile">
+            <span class="material-symbols-rounded text-[26px]">person</span>
             <span class="text-[10px] font-medium">Profile</span>
         </button>
     </nav>
 </div>
 
-<div id="loading-screen" class="fixed inset-0 bg-blue-600 z-50 flex items-center justify-center text-white"><div class="animate-pulse font-bold">Loading...</div></div>
+<div id="loading-screen" class="fixed inset-0 bg-blue-600 z-50 flex flex-col items-center justify-center text-white transition-opacity duration-500">
+    <div class="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin mb-4"></div>
+    <p class="font-medium animate-pulse" id="loading-text">Loading Student Portal...</p>
+</div>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
+
 <script>
+    // --- APP CONFIGURATION ---
     const API_ORIGIN = window.location.origin;
     const API_BASE_URL = API_ORIGIN + '/api';
+    
+    // --- DOM ELEMENTS ---
+    const appContainer = document.getElementById('app-container');
+    const loadingScreen = document.getElementById('loading-screen');
+    const headerTitle = document.getElementById('header-title');
+    const navButtons = document.querySelectorAll('.nav-btn');
+    const viewSections = document.querySelectorAll('.view-section');
+    const toastContainer = document.getElementById('toast-container');
 
+    // --- SAFETY TIMER ---
+    setTimeout(() => {
+        if (!loadingScreen.classList.contains('hidden')) {
+            console.warn("Forcing app load after timeout");
+            loadingScreen.classList.add('hidden');
+            appContainer.classList.remove('hidden');
+        }
+    }, 5000);
+
+    // --- INITIALIZATION ---
     document.addEventListener('DOMContentLoaded', () => {
         checkSession();
+        setupPWA();
     });
 
+    // --- NAVIGATION LOGIC ---
     window.switchView = function(viewId) {
-        document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
-        document.getElementById(`view-${viewId}`).classList.remove('hidden');
-        document.querySelectorAll('.nav-btn').forEach(btn => {
-            btn.classList.toggle('text-blue-600', btn.dataset.target === viewId);
-            btn.classList.toggle('text-gray-400', btn.dataset.target !== viewId);
+        const titles = {
+            'dashboard': 'Student Portal',
+            'academics': 'Academics',
+            'results': 'Exam Results',
+            'attendance': 'Attendance',
+            'profile': 'My Profile',
+            'notifications': 'Notifications'
+        };
+        if(headerTitle) headerTitle.textContent = titles[viewId] || 'Student Portal';
+
+        viewSections.forEach(el => el.classList.add('hidden'));
+        const target = document.getElementById(`view-${viewId}`);
+        if(target) target.classList.remove('hidden');
+
+        navButtons.forEach(btn => {
+            const icon = btn.querySelector('.material-symbols-rounded');
+            
+            if (btn.dataset.target === viewId) {
+                btn.classList.remove('text-gray-400');
+                btn.classList.add('text-blue-600');
+                if(icon) icon.style.fontVariationSettings = "'FILL' 1, 'wght' 600";
+            } else {
+                btn.classList.add('text-gray-400');
+                btn.classList.remove('text-blue-600');
+                if(icon) icon.style.fontVariationSettings = "'FILL' 0, 'wght' 400";
+            }
         });
-        
+
+        const mainContent = document.getElementById('main-content');
+        if(mainContent) mainContent.scrollTop = 0;
+
+        // Trigger data loads
         if (viewId === 'academics') fetchNotes();
         if (viewId === 'results') fetchGrades();
         if (viewId === 'attendance') fetchAttendance();
         if (viewId === 'notifications') fetchAnnouncements();
     };
 
+    // --- AUTHENTICATION ---
     async function checkSession() {
         try {
-            const res = await fetch(`${API_ORIGIN}/api/check_session`, { credentials: 'include' });
-            const data = await res.json();
-            if (data.logged_in && data.user.role === 'student') {
-                initApp(data.user);
+            const response = await fetch(`${API_ORIGIN}/api/check_session`, { credentials: 'include' });
+            if (!response.ok) throw new Error('Session invalid');
+            
+            const result = await response.json();
+
+            if (result.logged_in && result.user.role === 'student') {
+                initApp(result.user);
             } else {
                 window.location.href = API_ORIGIN + '/';
             }
-        } catch (e) { window.location.href = API_ORIGIN + '/'; }
+        } catch (error) {
+            console.error('Session check failed', error);
+            window.location.href = API_ORIGIN + '/';
+        }
     }
 
     async function initApp(user) {
-        document.getElementById('loading-screen').classList.add('hidden');
-        document.getElementById('app-container').classList.remove('hidden');
-        
-        document.getElementById('dash-name').textContent = user.name.split(' ')[0];
-        document.getElementById('dash-email').textContent = user.email;
-        document.getElementById('dash-profile-initial').textContent = user.name.charAt(0);
-        document.getElementById('profile-view-name').textContent = user.name;
-        document.getElementById('profile-view-email').textContent = user.email;
-        document.getElementById('profile-view-initial').textContent = user.name.charAt(0);
-
-        fetchFees();
-        fetchAttendanceSummary();
-    }
-    
-    async function fetchFees() {
-        const res = await fetch(`${API_BASE_URL}/student/fees`, { credentials: 'include' });
-        const d = await res.json();
-        document.getElementById('dash-fees').textContent = '₹' + d.balance;
-        if(d.balance > 0) {
-             document.getElementById('fee-alert').classList.remove('hidden');
-             document.getElementById('fee-alert-text').textContent = `Pending Fees: ₹${d.balance}`;
+        try {
+            updateProfileUI(user);
+            await Promise.allSettled([fetchFees(), fetchAttendanceSummary()]);
+        } catch (error) {
+            console.error("Initialization error:", error);
+        } finally {
+            if(loadingScreen) loadingScreen.classList.add('hidden');
+            if(appContainer) appContainer.classList.remove('hidden');
+            
+            // Check Notification Permission
+            if (Notification.permission !== 'granted') {
+                document.getElementById('enable-notif-btn').classList.remove('hidden');
+            } else {
+                initFirebase();
+            }
         }
     }
-    
+
+    // --- UI UPDATERS ---
+    function updateProfileUI(user) {
+        if (!user) return;
+        const initial = user.name ? user.name.charAt(0).toUpperCase() : 'U';
+        const photoUrl = user.profile_photo_url ? `${API_ORIGIN}${user.profile_photo_url}` : null;
+
+        const safeSetText = (id, text) => {
+            const el = document.getElementById(id);
+            if(el) el.textContent = text;
+        };
+
+        safeSetText('dash-name', user.name ? user.name.split(' ')[0] : 'Student');
+        safeSetText('dash-email', user.email);
+        safeSetText('dash-profile-initial', initial);
+        safeSetText('profile-view-name', user.name);
+        safeSetText('profile-view-email', `${user.role} • ${user.email}`);
+        safeSetText('profile-view-initial', initial);
+
+        const imgIds = ['dash-profile-img', 'profile-view-img'];
+        const txtIds = ['dash-profile-initial', 'profile-view-initial'];
+
+        if (photoUrl) {
+            imgIds.forEach(id => {
+                const img = document.getElementById(id);
+                if(img) { img.src = photoUrl; img.classList.remove('hidden'); }
+            });
+            txtIds.forEach(id => {
+                const txt = document.getElementById(id);
+                if(txt) txt.classList.add('hidden');
+            });
+        }
+    }
+
+    // --- NOTIFICATION TOAST LOGIC ---
+    function showToast(payload) {
+        const title = payload.notification.title;
+        const body = payload.notification.body;
+        
+        const toast = document.createElement('div');
+        toast.className = 'toast-enter pointer-events-auto bg-white border border-blue-100 shadow-lg rounded-2xl p-4 flex items-start gap-3 w-full max-w-sm transform transition-all duration-300';
+        toast.innerHTML = `
+            <div class="bg-blue-100 text-blue-600 rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-rounded text-sm">notifications</span>
+            </div>
+            <div class="flex-1">
+                <h4 class="text-sm font-bold text-gray-900">${title}</h4>
+                <p class="text-xs text-gray-500 mt-0.5">${body}</p>
+            </div>
+            <button onclick="this.parentElement.remove()" class="text-gray-400 hover:text-gray-600">
+                <span class="material-symbols-rounded text-lg">close</span>
+            </button>
+        `;
+        
+        toastContainer.appendChild(toast);
+        
+        // Auto remove after 5s
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(-10px)';
+            setTimeout(() => toast.remove(), 300);
+        }, 5000);
+        
+        // Refresh views if applicable
+        if (title.toLowerCase().includes('attendance')) fetchAttendance();
+        if (title.toLowerCase().includes('note')) fetchNotes();
+    }
+
+
+// --- REPLACE YOUR EXISTING fetchFees FUNCTION WITH THIS ---
+    async function fetchFees() {
+        try {
+            // Updated to call the new calculation endpoint
+            const res = await fetch(`${API_BASE_URL}/student/balance`, { credentials: 'include' });
+            if (!res.ok) return;
+            const data = await res.json();
+            
+            const balance = data.balance || 0;
+            
+            // 1. Update Dashboard Card
+            const dashFees = document.getElementById('dash-fees');
+            if(dashFees) dashFees.textContent = `₹${balance}`;
+            
+            // 2. Update Profile View Balance
+            const profileBal = document.getElementById('profile-view-balance');
+            if(profileBal) {
+                profileBal.textContent = `₹${balance}`;
+                // Red if they owe money, Green if paid
+                profileBal.className = balance > 0 
+                    ? "text-4xl font-bold text-red-500" 
+                    : "text-4xl font-bold text-green-600";
+            }
+
+            // 3. Show Alert on Dashboard if Fees Pending
+            const alertBox = document.getElementById('fee-alert');
+            const alertText = document.getElementById('fee-alert-text');
+            if(alertBox && alertText) {
+                if (balance > 0) {
+                    alertBox.classList.remove('hidden');
+                    alertText.innerHTML = `You have a total pending balance of <span class="font-bold">₹${balance}</span>.`;
+                } else {
+                    alertBox.classList.add('hidden');
+                }
+            }
+        } catch (e) { 
+            console.error('Fee fetch error', e); 
+        }
+    }
+
     async function fetchAttendanceSummary() {
-         // Logic to calc attendance percentage from /attendance endpoint
-         // For brevity, fetching raw list and calculating locally
-         const res = await fetch(`${API_BASE_URL}/student/attendance`, { credentials: 'include' });
-         const d = await res.json();
-         const total = d.length;
-         const present = d.filter(x => x.status === 'Present').length;
-         const pct = total ? Math.round((present/total)*100) : 0;
-         document.getElementById('dash-attendance').textContent = pct + '%';
+        try {
+            const res = await fetch(`${API_BASE_URL}/student/attendance`, { credentials: 'include' });
+            if(res.ok) {
+                const data = await res.json();
+                if (Array.isArray(data)) {
+                    const total = data.length;
+                    const present = data.filter(r => r.status === 'Present' || r.status === 'Checked-In').length;
+                    const percent = total > 0 ? Math.round((present / total) * 100) : 0;
+                    const dashAtt = document.getElementById('dash-attendance');
+                    if(dashAtt) dashAtt.textContent = `${percent}%`;
+                }
+            }
+        } catch (e) { console.error('Att summary error', e); }
+    }
+
+    async function fetchAttendance() {
+        const container = document.getElementById('attendance-list');
+        if(!container) return;
+        container.innerHTML = '<div class="text-center py-4 text-gray-400">Loading...</div>';
+        
+        try {
+            const res = await fetch(`${API_BASE_URL}/student/attendance`, { credentials: 'include' });
+            const data = await res.json();
+            
+            container.innerHTML = '';
+            if (!res.ok || !Array.isArray(data) || data.length === 0) {
+                container.innerHTML = '<div class="text-center py-10 text-gray-400">No records found.</div>';
+                return;
+            }
+
+            data.forEach(r => {
+                const dateObj = new Date(r.date);
+                const month = dateObj.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+                const day = dateObj.getDate();
+                const isPresent = r.status === 'Present' || r.status === 'Checked-In';
+                
+                container.innerHTML += `
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
+                    <div class="flex items-center gap-5">
+                        <div class="flex flex-col items-center justify-center bg-gray-50 border border-gray-200 rounded-xl w-14 h-14">
+                            <span class="text-[10px] font-bold text-gray-500 tracking-wide leading-none">${month}</span>
+                            <span class="text-xl font-bold text-gray-800 leading-none mt-1">${day}</span>
+                        </div>
+                        <div>
+                            <div class="text-lg font-bold text-gray-800">${r.time}</div>
+                            <div class="text-xs text-gray-400 font-medium">Class Check-in</div>
+                        </div>
+                    </div>
+                    <div class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border ${isPresent ? 'bg-green-50 text-green-600 border-green-100' : 'bg-red-50 text-red-600 border-red-100'}">
+                        ${r.status}
+                    </div>
+                </div>`;
+            });
+        } catch (e) { container.innerHTML = '<div class="text-center text-red-500">Error loading data.</div>'; }
+    }
+
+    async function fetchGrades() {
+        const container = document.getElementById('grades-list');
+        if(!container) return;
+        container.innerHTML = '<div class="text-center py-4 text-gray-400">Loading...</div>';
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/student/grades`, { credentials: 'include' });
+            const data = await res.json();
+            
+            container.innerHTML = '';
+            if (!res.ok || !Array.isArray(data) || data.length === 0) {
+                container.innerHTML = '<div class="text-center py-10 text-gray-400">No results published yet.</div>';
+                return;
+            }
+
+            data.forEach(g => {
+                const total = g.total_marks || 100;
+                const percentage = Math.round((g.marks_obtained / total) * 100);
+                const isPass = percentage >= 35;
+                const accentColor = isPass ? 'bg-green-500' : 'bg-red-500';
+                const pillColor = isPass ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700';
+
+                container.innerHTML += `
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 relative overflow-hidden">
+                    <div class="absolute left-0 top-0 bottom-0 w-1.5 ${accentColor}"></div>
+                    <div class="flex justify-between items-start mb-4 pl-3">
+                        <div>
+                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">${g.course_name}</span>
+                            <h4 class="font-bold text-gray-800 text-lg mt-0.5">${g.assessment_name}</h4>
+                        </div>
+                        <div class="px-2.5 py-1 rounded-lg font-bold text-xs ${pillColor}">
+                            ${percentage}%
+                        </div>
+                    </div>
+                    <div class="pt-3 border-t border-gray-50 flex items-center justify-between pl-3">
+                        <span class="text-xs font-bold text-gray-400 uppercase tracking-wide">Score</span>
+                        <span class="font-bold text-gray-800 text-lg">
+                            ${g.marks_obtained} <span class="text-gray-400 text-sm font-normal">/ ${total}</span>
+                        </span>
+                    </div>
+                </div>`;
+            });
+        } catch (e) { container.innerHTML = '<div class="text-center text-red-500">Error loading data.</div>'; }
     }
 
     async function fetchNotes() {
-        const res = await fetch(`${API_BASE_URL}/student/notes`, { credentials: 'include' });
-        const d = await res.json();
-        document.getElementById('notes-list').innerHTML = d.map(n=>`
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex justify-between items-center">
-                <div><h4 class="font-bold text-sm">${n.title}</h4><p class="text-xs text-slate-500">${n.course_name}</p></div>
-                <a href="/uploads/${n.filename}" class="text-blue-600"><span class="material-symbols-rounded">download</span></a>
-            </div>
-        `).join('') || '<div class="text-center text-slate-400 py-8">No notes.</div>';
-    }
-    
-    // ... (Add fetchGrades, fetchAttendance, fetchAnnouncements similarly) ...
-    async function fetchGrades() {
-        const res = await fetch(`${API_BASE_URL}/student/grades`, { credentials: 'include' });
-        const d = await res.json();
-        document.getElementById('grades-list').innerHTML = d.map(g=>`
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex justify-between items-center">
-                 <div><h4 class="font-bold text-sm">${g.assessment_name}</h4><p class="text-xs text-slate-500">${g.course_name}</p></div>
-                 <div class="font-bold text-lg">${g.marks_obtained}/${g.total_marks}</div>
-            </div>
-        `).join('') || '<div class="text-center text-slate-400 py-8">No results.</div>';
-    }
-    
-    async function fetchAttendance() {
-        const res = await fetch(`${API_BASE_URL}/student/attendance`, { credentials: 'include' });
-        const d = await res.json();
-        document.getElementById('attendance-list').innerHTML = d.map(a=>`
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex justify-between items-center">
-                 <div><h4 class="font-bold text-sm">${a.date}</h4><p class="text-xs text-slate-500">${a.time}</p></div>
-                 <div class="px-2 py-1 rounded text-xs font-bold ${a.status==='Present'?'bg-green-100 text-green-700':'bg-red-100 text-red-700'}">${a.status}</div>
-            </div>
-        `).join('') || '<div class="text-center text-slate-400 py-8">No records.</div>';
-    }
-    
-    async function fetchAnnouncements() {
-        const res = await fetch(`${API_BASE_URL}/announcements`, { credentials: 'include' });
-        const d = await res.json(); // Filter for students on client or server
-        document.getElementById('notifications-list').innerHTML = d.filter(a=>['all','students'].includes(a.target_group)).map(a=>`
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-                <h4 class="font-bold text-sm text-slate-800">${a.title}</h4>
-                <p class="text-xs text-slate-500 mt-1">${a.content}</p>
-            </div>
-        `).join('') || '<div class="text-center text-slate-400 py-8">No announcements.</div>';
+        const container = document.getElementById('notes-list');
+        if(!container) return;
+        container.innerHTML = '<div class="text-center py-4 text-gray-400">Loading...</div>';
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/student/notes`, { credentials: 'include' });
+            const data = await res.json();
+            
+            container.innerHTML = '';
+            if (!res.ok || !Array.isArray(data) || data.length === 0) {
+                container.innerHTML = '<div class="text-center py-10 text-gray-400">No notes shared.</div>';
+                return;
+            }
+
+            data.forEach(note => {
+                container.innerHTML += `
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
+                    <div class="flex items-center gap-4 overflow-hidden">
+                        <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <span class="material-symbols-rounded">description</span>
+                        </div>
+                        <div class="min-w-0">
+                            <h4 class="font-bold text-gray-800 text-sm truncate pr-2">${note.title}</h4>
+                            <p class="text-xs text-gray-500 truncate">${note.course_name} • ${note.teacher_name}</p>
+                        </div>
+                    </div>
+                    <a href="${API_ORIGIN}/uploads/${note.filename}" download="${note.original_filename}" class="text-gray-400 hover:text-blue-600 transition-colors p-2">
+                        <span class="material-symbols-rounded">download</span>
+                    </a>
+                </div>`;
+            });
+        } catch (e) { container.innerHTML = '<div class="text-center text-red-500">Error loading data.</div>'; }
     }
 
-    document.getElementById('logout-btn').addEventListener('click', async () => {
-        await fetch(`${API_BASE_URL}/logout`, { method: 'POST', credentials: 'include' });
-        window.location.href = API_ORIGIN + '/';
-    });
+    async function fetchAnnouncements() {
+        const container = document.getElementById('notifications-list');
+        const badge = document.getElementById('notif-badge');
+        if(!container) return;
+        
+        try {
+            const res = await fetch(`${API_BASE_URL}/announcements`, { credentials: 'include' });
+            if(!res.ok) return;
+            const data = await res.json();
+            
+            const relevant = data.filter(a => a.target_group === 'all' || a.target_group === 'students');
+            
+            if (relevant.length > 0 && badge) badge.classList.remove('hidden');
+            else if (badge) badge.classList.add('hidden');
+
+            container.innerHTML = '';
+            if (relevant.length === 0) {
+                container.innerHTML = '<div class="text-center py-10 text-gray-400">No new announcements.</div>';
+                return;
+            }
+
+            relevant.forEach(notif => {
+                const dateStr = notif.created_at ? notif.created_at.split(' ')[0] : 'Today';
+                container.innerHTML += `
+                <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex gap-4">
+                    <div class="w-10 h-10 rounded-full flex-shrink-0 bg-blue-50 text-blue-600 flex items-center justify-center">
+                        <span class="material-symbols-rounded text-sm">campaign</span>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex justify-between items-start mb-1">
+                            <h4 class="font-bold text-gray-800 text-sm">${notif.title}</h4>
+                            <span class="text-[10px] text-gray-400 whitespace-nowrap ml-2 mt-0.5">${dateStr}</span>
+                        </div>
+                        <p class="text-sm text-gray-500 leading-relaxed">${notif.content}</p>
+                    </div>
+                </div>`;
+            });
+        } catch (e) { console.error(e); }
+    }
+
+    // --- PWA & LOGOUT ---
+    function setupPWA() {
+        try {
+            let deferredPrompt;
+            const installBtn = document.getElementById('install-app-btn');
+            const installArea = document.getElementById('install-pwa-area');
+
+            if(!installBtn || !installArea) return;
+
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                installArea.classList.remove('hidden');
+            });
+
+            installBtn.addEventListener('click', async () => {
+                if (!deferredPrompt) return;
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') installArea.classList.add('hidden');
+                deferredPrompt = null;
+            });
+        } catch (e) { console.warn("PWA setup error", e); }
+    }
+
+    const logoutBtn = document.getElementById('logout-btn');
+    if(logoutBtn) {
+        logoutBtn.addEventListener('click', async () => {
+            await fetch(`${API_BASE_URL}/logout`, { method: 'POST', credentials: 'include' });
+            window.location.href = API_ORIGIN + '/';
+        });
+    }
+
+    // --- FIREBASE CLIENT LOGIC ---
+    window.requestNotificationPermission = function() {
+        initFirebase();
+    }
+
+    function initFirebase() {
+        try {
+            // REPLACE WITH YOUR ACTUAL FIREBASE CONFIG
+            const firebaseConfig = {
+  apiKey: "AIzaSyBkzEHM9fXRoCYSgEW-hk_lN7sL_nSLDfU",
+  authDomain: "cst-institute-app.firebaseapp.com",
+  projectId: "cst-institute-app",
+  storageBucket: "cst-institute-app.firebasestorage.app",
+  messagingSenderId: "485166460200",
+  appId: "1:485166460200:web:4eae20e2010ab92baeb41d"
+};
+
+            if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+                const messaging = firebase.messaging();
+
+                // 1. Foreground Message Handler (Shows Toast)
+                messaging.onMessage((payload) => {
+                    console.log('Message received. ', payload);
+                    showToast(payload);
+                });
+
+                // 2. Token Registration
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.register('/firebase-messaging-sw.js').then((reg) => {
+                        return Notification.requestPermission().then((permission) => {
+                            if (permission === 'granted') {
+                                document.getElementById('enable-notif-btn').classList.add('hidden');
+                                // REPLACE VAPID KEY
+                                return messaging.getToken({ 
+                                    vapidKey: 'BBOMxvKvbEs_t9ykKBa2zIewzCzD6FCbm9rxc8a9eWl2kjjH5vyTSH6TeQMksZ_OGl5jZyQpU2wBcf-KsZN1uko', 
+                                    serviceWorkerRegistration: reg 
+                                });
+                            } else {
+                                console.log("Permission denied for notifications");
+                            }
+                        });
+                    }).then((token) => {
+                        if (token) {
+                            console.log('FCM Token:', token);
+                            // Send token to backend
+                            fetch('/api/save_fcm_token', { 
+                                method: 'POST', 
+                                headers: {'Content-Type': 'application/json'}, 
+                                credentials: 'include', 
+                                body: JSON.stringify({token}) 
+                            });
+                        }
+                    }).catch(err => console.log('Firebase error', err));
+                }
+            }
+        } catch (e) { console.log('Firebase init skipped or error', e); }
+    }
 </script>
 </body>
 </html>

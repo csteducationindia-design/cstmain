@@ -1,126 +1,91 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full bg-white">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - CST Institute</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Login</title>
+    <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
+    <link as="style" href="https://fonts.googleapis.com/css2?display=swap&family=Inter:wght@400;500;700;900" onload="this.rel='stylesheet'" rel="stylesheet"/>
     <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
     <script>
         tailwind.config = {
+            darkMode: "class",
             theme: {
                 extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'] },
-                    colors: { primary: '#4F46E5', secondary: '#10B981' }
-                }
-            }
+                    colors: { "primary": "#1173d4" },
+                    fontFamily: { "display": ["Inter"] },
+                },
+            },
         }
     </script>
 </head>
-<body class="h-full font-sans antialiased text-slate-900">
-    <div class="flex min-h-full">
-        <div class="flex flex-1 flex-col justify-center py-12 px-4 sm:px-6 lg:flex-none lg:px-20 xl:px-24 bg-white z-10">
-            <div class="mx-auto w-full max-w-sm lg:w-96">
-                <div>
-                    <div class="h-12 w-12 bg-indigo-50 rounded-xl flex items-center justify-center mb-6">
-                        <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
-                    </div>
-                    <h2 class="mt-6 text-3xl font-extrabold tracking-tight text-slate-900">Sign in to your account</h2>
-                    <p class="mt-2 text-sm text-slate-600">Portal access for Students, Teachers, Parents & Admin</p>
-                </div>
-
-                <div class="mt-8">
-                    <div class="mt-6">
-                        <form id="loginForm" class="space-y-6">
-                            <div id="error-message" class="text-red-500 text-sm font-medium text-center hidden"></div>
-                            
-                            <div>
-                                <label for="email" class="block text-sm font-medium text-slate-700">Email address</label>
-                                <div class="mt-1">
-                                    <input id="email" name="email" type="email" autocomplete="email" required class="appearance-none block w-full px-3 py-3 border border-slate-300 rounded-xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm transition-all duration-200">
-                                </div>
-                            </div>
-
-                            <div>
-                                <label for="password" class="block text-sm font-medium text-slate-700">Password</label>
-                                <div class="mt-1">
-                                    <input id="password" name="password" type="password" autocomplete="current-password" required class="appearance-none block w-full px-3 py-3 border border-slate-300 rounded-xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm transition-all duration-200">
-                                </div>
-                            </div>
-
-                            <div>
-                                <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-primary hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-200 transform hover:scale-[1.02]">
-                                    Sign in
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+<body class="bg-background-light dark:bg-background-dark flex items-center justify-center min-h-screen font-display">
+    <div class="w-full max-w-md p-8 space-y-6 bg-white dark:bg-slate-900 rounded-xl shadow-xl">
+        <h1 class="text-3xl font-bold text-center text-slate-900 dark:text-white">CST Institute Login</h1>
+        <form id="loginForm" class="space-y-4">
+            <div id="error-message" class="text-red-500 text-sm text-center"></div>
+            <div>
+                <label for="email" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Email</label>
+                <input type="email" id="email" required class="mt-1 w-full p-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
             </div>
-        </div>
-        
-        <div class="hidden lg:block relative w-0 flex-1 overflow-hidden">
-            <div class="absolute inset-0 bg-gradient-to-br from-indigo-600 to-blue-700 flex items-center justify-center">
-                <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20"></div>
-                <div class="relative z-10 text-center px-8">
-                    <h1 class="text-5xl font-extrabold text-white mb-6 tracking-tight">CST Institute</h1>
-                    <p class="text-indigo-100 text-xl font-medium max-w-lg mx-auto">Empowering education through technology. Manage your academic journey with ease.</p>
-                </div>
+            <div>
+                <label for="password" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Password</label>
+                <input type="password" id="password" required class="mt-1 w-full p-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
             </div>
-        </div>
+            <button type="submit" class="w-full bg-primary text-white font-medium py-2.5 px-4 rounded-lg text-sm hover:bg-opacity-90 transition duration-150">
+                Log In
+            </button>
+        </form>
     </div>
 
-    <script>
-        const API_ORIGIN = window.location.origin;
-        const API_BASE_URL = API_ORIGIN + '/api';
+<script>
+    // FIX: Define the absolute base URL once for stability across all environments
+    const API_ORIGIN = window.location.origin;
+    const API_BASE_URL = API_ORIGIN + '/api';
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const loginForm = document.getElementById('loginForm');
-            const errorMessage = document.getElementById('error-message');
+    document.addEventListener('DOMContentLoaded', () => {
+        const loginForm = document.getElementById('loginForm');
+        const errorMessage = document.getElementById('error-message');
 
-            loginForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                errorMessage.textContent = '';
-                errorMessage.classList.add('hidden');
-                
-                const btn = loginForm.querySelector('button');
-                const originalText = btn.textContent;
-                btn.textContent = 'Signing in...';
-                btn.disabled = true;
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorMessage.textContent = '';
+            
+            try {
+                // FIX: Use API_BASE_URL for login request
+                const response = await fetch(`${API_BASE_URL}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        email: document.getElementById('email').value,
+                        password: document.getElementById('password').value
+                    })
+                });
 
-                try {
-                    const response = await fetch(`${API_BASE_URL}/login`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include',
-                        body: JSON.stringify({
-                            email: document.getElementById('email').value,
-                            password: document.getElementById('password').value
-                        })
-                    });
-
-                    const result = await response.json();
-                    if (response.ok) {
-                        const role = result.user.role;
-                        if (['admin', 'teacher', 'student', 'parent'].includes(role)) {
-                            window.location.href = `${API_ORIGIN}/${role}`;
-                        } else {
-                            throw new Error('Login not available for this role.');
-                        }
+                const result = await response.json();
+                if (response.ok) {
+                    // FIX: Use absolute URL for redirection based on role
+                    if (result.user.role === 'admin') {
+                        window.location.href = API_ORIGIN + '/admin';
+                    } else if (result.user.role === 'teacher') {
+                        window.location.href = API_ORIGIN + '/teacher';
+                    } else if (result.user.role === 'student') {
+                        window.location.href = API_ORIGIN + '/student';
+                    } else if (result.user.role === 'parent') {
+                        window.location.href = API_ORIGIN + '/parent';
                     } else {
-                        throw new Error(result.message || 'Invalid credentials');
+                        errorMessage.textContent = 'Login not available for this role.';
                     }
-                } catch (error) {
-                    errorMessage.textContent = error.message || 'Connection error';
-                    errorMessage.classList.remove('hidden');
-                } finally {
-                    btn.textContent = originalText;
-                    btn.disabled = false;
+                } else {
+                    errorMessage.textContent = result.message || 'Invalid email or password.';
                 }
-            });
+            } catch (error) {
+                errorMessage.textContent = 'Could not connect to the server. Is it running?';
+                console.error('Login fetch error:', error);
+            }
         });
-    </script>
+    });
+</script>
 </body>
 </html>
