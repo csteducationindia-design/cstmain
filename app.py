@@ -527,15 +527,6 @@ def save_fcm_token():
 
     return jsonify({"message": "FCM token saved successfully"})
 
-@app.route('/api/save_fcm_token', methods=['POST'])
-@login_required
-def save_fcm_token():
-    token = request.json.get('token')
-    if token:
-        current_user.fcm_token = token
-        db.session.commit()
-        return jsonify({"message": "Token saved"}), 200
-    return jsonify({"message": "No token"}), 400
 
 @app.route('/firebase-messaging-sw.js')
 def sw(): return send_from_directory(app.static_folder, 'firebase-messaging-sw.js')
