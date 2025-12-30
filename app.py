@@ -516,6 +516,20 @@ def check_session():
 @app.route('/api/save_fcm_token', methods=['POST'])
 @login_required
 def save_fcm_token():
+    data = request.json
+    token = data.get('token')
+
+    if not token:
+        return jsonify({"message": "Token missing"}), 400
+
+    current_user.fcm_token = token
+    db.session.commit()
+
+    return jsonify({"message": "FCM token saved successfully"})
+
+@app.route('/api/save_fcm_token', methods=['POST'])
+@login_required
+def save_fcm_token():
     token = request.json.get('token')
     if token:
         current_user.fcm_token = token
@@ -850,6 +864,38 @@ def t_attendance():
             
     db.session.commit()
     return jsonify({"message": f"Saved. Sent {cnt} Absent Alerts."})
+@app.route('/api/teacher/notify', methods=['POST'])
+@login_required
+def teacher_notify():
+    if current_user.role != 'teacher':
+        return jsonify({"message": "Access denied"}), 403
+
+    d = request.json
+    student_id = d.get('student_id')
+    subject = d.get('subject')
+    body = d.get('body')
+    msg_type = d.get('type')
+
+    student = db.session.get(User, student_id)
+    if not student:
+        return jsonify({"message": "Student not found"}), 404
+
+    if msg_type == 'portal':
+        result = send_push_notification(student_id, subject, body)
+
+    elif msg_type == 'sms':
+        send_actual_sms(student.phone_number, body)
+        result = "SMS Sent"
+
+    elif msg_type == 'email':
+        msg = MailMessage(subject, recipients=[student.email], body=body)
+        mail.send(msg)
+        result = "Email Sent"
+
+    else:
+        result = "Invalid message type"
+
+    return jsonify({"message": result})
 
 @app.route('/api/teacher/reports/attendance', methods=['GET'])
 @login_required
