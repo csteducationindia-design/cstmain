@@ -352,7 +352,7 @@ class SharedNote(db.Model):
 # =========================================================
 
 def calculate_fee_status(student_id):
-    """Robust fee calculation summing ALL applicable fees."""
+    """Fee calculation logic: Sums ONLY course-specific fees."""
     student = db.session.get(User, student_id)
     if not student:
         return {"total_due": 0, "total_paid": 0, "balance": 0, "due_date": "N/A", "pending_days": 0}
@@ -366,19 +366,18 @@ def calculate_fee_status(student_id):
     # 1. Course-Specific Fees (Sum ALL fees for enrolled courses)
     if student.courses_enrolled:
         for course in student.courses_enrolled:
-            # FIX: This was .first(), causing it to miss older fees. Changed to .all()
             course_fees = FeeStructure.query.filter_by(course_id=course.id).all()
             for fee_struct in course_fees:
                 total_due += fee_struct.total_amount
                 if fee_struct.due_date:
                     due_dates.append(fee_struct.due_date)
     
-    # 2. Global Fees (Apply to everyone, e.g., Registration Fee)
-    global_fees = FeeStructure.query.filter(FeeStructure.course_id == None).all()
-    for gf in global_fees:
-        total_due += gf.total_amount
-        if gf.due_date:
-            due_dates.append(gf.due_date)
+    # 2. Global Fees (DISABLED to prevent double-charging issue)
+    # We commented this out so the 2200 Global Fee is IGNORED by the system
+    # global_fees = FeeStructure.query.filter(FeeStructure.course_id == None).all()
+    # for gf in global_fees:
+    #     total_due += gf.total_amount
+    #     if gf.due_date: due_dates.append(gf.due_date)
 
     final_due_date = min(due_dates) if due_dates else date.today()
     balance = total_due - total_paid
