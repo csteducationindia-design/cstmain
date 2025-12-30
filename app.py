@@ -774,17 +774,66 @@ def fee_status():
         res.append({"student_id": s.id, "student_name": s.name, "balance": st['balance'], "due_date": st['due_date'], "pending_days": st['pending_days'], "latest_payment_id": lp.id if lp else None})
     return jsonify(res)
 
+# FIND THIS FUNCTION:
 @app.route('/api/reports/fee_pending', methods=['GET'])
 @login_required
 def pending_report():
     if current_user.role != 'admin': return jsonify({"msg": "Denied"}), 403
+    
+    # --- ADD THIS NEW FILTER LOGIC ---
+    course_filter_id = request.args.get('course_id') # Get course ID from URL
+    
     students = User.query.filter_by(role='student').all()
     res = []
     for s in students:
+        # IF A COURSE IS SELECTED, SKIP STUDENTS NOT IN THAT COURSE
+        if course_filter_id:
+            try:
+                # Check if student is enrolled in the specific course
+                student_course_ids = [c.id for c in s.courses_enrolled]
+                if int(course_filter_id) not in student_course_ids:
+                    continue
+            except:
+                continue
+        # -------------------------------
+
         st = calculate_fee_status(s.id)
         if st['balance'] > 0:
-            res.append({"student_id": s.id, "student_name": s.name, "balance": st['balance'], "due_date": st['due_date'], "pending_days": st['pending_days']})
+            res.append({
+                "student_id": s.id, 
+                "student_name": s.name, 
+                "phone_number": s.phone_number, # Added phone for messaging
+                "balance": st['balance'], 
+                "due_date": st['due_date'], 
+                "pending_days": st['pending_days']
+            })
     return jsonify(res)
+
+# --- ADD THIS NEW ROUTE BELOW THE ONE ABOVE FOR BULK MESSAGING ---
+@app.route('/api/admin/notify_specific_list', methods=['POST'])
+@login_required
+def notify_specific_list():
+    if current_user.role != 'admin': return jsonify({"msg": "Denied"}), 403
+    
+    data = request.json
+    student_ids = data.get('student_ids', [])
+    message_body = data.get('message', '')
+    
+    if not student_ids or not message_body:
+        return jsonify({"message": "Missing data"}), 400
+        
+    count = 0
+    for sid in student_ids:
+        user = db.session.get(User, sid)
+        if user:
+            # Send Push
+            send_push_notification(user.id, "Fee Reminder", message_body)
+            # Send SMS (if phone exists)
+            if user.phone_number:
+                send_actual_sms(user.phone_number, message_body)
+            count += 1
+            
+    return jsonify({"message": f"Sent reminders to {count} students."})
 
 @app.route('/api/send_sms_alert', methods=['POST'])
 @login_required
@@ -1041,12 +1090,66 @@ def user_photo(user_id):
 def serve_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
+# FIND THIS FUNCTION:
 @app.route('/api/receipt/<int:id>')
 @login_required
 def serve_receipt(id):
-    # (HTML Receipt Logic same as before, simplified here)
+    # REPLACE THE ENTIRE FUNCTION WITH THIS:
     p = db.session.get(Payment, id)
-    return f"<h1>Receipt #{p.id}</h1><p>Amt: {p.amount_paid}</p>"
+    if not p:
+        return "Receipt not found", 404
+        
+    student = db.session.get(User, p.student_id)
+    fee_struct = db.session.get(FeeStructure, p.fee_structure_id)
+    
+    # Simple CSS for the receipt
+    html = f"""
+    <html>
+    <head>
+        <title>Payment Receipt #{p.id}</title>
+        <style>
+            body {{ font-family: 'Helvetica', sans-serif; padding: 40px; color: #333; }}
+            .receipt-box {{ border: 2px solid #333; padding: 20px; max-width: 600px; margin: 0 auto; }}
+            .header {{ text-align: center; border-bottom: 1px solid #ccc; padding-bottom: 20px; margin-bottom: 20px; }}
+            .row {{ display: flex; justify-content: space-between; margin-bottom: 10px; }}
+            .label {{ font-weight: bold; }}
+            .footer {{ margin-top: 30px; text-align: center; font-size: 12px; color: #777; }}
+            .paid-stamp {{ color: green; font-weight: bold; border: 2px solid green; padding: 5px 10px; display: inline-block; transform: rotate(-10deg); margin-top: 20px; }}
+        </style>
+    </head>
+    <body>
+        <div class="receipt-box">
+            <div class="header">
+                <h2>CST Institute</h2>
+                <p>Payment Receipt</p>
+            </div>
+            
+            <div class="row"><span class="label">Receipt No:</span> <span>#{p.id}</span></div>
+            <div class="row"><span class="label">Date:</span> <span>{p.payment_date.strftime('%Y-%m-%d %H:%M')}</span></div>
+            <hr>
+            <div class="row"><span class="label">Student Name:</span> <span>{student.name if student else 'Unknown'}</span></div>
+            <div class="row"><span class="label">Student Email:</span> <span>{student.email if student else 'N/A'}</span></div>
+            <div class="row"><span class="label">Fee Category:</span> <span>{fee_struct.name if fee_struct else 'General'}</span></div>
+            <hr>
+            <div class="row"><span class="label">Payment Method:</span> <span>{p.payment_method}</span></div>
+            <div class="row" style="font-size: 1.2em; margin-top: 10px;">
+                <span class="label">Amount Paid:</span> 
+                <span>₹{p.amount_paid:.2f}</span>
+            </div>
+            
+            <div style="text-align: center;">
+                <div class="paid-stamp">PAID SUCCESSFUL</div>
+            </div>
+
+            <div class="footer">
+                <p>This is a computer-generated receipt.</p>
+                <button onclick="window.print()" style="margin-top:10px; padding: 5px 10px; cursor: pointer;">Print Receipt</button>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    return html
 
 # --- DEBUG & SETUP ---
 @app.route('/debug/firebase')

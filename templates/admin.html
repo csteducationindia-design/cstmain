@@ -505,24 +505,38 @@
                 </div>
             </div>
             
-             <div id="content-fee-pending-report" class="content-section hidden">
-                <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">Student Fee Pending Report</h2>
-                <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm overflow-hidden">
-                    <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700 table-auto-layout">
-                        <thead>
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Student Name</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Pending Amount</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Due Date</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Days Status</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider">SMS</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider">WhatsApp</th>
-                            </tr>
-                        </thead>
-                        <tbody id="fee-pending-report-body" class="divide-y divide-slate-200 dark:divide-slate-700"></tbody>
-                    </table>
-                </div>
-            </div>
+           <div id="content-fee-pending-report" class="content-section hidden">
+    <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">Student Fee Pending Report</h2>
+    
+    <div class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-sm mb-6 flex flex-col md:flex-row gap-4 items-end">
+        <div class="w-full md:w-1/3">
+            <label class="block text-sm font-medium mb-1">Filter by Course</label>
+            <select id="report-course-filter" class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800" onchange="fetchFeePendingReport()">
+                <option value="">All Courses</option>
+                </select>
+        </div>
+        <div class="w-full md:w-auto">
+             <button onclick="sendBulkFeeReminder()" class="w-full bg-red-600 text-white font-medium py-2.5 px-6 rounded-lg text-sm hover:bg-red-700 transition duration-150">
+                <span class="material-symbols-outlined align-middle text-lg mr-1">send</span>
+                Send Reminder to All Listed
+            </button>
+        </div>
+    </div>
+    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm overflow-hidden">
+        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700 table-auto-layout">
+            <thead>
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Student Name</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Pending Amount</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Due Date</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Days Status</th>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="fee-pending-report-body" class="divide-y divide-slate-200 dark:divide-slate-700"></tbody>
+        </table>
+    </div>
+</div>
             <div id="content-admin-message" class="content-section hidden">
                 <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">Send Bulk Notifications (SMS/WhatsApp Mock)</h2>
                 <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6 mb-8">
@@ -805,9 +819,10 @@
                         fetchFeeStatus(); 
                         resetFeeStructureForm();
                         break;
-                    case 'fee-pending-report': 
-                        fetchFeePendingReport(); 
-                        break; 
+                    case 'fee-pending-report':
+    			fetchFeePendingReport();
+    			populateReportCourseFilter(); // Add this line
+    			break;
                     case 'reports': 
                         fetchAdmissionsReport(); 
                         fetchAttendanceReport(); 
@@ -864,6 +879,98 @@
                 alert("Logout failed. Please try refreshing the page.");
             }
         });
+// Populate the new dropdown
+async function populateReportCourseFilter() {
+    const select = document.getElementById('report-course-filter');
+    if (select.options.length > 1) return; // Don't reload if already loaded
+
+    try {
+        // Use the global cache or fetch new
+        const courses = allCoursesCache.length ? allCoursesCache : await (await fetch(`${API_BASE_URL}/courses`, {credentials: 'include'})).json();
+        courses.forEach(c => {
+            select.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+        });
+    } catch (e) { console.error(e); }
+}
+
+// Global variable to store current list of pending students
+let currentPendingStudents = [];
+
+// Update the existing fetchFeePendingReport function
+async function fetchFeePendingReport() {
+    const feePendingReportBody = document.getElementById('fee-pending-report-body');
+    const courseId = document.getElementById('report-course-filter').value; // Get selected course
+    
+    feePendingReportBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center">Loading...</td></tr>`;
+    
+    try {
+        // Add query param
+        let url = `${API_BASE_URL}/reports/fee_pending`;
+        if (courseId) url += `?course_id=${courseId}`;
+
+        const response = await fetch(url, {credentials: 'include'});
+        const pendingList = await response.json();
+        
+        // Store for bulk messaging
+        currentPendingStudents = pendingList; 
+
+        feePendingReportBody.innerHTML = ''; 
+        if (pendingList.length === 0) {
+            feePendingReportBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center">No pending fees found for this selection.</td></tr>`;
+            return;
+        }
+
+        pendingList.forEach(status => {
+            const isOverdue = status.pending_days < 0;
+            const balanceClass = isOverdue ? 'overdue' : 'pending';
+            const daysText = isOverdue ? `${Math.abs(status.pending_days)} Days OVERDUE` : `${status.pending_days} Days Left`;
+
+            feePendingReportBody.innerHTML += `
+                <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${status.student_name}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-bold ${balanceClass}">₹${status.balance.toFixed(2)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${status.due_date}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm ${isOverdue ? 'text-red-600' : 'text-slate-500'}">${daysText}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
+                        <button onclick="sendFeeAlert(${status.student_id})" class="text-primary hover:text-blue-700">Send Individual SMS</button>
+                    </td>
+                </tr>`;
+        });
+    } catch (error) {
+        console.error("Error:", error);
+        feePendingReportBody.innerHTML = `<tr><td colspan="5" class="text-center text-red-500">Error loading data.</td></tr>`;
+    }
+}
+
+// New Bulk Message Function
+async function sendBulkFeeReminder() {
+    if (currentPendingStudents.length === 0) {
+        alert("No students in the list to message.");
+        return;
+    }
+
+    const count = currentPendingStudents.length;
+    if (!confirm(`Are you sure you want to send a Fee Reminder to ALL ${count} students listed below?`)) {
+        return;
+    }
+
+    const studentIds = currentPendingStudents.map(s => s.student_id);
+    const message = "Dear Student/Parent, this is a reminder to clear your pending course fees at CST Institute to avoid interruptions. Thank you.";
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/admin/notify_specific_list`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            credentials: 'include',
+            body: JSON.stringify({ student_ids: studentIds, message: message })
+        });
+        const result = await response.json();
+        alert(result.message);
+    } catch (e) {
+        alert("Failed to send bulk messages.");
+        console.error(e);
+    }
+}
 
         // --- DASHBOARD SUMMARY ---
         async function fetchDashboardSummary() {
