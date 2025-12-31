@@ -17,6 +17,8 @@ from sqlalchemy import or_, inspect, text
 import firebase_admin
 from firebase_admin import credentials, messaging
 import logging
+import pandas as pd
+from io import BytesIO
 
 # =========================================================
 # CONFIGURATION & SETUP
@@ -1075,6 +1077,93 @@ def report_perf():
         pct = round((ob/tot)*100) if tot > 0 else 0
         res.append({"student_name": u.name, "assessments_taken": len(g), "total_score": ob, "overall_percentage": pct})
     return jsonify(res)
+@app.route('/api/export/<report_type>', methods=['GET'])
+@login_required
+def export_data(report_type):
+    if current_user.role != 'admin':
+        return jsonify({"msg": "Denied"}), 403
+
+    output = BytesIO()
+    filename = f"{report_type}_report.xlsx"
+    df = pd.DataFrame()
+
+    # 1. Logic for Fee Pending Report
+    if report_type == 'fee_pending':
+        course_filter_id = request.args.get('course_id')
+        students = User.query.filter_by(role='student').all()
+        data = []
+        
+        for s in students:
+            # Apply Course Filter logic
+            if course_filter_id:
+                student_course_ids = [c.id for c in s.courses_enrolled]
+                if int(course_filter_id) not in student_course_ids:
+                    continue
+            
+            st = calculate_fee_status(s.id)
+            if st['balance'] > 0:
+                data.append({
+                    "Student Name": s.name,
+                    "Phone": s.phone_number,
+                    "Email": s.email,
+                    "Total Due": st['total_due'],
+                    "Paid": st['total_paid'],
+                    "Balance Pending": st['balance'],
+                    "Due Date": st['due_date'],
+                    "Days Overdue": abs(st['pending_days']) if st['pending_days'] < 0 else 0
+                })
+        df = pd.DataFrame(data)
+
+    # 2. Logic for Attendance Report
+    elif report_type == 'attendance':
+        students = User.query.filter_by(role='student').all()
+        data = []
+        for s in students:
+            tot = Attendance.query.filter_by(student_id=s.id).count()
+            pres = Attendance.query.filter_by(student_id=s.id, status='Present').count()
+            pct = round((pres/tot)*100) if tot > 0 else 0
+            data.append({
+                "Student Name": s.name,
+                "Total Classes": tot,
+                "Present": pres,
+                "Absent": tot-pres,
+                "Percentage": f"{pct}%"
+            })
+        df = pd.DataFrame(data)
+
+    # 3. Logic for Student List
+    elif report_type == 'students':
+        students = User.query.filter_by(role='student').all()
+        data = []
+        for s in students:
+            parent = db.session.get(User, s.parent_id) if s.parent_id else None
+            courses = ", ".join([c.name for c in s.courses_enrolled])
+            data.append({
+                "ID": s.id,
+                "Name": s.name,
+                "Email": s.email,
+                "Phone": s.phone_number,
+                "Courses": courses,
+                "Parent Name": parent.name if parent else "N/A",
+                "Parent Phone": parent.phone_number if parent else "N/A"
+            })
+        df = pd.DataFrame(data)
+
+    # --- Generate Excel ---
+    if df.empty:
+        return "No data to export", 404
+
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Report')
+
+    output.seek(0)
+    
+    return send_file(
+        output,
+        download_name=filename,
+        as_attachment=True,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
 
 @app.route('/api/user/upload_photo/<int:user_id>', methods=['POST'])
 @login_required
