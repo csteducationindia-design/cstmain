@@ -36,26 +36,38 @@
             table-layout: auto;
         }
         .overdue {
-            color: #ef4444; /* text-red-500 */
+            color: #ef4444;
             font-weight: 600;
         }
         .pending {
-            color: #f59e0b; /* text-amber-500 */
+            color: #f59e0b;
             font-weight: 600;
         }
         .paid {
-            color: #10b981; /* text-emerald-500 */
+            color: #10b981;
             font-weight: 600;
         }
+
+        /* PRINT STYLES MOVED INSIDE HERE */
+        @media print {
+            aside, header, .no-print, button, .content-section.hidden { 
+                display: none !important; 
+            }
+            /* Ensure the currently active section is visible */
+            .content-section:not(.hidden) {
+                display: block !important;
+            }
+            main { margin: 0; padding: 0; width: 100%; }
+            body { background: white; color: black; }
+            table { border: 1px solid #ccc; width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #ccc; padding: 8px; font-size: 12px; }
+            
+            /* Hide URL footprint in some browsers */
+            @page { margin: 20px; }
+        }
     </style>
-@media print {
-    aside, header, .no-print { display: none !important; }
-    main { margin: 0; padding: 0; }
-    body { background: white; color: black; }
-    table { border: 1px solid #ccc; width: 100%; }
-    th, td { border: 1px solid #ccc; padding: 8px; }
-}
 </head>
+
 <body class="bg-background-light dark:bg-background-dark font-display text-slate-800 dark:text-slate-200">
 
 <div class="flex min-h-screen">
