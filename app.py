@@ -348,6 +348,13 @@ class SharedNote(db.Model):
     teacher = db.relationship('User', backref=db.backref('notes', lazy=True))
     def to_dict(self):
         return {"id": self.id, "title": self.title, "description": self.description, "course_name": self.course.name if self.course else "N/A", "filename": self.filename, "original_filename": self.original_filename, "created_at": self.created_at.strftime('%Y-%m-%d')}
+class TimeTable(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    course_id = db.Column(db.Integer, db.ForeignKey('course.id'))
+    day_of_week = db.Column(db.String(20)) # Monday, Tuesday...
+    start_time = db.Column(db.String(10)) # 10:00
+    end_time = db.Column(db.String(10))   # 11:00
+    room_number = db.Column(db.String(50))
 
 # =========================================================
 # BUSINESS LOGIC & HELPERS

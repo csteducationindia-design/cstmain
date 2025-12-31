@@ -48,6 +48,13 @@
             font-weight: 600;
         }
     </style>
+@media print {
+    aside, header, .no-print { display: none !important; }
+    main { margin: 0; padding: 0; }
+    body { background: white; color: black; }
+    table { border: 1px solid #ccc; width: 100%; }
+    th, td { border: 1px solid #ccc; padding: 8px; }
+}
 </head>
 <body class="bg-background-light dark:bg-background-dark font-display text-slate-800 dark:text-slate-200">
 
