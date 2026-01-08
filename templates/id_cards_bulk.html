@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Bulk ID Cards</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #e5e7eb;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        /* A4 Paper Setup */
+        .a4-page {
+            width: 210mm;
+            min-height: 297mm;
+            background: white;
+            padding: 10mm;
+            box-sizing: border-box;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* 2 Columns */
+            grid-template-rows: repeat(4, 1fr); /* 4 Rows */
+            gap: 10mm; /* Space between cards */
+            page-break-after: always;
+        }
+
+        /* ID Card Design (Scaled slightly for A4 Grid) */
+        .id-card {
+            width: 85.6mm; /* Standard CR80 width */
+            height: 54mm;  /* Standard CR80 height */
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            display: flex;
+            overflow: hidden;
+            position: relative;
+            background: white;
+            page-break-inside: avoid; /* Prevent cutting card in half */
+        }
+
+        .brand-strip {
+            width: 25px;
+            background: #1173d4;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .brand-text {
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            color: white;
+            font-weight: 700;
+            font-size: 12px;
+            letter-spacing: 2px;
+        }
+
+        .content {
+            flex: 1;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 1px solid #f3f4f6;
+            padding-bottom: 5px;
+            margin-bottom: 5px;
+        }
+
+        .logo { height: 25px; width: auto; }
+        .inst-info { font-size: 10px; text-align: right; font-weight: 700; color: #111827; }
+
+        .main-body { display: flex; gap: 10px; flex: 1; }
+        .photo { width: 60px; height: 70px; background: #f3f4f6; border: 1px solid #e5e7eb; object-fit: cover; border-radius: 4px; }
+        
+        .info { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 2px; }
+        .name { font-size: 12px; font-weight: 700; color: #000; margin-bottom: 2px; }
+        .field { font-size: 9px; color: #4b5563; }
+        .label { font-weight: 600; color: #6b7280; }
+
+        .footer {
+            margin-top: auto;
+            border-top: 1px solid #f3f4f6;
+            padding-top: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .qr-code { width: 35px; height: 35px; }
+        .sign { font-size: 7px; color: #9ca3af; text-align: right; border-top: 1px solid #d1d5db; padding-top: 2px; width: 80px; }
+
+        /* Print Settings */
+        @media print {
+            body { background: white; padding: 0; }
+            .a4-page { box-shadow: none; margin: 0; border: none; }
+            .no-print { display: none !important; }
+            @page { size: A4; margin: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="no-print" style="position: fixed; top: 20px; right: 20px; z-index: 100;">
+        <button onclick="window.print()" style="background: #1173d4; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
+            Print All Cards
+        </button>
+    </div>
+
+    {% for batch in students | batch(8) %}
+    <div class="a4-page">
+        {% for student in batch %}
+        <div class="id-card">
+            <div class="brand-strip"><span class="brand-text">STUDENT</span></div>
+            <div class="content">
+                <div class="header">
+                    <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="logo">
+                    <div class="inst-info">CST INSTITUTE<br><span style="font-weight:400; color:#666; font-size:8px;">Excellence in Education</span></div>
+                </div>
+                <div class="main-body">
+                    {% if student.profile_photo_url %}
+                        <img src="{{ student.profile_photo_url }}" class="photo">
+                    {% else %}
+                        <img src="https://placehold.co/60x70/e2e8f0/64748b?text=PHOTO" class="photo">
+                    {% endif %}
+                    <div class="info">
+                        <div class="name">{{ student.name }}</div>
+                        <div class="field"><span class="label">ID:</span> {{ "%04d" | format(student.id) }}</div>
+                        <div class="field"><span class="label">Phone:</span> {{ student.phone_number }}</div>
+                        <div class="field"><span class="label">Course:</span> {{ student.courses_enrolled[0].name if student.courses_enrolled else 'General' }}</div>
+                        <div class="field"><span class="label">DOB:</span> {{ student.dob }}</div>
+                    </div>
+                </div>
+                <div class="footer">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ student.id }}" class="qr-code">
+                    <div class="sign">Authorized Signatory</div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endfor %}
+
+</body>
+</html>

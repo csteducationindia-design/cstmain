@@ -309,7 +309,14 @@
                         <input type="text" id="student-search-input" placeholder="Start typing to search..." class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800">
                     </div>
 
-                    <h3 class="text-xl font-bold mb-4">Existing Students</h3>
+                    <div class="flex justify-between items-center mb-4">
+    <h3 class="text-xl font-bold">Existing Students</h3>
+    
+    <button onclick="window.open(window.location.origin + '/admin/id_cards/bulk', '_blank')" 
+            class="bg-indigo-600 text-white font-medium py-2 px-4 rounded-lg text-sm hover:bg-indigo-700 transition flex items-center gap-2 shadow-sm">
+        <span class="material-symbols-outlined text-sm">print</span> Print All ID Cards
+    </button>
+</div>
                     <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm overflow-hidden">
                         <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                             <thead>

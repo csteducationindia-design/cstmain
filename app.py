@@ -510,6 +510,22 @@ def serve_login_page():
         return redirect(f"/{current_user.role}")
     return render_template('login.html')
 
+# --- BULK ID CARD ROUTE ---
+@app.route('/admin/id_cards/bulk')
+@login_required
+def bulk_id_cards():
+    if current_user.role != 'admin':
+        return jsonify({"msg": "Access Denied"}), 403
+    
+    # Optional: Filter by course if needed, or just get all active students
+    course_id = request.args.get('course_id')
+    if course_id:
+        students = User.query.filter_by(role='student').filter(User.courses_enrolled.any(id=course_id)).all()
+    else:
+        students = User.query.filter_by(role='student').all()
+
+    return render_template('id_cards_bulk.html', students=students)
+
 @app.route('/admin/id_card/<int:student_id>')
 @login_required
 def generate_id_card(student_id):
