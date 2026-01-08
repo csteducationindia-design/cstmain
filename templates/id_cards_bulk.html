@@ -143,7 +143,12 @@
                 </div>
                 <div class="footer">
                     <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ student.id }}" class="qr-code">
-                    <div class="sign">Authorized Signatory</div>
+                    <div class="text-right"> <img src="{{ url_for('static', filename='signature_director.png') }}" 
+         alt="Director Signature" 
+         style="height: 40px; margin-bottom: 5px; display: block; margin-left: auto;">
+         
+    <p class="text-xs text-gray-500">Authorized Signatory</p>
+</div>
                 </div>
             </div>
         </div>
