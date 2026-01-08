@@ -19,6 +19,7 @@ from firebase_admin import credentials, messaging
 import logging
 import pandas as pd
 from io import BytesIO
+import threading
 
 # =========================================================
 # CONFIGURATION & SETUP
@@ -201,6 +202,17 @@ def send_mock_whatsapp(user, subject, body):
 
 def allowed_file(filename, extension_set):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in extension_set
+
+import threading # Add to imports
+
+# Add this helper function
+def background_notify(app_ctx, user_list, subject, body):
+    with app_ctx:
+        for u in user_list:
+            send_push_notification(u.id, subject, body)
+            if u.phone_number: send_actual_sms(u.phone_number, body)
+
+
 
 # =========================================================
 # DATABASE MODELS
@@ -497,6 +509,19 @@ def serve_login_page():
     if current_user.is_authenticated:
         return redirect(f"/{current_user.role}")
     return render_template('login.html')
+
+@app.route('/admin/id_card/<int:student_id>')
+@login_required
+def generate_id_card(student_id):
+    # Security: Only Admin or the Student themselves can view the card
+    if current_user.role != 'admin' and current_user.id != student_id:
+        return jsonify({"msg": "Access Denied"}), 403
+        
+    student = db.session.get(User, student_id)
+    if not student:
+        return "Student not found", 404
+        
+    return render_template('id_card.html', student=student)
 
 @app.route('/<role>')
 @login_required
@@ -857,23 +882,17 @@ def manual_sms():
     send_push_notification(s.id, "Fee Reminder", f"Please pay pending fee: {st['balance']}")
     return jsonify({"message": "Sent"})
 
+# Update the route
 @app.route('/api/admin/bulk_notify', methods=['POST'])
 @login_required
 def bulk_notify():
-    if current_user.role != 'admin': return jsonify({"msg": "Denied"}), 403
     d = request.json
     users = User.query.all() if d['target_role'] == 'all' else User.query.filter_by(role=d['target_role'][:-1]).all()
     
-    count = 0
-    for u in users:
-        db.session.add(Message(sender_id=current_user.id, recipient_id=u.id, content=d['body']))
-        if d['type'] == 'sms' and u.phone_number:
-            send_actual_sms(u.phone_number, d['body'])
-            count += 1
-        send_push_notification(u.id, d['subject'], d['body'])
+    # Run in background (Instant response for Admin)
+    threading.Thread(target=background_notify, args=(app.app_context(), users, d['subject'], d['body'])).start()
     
-    db.session.commit()
-    return jsonify({"message": f"Sent to {count} users."})
+    return jsonify({"message": "Sending started in background!"})
 
 @app.route('/api/bulk_upload/users', methods=['POST'])
 @login_required
