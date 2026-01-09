@@ -16,7 +16,7 @@
             justify-content: center;
         }
 
-        /* A4 Page Layout (Portrait Mode - 3x3 Grid) */
+        /* A4 Page Layout (Portrait Mode) */
         .a4-page {
             width: 210mm;
             min-height: 297mm;
@@ -26,8 +26,8 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             margin-bottom: 20px;
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            grid-template-rows: repeat(3, 1fr);
+            grid-template-columns: repeat(3, 1fr); /* 3 Columns */
+            grid-template-rows: repeat(3, 1fr);    /* 3 Rows */
             gap: 5mm; 
             page-break-after: always;
         }
@@ -43,12 +43,11 @@
             position: relative;
             display: flex;
             flex-direction: column;
-            page-break-inside: avoid; /* Prevents cutting cards in half */
         }
 
         /* Top Blue Banner */
         .top-banner {
-            height: 18px;
+            height: 16px; /* Slightly thinner to save space */
             background-color: #1173d4;
             width: 100%;
             display: flex;
@@ -60,7 +59,7 @@
         .banner-text {
             color: white;
             font-weight: 700;
-            font-size: 9px;
+            font-size: 8px;
             letter-spacing: 2px;
             text-transform: uppercase;
         }
@@ -68,7 +67,7 @@
         /* Content Padding */
         .card-body {
             flex: 1;
-            padding: 5px 8px; /* Optimized padding */
+            padding: 4px 6px; /* Very tight padding */
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -107,33 +106,32 @@
                 <div class="flex flex-col items-center justify-center w-full border-b border-gray-100 pb-1 mb-1">
                     <img src="{{ url_for('static', filename='logo.png') }}" 
                          alt="Logo" 
-                         style="height: 20px; width: auto; display: block; margin: 0 auto 1px auto;">
+                         style="height: 20px; width: auto; display: block; margin: 0 auto;">
                     
-                    <h2 style="font-size: 10px; font-weight: 800; color: #111827; line-height: 1; margin: 0;">
+                    <h2 style="font-size: 10px; font-weight: 800; color: #111827; line-height: 1; margin-top: 1px;">
                         CST INSTITUTE
                     </h2>
-                    <p style="font-size: 6px; color: #6b7280; margin-top: 1px; line-height: 1;">
+                    <p style="font-size: 6px; color: #6b7280; line-height: 1;">
                         Excellence in Education
                     </p>
                 </div>
 
-                <div class="mb-1 flex-shrink-0">
+                <div class="mb-1">
                     {% if student.profile_photo_url %}
                         <img src="{{ student.profile_photo_url }}" 
-                             style="width: 58px; height: 68px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb; display: block;">
+                             style="width: 55px; height: 65px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb; display: block;">
                     {% else %}
-                        <img src="https://placehold.co/58x68/e2e8f0/64748b?text=PHOTO" 
-                             style="width: 58px; height: 68px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb; display: block;">
+                        <img src="https://placehold.co/55x65/e2e8f0/64748b?text=PHOTO" 
+                             style="width: 55px; height: 65px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb; display: block;">
                     {% endif %}
                 </div>
 
-                <div class="w-full mb-0 flex-1 flex flex-col justify-start">
-                    
-                    <h3 style="font-size: 10px; font-weight: 800; color: #1e3a8a; text-transform: uppercase; line-height: 1.1; margin-bottom: 3px; min-height: 22px; display: flex; align-items: center; justify-content: center;">
+                <div class="w-full mb-1 flex-1 flex flex-col justify-start">
+                    <h3 style="font-size: 10px; font-weight: 800; color: #1e3a8a; text-transform: uppercase; line-height: 1.1; margin-top: 2px; margin-bottom: 4px;">
                         {{ student.name }}
                     </h3>
                     
-                    <div style="font-size: 8px; line-height: 1.35; color: #374151; text-align: left; width: 100%; padding-left: 2px;">
+                    <div style="font-size: 8px; line-height: 1.25; color: #374151; text-align: left; width: 100%; padding-left: 2px;">
                         <div class="flex">
                             <strong style="width: 38px; color: #111827; flex-shrink: 0;">ID:</strong> 
                             <span>{{ "%04d" | format(student.id) }}</span>
@@ -148,7 +146,7 @@
                         </div>
                         <div class="flex">
                             <strong style="width: 38px; color: #111827; flex-shrink: 0;">DOB:</strong> 
-                            <span>{{ student.dob if student.dob else '' }}</span>
+                            <span>{{ student.dob }}</span>
                         </div>
                     </div>
                 </div>
@@ -159,20 +157,21 @@
                         {% if student.qr_code %}
                             <img src="{{ url_for('static', filename='qr_codes/' + student.qr_code) }}" 
                                  alt="QR" 
-                                 style="width: 38px; height: 38px; object-fit: contain; display: block;">
+                                 style="width: 35px; height: 35px; object-fit: contain; display: block;">
                         {% else %}
-                            <div style="width: 38px; height: 38px; background: #f9fafb; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center;">
+                            <div style="width: 35px; height: 35px; background: #f9fafb; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center;">
                                 <span style="font-size: 5px; color: #ccc;">No QR</span>
                             </div>
                         {% endif %}
+                        <span style="font-size: 5px; color: #1173d4; font-weight: 700; margin-top: 1px;">ATTENDANCE</span>
                     </div>
 
-                    <div class="flex flex-col items-center justify-end relative pb-1">
+                    <div class="flex flex-col items-end justify-end h-full">
                         <img src="{{ url_for('static', filename='signature_director.png') }}" 
                              alt="Sign" 
-                             style="height: 28px; width: auto; display: block; margin-bottom: -8px; position: relative; z-index: 10;">
+                             style="height: 22px; width: auto; display: block; margin-bottom: 2px;">
                         
-                        <p style="font-size: 6px; font-weight: 700; color: #6b7280; margin: 0; padding-top: 2px;">
+                        <p style="font-size: 6px; font-weight: 700; color: #6b7280; margin: 0; line-height: 1;">
                             Authorized Signatory
                         </p>
                     </div>
