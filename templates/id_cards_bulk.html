@@ -79,6 +79,8 @@
             .a4-page { box-shadow: none; margin: 0; border: none; padding: 10mm; }
             .no-print { display: none !important; }
             @page { size: A4; margin: 0; }
+            /* Force background colors to print */
+            * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
     </style>
 </head>
@@ -99,7 +101,11 @@
             <div class="content">
                 
                 <div class="flex justify-between items-start border-b border-gray-100 pb-1 mb-2">
-                    <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="h-6 w-auto">
+                    <img src="{{ url_for('static', filename='logo.png') }}" 
+                         alt="Logo" 
+                         class="h-6 w-auto" 
+                         style="height: 24px; width: auto;">
+                    
                     <div class="text-right">
                         <h2 class="text-[10px] font-bold text-gray-900 leading-tight">CST INSTITUTE</h2>
                         <p class="text-[7px] text-gray-500">Excellence in Education</p>
@@ -109,9 +115,13 @@
                 <div class="flex gap-3 mb-1">
                     <div class="flex-shrink-0">
                         {% if student.profile_photo_url %}
-                            <img src="{{ student.profile_photo_url }}" class="w-[60px] h-[70px] bg-gray-100 border border-gray-200 rounded object-cover">
+                            <img src="{{ student.profile_photo_url }}" 
+                                 class="w-[60px] h-[70px] bg-gray-100 border border-gray-200 rounded object-cover"
+                                 style="width: 60px; height: 70px; object-fit: cover;">
                         {% else %}
-                            <img src="https://placehold.co/60x70/e2e8f0/64748b?text=PHOTO" class="w-[60px] h-[70px] bg-gray-100 border border-gray-200 rounded object-cover">
+                            <img src="https://placehold.co/60x70/e2e8f0/64748b?text=PHOTO" 
+                                 class="w-[60px] h-[70px] bg-gray-100 border border-gray-200 rounded object-cover"
+                                 style="width: 60px; height: 70px; object-fit: cover;">
                         {% endif %}
                     </div>
                     
@@ -132,9 +142,11 @@
                         {% if student.qr_code %}
                              <img src="{{ url_for('static', filename='qr_codes/' + student.qr_code) }}" 
                                   alt="QR" 
-                                  class="w-10 h-10 object-contain">
+                                  class="w-10 h-10 object-contain"
+                                  style="width: 40px; height: 40px; object-fit: contain;">
                         {% else %}
-                            <div class="w-10 h-10 bg-gray-200 flex items-center justify-center text-[6px] text-gray-500">No QR</div>
+                            <div class="w-10 h-10 bg-gray-200 flex items-center justify-center text-[6px] text-gray-500"
+                                 style="width: 40px; height: 40px;">No QR</div>
                         {% endif %}
                     </div>
 
