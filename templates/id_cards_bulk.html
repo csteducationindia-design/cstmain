@@ -32,27 +32,32 @@
             page-break-after: always;
         }
 
-        /* ID Card Dimensions */
+        /* ID Card Container */
         .id-card {
             width: 85.6mm;
             height: 54mm;
             border: 1px solid #d1d5db;
             border-radius: 8px;
-            display: flex;
             background: white;
             overflow: hidden;
             position: relative;
+            
+            /* --- THE FIX: CSS GRID LAYOUT --- */
+            display: grid;
+            /* 3 Columns: 20px Strip | 65px Photo area | Auto-fill Text area */
+            grid-template-columns: 20px 65px 1fr; 
+            grid-template-rows: 1fr;
+            gap: 8px; /* Space between columns */
         }
 
-        /* Blue Brand Strip */
+        /* 1. Left Blue Strip */
         .brand-strip {
-            width: 18px;
             background-color: #1173d4;
             height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
-            flex-shrink: 0;
+            overflow: hidden;
         }
 
         .brand-text {
@@ -62,6 +67,24 @@
             font-weight: 700;
             font-size: 9px;
             letter-spacing: 2px;
+            white-space: nowrap;
+        }
+
+        /* 2. Photo & QR Column */
+        .visual-col {
+            padding: 8px 0; /* Vertical padding */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; /* Pushes Photo to top, QR to bottom */
+            align-items: center;
+        }
+
+        /* 3. Text Data Column */
+        .info-col {
+            padding: 6px 8px 6px 0; /* Top Right Bottom Left */
+            display: flex;
+            flex-direction: column;
+            position: relative;
         }
 
         /* Print Settings */
@@ -89,58 +112,70 @@
             
             <div class="brand-strip"><span class="brand-text">STUDENT</span></div>
             
-            <div class="flex flex-1 p-2 gap-3 h-full">
+            <div class="visual-col">
+                {% if student.profile_photo_url %}
+                    <img src="{{ student.profile_photo_url }}" 
+                         style="width: 60px; height: 70px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb; display: block;">
+                {% else %}
+                    <img src="https://placehold.co/60x70/e2e8f0/64748b?text=PHOTO" 
+                         style="width: 60px; height: 70px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb; display: block;">
+                {% endif %}
+
+                {% if student.qr_code %}
+                     <img src="{{ url_for('static', filename='qr_codes/' + student.qr_code) }}" 
+                          alt="QR" 
+                          style="width: 45px; height: 45px; object-fit: contain; display: block;">
+                {% else %}
+                     <div style="width: 45px; height: 45px; background: #f9fafb; display: flex; align-items: center; justify-content: center; border: 1px dashed #ccc;">
+                        <span style="font-size: 6px; text-align: center; color: #999;">No QR<br>Data</span>
+                     </div>
+                {% endif %}
+            </div>
+
+            <div class="info-col">
                 
-                <div class="flex flex-col items-center justify-between w-[64px] flex-shrink-0 h-full py-1 border-r border-gray-100 pr-2">
+                <div class="flex justify-between items-start border-b border-gray-100 pb-1 mb-1">
+                     <img src="{{ url_for('static', filename='logo.png') }}" 
+                         alt="Logo" style="height: 22px; width: auto; object-fit: contain;">
                     
-                    {% if student.profile_photo_url %}
-                        <img src="{{ student.profile_photo_url }}" 
-                             style="width: 60px; height: 70px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb; display: block;">
-                    {% else %}
-                        <img src="https://placehold.co/60x70/e2e8f0/64748b?text=PHOTO" 
-                             style="width: 60px; height: 70px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb; display: block;">
-                    {% endif %}
-
-                    {% if student.qr_code %}
-                         <img src="{{ url_for('static', filename='qr_codes/' + student.qr_code) }}" 
-                              alt="QR" 
-                              style="width: 42px; height: 42px; object-fit: contain; display: block;">
-                    {% else %}
-                         <div style="width: 42px; height: 42px; background: #f9fafb; display: flex; align-items: center; justify-content: center; font-size: 6px; color: #ccc;">No QR</div>
-                    {% endif %}
+                    <div class="text-right leading-none">
+                        <h2 style="font-size: 11px; font-weight: 800; color: #111827; margin: 0;">CST INSTITUTE</h2>
+                        <p style="font-size: 7px; color: #6b7280; margin: 0;">Excellence in Education</p>
+                    </div>
                 </div>
 
-                <div class="flex-1 flex flex-col justify-between h-full relative">
-                    
-                    <div class="flex justify-between items-start border-b border-gray-100 pb-1">
-                        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" style="height: 20px; width: auto;">
-                        <div class="text-right leading-none">
-                            <h2 style="font-size: 11px; font-weight: 800; color: #111827;">CST INSTITUTE</h2>
-                            <p style="font-size: 7px; color: #6b7280;">Excellence in Education</p>
+                <div class="flex-1">
+                    <h3 style="font-size: 11px; font-weight: 800; color: #1e3a8a; text-transform: uppercase; line-height: 1.1; margin-bottom: 4px;">
+                        {{ student.name }}
+                    </h3>
+
+                    <div style="font-size: 9px; line-height: 1.4; color: #374151;">
+                        <div class="flex">
+                            <strong style="width: 40px; color: #111827; flex-shrink: 0;">ID No:</strong> 
+                            <span>{{ "%04d" | format(student.id) }}</span>
+                        </div>
+                        <div class="flex">
+                            <strong style="width: 40px; color: #111827; flex-shrink: 0;">Course:</strong> 
+                            <span class="truncate">{{ student.courses_enrolled[0].name if student.courses_enrolled else 'General' }}</span>
+                        </div>
+                        <div class="flex">
+                            <strong style="width: 40px; color: #111827; flex-shrink: 0;">Phone:</strong> 
+                            <span>{{ student.phone_number }}</span>
+                        </div>
+                        <div class="flex">
+                            <strong style="width: 40px; color: #111827; flex-shrink: 0;">DOB:</strong> 
+                            <span>{{ student.dob }}</span>
                         </div>
                     </div>
-
-                    <div class="flex-1 pt-1 flex flex-col">
-                        <h3 style="font-size: 11px; font-weight: 800; color: #1e3a8a; text-transform: uppercase; line-height: 1.1; margin-bottom: 4px;">
-                            {{ student.name }}
-                        </h3>
-
-                        <div style="font-size: 9px; line-height: 1.4; color: #374151;">
-                            <div><strong style="color: #111827;">ID No:</strong> {{ "%04d" | format(student.id) }}</div>
-                            <div><strong style="color: #111827;">Course:</strong> {{ student.courses_enrolled[0].name if student.courses_enrolled else 'General' }}</div>
-                            <div><strong style="color: #111827;">Phone:</strong> {{ student.phone_number }}</div>
-                            <div><strong style="color: #111827;">DOB:</strong> {{ student.dob }}</div>
-                        </div>
-                    </div>
-
-                    <div class="text-right mt-auto">
-                        <img src="{{ url_for('static', filename='signature_director.png') }}" 
-                             alt="Sign" 
-                             style="height: 26px; width: auto; display: block; margin-left: auto; margin-bottom: -2px;">
-                        <p style="font-size: 7px; font-weight: 700; color: #6b7280; margin: 0;">Authorized Signatory</p>
-                    </div>
-
                 </div>
+
+                <div class="text-right mt-auto">
+                    <img src="{{ url_for('static', filename='signature_director.png') }}" 
+                         alt="Sign" 
+                         style="height: 28px; width: auto; display: block; margin-left: auto; margin-bottom: -4px;">
+                    <p style="font-size: 7px; font-weight: 700; color: #6b7280; margin: 0;">Authorized Signatory</p>
+                </div>
+
             </div>
         </div>
         {% endfor %}
