@@ -16,7 +16,7 @@
             justify-content: center;
         }
 
-        /* A4 Page Layout (Portrait Mode) */
+        /* A4 Page Layout (3x3 Grid) */
         .a4-page {
             width: 210mm;
             min-height: 297mm;
@@ -26,8 +26,8 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             margin-bottom: 20px;
             display: grid;
-            grid-template-columns: repeat(3, 1fr); /* 3 Columns */
-            grid-template-rows: repeat(3, 1fr);    /* 3 Rows */
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
             gap: 5mm; 
             page-break-after: always;
         }
@@ -47,7 +47,7 @@
 
         /* Top Blue Banner */
         .top-banner {
-            height: 16px; /* Slightly thinner to save space */
+            height: 16px;
             background-color: #1173d4;
             width: 100%;
             display: flex;
@@ -67,7 +67,7 @@
         /* Content Padding */
         .card-body {
             flex: 1;
-            padding: 4px 6px; /* Very tight padding */
+            padding: 4px 6px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -106,12 +106,13 @@
                 <div class="flex flex-col items-center justify-center w-full border-b border-gray-100 pb-1 mb-1">
                     <img src="{{ url_for('static', filename='logo.png') }}" 
                          alt="Logo" 
-                         style="height: 20px; width: auto; display: block; margin: 0 auto;">
+                         style="height: 18px; width: auto; display: block; margin: 0 auto;">
                     
-                    <h2 style="font-size: 10px; font-weight: 800; color: #111827; line-height: 1; margin-top: 1px;">
+                    <h2 style="font-size: 10px; font-weight: 800; color: #111827; line-height: 1; margin-top: 1px; margin-bottom: 0;">
                         CST INSTITUTE
                     </h2>
-                    <p style="font-size: 6px; color: #6b7280; line-height: 1;">
+                    
+                    <p style="font-size: 6px; color: #6b7280; line-height: 1; margin: 0;">
                         Excellence in Education
                     </p>
                 </div>
@@ -127,7 +128,7 @@
                 </div>
 
                 <div class="w-full mb-1 flex-1 flex flex-col justify-start">
-                    <h3 style="font-size: 10px; font-weight: 800; color: #1e3a8a; text-transform: uppercase; line-height: 1.1; margin-top: 2px; margin-bottom: 4px;">
+                    <h3 style="font-size: 10px; font-weight: 800; color: #1e3a8a; text-transform: uppercase; line-height: 1.1; margin-top: 1px; margin-bottom: 3px;">
                         {{ student.name }}
                     </h3>
                     
@@ -157,16 +158,15 @@
                         {% if student.qr_code %}
                             <img src="{{ url_for('static', filename='qr_codes/' + student.qr_code) }}" 
                                  alt="QR" 
-                                 style="width: 35px; height: 35px; object-fit: contain; display: block;">
+                                 style="width: 38px; height: 38px; object-fit: contain; display: block;">
                         {% else %}
-                            <div style="width: 35px; height: 35px; background: #f9fafb; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center;">
+                            <div style="width: 38px; height: 38px; background: #f9fafb; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center;">
                                 <span style="font-size: 5px; color: #ccc;">No QR</span>
                             </div>
                         {% endif %}
-                        <span style="font-size: 5px; color: #1173d4; font-weight: 700; margin-top: 1px;">ATTENDANCE</span>
                     </div>
 
-                    <div class="flex flex-col items-end justify-end h-full">
+                    <div class="flex flex-col items-end justify-end">
                         <img src="{{ url_for('static', filename='signature_director.png') }}" 
                              alt="Sign" 
                              style="height: 22px; width: auto; display: block; margin-bottom: 2px;">
