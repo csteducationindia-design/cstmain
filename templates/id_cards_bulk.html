@@ -42,12 +42,12 @@
             overflow: hidden;
             position: relative;
             
-            /* --- THE FIX: CSS GRID LAYOUT --- */
+            /* GRID LAYOUT */
             display: grid;
-            /* 3 Columns: 20px Strip | 65px Photo area | Auto-fill Text area */
+            /* 1. Strip(20px)  2. Visuals(65px)  3. Info(Auto) */
             grid-template-columns: 20px 65px 1fr; 
             grid-template-rows: 1fr;
-            gap: 8px; /* Space between columns */
+            gap: 8px; 
         }
 
         /* 1. Left Blue Strip */
@@ -70,18 +70,20 @@
             white-space: nowrap;
         }
 
-        /* 2. Photo & QR Column */
+        /* 2. Photo & QR Column (FIXED: GAP ISSUE) */
         .visual-col {
-            padding: 8px 0; /* Vertical padding */
+            padding: 8px 0;
             display: flex;
             flex-direction: column;
-            justify-content: space-between; /* Pushes Photo to top, QR to bottom */
             align-items: center;
+            /* Changed from space-between to flex-start + gap */
+            justify-content: flex-start; 
+            gap: 5px; /* Creates the perfect small distance between Photo and QR */
         }
 
         /* 3. Text Data Column */
         .info-col {
-            padding: 6px 8px 6px 0; /* Top Right Bottom Left */
+            padding: 6px 8px 6px 0; 
             display: flex;
             flex-direction: column;
             position: relative;
@@ -127,7 +129,7 @@
                           style="width: 45px; height: 45px; object-fit: contain; display: block;">
                 {% else %}
                      <div style="width: 45px; height: 45px; background: #f9fafb; display: flex; align-items: center; justify-content: center; border: 1px dashed #ccc;">
-                        <span style="font-size: 6px; text-align: center; color: #999;">No QR<br>Data</span>
+                        <span style="font-size: 6px; text-align: center; color: #999;">No QR</span>
                      </div>
                 {% endif %}
             </div>
@@ -135,7 +137,7 @@
             <div class="info-col">
                 
                 <div class="flex justify-between items-start border-b border-gray-100 pb-1 mb-1">
-                     <img src="{{ url_for('static', filename='logo.png') }}" 
+                    <img src="{{ url_for('static', filename='logo.png') }}" 
                          alt="Logo" style="height: 22px; width: auto; object-fit: contain;">
                     
                     <div class="text-right leading-none">
@@ -169,11 +171,15 @@
                     </div>
                 </div>
 
-                <div class="text-right mt-auto">
+                <div class="mt-auto self-end flex flex-col items-center" style="width: 80px;"> 
+                    
                     <img src="{{ url_for('static', filename='signature_director.png') }}" 
                          alt="Sign" 
-                         style="height: 28px; width: auto; display: block; margin-left: auto; margin-bottom: -4px;">
-                    <p style="font-size: 7px; font-weight: 700; color: #6b7280; margin: 0;">Authorized Signatory</p>
+                         style="height: 30px; width: auto; display: block; margin-bottom: -6px;">
+                    
+                    <p style="font-size: 7px; font-weight: 700; color: #6b7280; margin: 0; text-align: center;">
+                        Authorized Signatory
+                    </p>
                 </div>
 
             </div>
