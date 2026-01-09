@@ -16,43 +16,43 @@
             justify-content: center;
         }
 
-        /* A4 Paper Setup */
+        /* A4 Page Layout */
         .a4-page {
             width: 210mm;
             min-height: 297mm;
             background: white;
             padding: 10mm;
-            box-sizing: border-box;
+            box-sizing: border-box; /* Important for padding */
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             margin-bottom: 20px;
             display: grid;
-            grid-template-columns: 1fr 1fr; /* 2 Columns */
-            grid-template-rows: repeat(4, 1fr); /* 4 Rows */
+            grid-template-columns: 1fr 1fr; /* Two columns */
+            grid-template-rows: repeat(4, 1fr); /* Four rows */
             gap: 10mm; /* Space between cards */
             page-break-after: always;
         }
 
-        /* ID Card Container */
+        /* The ID Card Box */
         .id-card {
-            width: 85.6mm; /* Standard CR80 width */
-            height: 54mm;  /* Standard CR80 height */
+            width: 85.6mm; /* Exact Credit Card Width */
+            height: 54mm;  /* Exact Credit Card Height */
             border: 1px solid #d1d5db;
             border-radius: 8px;
             display: flex;
-            overflow: hidden;
-            position: relative;
             background: white;
-            page-break-inside: avoid;
+            overflow: hidden; /* Cuts off anything that sticks out */
+            position: relative;
         }
 
+        /* Blue Strip on Left */
         .brand-strip {
-            width: 25px;
-            background: #1173d4;
+            width: 24px;
+            background-color: #1173d4;
             height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
-            flex-shrink: 0;
+            flex-shrink: 0; /* Prevents strip from shrinking */
         }
 
         .brand-text {
@@ -60,17 +60,17 @@
             transform: rotate(180deg);
             color: white;
             font-weight: 700;
-            font-size: 12px;
+            font-size: 10px;
             letter-spacing: 2px;
         }
 
-        /* Content Area */
+        /* Main Content Area */
         .content {
             flex: 1;
             padding: 8px 10px;
             display: flex;
             flex-direction: column;
-            width: 100%;
+            justify-content: space-between; /* Pushes Footer to bottom */
         }
 
         /* Print Settings */
@@ -79,7 +79,6 @@
             .a4-page { box-shadow: none; margin: 0; border: none; padding: 10mm; }
             .no-print { display: none !important; }
             @page { size: A4; margin: 0; }
-            /* Force background colors to print */
             * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
     </style>
@@ -96,66 +95,62 @@
     <div class="a4-page">
         {% for student in batch %}
         <div class="id-card">
+            
             <div class="brand-strip"><span class="brand-text">STUDENT</span></div>
             
             <div class="content">
                 
-                <div class="flex justify-between items-start border-b border-gray-100 pb-1 mb-2">
+                <div class="flex justify-between items-start border-b border-gray-200 pb-1 mb-1">
                     <img src="{{ url_for('static', filename='logo.png') }}" 
                          alt="Logo" 
-                         class="h-6 w-auto" 
-                         style="height: 24px; width: auto;">
+                         style="height: 24px; width: auto; display: block;">
                     
                     <div class="text-right">
-                        <h2 class="text-[10px] font-bold text-gray-900 leading-tight">CST INSTITUTE</h2>
-                        <p class="text-[7px] text-gray-500">Excellence in Education</p>
+                        <h2 style="font-size: 12px; font-weight: 800; color: #111827; margin: 0; line-height: 1;">CST INSTITUTE</h2>
+                        <p style="font-size: 8px; color: #6b7280; margin: 0;">Excellence in Education</p>
                     </div>
                 </div>
 
-                <div class="flex gap-3 mb-1">
+                <div class="flex flex-row items-center gap-2 mt-1" style="height: 75px;">
                     <div class="flex-shrink-0">
                         {% if student.profile_photo_url %}
                             <img src="{{ student.profile_photo_url }}" 
-                                 class="w-[60px] h-[70px] bg-gray-100 border border-gray-200 rounded object-cover"
-                                 style="width: 60px; height: 70px; object-fit: cover;">
+                                 style="width: 60px; height: 70px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb;">
                         {% else %}
                             <img src="https://placehold.co/60x70/e2e8f0/64748b?text=PHOTO" 
-                                 class="w-[60px] h-[70px] bg-gray-100 border border-gray-200 rounded object-cover"
-                                 style="width: 60px; height: 70px; object-fit: cover;">
+                                 style="width: 60px; height: 70px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb;">
                         {% endif %}
                     </div>
-                    
-                    <div class="flex-1 flex flex-col justify-center text-[9px] leading-snug">
-                        <div class="text-[11px] font-bold text-black uppercase mb-1 leading-tight">
+
+                    <div class="flex-1 flex flex-col justify-center" style="font-size: 9px; line-height: 1.3;">
+                        <h3 style="font-size: 11px; font-weight: 800; color: #000; text-transform: uppercase; margin-bottom: 2px; line-height: 1.1;">
                             {{ student.name }}
-                        </div>
-                        <div class="text-gray-600"><strong class="text-gray-800">ID:</strong> {{ "%04d" | format(student.id) }}</div>
-                        <div class="text-gray-600"><strong class="text-gray-800">Phone:</strong> {{ student.phone_number }}</div>
-                        <div class="text-gray-600"><strong class="text-gray-800">Course:</strong> {{ student.courses_enrolled[0].name if student.courses_enrolled else 'General' }}</div>
-                        <div class="text-gray-600"><strong class="text-gray-800">DOB:</strong> {{ student.dob }}</div>
+                        </h3>
+                        <div><strong style="color: #374151;">ID:</strong> {{ "%04d" | format(student.id) }}</div>
+                        <div><strong style="color: #374151;">Phone:</strong> {{ student.phone_number }}</div>
+                        <div><strong style="color: #374151;">Course:</strong> {{ student.courses_enrolled[0].name if student.courses_enrolled else 'General' }}</div>
+                        <div><strong style="color: #374151;">DOB:</strong> {{ student.dob }}</div>
                     </div>
                 </div>
 
-                <div class="flex justify-between items-end mt-auto w-full pt-1 border-t border-gray-50">
+                <div class="flex justify-between items-end mt-auto pt-1 border-t border-gray-100">
                     
-                    <div class="flex-shrink-0">
+                    <div>
                         {% if student.qr_code %}
                              <img src="{{ url_for('static', filename='qr_codes/' + student.qr_code) }}" 
                                   alt="QR" 
-                                  class="w-10 h-10 object-contain"
-                                  style="width: 40px; height: 40px; object-fit: contain;">
+                                  style="width: 35px; height: 35px; object-fit: contain; display: block;">
                         {% else %}
-                            <div class="w-10 h-10 bg-gray-200 flex items-center justify-center text-[6px] text-gray-500"
-                                 style="width: 40px; height: 40px;">No QR</div>
+                             <div style="width: 35px; height: 35px; background: #f3f4f6;"></div>
                         {% endif %}
                     </div>
 
                     <div class="text-right">
                         <img src="{{ url_for('static', filename='signature_director.png') }}" 
                              alt="Sign" 
-                             style="height: 30px; display: block; margin-left: auto; margin-bottom: -4px;">
+                             style="height: 30px; width: auto; display: block; margin-left: auto; margin-bottom: -3px;">
                         
-                        <p class="text-[8px] font-bold text-gray-800 mt-1">
+                        <p style="font-size: 8px; font-weight: 700; color: #4b5563; margin: 0;">
                             Authorized Signatory
                         </p>
                     </div>
