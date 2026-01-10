@@ -13,5 +13,3 @@ firebase-admin
 google-auth>=2.0.0
 Flask-Caching
 psycopg2-binary
-pandas
-openpyxl

@@ -1339,19 +1339,13 @@ def check_and_upgrade_db():
     except Exception as e:
         print(f"Migration Note: {e}")
 
-# Update the main init function to call this
-def initialize_database():
-    with app.app_context():
-        db.create_all()         # Creates tables if they don't exist
-        check_and_upgrade_db()  # Adds columns to EXISTING tables safely
-        init_firebase()
+# --- INITIALIZATION (Run once on import/start) ---
+with app.app_context():
+    # This ensures tables & columns exist even when running via Gunicorn
+    db.create_all()
+    check_and_upgrade_db()
+    init_firebase()
 
-def initialize_database():
-    with app.app_context():
-        db.create_all()
-        check_and_upgrade_db()
-        init_firebase()
-
+# Only runs if executed directly (e.g. for testing)
 if __name__ == '__main__':
-    initialize_database()
     app.run(debug=True, host='0.0.0.0', port=5000)
