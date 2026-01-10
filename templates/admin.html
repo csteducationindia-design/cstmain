@@ -1115,6 +1115,7 @@ async function sendBulkFeeReminder() {
             
             if (role === 'student') {
                 document.getElementById('student-parent-select').value = user.parent_id || '';
+		if (user.session_id) document.getElementById('student-session-select').value = user.session_id;
                 document.getElementById('student-dob-input').value = user.dob || '';
                 document.getElementById('student-gender-select').value = user.gender || '';
                 document.getElementById('student-father-name-input').value = user.father_name || '';
