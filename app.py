@@ -283,7 +283,6 @@ def calculate_fee_status(student_id):
         for course in student.courses_enrolled:
             course_fees = FeeStructure.query.filter_by(course_id=course.id).all()
             for fee_struct in course_fees:
-                # OPTIONAL: Filter by session if needed, e.g. if fee_struct.academic_session_id == student.session_id
                 total_due += fee_struct.total_amount
                 if fee_struct.due_date:
                     due_dates.append(fee_struct.due_date)
@@ -317,8 +316,6 @@ def process_bulk_users(file_stream):
     users_added = []
     users_failed = []
     
-    # Process rows... (Simplified for brevity, ensure your original logic is here if needed)
-    # Re-using the logic from your file:
     rows = list(reader)
     for row in rows:
         if row.get('role', '').lower() == 'student':
@@ -369,7 +366,6 @@ def check_session():
 
 # --- ADMIN ROUTES ---
 
-# 1. FIXED API_USERS (With Session Filter)
 @app.route('/api/users', methods=['GET', 'POST', 'PUT', 'DELETE'])
 @login_required
 def api_users():
@@ -796,14 +792,14 @@ def check_and_upgrade_db():
                 conn.commit()
     except Exception as e: print(f"Migration Error: {e}")
 
-def initialize_app():
+def initialize_database():
     with app.app_context():
         db.create_all()
         check_and_upgrade_db()
         init_firebase()
 
 # Run init immediately so Gunicorn picks it up
-initialize_app()
+initialize_database()
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
