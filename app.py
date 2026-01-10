@@ -592,11 +592,25 @@ def health_check(): return "OK", 200
 @login_required
 def api_users():
     if current_user.role != 'admin': return jsonify({"msg": "Denied"}), 403
+    
+    # --- GET: FETCH STUDENTS WITH FILTERS ---
     if request.method == 'GET':
+        session_id = request.args.get('session_id') # Filter by Batch
         search = request.args.get('search', '').lower()
-        q = User.query
-        if search: q = q.filter(or_(User.name.ilike(f'%{search}%'), User.email.ilike(f'%{search}%')))
-        return jsonify([u.to_dict() for u in q.all()])
+        
+        # Start with all students
+        query = User.query
+        
+        # 1. Apply Session Filter (The "Session First" logic)
+        if session_id:
+            query = query.filter_by(session_id=int(session_id))
+            
+        # 2. Apply Search
+        if search:
+            query = query.filter(or_(User.name.ilike(f'%{search}%'), User.email.ilike(f'%{search}%')))
+            
+        users = query.all()
+        return jsonify([u.to_dict() for u in users])
         
     if request.method == 'POST':
         d = request.form
@@ -1119,86 +1133,80 @@ def report_perf():
         pct = round((ob/tot)*100) if tot > 0 else 0
         res.append({"student_name": u.name, "assessments_taken": len(g), "total_score": ob, "overall_percentage": pct})
     return jsonify(res)
+
 @app.route('/api/export/<report_type>', methods=['GET'])
 @login_required
 def export_data(report_type):
-    if current_user.role != 'admin':
-        return jsonify({"msg": "Denied"}), 403
+    if current_user.role != 'admin': return jsonify({"msg": "Denied"}), 403
+
+    import pandas as pd
+    from io import BytesIO
 
     output = BytesIO()
-    filename = f"{report_type}_report.xlsx"
+    filename = f"{report_type}_{datetime.now().strftime('%Y%m%d')}.xlsx"
     df = pd.DataFrame()
 
-    # 1. Logic for Fee Pending Report
+    # Get Filters
+    session_id = request.args.get('session_id')
+    course_id = request.args.get('course_id')
+
+    # Base Query: All Students
+    query = User.query.filter_by(role='student')
+
+    # Apply Filters (Batch Wise / Course Wise)
+    if session_id:
+        query = query.filter_by(session_id=int(session_id))
+    if course_id:
+        query = query.filter(User.courses_enrolled.any(id=int(course_id)))
+
+    students = query.all()
+
+    # --- REPORT 1: FEE PENDING REPORT ---
     if report_type == 'fee_pending':
-        course_filter_id = request.args.get('course_id')
-        students = User.query.filter_by(role='student').all()
         data = []
-        
         for s in students:
-            # Apply Course Filter logic
-            if course_filter_id:
-                student_course_ids = [c.id for c in s.courses_enrolled]
-                if int(course_filter_id) not in student_course_ids:
-                    continue
-            
             st = calculate_fee_status(s.id)
-            if st['balance'] > 0:
+            if st['balance'] > 0: # Only show students who owe money
+                courses = ", ".join([c.name for c in s.courses_enrolled])
                 data.append({
-                    "Student Name": s.name,
+                    "Admission No": s.admission_number,
+                    "Name": s.name,
+                    "Batch": s.session.name if s.session else "Unassigned",
+                    "Courses": courses,
                     "Phone": s.phone_number,
-                    "Email": s.email,
-                    "Total Due": st['total_due'],
+                    "Total Fee": st['total_due'],
                     "Paid": st['total_paid'],
-                    "Balance Pending": st['balance'],
-                    "Due Date": st['due_date'],
-                    "Days Overdue": abs(st['pending_days']) if st['pending_days'] < 0 else 0
+                    "Pending Balance": st['balance'],
+                    "Due Date": st['due_date']
                 })
         df = pd.DataFrame(data)
 
-    # 2. Logic for Attendance Report
-    elif report_type == 'attendance':
-        students = User.query.filter_by(role='student').all()
-        data = []
-        for s in students:
-            tot = Attendance.query.filter_by(student_id=s.id).count()
-            pres = Attendance.query.filter_by(student_id=s.id, status='Present').count()
-            pct = round((pres/tot)*100) if tot > 0 else 0
-            data.append({
-                "Student Name": s.name,
-                "Total Classes": tot,
-                "Present": pres,
-                "Absent": tot-pres,
-                "Percentage": f"{pct}%"
-            })
-        df = pd.DataFrame(data)
-
-    # 3. Logic for Student List
+    # --- REPORT 2: ALL STUDENT DATA (Batch/Course Wise) ---
     elif report_type == 'students':
-        students = User.query.filter_by(role='student').all()
         data = []
         for s in students:
             parent = db.session.get(User, s.parent_id) if s.parent_id else None
             courses = ", ".join([c.name for c in s.courses_enrolled])
             data.append({
-                "ID": s.id,
+                "Admission No": s.admission_number,
                 "Name": s.name,
-                "Email": s.email,
-                "Phone": s.phone_number,
+                "Batch/Session": s.session.name if s.session else "Unassigned",
                 "Courses": courses,
-                "Parent Name": parent.name if parent else "N/A",
-                "Parent Phone": parent.phone_number if parent else "N/A"
+                "Phone": s.phone_number,
+                "Father Name": s.father_name,
+                "Parent Phone": parent.phone_number if parent else ""
             })
         df = pd.DataFrame(data)
 
-    # --- Generate Excel ---
     if df.empty:
-        return "No data to export", 404
+        return "No data found for these filters.", 404
 
+    # Generate Excel
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df.to_excel(writer, index=False, sheet_name='Report')
 
     output.seek(0)
+    return send_file(output, download_name=filename, as_attachment=True, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     
     return send_file(
         output,
@@ -1303,6 +1311,39 @@ def check_and_upgrade_db():
                 conn.execute(text("ALTER TABLE fee_structure ADD COLUMN course_id INTEGER REFERENCES course(id)"))
                 conn.commit()
     except Exception as e: print(f"Migration Error: {e}")
+
+def check_and_upgrade_db():
+    """
+    Safely adds new columns (like session_id) to the existing database 
+    WITHOUT deleting any student data.
+    """
+    try:
+        with app.app_context():
+            insp = inspect(db.engine)
+            user_cols = [c['name'] for c in insp.get_columns('user')]
+            
+            with db.engine.connect() as conn:
+                # 1. Add session_id if missing (Links student to a batch)
+                if 'session_id' not in user_cols:
+                    print("Migrating: Adding session_id column...")
+                    conn.execute(text("ALTER TABLE user ADD COLUMN session_id INTEGER REFERENCES academic_session(id)"))
+
+                # 2. Add admission_number if missing
+                if 'admission_number' not in user_cols:
+                    print("Migrating: Adding admission_number column...")
+                    conn.execute(text("ALTER TABLE user ADD COLUMN admission_number VARCHAR(50)"))
+
+                conn.commit()
+                print("Database Safe-Check Complete: No data lost.")
+    except Exception as e:
+        print(f"Migration Note: {e}")
+
+# Update the main init function to call this
+def initialize_database():
+    with app.app_context():
+        db.create_all()         # Creates tables if they don't exist
+        check_and_upgrade_db()  # Adds columns to EXISTING tables safely
+        init_firebase()
 
 def initialize_database():
     with app.app_context():
