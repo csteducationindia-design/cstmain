@@ -2407,17 +2407,40 @@ async function fetchAnnouncements(isManagementPage) {
 
     // 2. Fetch Users based on Filters
     async function loadUsers() {
+        // 1. Get the selected Session ID
         const sessionId = document.getElementById('filterSession').value;
         const search = document.getElementById('userSearch').value;
         
-        try {
-            // Using the new API logic you added to app.py
-            const res = await fetch(`/api/users?session_id=${sessionId}&search=${search}`);
-            const users = await res.json();
-            // Filter only students for this table
-            const students = users.filter(u => u.role === 'student');
-            renderUserTable(students);
-        } catch (err) { console.error("Error loading users:", err); }
+        // 2. Send it to the backend
+        const res = await fetch(`${API_BASE_URL}/users?session_id=${sessionId}&search=${search}`);
+        const users = await res.json();
+        
+        // 3. Filter strictly for students (so teachers don't show up in the list)
+        const students = users.filter(u => u.role === 'student');
+        
+        const tbody = document.getElementById('usersTableBody');
+        tbody.innerHTML = ''; // Clear previous data
+        
+        if(students.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500">No students found in this session.</td></tr>';
+            return;
+        }
+
+        students.forEach(u => {
+            tbody.innerHTML += `
+                <tr class="hover:bg-gray-50 border-b">
+                    <td class="px-6 py-4">${u.admission_number || '-'}</td>
+                    <td class="px-6 py-4 font-bold">${u.name}</td>
+                    <td class="px-6 py-4 text-blue-600">${u.session_name || 'Unassigned'}</td>
+                    <td class="px-6 py-4">${u.phone_number || ''}</td>
+                    <td class="px-6 py-4 text-right">
+                        <a href="/admin/id_card/${u.id}" target="_blank" class="text-indigo-600 mr-2">ID Card</a>
+                        <button onclick="editUser(${u.id})" class="text-blue-600 mr-2">Edit</button>
+                        <button onclick="deleteUser(${u.id})" class="text-red-600">Delete</button>
+                    </td>
+                </tr>`;
+        });
+        allUsersCache = users;
     }
 
     // 3. RENDER FUNCTION

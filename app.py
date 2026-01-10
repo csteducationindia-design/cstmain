@@ -588,7 +588,7 @@ def sw(): return send_from_directory(app.static_folder, 'firebase-messaging-sw.j
 def health_check(): return "OK", 200
 
 # --- ADMIN ROUTES ---
-@app.route('/api/users', methods=['GET', 'POST', 'PUT'])
+@app.route('/api/users', methods=['GET', 'POST', 'PUT', 'DELETE'])
 @login_required
 def api_users():
     if current_user.role != 'admin': return jsonify({"msg": "Denied"}), 403
@@ -602,15 +602,16 @@ def api_users():
         query = User.query
         
         # 1. Apply Session Filter (The "Session First" logic)
+	session_id = request.args.get('session_id')
         if session_id:
             query = query.filter_by(session_id=int(session_id))
             
         # 2. Apply Search
+	search = request.args.get('search')
         if search:
             query = query.filter(or_(User.name.ilike(f'%{search}%'), User.email.ilike(f'%{search}%')))
-            
-        users = query.all()
-        return jsonify([u.to_dict() for u in users])
+        return jsonify([u.to_dict() for u in query.all()])
+        
         
     if request.method == 'POST':
         d = request.form
