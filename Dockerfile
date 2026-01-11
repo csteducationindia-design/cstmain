@@ -13,15 +13,14 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of your application code into the container
+# Copy the rest of your application code
 COPY . .
 
-# CRITICAL FIX 1: Create data directory and run initialization script to create DB/tables.
+# Create data directory (DB initialization happens in app.py now)
 RUN mkdir -p /app/data
-RUN python -c 'from app import initialize_database; initialize_database()'
 
-# Expose the port the app runs on
+# Expose the port
 EXPOSE 8080
 
-# CRITICAL FIX 2: Increase Gunicorn concurrency (workers/threads) to prevent hanging during blocking I/O operations (SMS/API calls).
+# Start the application using Gunicorn
 CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "3", "--threads", "4", "app:app"]
