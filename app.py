@@ -522,7 +522,24 @@ def generate_id_card(student_id):
         return "Student not found", 404
         
     return render_template('id_card.html', student=student)
-
+@app.route('/admin/id_cards/bulk')
+@login_required
+def bulk_ids():
+    if current_user.role != 'admin': return "Denied", 403
+    
+    query = User.query.filter_by(role='student')
+    
+    # FILTER LOGIC: Only filter if session_id is a valid number
+    sid = request.args.get('session_id')
+    if sid and sid != 'null' and sid != '':
+        query = query.filter_by(session_id=int(sid))
+    
+    students = query.all()
+    
+    # Debug: Print count to console
+    print(f"Generating ID cards for {len(students)} students.")
+    
+    return render_template('id_cards_bulk.html', students=students)
 @app.route('/<role>')
 @login_required
 def serve_role_page(role):
