@@ -1096,7 +1096,7 @@ async function sendBulkFeeReminder() {
             }
         }
 
-        function populateUserForm(user, role) {
+       function populateUserForm(user, role) {
             const form = document.getElementById(`${role}-form`);
             if (!form) return;
 
@@ -1115,7 +1115,13 @@ async function sendBulkFeeReminder() {
             
             if (role === 'student') {
                 document.getElementById('student-parent-select').value = user.parent_id || '';
-		if (user.session_id) document.getElementById('student-session-select').value = user.session_id;
+                
+                // --- FIX: This line ensures the Batch is selected when editing ---
+                if (user.session_id) {
+                    document.getElementById('student-session-select').value = user.session_id;
+                }
+                // ---------------------------------------------------------------
+
                 document.getElementById('student-dob-input').value = user.dob || '';
                 document.getElementById('student-gender-select').value = user.gender || '';
                 document.getElementById('student-father-name-input').value = user.father_name || '';
@@ -1125,13 +1131,19 @@ async function sendBulkFeeReminder() {
                 document.getElementById('student-state-input').value = user.state || '';
                 document.getElementById('student-pincode-input').value = user.pincode || '';
                 
+                // Pre-select multiple courses
                 const courseSelect = document.getElementById('student-course-select');
-                if (courseSelect) courseSelect.value = user.course_ids && user.course_ids.length > 0 ? user.course_ids[0] : ''; 
+                if (courseSelect) {
+                    // Clear previous selection
+                    Array.from(courseSelect.options).forEach(opt => opt.selected = false);
+                    if (user.course_ids && user.course_ids.length > 0) {
+                        user.course_ids.forEach(cid => {
+                            const option = courseSelect.querySelector(`option[value="${cid}"]`);
+                            if (option) option.selected = true;
+                        });
+                    }
+                }
 
-                const preview = document.getElementById('student-photo-preview');
-                const defaultAvatar = `https://placehold.co/100x100/f6f7f8/666?text=${user.name.charAt(0) || '?'}`;
-                const photoUrl = user.profile_photo_url ? `${API_ORIGIN}${user.profile_photo_url}?t=${new Date().getTime()}` : defaultAvatar;
-                preview.src = photoUrl;
                 document.getElementById('student-photo-file-input').value = ''; 
             }
             
