@@ -117,7 +117,6 @@ def send_push_notification(user_id, title, body):
             return str(e)
 
 def send_actual_sms(phone_number, message_body):
-    # Placeholder for SMS API
     return True
 
 def background_notify(app_ctx, user_list, subject, body):
@@ -278,14 +277,16 @@ def calculate_fee_status(student_id):
     total_due = 0.0
     due_dates = []
 
-    # Calculate fees based on enrolled courses
+    # Calculate fees: Only include fees for the student's assigned session
     if student.courses_enrolled:
         for course in student.courses_enrolled:
             course_fees = FeeStructure.query.filter_by(course_id=course.id).all()
             for fee_struct in course_fees:
-                total_due += fee_struct.total_amount
-                if fee_struct.due_date:
-                    due_dates.append(fee_struct.due_date)
+                # CRITICAL FIX: Only charge fees if they belong to the student's session
+                if fee_struct.academic_session_id == student.session_id:
+                    total_due += fee_struct.total_amount
+                    if fee_struct.due_date:
+                        due_dates.append(fee_struct.due_date)
 
     final_due_date = min(due_dates) if due_dates else date.today()
     balance = total_due - total_paid
@@ -311,19 +312,50 @@ def send_fee_alert_sms(user, balance, due_date):
     return True
 
 def process_bulk_users(file_stream):
+    """Parses CSV and creates users."""
     stream = StringIO(file_stream.decode('utf-8'))
     reader = csv.DictReader(stream)
     users_added = []
     users_failed = []
-    
     rows = list(reader)
+
+    # First pass: Non-students
+    for row in rows:
+        if row.get('role', '').lower() != 'student':
+            try:
+                if User.query.filter_by(email=row['email']).first(): continue
+                pw = bcrypt.generate_password_hash(row['password']).decode('utf-8')
+                u = User(name=row['name'], email=row['email'], password=pw, role=row['role'], phone_number=row.get('phone_number'))
+                db.session.add(u)
+                users_added.append(row['email'])
+            except Exception as e: users_failed.append(f"{row['email']}: {e}")
+    db.session.commit()
+
+    # Second pass: Students
     for row in rows:
         if row.get('role', '').lower() == 'student':
-            if User.query.filter_by(email=row['email']).first(): continue
-            pw = bcrypt.generate_password_hash(row['password']).decode('utf-8')
-            u = User(name=row['name'], email=row['email'], password=pw, role='student')
-            db.session.add(u)
-            users_added.append(row['email'])
+            try:
+                if User.query.filter_by(email=row['email']).first(): continue
+                parent_id = None
+                if row.get('parent_email'):
+                    p = User.query.filter_by(email=row['parent_email']).first()
+                    if p: parent_id = p.id
+                
+                pw = bcrypt.generate_password_hash(row['password']).decode('utf-8')
+                u = User(name=row['name'], email=row['email'], password=pw, role='student', 
+                         phone_number=row.get('phone_number'), parent_id=parent_id,
+                         gender=row.get('gender'), father_name=row.get('father_name'), mother_name=row.get('mother_name'),
+                         address_line1=row.get('address_line1'), city=row.get('city'), state=row.get('state'), pincode=row.get('pincode'), dob=row.get('dob'))
+                db.session.add(u)
+                
+                if row.get('course_ids'):
+                    cids = [int(c) for c in row['course_ids'].split(',') if c.strip().isdigit()]
+                    courses = Course.query.filter(Course.id.in_(cids)).all()
+                    u.courses_enrolled.extend(courses)
+                    
+                users_added.append(row['email'])
+            except Exception as e: users_failed.append(f"{row['email']}: {e}")
+    
     db.session.commit()
     return {"added": users_added, "failed": users_failed}
 
@@ -619,7 +651,6 @@ def pending_report():
             res.append({"student_id": s.id, "student_name": s.name, "phone_number": s.phone_number, "balance": st['balance'], "due_date": st['due_date'], "pending_days": st['pending_days']})
     return jsonify(res)
 
-# 2. FIXED EXPORT_DATA (With Session Filter & Safe Indentation)
 @app.route('/api/export/<report_type>', methods=['GET'])
 @login_required
 def export_data(report_type):
