@@ -1096,7 +1096,7 @@ async function sendBulkFeeReminder() {
             }
         }
 
-       function populateUserForm(user, role) {
+      function populateUserForm(user, role) {
             const form = document.getElementById(`${role}-form`);
             if (!form) return;
 
@@ -1116,12 +1116,11 @@ async function sendBulkFeeReminder() {
             if (role === 'student') {
                 document.getElementById('student-parent-select').value = user.parent_id || '';
                 
-                // --- FIX: This line ensures the Batch is selected when editing ---
+                // --- FIX: Ensure Batch is selected ---
                 if (user.session_id) {
                     document.getElementById('student-session-select').value = user.session_id;
                 }
-                // ---------------------------------------------------------------
-
+                
                 document.getElementById('student-dob-input').value = user.dob || '';
                 document.getElementById('student-gender-select').value = user.gender || '';
                 document.getElementById('student-father-name-input').value = user.father_name || '';
@@ -1131,10 +1130,9 @@ async function sendBulkFeeReminder() {
                 document.getElementById('student-state-input').value = user.state || '';
                 document.getElementById('student-pincode-input').value = user.pincode || '';
                 
-                // Pre-select multiple courses
+                // --- FIX: Ensure Courses are selected ---
                 const courseSelect = document.getElementById('student-course-select');
                 if (courseSelect) {
-                    // Clear previous selection
                     Array.from(courseSelect.options).forEach(opt => opt.selected = false);
                     if (user.course_ids && user.course_ids.length > 0) {
                         user.course_ids.forEach(cid => {
@@ -1142,6 +1140,12 @@ async function sendBulkFeeReminder() {
                             if (option) option.selected = true;
                         });
                     }
+                }
+                
+                // Update admission number
+                if (user.admission_number) {
+                    const admInput = form.querySelector('input[name="admission_number"]');
+                    if (admInput) admInput.value = user.admission_number;
                 }
 
                 document.getElementById('student-photo-file-input').value = ''; 
