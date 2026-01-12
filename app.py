@@ -368,6 +368,28 @@ class TimeTable(db.Model):
     end_time = db.Column(db.String(10))   # 11:00
     room_number = db.Column(db.String(50))
 
+class SyllabusLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    course_id = db.Column(db.Integer, db.ForeignKey('course.id'))
+    teacher_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    topic_covered = db.Column(db.String(300))
+    log_date = db.Column(db.Date, default=date.today)
+
+class Assignment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    course_id = db.Column(db.Integer, db.ForeignKey('course.id'))
+    teacher_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    title = db.Column(db.String(150))
+    due_date = db.Column(db.Date)
+
+class AssignmentSubmission(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    assignment_id = db.Column(db.Integer)
+    student_id = db.Column(db.Integer)
+    status = db.Column(db.String(20), default='Pending')
+
+
+
 # =========================================================
 # BUSINESS LOGIC & HELPERS
 # =========================================================
@@ -522,6 +544,7 @@ def generate_id_card(student_id):
         return "Student not found", 404
         
     return render_template('id_card.html', student=student)
+
 @app.route('/admin/id_cards/bulk')
 @login_required
 def bulk_ids():
@@ -540,6 +563,58 @@ def bulk_ids():
     print(f"Generating ID cards for {len(students)} students.")
     
     return render_template('id_cards_bulk.html', students=students)
+
+@app.route('/api/admin/student', methods=['POST'])
+@login_required
+def save_student():
+    if current_user.role != 'admin':
+        return jsonify({"error": "Unauthorized"}), 403
+
+    form = request.form
+    student_id = form.get('id')
+
+    if student_id:
+        student = db.session.get(User, int(student_id))
+        if not student:
+            return jsonify({"error": "Student not found"}), 404
+    else:
+        student = User(role='student')
+
+    # BASIC DETAILS
+    student.name = form['name']
+    student.email = form['email']
+    student.phone_number = form.get('phone_number')
+    student.dob = form.get('dob')
+    student.gender = form.get('gender')
+
+    # PASSWORD (only if entered)
+    if form.get('password'):
+        student.password = bcrypt.generate_password_hash(
+            form['password']
+        ).decode('utf-8')
+
+    # PARENT LINK
+    student.parent_id = form.get('parent_id') or None
+
+    # COURSE ENROLLMENT
+    course_ids = request.form.getlist('course_ids')
+    student.courses_enrolled = Course.query.filter(
+        Course.id.in_(course_ids)
+    ).all()
+
+    # PHOTO UPLOAD (only if new file)
+    file = request.files.get('profile_photo_file')
+    if file and allowed_file(file.filename, ALLOWED_IMAGE_EXTENSIONS):
+        filename = secure_filename(file.filename)
+        path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(path)
+        student.profile_photo_url = f"/uploads/{filename}"
+
+    db.session.add(student)
+    db.session.commit()
+
+    return jsonify({"success": True})
+
 @app.route('/<role>')
 @login_required
 def serve_role_page(role):
@@ -984,6 +1059,45 @@ def teacher_notify():
         result = "Invalid message type"
 
     return jsonify({"message": result})
+
+@app.route('/api/teacher/syllabus', methods=['POST'])
+@login_required
+def save_syllabus():
+    if current_user.role != 'teacher':
+        return jsonify({"error": "Unauthorized"}), 403
+
+    data = request.json
+
+    log = SyllabusLog(
+        course_id=data['course_id'],
+        teacher_id=current_user.id,
+        topic_covered=data['topic']
+    )
+    db.session.add(log)
+    db.session.commit()
+
+    return jsonify({"success": True})
+
+@app.route('/api/teacher/assignments/status')
+@login_required
+def assignment_status():
+    assignments = Assignment.query.filter_by(
+        teacher_id=current_user.id
+    ).all()
+
+    result = []
+    for a in assignments:
+        pending = AssignmentSubmission.query.filter_by(
+            assignment_id=a.id,
+            status='Pending'
+        ).count()
+
+        result.append({
+            "title": a.title,
+            "pending": pending
+        })
+
+    return jsonify(result)
 
 @app.route('/api/teacher/reports/attendance', methods=['GET'])
 @login_required

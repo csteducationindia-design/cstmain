@@ -718,6 +718,18 @@
                 document.getElementById('total-my-students').textContent = allTeacherStudents.length;
             } catch (e) { console.error(e); }
         }
+async function submitSyllabus() {
+    await fetch('/api/teacher/syllabus', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        credentials: 'include',
+        body: JSON.stringify({
+            course_id: document.getElementById('syllabus-course').value,
+            topic: document.getElementById('topic-covered').value
+        })
+    });
+    alert('Syllabus saved');
+}
 
         function populateDropdowns() {
             const selects = [attendanceCourseSelect, noteCourseSelect, syllabusCourseSelect, assignmentCourseSelect, reportCourseSelect];
