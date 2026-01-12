@@ -666,8 +666,6 @@ def health_check(): return "OK", 200
 # --- ADMIN ROUTES ---
 @app.route('/api/users', methods=['GET', 'POST', 'PUT'])
 @login_required
-@app.route('/api/users', methods=['GET', 'POST', 'PUT'])
-@login_required
 def api_users():
     if current_user.role != 'admin': return jsonify({"msg": "Denied"}), 403
     
