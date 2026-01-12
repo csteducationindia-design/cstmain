@@ -2083,72 +2083,26 @@ async function fetchAnnouncements(isManagementPage) {
         }
         
        // REPLACED: Simply use loadUsers because it targets the correct Table ID
-async function fetchStudents(searchTerm = '') {
-    // Forward the search term to the filter input if provided
-    if (searchTerm) {
-        document.getElementById('userSearch').value = searchTerm;
-    }
-    await loadUsers(); // This is the function that actually works
-}
+
+window.deleteStudent = async function(id) {
+    if (!id) return alert('Invalid Student ID.');
+    if (confirm(`Are you sure you want to delete Student ID ${id}?`)) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/users/${id}`, { method: 'DELETE', credentials: 'include' });
             
-            try {
-                const users = await fetchAllUsers(searchTerm); 
-                const students = users.filter(u => u.role === 'student');
-                
-                tableBody.innerHTML = '';
-                if (students.length === 0) {
-                    tableBody.innerHTML = `<tr><td colspan="7" class="px-6 py-4 text-center">${searchTerm ? 'No students match your search.' : 'No students found.'}</td></tr>`;
-                    return;
-                }
-                
-                const parents = users.filter(u => u.role === 'parent');
-                const parentMap = new Map(parents.map(p => [p.id, p.name]));
-                
-                students.forEach(student => {
-                    const parentName = parentMap.get(student.parent_id) || 'Unlinked';
-                    const isPhoneAvailable = !!student.phone_number;
-                    
-                    tableBody.innerHTML += `
-                        <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
-        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${student.name}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${student.email}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${parentName}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${student.phone_number || 'N/A'}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
-            <button onclick="sendQuickSms(${student.id}, '${student.name}')" class="text-yellow-600 hover:text-yellow-700 disabled:text-slate-400" ${isPhoneAvailable ? '' : 'disabled'}>SMS</button>
-        </td>
-        <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
-            <button onclick="sendQuickWhatsapp(${student.id}, '${student.name}')" class="text-green-600 hover:text-green-700 disabled:text-slate-400" ${isPhoneAvailable ? '' : 'disabled'}>WA</button>
-        </td>
-        
-        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-            
-            <button onclick="window.open('${API_BASE_URL.replace('/api', '')}/admin/id_card/${student.id}', '_blank')" 
-                    class="text-purple-600 hover:text-purple-700 font-bold mr-2" 
-                    title="Generate ID Card">
-                <span class="material-symbols-outlined align-middle">badge</span>
-            </button>
-            <button onclick="editStudent(${student.id})" class="text-primary hover:text-blue-700 mr-2">Edit</button>
-            <button onclick="deleteStudent(${student.id})" class="text-red-600 hover:text-red-900">Delete</button>
-        </td>
-    </tr>`;
-                });
-            } catch (error) {
-                console.error("Error fetching students:", error);
-                tableBody.innerHTML = `<tr><td colspan="7" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
+            if (response.ok) {
+                alert(`Student deleted successfully.`);
+                await loadUsers(); // Refresh the table correctly
+            } else {
+                const result = await response.json();
+                alert(`Delete failed: ${result.message || 'Server error'}`);
             }
+        } catch (error) {
+            console.error('Error deleting user:', error);
+            alert('Network error during deletion.');
         }
-        
-        // --- Student Search Event Listener (Add this if missing) ---
-        if (searchInput) {
-            searchInput.addEventListener('input', () => {
-                clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(() => {
-                    fetchStudents(searchInput.value.trim());
-                }, 300); // Debounce search
-            });
-        }
-        
+    }
+};
         async function fetchParents() {
             const tableBody = document.getElementById('parent-table-body');
             tableBody.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center">Loading parents...</td></tr>';

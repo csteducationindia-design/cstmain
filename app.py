@@ -666,6 +666,8 @@ def health_check(): return "OK", 200
 # --- ADMIN ROUTES ---
 @app.route('/api/users', methods=['GET', 'POST', 'PUT'])
 @login_required
+@app.route('/api/users', methods=['GET', 'POST', 'PUT'])
+@login_required
 def api_users():
     if current_user.role != 'admin': return jsonify({"msg": "Denied"}), 403
     
@@ -676,9 +678,9 @@ def api_users():
         
         q = User.query
         
-        # Filter by Session (if provided and valid)
+        # Filter by Session if provided
         if session_id and session_id != 'null' and session_id != '':
-             if hasattr(User, 'session_id'): # Safety check
+             if hasattr(User, 'session_id'):
                  q = q.filter_by(session_id=int(session_id))
 
         if search: 
@@ -686,7 +688,7 @@ def api_users():
             
         return jsonify([u.to_dict() for u in q.all()])
 
-    # --- CREATE USER ---
+    # --- CREATE USER (POST) ---
     if request.method == 'POST':
         d = request.form
         if User.query.filter_by(email=d['email']).first(): return jsonify({"msg": "Email exists"}), 400
@@ -710,18 +712,14 @@ def api_users():
             address_line1=d.get('address_line1'), city=d.get('city'), 
             state=d.get('state'), pincode=d.get('pincode')
         )
-        # Handle Session ID if it exists in your model
         if hasattr(User, 'session_id') and d.get('session_id'):
             u.session_id = int(d.get('session_id'))
 
         db.session.add(u)
         
-        # Handle Courses for Students
         if u.role == 'student':
             c_ids = request.form.getlist('course_ids')
-            # Fallback for single value
             if not c_ids and d.get('course_ids'): c_ids = [d.get('course_ids')]
-            
             if c_ids:
                 valid_ids = [int(cid) for cid in c_ids if cid.isdigit()]
                 if valid_ids:
@@ -731,13 +729,13 @@ def api_users():
         db.session.commit()
         return jsonify(u.to_dict()), 201
 
-    # --- UPDATE USER (This was the broken part) ---
+    # --- UPDATE USER (PUT) ---
     if request.method == 'PUT':
         d = request.form
         u = db.session.get(User, int(d['id']))
         if not u: return jsonify({"msg": "Not found"}), 404
 
-        # Update Basic Fields
+        # Update basic fields
         u.name = d.get('name', u.name)
         u.email = d.get('email', u.email)
         u.phone_number = d.get('phone_number', u.phone_number)
@@ -768,16 +766,12 @@ def api_users():
                 file.save(os.path.join(app.config['UPLOAD_FOLDER'], uid))
                 u.profile_photo_url = f"/uploads/{uid}"
 
-        # Update Courses safely
         if u.role == 'student':
             c_ids = request.form.getlist('course_ids')
             if not c_ids and d.get('course_ids'): c_ids = [d.get('course_ids')]
-            
-            # Only update if course_ids are actually provided (prevents clearing if not sending field)
-            # However, if you want to allow clearing, you need to handle empty lists carefully.
-            # Assuming form always sends current state:
-            if c_ids is not None: 
-                u.courses_enrolled = [] # Reset
+            # Only update if list is provided (to avoid accidental clearing)
+            if c_ids:
+                u.courses_enrolled = [] 
                 valid_ids = [int(cid) for cid in c_ids if cid.isdigit()]
                 if valid_ids:
                     courses = Course.query.filter(Course.id.in_(valid_ids)).all()
@@ -785,8 +779,7 @@ def api_users():
 
         db.session.commit()
         return jsonify(u.to_dict()), 200
-
-    if request.method == 'PUT':
+       if request.method == 'PUT':
         d = request.form
         u = db.session.get(User, int(d['id']))
         if not u: return jsonify({"msg": "Not found"}), 404
