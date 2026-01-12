@@ -1077,7 +1077,7 @@ async function fetchTeachers() {
         }
     }
 
-    function populateUserForm(user, role) {
+function populateUserForm(user, role) {
         const form = document.getElementById(`${role}-form`);
         if (!form) return;
 
@@ -1097,14 +1097,12 @@ async function fetchTeachers() {
         if (role === 'student') {
             document.getElementById('student-parent-select').value = user.parent_id || '';
             
-            // --- FIX: Populate Session Dropdown correctly ---
+            // 1. Set Session (Batch)
             const sessionSelect = document.getElementById('student-session-select');
             if (sessionSelect) {
-                // Determine value to set (handle nulls)
-                sessionSelect.value = user.session_id ? user.session_id : '';
+                 sessionSelect.value = user.session_id ? user.session_id : '';
             }
             
-            // Check for admission number
             const admInput = form.querySelector('input[name="admission_number"]');
             if (admInput) admInput.value = user.admission_number || '';
 
@@ -1117,29 +1115,37 @@ async function fetchTeachers() {
             document.getElementById('student-state-input').value = user.state || '';
             document.getElementById('student-pincode-input').value = user.pincode || '';
             
+            // 2. Set Courses
             const courseSelect = document.getElementById('student-course-select');
             if (courseSelect) {
                 Array.from(courseSelect.options).forEach(opt => opt.selected = false);
                 if (user.course_ids && user.course_ids.length > 0) {
                     user.course_ids.forEach(cid => {
                         const opt = courseSelect.querySelector(`option[value="${cid}"]`);
-                        if (opt) opt.selected = true;
+                        if(opt) opt.selected = true;
                     });
-                     // Force single selection visual if needed
                      if (!courseSelect.multiple && user.course_ids.length > 0) {
                         courseSelect.value = user.course_ids[0];
                     }
                 }
             }
+            
+            // 3. FIX: Show Photo Preview
+            const photoPreview = document.getElementById('student-photo-preview');
+            if(user.profile_photo_url) {
+                // Add timestamp to force reload image if cache persists
+                photoPreview.src = user.profile_photo_url + '?t=' + new Date().getTime();
+            } else {
+                photoPreview.src = 'https://placehold.co/100x100/f6f7f8/666?text=No+Img';
+            }
             document.getElementById('student-photo-file-input').value = ''; 
         } 
         
-        // Update Title and Button
-        const titleEl = document.querySelector(`#content-${role} h3`) || document.getElementById(`${role}-form-title`);
-        if(titleEl) titleEl.textContent = `Edit Existing ${role.charAt(0).toUpperCase() + role.slice(1)}`;
-        
         const btn = form.querySelector('button[type="submit"]');
         if(btn) btn.textContent = `Update ${role.charAt(0).toUpperCase() + role.slice(1)}`;
+        
+        const titleEl = document.querySelector(`#content-${role} h3`) || document.getElementById(`${role}-form-title`);
+        if(titleEl) titleEl.textContent = `Edit Existing ${role.charAt(0).toUpperCase() + role.slice(1)}`;
     }
 
     async function populateParentDropdowns() {
@@ -1236,8 +1242,14 @@ async function fetchTeachers() {
                         <td class="p-4">₹${f.total_amount}</td>
                         <td class="p-4">${f.due_date}</td>
                         <td class="p-4 text-right">
-                            <button onclick="editFeeStructure(${f.id})" class="text-blue-600 mr-3 font-medium">Edit</button>
-                            <button onclick="deleteFeeStructure(${f.id})" class="text-red-600 font-medium">Delete</button>
+                            <div class="flex justify-end gap-3">
+                                <button onclick="editFeeStructure(${f.id})" class="flex items-center gap-1 text-white bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-xs">
+                                    <span class="material-symbols-outlined text-sm">edit</span> Edit
+                                </button>
+                                <button onclick="deleteFeeStructure(${f.id})" class="flex items-center gap-1 text-white bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-xs">
+                                    <span class="material-symbols-outlined text-sm">delete</span> Delete
+                                </button>
+                            </div>
                         </td>
                     </tr>`;
                 if(paySel) paySel.innerHTML += `<option value="${f.id}">${f.name}</option>`;
@@ -1345,23 +1357,32 @@ async function fetchTeachers() {
 
     // --- COURSE ---
     async function fetchCourses() {
-        const res = await fetch(`${API_BASE_URL}/courses`, {credentials: 'include'});
-        const data = await res.json();
-        allCoursesCache = data;
-        const tbody = document.getElementById('course-table-body');
-        if(tbody) {
-            tbody.innerHTML = '';
-            data.forEach(c => {
-                tbody.innerHTML += `
-                <tr class="border-b">
-                    <td class="p-4">${c.name}</td>
-                    <td class="p-4">${c.subjects}</td>
-                    <td class="p-4">${c.teacher_name}</td>
-                    <td class="p-4 text-right">
-                        <button onclick="deleteCourse(${c.id})" class="text-red-600">Delete</button>
-                    </td>
-                </tr>`;
+        try {
+            const response = await fetch(`${API_BASE_URL}/courses`, {credentials: 'include'});
+            const courses = await response.json();
+            allCoursesCache = courses; 
+            const tableBody = document.getElementById('course-table-body');
+            
+            tableBody.innerHTML = '';
+            if (courses.length === 0) {
+                 tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center">No courses found.</td></tr>`;
+                 return;
+            }
+
+            courses.forEach(course => {
+                tableBody.innerHTML += `
+                    <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${course.name}</td>
+                        <td class="px-6 py-4 text-sm text-slate-500 dark:text-slate-400 max-w-xs truncate">${course.subjects.join(', ')}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${course.teacher_name}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button onclick="editCourse(${course.id})" class="text-blue-600 hover:text-blue-900 mr-3 font-semibold">Edit</button>
+                            <button onclick="deleteCourse(${course.id})" class="text-red-600 hover:text-red-900 font-semibold">Delete</button>
+                        </td>
+                    </tr>`;
             });
+        } catch(error) {
+             console.error('Error fetching courses:', error);
         }
     }
     window.deleteCourse = async function(id) {
