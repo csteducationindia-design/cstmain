@@ -735,6 +735,18 @@ def api_users():
         db.session.commit()
         return jsonify(u.to_dict()), 200
 
+@app.route('/api/admin/student/<int:id>', methods=['GET'])
+@login_required
+def get_student(id):
+    if current_user.role != 'admin':
+        return jsonify({"error": "Unauthorized"}), 403
+
+    student = db.session.get(User, id)
+    if not student or student.role != 'student':
+        return jsonify({"error": "Student not found"}), 404
+
+    return jsonify(student.to_dict())
+
 @app.route('/api/users/<int:id>', methods=['DELETE'])
 @login_required
 def delete_user(id):

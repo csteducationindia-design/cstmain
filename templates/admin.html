@@ -1276,23 +1276,32 @@ async function sendBulkFeeReminder() {
 
         
         // --- UNIVERSAL EDIT/DELETE FUNCTIONS ---
-        window.editStudent = async function(id) {
-            try { // CRITICAL: Added try...catch for stability
-                let user = allUsersCache.find(u => u.id === id);
-                if (user) {
-                    populateUserForm(user, 'student');
-                    window.location.hash = 'students'; 
-                } else {
-                    alert('Could not find user data. Refreshing...');
-                    await fetchAllUsers();
-                    user = allUsersCache.find(u => u.id === id);
-                    if (user) populateUserForm(user, 'student');
-                }
-            } catch (error) {
-                 console.error('Error during editStudent:', error);
-                 alert('A critical error occurred during edit.');
-            }
-        };
+      window.editStudent = async function (id) {
+    try {
+        // ALWAYS fetch fresh data from backend
+        const res = await fetch(`/api/admin/student/${id}`, {
+            credentials: 'include'
+        });
+
+        if (!res.ok) {
+            alert('Failed to load student data');
+            return;
+        }
+
+        const student = await res.json();
+
+        // Reuse your existing form logic
+        populateUserForm(student, 'student');
+
+        // Switch to student section
+        window.location.hash = 'students';
+
+    } catch (error) {
+        console.error('Error during editStudent:', error);
+        alert('A critical error occurred while editing student.');
+    }
+};
+
         window.editTeacher = async function(id) {
             try { // CRITICAL: Added try...catch for stability
                 let user = allUsersCache.find(u => u.id === id);
