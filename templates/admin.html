@@ -1276,31 +1276,32 @@ async function sendBulkFeeReminder() {
 
         
         // --- UNIVERSAL EDIT/DELETE FUNCTIONS ---
-      window.editStudent = async function (id) {
+
+window.editStudent = async function (id) {
     try {
-        // ALWAYS fetch fresh data from backend
         const res = await fetch(`/api/admin/student/${id}`, {
             credentials: 'include'
         });
 
         if (!res.ok) {
-            alert('Failed to load student data');
+            alert('Unable to load student data');
             return;
         }
 
         const student = await res.json();
 
-        // Reuse your existing form logic
+        // IMPORTANT: This function already exists in your file
         populateUserForm(student, 'student');
 
-        // Switch to student section
+        // Move to form section
         window.location.hash = 'students';
 
-    } catch (error) {
-        console.error('Error during editStudent:', error);
-        alert('A critical error occurred while editing student.');
+    } catch (err) {
+        console.error(err);
+        alert('Edit failed due to an error');
     }
 };
+
 
         window.editTeacher = async function(id) {
             try { // CRITICAL: Added try...catch for stability
@@ -1378,6 +1379,30 @@ async function sendBulkFeeReminder() {
                 }
             }
         };
+window.deleteStudent = async function (id) {
+    if (!confirm('Are you sure you want to delete this student?')) return;
+
+    try {
+        const res = await fetch(`/api/users/${id}`, {
+            method: 'DELETE',
+            credentials: 'include'
+        });
+
+        if (!res.ok) {
+            alert('Delete failed');
+            return;
+        }
+
+        alert('Student deleted successfully');
+
+        // Reload list
+        fetchAllUsers();
+
+    } catch (err) {
+        console.error(err);
+        alert('Delete failed due to error');
+    }
+};
 
         window.deleteParent = async function(id) {
             if (!id) return alert('Invalid Parent ID.');
