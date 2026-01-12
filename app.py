@@ -669,18 +669,16 @@ def health_check(): return "OK", 200
 def api_users():
     if current_user.role != 'admin': return jsonify({"msg": "Denied"}), 403
     
+    # --- GET USERS ---
     if request.method == 'GET':
         search = request.args.get('search', '').lower()
-        # FIX: Check if session_id is provided for filtering
         session_id = request.args.get('session_id')
         
         q = User.query
         
-        # Apply Session Filter if provided
+        # Filter by Session (if provided and valid)
         if session_id and session_id != 'null' and session_id != '':
-             # This requires your User model to have session_id. 
-             # If it doesn't, we skip this filter to prevent crash.
-             if hasattr(User, 'session_id'):
+             if hasattr(User, 'session_id'): # Safety check
                  q = q.filter_by(session_id=int(session_id))
 
         if search: 
@@ -688,6 +686,7 @@ def api_users():
             
         return jsonify([u.to_dict() for u in q.all()])
 
+    # --- CREATE USER ---
     if request.method == 'POST':
         d = request.form
         if User.query.filter_by(email=d['email']).first(): return jsonify({"msg": "Email exists"}), 400
@@ -702,29 +701,25 @@ def api_users():
                 f.save(os.path.join(app.config['UPLOAD_FOLDER'], uid))
                 photo_url = f"/uploads/{uid}"
 
-        # FIX: Safely get optional fields
         u = User(
-            name=d['name'], 
-            email=d['email'], 
-            password=pw, 
-            role=d['role'], 
+            name=d['name'], email=d['email'], password=pw, role=d['role'], 
             phone_number=d.get('phone_number'),
             parent_id=d.get('parent_id') if d.get('parent_id') else None,
-            profile_photo_url=photo_url, 
-            dob=d.get('dob'), 
-            gender=d.get('gender'),
-            father_name=d.get('father_name'), 
-            mother_name=d.get('mother_name'), 
-            address_line1=d.get('address_line1'),
-            city=d.get('city'), 
-            state=d.get('state'), 
-            pincode=d.get('pincode')
+            profile_photo_url=photo_url, dob=d.get('dob'), gender=d.get('gender'),
+            father_name=d.get('father_name'), mother_name=d.get('mother_name'), 
+            address_line1=d.get('address_line1'), city=d.get('city'), 
+            state=d.get('state'), pincode=d.get('pincode')
         )
+        # Handle Session ID if it exists in your model
+        if hasattr(User, 'session_id') and d.get('session_id'):
+            u.session_id = int(d.get('session_id'))
+
         db.session.add(u)
         
-        # Handle Courses
+        # Handle Courses for Students
         if u.role == 'student':
             c_ids = request.form.getlist('course_ids')
+            # Fallback for single value
             if not c_ids and d.get('course_ids'): c_ids = [d.get('course_ids')]
             
             if c_ids:
@@ -736,11 +731,13 @@ def api_users():
         db.session.commit()
         return jsonify(u.to_dict()), 201
 
+    # --- UPDATE USER (This was the broken part) ---
     if request.method == 'PUT':
         d = request.form
         u = db.session.get(User, int(d['id']))
         if not u: return jsonify({"msg": "Not found"}), 404
 
+        # Update Basic Fields
         u.name = d.get('name', u.name)
         u.email = d.get('email', u.email)
         u.phone_number = d.get('phone_number', u.phone_number)
@@ -752,6 +749,9 @@ def api_users():
         u.city = d.get('city', u.city)
         u.state = d.get('state', u.state)
         u.pincode = d.get('pincode', u.pincode)
+
+        if hasattr(User, 'session_id') and d.get('session_id'):
+            u.session_id = int(d.get('session_id'))
 
         if d.get('parent_id'): 
             try: u.parent_id = int(d.get('parent_id'))
@@ -768,12 +768,16 @@ def api_users():
                 file.save(os.path.join(app.config['UPLOAD_FOLDER'], uid))
                 u.profile_photo_url = f"/uploads/{uid}"
 
+        # Update Courses safely
         if u.role == 'student':
             c_ids = request.form.getlist('course_ids')
             if not c_ids and d.get('course_ids'): c_ids = [d.get('course_ids')]
             
-            if c_ids:
-                u.courses_enrolled = [] # Reset courses
+            # Only update if course_ids are actually provided (prevents clearing if not sending field)
+            # However, if you want to allow clearing, you need to handle empty lists carefully.
+            # Assuming form always sends current state:
+            if c_ids is not None: 
+                u.courses_enrolled = [] # Reset
                 valid_ids = [int(cid) for cid in c_ids if cid.isdigit()]
                 if valid_ids:
                     courses = Course.query.filter(Course.id.in_(valid_ids)).all()
@@ -781,6 +785,7 @@ def api_users():
 
         db.session.commit()
         return jsonify(u.to_dict()), 200
+
     if request.method == 'PUT':
         d = request.form
         u = db.session.get(User, int(d['id']))
