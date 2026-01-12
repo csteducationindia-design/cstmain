@@ -1114,14 +1114,19 @@ async function sendBulkFeeReminder() {
             }
             
             if (role === 'student') {
-                document.getElementById('student-parent-select').value = user.parent_id || '';
+                const parentSelect = document.getElementById('student-parent-select');
+                if (parentSelect) parentSelect.value = user.parent_id || '';
                 
-                // --- FIX: Safely handle Session ID (Prevents crash if element missing) ---
+                // --- FIX: Safely check if elements exist before setting value ---
                 const sessionSelect = document.getElementById('student-session-select');
                 if (sessionSelect && user.session_id) {
                     sessionSelect.value = user.session_id;
                 }
                 
+                const admInput = form.querySelector('input[name="admission_number"]');
+                if (admInput) admInput.value = user.admission_number || '';
+                // ---------------------------------------------------------------
+
                 document.getElementById('student-dob-input').value = user.dob || '';
                 document.getElementById('student-gender-select').value = user.gender || '';
                 document.getElementById('student-father-name-input').value = user.father_name || '';
@@ -1131,19 +1136,16 @@ async function sendBulkFeeReminder() {
                 document.getElementById('student-state-input').value = user.state || '';
                 document.getElementById('student-pincode-input').value = user.pincode || '';
                 
-                // --- FIX: Ensure Courses are selected properly ---
+                // Correct Course Selection Logic
                 const courseSelect = document.getElementById('student-course-select');
                 if (courseSelect) {
-                    // Reset selection
                     Array.from(courseSelect.options).forEach(opt => opt.selected = false);
-                    
-                    // Select courses if they exist
                     if (user.course_ids && user.course_ids.length > 0) {
                         user.course_ids.forEach(cid => {
                             const option = courseSelect.querySelector(`option[value="${cid}"]`);
                             if (option) option.selected = true;
                         });
-                        // If it's a simple dropdown (not multi), set value
+                        // Fallback for single select dropdowns
                         if (!courseSelect.multiple && user.course_ids.length > 0) {
                             courseSelect.value = user.course_ids[0];
                         }
@@ -1151,7 +1153,7 @@ async function sendBulkFeeReminder() {
                 }
                 
                 document.getElementById('student-photo-file-input').value = ''; 
-            }            
+            }         
             form.querySelector('button[type="submit"]').textContent = `Update ${role.charAt(0).toUpperCase() + role.slice(1)}`;
             document.querySelector(`#content-${role} h3`).textContent = `Edit Existing ${role.charAt(0).toUpperCase() + role.slice(1)}`;
         }
