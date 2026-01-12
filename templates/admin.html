@@ -1116,9 +1116,10 @@ async function sendBulkFeeReminder() {
             if (role === 'student') {
                 document.getElementById('student-parent-select').value = user.parent_id || '';
                 
-                // --- FIX: Ensure Batch is selected ---
-                if (user.session_id) {
-                    document.getElementById('student-session-select').value = user.session_id;
+                // --- FIX: Safely handle Session ID (Prevents crash if element missing) ---
+                const sessionSelect = document.getElementById('student-session-select');
+                if (sessionSelect && user.session_id) {
+                    sessionSelect.value = user.session_id;
                 }
                 
                 document.getElementById('student-dob-input').value = user.dob || '';
@@ -1130,27 +1131,27 @@ async function sendBulkFeeReminder() {
                 document.getElementById('student-state-input').value = user.state || '';
                 document.getElementById('student-pincode-input').value = user.pincode || '';
                 
-                // --- FIX: Ensure Courses are selected ---
+                // --- FIX: Ensure Courses are selected properly ---
                 const courseSelect = document.getElementById('student-course-select');
                 if (courseSelect) {
+                    // Reset selection
                     Array.from(courseSelect.options).forEach(opt => opt.selected = false);
+                    
+                    // Select courses if they exist
                     if (user.course_ids && user.course_ids.length > 0) {
                         user.course_ids.forEach(cid => {
                             const option = courseSelect.querySelector(`option[value="${cid}"]`);
                             if (option) option.selected = true;
                         });
+                        // If it's a simple dropdown (not multi), set value
+                        if (!courseSelect.multiple && user.course_ids.length > 0) {
+                            courseSelect.value = user.course_ids[0];
+                        }
                     }
                 }
                 
-                // Update admission number
-                if (user.admission_number) {
-                    const admInput = form.querySelector('input[name="admission_number"]');
-                    if (admInput) admInput.value = user.admission_number;
-                }
-
                 document.getElementById('student-photo-file-input').value = ''; 
-            }
-            
+            }            
             form.querySelector('button[type="submit"]').textContent = `Update ${role.charAt(0).toUpperCase() + role.slice(1)}`;
             document.querySelector(`#content-${role} h3`).textContent = `Edit Existing ${role.charAt(0).toUpperCase() + role.slice(1)}`;
         }
@@ -1279,7 +1280,7 @@ async function sendBulkFeeReminder() {
 
 window.editStudent = async function (id) {
     try {
-        const res = await fetch(`/api/admin/student/${id}`, {
+        const res = await fetch(`${API_BASE_URL}/admin/student/${id}`, {
             credentials: 'include'
         });
 
@@ -1290,17 +1291,21 @@ window.editStudent = async function (id) {
 
         const student = await res.json();
 
-        // IMPORTANT: This function already exists in your file
+        // Populate the form with data
         populateUserForm(student, 'student');
 
-        // Move to form section
-        window.location.hash = 'students';
+        // Switch view to student form
+        showSection('#students'); // Use your helper function to switch tabs
+        
+        // Scroll to top
+        window.scrollTo(0,0);
 
     } catch (err) {
         console.error(err);
         alert('Edit failed due to an error');
     }
 };
+
 
 
         window.editTeacher = async function(id) {
@@ -1359,26 +1364,7 @@ window.editStudent = async function (id) {
             }
         };
 
-        window.deleteStudent = async function(id) {
-            if (!id) return alert('Invalid Student ID.');
-            if (confirm(`Are you sure you want to delete Student ID ${id}?`)) {
-                try {
-                    const response = await fetch(`${API_BASE_URL}/users/${id}`, { method: 'DELETE', credentials: 'include' });
-                    const result = await response.json();
-                    if (response.ok) {
-                        alert(`Student deleted: ${result.message}`);
-                        await fetchAllUsers(); 
-                        fetchStudents(); 
-                    } else {
-                        alert(`Delete failed: ${result.message || 'Server error'}`);
-                        console.error('Delete User Failed:', result);
-                    }
-                } catch (error) {
-                    console.error('Error deleting user:', error);
-                    alert('Network error during deletion.');
-                }
-            }
-        };
+        
 window.deleteStudent = async function (id) {
     if (!confirm('Are you sure you want to delete this student?')) return;
 

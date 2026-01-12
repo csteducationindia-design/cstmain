@@ -674,35 +674,63 @@ def api_users():
         if search: q = q.filter(or_(User.name.ilike(f'%{search}%'), User.email.ilike(f'%{search}%')))
         return jsonify([u.to_dict() for u in q.all()])
         
-    if request.method == 'POST':
+if request.method == 'PUT':
         d = request.form
-        if User.query.filter_by(email=d['email']).first(): return jsonify({"msg": "Email exists"}), 400
-        pw = bcrypt.generate_password_hash(d['password']).decode('utf-8')
+        u = db.session.get(User, int(d['id']))
+        if not u: return jsonify({"msg": "Not found"}), 404
         
-        photo_url = None
-        if 'profile_photo_file' in request.files:
-            f = request.files['profile_photo_file']
-            if allowed_file(f.filename, ALLOWED_IMAGE_EXTENSIONS):
-                fn = secure_filename(f.filename)
-                uid = f"{uuid.uuid4()}{os.path.splitext(fn)[1]}"
-                f.save(os.path.join(app.config['UPLOAD_FOLDER'], uid))
-                photo_url = f"/uploads/{uid}"
-
-        u = User(name=d['name'], email=d['email'], password=pw, role=d['role'], phone_number=d.get('phone_number'), 
-                 parent_id=d.get('parent_id'), profile_photo_url=photo_url, dob=d.get('dob'), gender=d.get('gender'),
-                 father_name=d.get('father_name'), mother_name=d.get('mother_name'), address_line1=d.get('address_line1'),
-                 city=d.get('city'), state=d.get('state'), pincode=d.get('pincode'))
-        db.session.add(u)
+        # 1. Update Basic Fields
+        u.name = d.get('name', u.name)
+        u.email = d.get('email', u.email)
+        u.phone_number = d.get('phone_number', u.phone_number)
+        u.dob = d.get('dob', u.dob)
+        u.gender = d.get('gender', u.gender)
+        u.father_name = d.get('father_name', u.father_name)
+        u.mother_name = d.get('mother_name', u.mother_name)
+        u.address_line1 = d.get('address_line1', u.address_line1)
+        u.city = d.get('city', u.city)
+        u.state = d.get('state', u.state)
+        u.pincode = d.get('pincode', u.pincode)
         
-        if u.role == 'student' and d.get('course_ids'):
+        # 2. Update Parent Link
+        if d.get('parent_id'): 
             try:
-                cid = int(d.get('course_ids'))
-                c = db.session.get(Course, cid)
-                if c: u.courses_enrolled.append(c)
-            except: pass
+                u.parent_id = int(d.get('parent_id'))
+            except:
+                u.parent_id = None
+        
+        # 3. Update Password (Only if provided)
+        if d.get('password'): 
+            u.password = bcrypt.generate_password_hash(d.get('password')).decode('utf-8')
+        
+        # 4. Update Photo (Only if provided)
+        if 'profile_photo_file' in request.files:
+            file = request.files['profile_photo_file']
+            if file and allowed_file(file.filename, ALLOWED_IMAGE_EXTENSIONS):
+                filename = secure_filename(file.filename)
+                uid = f"{uuid.uuid4()}{os.path.splitext(filename)[1]}"
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], uid))
+                u.profile_photo_url = f"/uploads/{uid}"
+
+        # 5. Fix Course Enrollment Logic (The Bug Fix)
+        if u.role == 'student':
+            # Use getlist to handle multiple courses, or single
+            c_ids = request.form.getlist('course_ids')
+            if not c_ids and d.get('course_ids'): # Fallback for single value
+                c_ids = [d.get('course_ids')]
+            
+            if c_ids:
+                u.courses_enrolled = [] # Clear existing
+                valid_ids = []
+                for cid in c_ids:
+                    if cid.isdigit(): valid_ids.append(int(cid))
+                
+                if valid_ids:
+                    courses = Course.query.filter(Course.id.in_(valid_ids)).all()
+                    u.courses_enrolled.extend(courses)
             
         db.session.commit()
-        return jsonify(u.to_dict()), 201
+        return jsonify(u.to_dict()), 200
 
     if request.method == 'PUT':
         d = request.form
