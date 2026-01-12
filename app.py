@@ -397,35 +397,44 @@ class AssignmentSubmission(db.Model):
 # =========================================================
 # BUSINESS LOGIC & HELPERS
 # =========================================================
-
 def calculate_fee_status(student_id):
-    """Fee calculation logic: Sums ONLY course-specific fees."""
+    """Fee calculation: Sums Course Fees + Global Session Fees."""
     student = db.session.get(User, student_id)
     if not student:
         return {"total_due": 0, "total_paid": 0, "balance": 0, "due_date": "N/A", "pending_days": 0}
 
+    # 1. Calculate Total Paid
     payments = Payment.query.filter_by(student_id=student_id).all()
     total_paid = sum(p.amount_paid for p in payments)
 
     total_due = 0.0
     due_dates = []
 
-    # 1. Course-Specific Fees (Sum ALL fees for enrolled courses)
+    # 2. Calculate Course-Specific Fees (Only for courses the student is enrolled in)
     if student.courses_enrolled:
         for course in student.courses_enrolled:
+            # Get fees for this course (and ensure they match the student's session if needed)
             course_fees = FeeStructure.query.filter_by(course_id=course.id).all()
             for fee_struct in course_fees:
+                # OPTIONAL: Filter by Session if strict (uncomment next line if needed)
+                # if hasattr(student, 'session_id') and fee_struct.academic_session_id != student.session_id: continue
+                
                 total_due += fee_struct.total_amount
                 if fee_struct.due_date:
                     due_dates.append(fee_struct.due_date)
     
-    # 2. Global Fees (DISABLED to prevent double-charging issue)
-    # We commented this out so the 2200 Global Fee is IGNORED by the system
-    # global_fees = FeeStructure.query.filter(FeeStructure.course_id == None).all()
-    # for gf in global_fees:
-    #     total_due += gf.total_amount
-    #     if gf.due_date: due_dates.append(gf.due_date)
+    # 3. Calculate Global/Session Fees (Admission, Annual charges, etc.)
+    # FIX: We enable this so students have a "Due" amount even without courses
+    if hasattr(student, 'session_id') and student.session_id:
+        global_fees = FeeStructure.query.filter(
+            FeeStructure.course_id == None, 
+            FeeStructure.academic_session_id == student.session_id
+        ).all()
+        for gf in global_fees:
+            total_due += gf.total_amount
+            if gf.due_date: due_dates.append(gf.due_date)
 
+    # 4. Final Calculation
     final_due_date = min(due_dates) if due_dates else date.today()
     balance = total_due - total_paid
 
