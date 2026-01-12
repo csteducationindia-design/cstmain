@@ -273,19 +273,26 @@
                         </div>
                         <div class="w-full md:w-1/3">
                             <label>Search Student</label>
-                            <input type="text" id="userSearch" onkeyup="loadUsers()" placeholder="Search Name..." class="w-full">
+                            <input type="text" id="userSearch" onkeyup="loadUsers()" placeholder="Name or Email..." class="w-full">
                         </div>
                         <div class="flex gap-2">
-                            <button onclick="downloadReport('fee_pending')" class="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm">Export Fees</button>
-                            <button onclick="window.open('/admin/id_cards/bulk','_blank')" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm">IDs</button>
+                            <button onclick="downloadReport('fee_pending')" class="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-900">Export Fees</button>
+                            <button onclick="window.open('/admin/id_cards/bulk','_blank')" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700">Print IDs</button>
                         </div>
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left">
-                            <thead class="bg-slate-50 text-slate-600 text-xs uppercase font-bold">
-                                <tr><th class="px-6 py-3">ID</th><th class="px-6 py-3">Name</th><th class="px-6 py-3">Session</th><th class="px-6 py-3">Contact</th><th class="px-6 py-3 text-right">Actions</th></tr>
+
+                    <div class="overflow-x-auto rounded-lg border border-slate-200">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-slate-50 text-slate-600 text-sm uppercase">
+                                <tr>
+                                    <th class="px-6 py-3 font-bold border-b">ID</th>
+                                    <th class="px-6 py-3 font-bold border-b">Name</th>
+                                    <th class="px-6 py-3 font-bold border-b">Session</th>
+                                    <th class="px-6 py-3 font-bold border-b">Contact</th>
+                                    <th class="px-6 py-3 font-bold border-b text-right">Actions</th>
+                                </tr>
                             </thead>
-                            <tbody id="usersTableBody" class="text-sm"></tbody>
+                            <tbody id="usersTableBody" class="text-sm text-slate-700"></tbody>
                         </table>
                     </div>
                 </div>
@@ -304,7 +311,7 @@
                         <div class="md:col-span-2 pt-4"><button type="submit" id="teacher-form-btn" class="w-full bg-primary text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition">Save Teacher</button></div>
                     </form>
                 </div>
-                <div class="bg-white rounded-xl shadow-sm overflow-hidden"><table class="w-full"><thead class="bg-slate-50"><tr><th class="px-6 py-3">Name</th><th class="px-6 py-3">Email</th><th class="px-6 py-3">Phone</th><th class="px-6 py-3 text-right">Actions</th></tr></thead><tbody id="teacher-table-body"></tbody></table></div>
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden"><table class="w-full"><thead class="bg-slate-50"><tr><th class="px-6 py-3 text-left">Name</th><th class="px-6 py-3 text-left">Email</th><th class="px-6 py-3 text-left">Phone</th><th class="px-6 py-3 text-right">Actions</th></tr></thead><tbody id="teacher-table-body"></tbody></table></div>
             </div>
 
             <div id="content-parents" class="content-section hidden">
@@ -316,16 +323,16 @@
                         <div><label>Full Name</label><input type="text" id="parent-name-input" name="name" required></div>
                         <div><label>Email</label><input type="email" id="parent-email-input" name="email" required></div>
                         <div><label>Phone</label><input type="tel" id="parent-phone-input" name="phone_number"></div>
-                        <div><label>Password</label><input type="password" id="parent-password-input" name="password"></div>
-                        <div class="md:col-span-2 pt-4"><button type="submit" id="parent-form-btn" class="w-full bg-primary text-white py-3 rounded-lg font-bold">Save Parent</button></div>
+                        <div><label>Password</label><input type="password" id="parent-password-input" name="password" class="w-full"></div>
+                        <div class="md:col-span-2 pt-4"><button type="submit" id="parent-form-btn" class="w-full bg-primary text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition">Save Parent</button></div>
                     </form>
                 </div>
-                <div class="bg-white rounded-xl shadow-sm overflow-hidden"><table class="w-full"><thead class="bg-slate-50"><tr><th class="px-6 py-3">Name</th><th class="px-6 py-3">Email</th><th class="px-6 py-3">Phone</th><th class="px-6 py-3 text-right">Actions</th></tr></thead><tbody id="parent-table-body"></tbody></table></div>
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden"><table class="w-full"><thead class="bg-slate-50"><tr><th class="px-6 py-3 text-left">Name</th><th class="px-6 py-3 text-left">Email</th><th class="px-6 py-3 text-left">Phone</th><th class="px-6 py-3 text-right">Actions</th></tr></thead><tbody id="parent-table-body"></tbody></table></div>
             </div>
 
             <div id="content-courses" class="content-section hidden">
-                <h2 class="text-3xl font-bold mb-6">Manage Courses</h2>
-                <div class="bg-white p-8 rounded-xl shadow-sm mb-8 border border-slate-200">
+                 <h2 class="text-3xl font-bold mb-6">Manage Courses</h2>
+                 <div class="bg-white p-8 rounded-xl shadow-sm mb-8 border border-slate-200">
                     <h3 class="text-xl font-bold mb-6 text-primary">Add Course</h3>
                     <form id="course-form" class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <input type="hidden" id="course-id" name="id">
@@ -681,7 +688,7 @@
                  const pfd = new FormData();
                  pfd.append('profile_photo_file', document.getElementById('student-photo-file-input').files[0]);
                  await fetch(`${API_BASE_URL}/user/upload_photo/${id}`, {method:'POST', credentials:'include', body:pfd});
-                 fd.delete('profile_photo_file'); 
+                 fd.delete('profile_photo_file'); // Don't send twice
             }
 
             const res = await fetch(url, { method: id ? 'PUT' : 'POST', credentials:'include', body: fd });
