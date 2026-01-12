@@ -429,8 +429,8 @@ def calculate_fee_status(student_id):
                 if fee_struct.due_date:
                     due_dates.append(fee_struct.due_date)
     
-    # 3. Global/Session Fees (Fixed: Now Enabled)
-    # This ensures "Admission Fee" etc. are added even if no course is assigned
+    # 3. Global/Session Fees (FIXED: Now Enabled)
+    # This adds Admission/Annual fees linked to the Session but NOT a specific course
     if student.session_id:
         global_fees = FeeStructure.query.filter(
             FeeStructure.course_id == None, 
@@ -459,7 +459,6 @@ def calculate_fee_status(student_id):
         "due_date": final_due_date.strftime('%Y-%m-%d') if due_dates else "N/A",
         "pending_days": pending_days
     }
-
 def send_fee_alert_notifications(student_id):
     student = db.session.get(User, student_id)
     if not student: return False
@@ -1483,19 +1482,18 @@ def debug_fb():
 def check_and_upgrade_db():
     try:
         insp = inspect(db.engine)
-        columns = [c['name'] for c in insp.get_columns('user')]
+        user_cols = [c['name'] for c in insp.get_columns('user')]
         
         with db.engine.connect() as conn:
-            if 'fcm_token' not in columns:
+            if 'fcm_token' not in user_cols:
                 conn.execute(text("ALTER TABLE user ADD COLUMN fcm_token VARCHAR(500)"))
             
-            # Add session_id if missing
-            if 'session_id' not in columns:
+            # --- FIX: Ensure session_id column exists ---
+            if 'session_id' not in user_cols:
                 conn.execute(text("ALTER TABLE user ADD COLUMN session_id INTEGER REFERENCES academic_session(id)"))
                 
             conn.commit()
             
-        # Check Fee Structure table
         fee_cols = [c['name'] for c in insp.get_columns('fee_structure')]
         if 'course_id' not in fee_cols:
             with db.engine.connect() as conn:
