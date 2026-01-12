@@ -938,6 +938,41 @@
 
     }); // End DOMContentLoaded
 
+async function fetchTeachers() {
+        const tableBody = document.getElementById('teacher-table-body');
+        tableBody.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center">Loading teachers...</td></tr>';
+
+        try {
+            // Force fetch fresh data
+            const res = await fetch(`${API_BASE_URL}/users`, { credentials: 'include' });
+            const users = await res.json();
+            allUsersCache = users; // Update cache
+            
+            const teachers = users.filter(u => u.role === 'teacher');
+            
+            tableBody.innerHTML = '';
+            if (teachers.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center">No teachers found.</td></tr>`;
+                return;
+            }
+
+            teachers.forEach(teacher => {
+                tableBody.innerHTML += `
+                    <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50 hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${teacher.name}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${teacher.email}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${teacher.phone_number || 'N/A'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button onclick="editTeacher(${teacher.id})" class="text-primary hover:text-blue-700 mr-2">Edit</button>
+                            <button onclick="deleteTeacher(${teacher.id})" class="text-red-600 hover:text-red-900">Delete</button>
+                        </td>
+                    </tr>`;
+            });
+        } catch (error) {
+            console.error("Error fetching teachers:", error);
+            tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
+        }
+    }
     // --- 4. DATA FETCHING FUNCTIONS ---
 
     async function loadSessionsFilter() {
@@ -1025,28 +1060,67 @@
 
     function populateUserForm(user, role) {
         const form = document.getElementById(`${role}-form`);
+        if (!form) return;
+
         form.querySelector('input[id$="-id"]').value = user.id;
         form.querySelector('input[id$="-name-input"]').value = user.name;
         form.querySelector('input[id$="-email-input"]').value = user.email;
-        if(form.querySelector('input[id$="-phone-input"]')) form.querySelector('input[id$="-phone-input"]').value = user.phone_number || '';
         
-        if(role === 'student') {
+        const phoneInput = form.querySelector('input[id$="-phone-input"]');
+        if (phoneInput) phoneInput.value = user.phone_number || '';
+
+        const passwordInput = form.querySelector('input[id$="-password-input"]');
+        if (passwordInput) {
+            passwordInput.value = '';
+            passwordInput.placeholder = 'Leave blank to keep current password';
+        }
+        
+        if (role === 'student') {
             document.getElementById('student-parent-select').value = user.parent_id || '';
-            if(user.session_id) document.getElementById('student-session-select').value = user.session_id;
+            
+            // FIX: Handle Session ID safely
+            const sessionSelect = document.getElementById('student-session-select');
+            if (sessionSelect) {
+                 if (user.session_id) {
+                     sessionSelect.value = user.session_id;
+                 } else {
+                     sessionSelect.value = ''; // Reset if null
+                 }
+            }
+            
+            // Check if admission number input exists (it might be hidden/missing)
+            const admInput = form.querySelector('input[name="admission_number"]');
+            if (admInput) admInput.value = user.admission_number || '';
+
             document.getElementById('student-dob-input').value = user.dob || '';
             document.getElementById('student-gender-select').value = user.gender || '';
+            document.getElementById('student-father-name-input').value = user.father_name || '';
+            document.getElementById('student-mother-name-input').value = user.mother_name || '';
             document.getElementById('student-address-input').value = user.address_line1 || '';
+            document.getElementById('student-city-input').value = user.city || '';
+            document.getElementById('student-state-input').value = user.state || '';
+            document.getElementById('student-pincode-input').value = user.pincode || '';
             
             // Course selection
             const courseSelect = document.getElementById('student-course-select');
-            Array.from(courseSelect.options).forEach(opt => opt.selected = false);
-            if(user.course_ids) {
-                user.course_ids.forEach(cid => {
-                    const opt = courseSelect.querySelector(`option[value="${cid}"]`);
-                    if(opt) opt.selected = true;
-                });
+            if (courseSelect) {
+                Array.from(courseSelect.options).forEach(opt => opt.selected = false);
+                if (user.course_ids && user.course_ids.length > 0) {
+                    user.course_ids.forEach(cid => {
+                        const opt = courseSelect.querySelector(`option[value="${cid}"]`);
+                        if(opt) opt.selected = true;
+                    });
+                }
             }
-        }
+            document.getElementById('student-photo-file-input').value = ''; 
+        } 
+        
+        // Update Title and Button
+        const titleEl = document.querySelector(`#content-${role} h3`) || document.getElementById(`${role}-form-title`);
+        if(titleEl) titleEl.textContent = `Edit Existing ${role.charAt(0).toUpperCase() + role.slice(1)}`;
+        
+        const btn = form.querySelector('button[type="submit"]');
+        if(btn) btn.textContent = `Update ${role.charAt(0).toUpperCase() + role.slice(1)}`;
     }
 
     async function populateParentDropdowns() {
@@ -1121,21 +1195,30 @@
     };
 
     // --- FEE STRUCTURES & SESSIONS ---
-    async function fetchFeeStructures() {
+   async function fetchFeeStructures() {
         const res = await fetch(`${API_BASE_URL}/fee_structures`, {credentials: 'include'});
         const fees = await res.json();
         const tbody = document.getElementById('fee-structure-table-body');
         const paySel = document.getElementById('payment-fee-structure-select');
+        
         if(tbody) tbody.innerHTML = '';
         if(paySel) paySel.innerHTML = '<option value="">Select Fee</option>';
         
+        if (fees.length === 0 && tbody) {
+             tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center">No fee structures found.</td></tr>';
+             return;
+        }
+
         fees.forEach(f => {
             if(tbody) tbody.innerHTML += `
-                <tr class="border-b">
+                <tr class="border-b hover:bg-gray-50">
                     <td class="p-4">${f.name}</td>
                     <td class="p-4">₹${f.total_amount}</td>
                     <td class="p-4">${f.due_date}</td>
-                    <td class="p-4 text-right"><button onclick="deleteFeeStructure(${f.id})" class="text-red-600">Delete</button></td>
+                    <td class="p-4 text-right">
+                        <button onclick="editFeeStructure(${f.id})" class="text-blue-600 mr-3">Edit</button>
+                        <button onclick="deleteFeeStructure(${f.id})" class="text-red-600">Delete</button>
+                    </td>
                 </tr>`;
             if(paySel) paySel.innerHTML += `<option value="${f.id}">${f.name}</option>`;
         });

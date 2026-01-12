@@ -246,13 +246,22 @@ class User(db.Model, UserMixin):
     city = db.Column(db.String(100), nullable=True)
     state = db.Column(db.String(100), nullable=True)
     pincode = db.Column(db.String(20), nullable=True)
-    fcm_token = db.Column(db.String(500), nullable=True) # For Notifications
+    fcm_token = db.Column(db.String(500), nullable=True)
+    
+    # --- ADDED SESSION ID ---
+    session_id = db.Column(db.Integer, db.ForeignKey('academic_session.id'), nullable=True)
     
     children = db.relationship('User', foreign_keys=[parent_id], backref=db.backref('parent', remote_side=[id]))
     courses_enrolled = db.relationship('Course', secondary=student_course_association, lazy='subquery',
                                        backref=db.backref('students', lazy=True))
 
     def to_dict(self):
+        # Fetch session name for display
+        sess_name = "Unassigned"
+        if self.session_id:
+            sess = db.session.get(AcademicSession, self.session_id)
+            if sess: sess_name = sess.name
+
         return {
             "id": self.id, "name": self.name, "email": self.email, "role": self.role,
             "created_at": self.created_at.strftime('%Y-%m-%d'),
@@ -262,9 +271,10 @@ class User(db.Model, UserMixin):
             "gender": self.gender, "father_name": self.father_name,
             "mother_name": self.mother_name, "address_line1": self.address_line1,
             "city": self.city, "state": self.state, "pincode": self.pincode,
+            "session_id": self.session_id,      # Send ID for editing
+            "session_name": sess_name,          # Send Name for table display
             "course_ids": [c.id for c in self.courses_enrolled] if self.role == 'student' else []
         }
-
 class Course(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150), nullable=False)
@@ -403,29 +413,25 @@ def calculate_fee_status(student_id):
     if not student:
         return {"total_due": 0, "total_paid": 0, "balance": 0, "due_date": "N/A", "pending_days": 0}
 
-    # 1. Calculate Total Paid
+    # 1. Total Paid
     payments = Payment.query.filter_by(student_id=student_id).all()
     total_paid = sum(p.amount_paid for p in payments)
 
     total_due = 0.0
     due_dates = []
 
-    # 2. Calculate Course-Specific Fees (Only for courses the student is enrolled in)
+    # 2. Course Fees
     if student.courses_enrolled:
         for course in student.courses_enrolled:
-            # Get fees for this course (and ensure they match the student's session if needed)
             course_fees = FeeStructure.query.filter_by(course_id=course.id).all()
             for fee_struct in course_fees:
-                # OPTIONAL: Filter by Session if strict (uncomment next line if needed)
-                # if hasattr(student, 'session_id') and fee_struct.academic_session_id != student.session_id: continue
-                
                 total_due += fee_struct.total_amount
                 if fee_struct.due_date:
                     due_dates.append(fee_struct.due_date)
     
-    # 3. Calculate Global/Session Fees (Admission, Annual charges, etc.)
-    # FIX: We enable this so students have a "Due" amount even without courses
-    if hasattr(student, 'session_id') and student.session_id:
+    # 3. Global/Session Fees (Fixed: Now Enabled)
+    # This ensures "Admission Fee" etc. are added even if no course is assigned
+    if student.session_id:
         global_fees = FeeStructure.query.filter(
             FeeStructure.course_id == None, 
             FeeStructure.academic_session_id == student.session_id
@@ -1477,11 +1483,21 @@ def debug_fb():
 def check_and_upgrade_db():
     try:
         insp = inspect(db.engine)
-        if 'fcm_token' not in [c['name'] for c in insp.get_columns('user')]:
-            with db.engine.connect() as conn:
+        columns = [c['name'] for c in insp.get_columns('user')]
+        
+        with db.engine.connect() as conn:
+            if 'fcm_token' not in columns:
                 conn.execute(text("ALTER TABLE user ADD COLUMN fcm_token VARCHAR(500)"))
-                conn.commit()
-        if 'course_id' not in [c['name'] for c in insp.get_columns('fee_structure')]:
+            
+            # Add session_id if missing
+            if 'session_id' not in columns:
+                conn.execute(text("ALTER TABLE user ADD COLUMN session_id INTEGER REFERENCES academic_session(id)"))
+                
+            conn.commit()
+            
+        # Check Fee Structure table
+        fee_cols = [c['name'] for c in insp.get_columns('fee_structure')]
+        if 'course_id' not in fee_cols:
             with db.engine.connect() as conn:
                 conn.execute(text("ALTER TABLE fee_structure ADD COLUMN course_id INTEGER REFERENCES course(id)"))
                 conn.commit()
