@@ -30,7 +30,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__, template_folder='templates')
-app.config['SECRET_KEY'] = 'a_very_secret_key_that_should_be_changed_in_production'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'fallback_secret_key_change_this')
 CORS(app, supports_credentials=True)
 
 # Email Configuration
@@ -206,11 +206,15 @@ def allowed_file(filename, extension_set):
 import threading # Add to imports
 
 # Add this helper function
-def background_notify(app_ctx, user_list, subject, body):
+# Updated helper function
+def background_notify(app_ctx, user_ids, subject, body):
     with app_ctx:
-        for u in user_list:
+        # Re-query users inside the thread to be safe
+        users = User.query.filter(User.id.in_(user_ids)).all()
+        for u in users:
             send_push_notification(u.id, subject, body)
-            if u.phone_number: send_actual_sms(u.phone_number, body)
+            if u.phone_number: 
+                send_actual_sms(u.phone_number, body)
 
 
 
@@ -673,10 +677,8 @@ def api_users():
     if request.method == 'GET':
         search = request.args.get('search', '').lower()
         session_id = request.args.get('session_id')
-        
         q = User.query
         
-        # Filter by Session if provided
         if session_id and session_id != 'null' and session_id != '':
              if hasattr(User, 'session_id'):
                  q = q.filter_by(session_id=int(session_id))
@@ -733,7 +735,6 @@ def api_users():
         u = db.session.get(User, int(d['id']))
         if not u: return jsonify({"msg": "Not found"}), 404
 
-        # Update basic fields
         u.name = d.get('name', u.name)
         u.email = d.get('email', u.email)
         u.phone_number = d.get('phone_number', u.phone_number)
@@ -767,7 +768,8 @@ def api_users():
         if u.role == 'student':
             c_ids = request.form.getlist('course_ids')
             if not c_ids and d.get('course_ids'): c_ids = [d.get('course_ids')]
-            # Only update if list is provided (to avoid accidental clearing)
+            
+            # Reset and re-add courses
             if c_ids:
                 u.courses_enrolled = [] 
                 valid_ids = [int(cid) for cid in c_ids if cid.isdigit()]
@@ -777,37 +779,6 @@ def api_users():
 
         db.session.commit()
         return jsonify(u.to_dict()), 200
-       if request.method == 'PUT':
-        d = request.form
-        u = db.session.get(User, int(d['id']))
-        if not u: return jsonify({"msg": "Not found"}), 404
-        
-        u.name = d.get('name', u.name)
-        u.email = d.get('email', u.email)
-        u.phone_number = d.get('phone_number', u.phone_number)
-        u.dob = d.get('dob', u.dob)
-        u.gender = d.get('gender', u.gender)
-        u.father_name = d.get('father_name', u.father_name)
-        u.mother_name = d.get('mother_name', u.mother_name)
-        u.address_line1 = d.get('address_line1', u.address_line1)
-        u.city = d.get('city', u.city)
-        u.state = d.get('state', u.state)
-        u.pincode = d.get('pincode', u.pincode)
-        
-        if d.get('parent_id'): u.parent_id = int(d.get('parent_id'))
-        if d.get('password'): u.password = bcrypt.generate_password_hash(d.get('password')).decode('utf-8')
-        
-        if u.role == 'student' and d.get('course_ids'):
-            u.courses_enrolled = []
-            try:
-                cid = int(d.get('course_ids'))
-                c = db.session.get(Course, cid)
-                if c: u.courses_enrolled.append(c)
-            except: pass
-            
-        db.session.commit()
-        return jsonify(u.to_dict()), 200
-
 @app.route('/api/admin/student/<int:id>', methods=['GET'])
 @login_required
 def get_student(id):
@@ -1066,8 +1037,11 @@ def bulk_notify():
     d = request.json
     users = User.query.all() if d['target_role'] == 'all' else User.query.filter_by(role=d['target_role'][:-1]).all()
     
-    # Run in background (Instant response for Admin)
-    threading.Thread(target=background_notify, args=(app.app_context(), users, d['subject'], d['body'])).start()
+    # EXTRACT IDs HERE
+    user_ids = [u.id for u in users]
+    
+    # Pass user_ids instead of users
+    threading.Thread(target=background_notify, args=(app.app_context(), user_ids, d['subject'], d['body'])).start()
     
     return jsonify({"message": "Sending started in background!"})
 
@@ -1428,7 +1402,7 @@ def serve_file(filename):
 @app.route('/api/receipt/<int:id>')
 @login_required
 def serve_receipt(id):
-    # REPLACE THE ENTIRE FUNCTION WITH THIS:
+   
     p = db.session.get(Payment, id)
     if not p:
         return "Receipt not found", 404
@@ -1509,6 +1483,12 @@ def initialize_database():
         db.create_all()
         check_and_upgrade_db()
         init_firebase()
+
+# Create DB tables automatically when app loads (Required for Gunicorn/Production)
+with app.app_context():
+    db.create_all()
+    check_and_upgrade_db()
+    # init_firebase() 
 
 if __name__ == '__main__':
     initialize_database()

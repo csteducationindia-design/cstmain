@@ -947,7 +947,7 @@ function downloadReport(type) {
 }
 
 // 2. PDF Print Handler (Client-side is faster for simple reports)
-function printReportPDF() {
+window.printReportPDF = function()  {
     // Hide sidebar and other elements for printing
     const sidebar = document.querySelector('aside');
     const header = document.querySelector('header');
@@ -956,7 +956,7 @@ function printReportPDF() {
     window.print();
 }
 // Populate the new dropdown
-async function populateReportCourseFilter() {
+window.populateReportCourseFilter = async function() {
     const select = document.getElementById('report-course-filter');
     if (select.options.length > 1) return; // Don't reload if already loaded
 
@@ -973,7 +973,7 @@ async function populateReportCourseFilter() {
 let currentPendingStudents = [];
 
 // Update the existing fetchFeePendingReport function
-async function fetchFeePendingReport() {
+window.sendBulkFeeReminder = async function() {
     const feePendingReportBody = document.getElementById('fee-pending-report-body');
     const courseId = document.getElementById('report-course-filter').value; // Get selected course
     
@@ -1367,26 +1367,6 @@ window.editStudent = async function (id) {
         };
 
         
-window.deleteStudent = async function(id) {
-    if (!id) return alert('Invalid Student ID.');
-    if (confirm(`Are you sure you want to delete Student ID ${id}?`)) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/users/${id}`, { method: 'DELETE', credentials: 'include' });
-            
-            if (response.ok) {
-                alert(`Student deleted successfully.`);
-                await loadUsers(); // Refresh the table correctly
-            } else {
-                const result = await response.json();
-                alert(`Delete failed: ${result.message || 'Server error'}`);
-            }
-        } catch (error) {
-            console.error('Error deleting user:', error);
-            alert('Network error during deletion.');
-        }
-    }
-};
-
         window.deleteParent = async function(id) {
             if (!id) return alert('Invalid Parent ID.');
             if (confirm(`Are you sure you want to delete Parent ID ${id}?`)) {
@@ -1858,7 +1838,7 @@ async function fetchAnnouncements(isManagementPage) {
             }
         }
         
-        async function fetchFeePendingReport() {
+        window.fetchFeePendingReport = async function()  {
             const feePendingReportBody = document.getElementById('fee-pending-report-body');
             if (!feePendingReportBody) return; 
 
@@ -2085,24 +2065,7 @@ async function fetchAnnouncements(isManagementPage) {
        // REPLACED: Simply use loadUsers because it targets the correct Table ID
 
 window.deleteStudent = async function(id) {
-    if (!id) return alert('Invalid Student ID.');
-    if (confirm(`Are you sure you want to delete Student ID ${id}?`)) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/users/${id}`, { method: 'DELETE', credentials: 'include' });
-            
-            if (response.ok) {
-                alert(`Student deleted successfully.`);
-                await loadUsers(); // Refresh the table correctly
-            } else {
-                const result = await response.json();
-                alert(`Delete failed: ${result.message || 'Server error'}`);
-            }
-        } catch (error) {
-            console.error('Error deleting user:', error);
-            alert('Network error during deletion.');
-        }
-    }
-};
+
         async function fetchParents() {
             const tableBody = document.getElementById('parent-table-body');
             tableBody.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center">Loading parents...</td></tr>';
@@ -2172,7 +2135,14 @@ window.deleteStudent = async function(id) {
                 }
             }
         }
-
+async function fetchStudents(searchTerm = '') {
+            if (searchTerm) {
+                const searchInput = document.getElementById('userSearch');
+                if (searchInput) searchInput.value = searchTerm;
+            }
+            // This calls the main table loader which works correctly
+            await loadUsers(); 
+        }
         async function fetchStudentsForPaymentDropdown() {
             try {
                 const response = await fetch(`${API_BASE_URL}/users`, {credentials: 'include'});
@@ -2470,10 +2440,9 @@ window.deleteStudent = async function(id) {
     }
 
     // Init
-    document.addEventListener('DOMContentLoaded', () => {
-        loadSessionsFilter();
-    });
+   document.addEventListener('DOMContentLoaded', () => {
+    loadSessionsFilter();
+});
 </script>
-
 </body>
 </html>
