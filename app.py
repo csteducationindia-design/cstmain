@@ -283,13 +283,15 @@ def check_and_upgrade_db():
         user_cols = [c['name'] for c in insp.get_columns('user')]
         
         with db.engine.connect() as conn:
-	    if 'admission_number' not in user_cols:
-                conn.execute(text("ALTER TABLE user ADD COLUMN admission_number VARCHAR(50)"))
-            # Fix for fcm_token
+            # Check and add fcm_token
             if 'fcm_token' not in user_cols:
                 conn.execute(text("ALTER TABLE user ADD COLUMN fcm_token VARCHAR(500)"))
             
-            # --- CRITICAL FIX: Ensure session_id column exists for Batch tracking ---
+            # Check and add admission_number
+            if 'admission_number' not in user_cols:
+                conn.execute(text("ALTER TABLE user ADD COLUMN admission_number VARCHAR(50)"))
+            
+            # Check and add session_id
             if 'session_id' not in user_cols:
                 conn.execute(text("ALTER TABLE user ADD COLUMN session_id INTEGER REFERENCES academic_session(id)"))
                 
