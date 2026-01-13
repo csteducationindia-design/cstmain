@@ -280,13 +280,27 @@ def check_and_upgrade_db():
     try:
         insp = inspect(db.engine)
         user_cols = [c['name'] for c in insp.get_columns('user')]
+        
         with db.engine.connect() as conn:
+            # Fix for fcm_token
+            if 'fcm_token' not in user_cols:
+                conn.execute(text("ALTER TABLE user ADD COLUMN fcm_token VARCHAR(500)"))
+            
+            # --- CRITICAL FIX: Ensure session_id column exists for Batch tracking ---
             if 'session_id' not in user_cols:
-                # Add column for existing database
                 conn.execute(text("ALTER TABLE user ADD COLUMN session_id INTEGER REFERENCES academic_session(id)"))
+                
+            conn.commit()
+            
+        # Check Fee Structure table
+        fee_cols = [c['name'] for c in insp.get_columns('fee_structure')]
+        if 'course_id' not in fee_cols:
+            with db.engine.connect() as conn:
+                conn.execute(text("ALTER TABLE fee_structure ADD COLUMN course_id INTEGER REFERENCES course(id)"))
                 conn.commit()
-                print("Database migrated: Added session_id to user table.")
-    except Exception as e: print(f"Migration Error: {e}")
+        print("Database migration successful.")
+    except Exception as e: 
+        print(f"Migration Error: {e}")
 
 class Course(db.Model):
     id = db.Column(db.Integer, primary_key=True)

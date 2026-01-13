@@ -984,17 +984,51 @@ async function fetchTeachers() {
     }
     // --- 4. DATA FETCHING FUNCTIONS ---
 
+    // --- FIX: Ensure sessions are loaded into ALL relevant dropdowns ---
     async function loadSessionsFilter() {
         try {
-            const res = await fetch('/api/sessions');
-            const sessions = await res.json();
-            const select = document.getElementById('filterSession');
-            select.innerHTML = '<option value="">All Sessions</option>';
-            sessions.forEach(s => {
-                select.innerHTML += `<option value="${s.id}">${s.name}</option>`;
-            });
-        } catch (e) { console.error(e); }
+            const res = await fetch(`${API_BASE_URL}/sessions`);
+            const data = await res.json();
+            allSessionsCache = data;
+            
+            // 1. Populate the 'Academic Session' dropdown in the Registration Form
+            const sSelect = document.getElementById('student-session-select');
+            if (sSelect) {
+                const currentVal = sSelect.value;
+                sSelect.innerHTML = '<option value="">-- Select Session --</option>';
+                data.forEach(s => {
+                    sSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+                });
+                if(currentVal) sSelect.value = currentVal;
+            }
+
+            // 2. Populate the 'Filter by Session' dropdown in the Student List
+            const fSelect = document.getElementById('filterSession');
+            if (fSelect) {
+                fSelect.innerHTML = '<option value="">All Sessions</option>';
+                data.forEach(s => {
+                    fSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+                });
+            }
+            
+            // 3. Populate the Fee Session dropdown
+            const feeSel = document.getElementById('fee-session-select');
+            if (feeSel) {
+                feeSel.innerHTML = '<option value="">Select Session</option>';
+                data.forEach(s => feeSel.innerHTML += `<option value="${s.id}">${s.name}</option>`);
+            }
+        } catch (e) {
+            console.error("Error loading sessions:", e);
+        }
     }
+
+    // --- FIX: Ensure these run when the page loads ---
+    document.addEventListener('DOMContentLoaded', () => { 
+        showSection(window.location.hash || '#dashboard');
+        loadSessionsFilter(); // Populates Batch/Session dropdowns
+        fetchCoursesForEnrollment(); 
+        populateParentDropdowns();
+    });
 
     async function loadUsers() {
         const sessionId = document.getElementById('filterSession').value;
