@@ -9,7 +9,7 @@
         tailwind.config = {
             theme: {
                 extend: {
-                    colors: { "primary": "#2563eb", "primary-dark": "#1e40af", "background-light": "#f8fafc" },
+                    colors: { "primary": "#2563eb", "primary-dark": "#1e40af", "background-light": "#f8fafc", "background-dark": "#0f172a" },
                     fontFamily: { "display": ["Inter", "sans-serif"] },
                 },
             },
@@ -20,44 +20,27 @@
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
         
-        /* Sidebar Link Styling */
-        .nav-link { 
-            display: flex; align-items: center; gap: 12px; padding: 12px 16px; 
-            border-radius: 8px; color: #475569; font-weight: 500; transition: all 0.2s; 
-            width: 100%; cursor: pointer;
-        }
-        .nav-link:hover, .nav-link.active { background-color: #eff6ff; color: #2563eb; }
-        
-        /* Notepad-style Submenu Animation */
-        .submenu { 
-            transition: max-height 0.3s ease-out; overflow: hidden; 
-            max-height: 0; background: #f8fafc; border-radius: 8px; margin-left: 12px; 
-        }
-        .submenu.open { max-height: 500px; padding: 4px 0; border: 1px solid #e2e8f0; }
-        .submenu-link { 
-            padding: 10px 16px 10px 40px; display: flex; align-items: center; 
-            gap: 8px; font-size: 0.9rem; color: #64748b; border-radius: 6px; 
-        }
-        .submenu-link:hover { color: #2563eb; background: #fff; }
-
-        /* Modern Form Styling - Big & Clear */
-        input, select, textarea { 
-            width: 100%; padding: 14px 16px; border: 1px solid #cbd5e1; 
-            border-radius: 8px; background-color: #fff; font-size: 1rem; margin-top: 4px;
+        /* Modern Inputs - Large and Spacious */
+        input[type="text"], input[type="email"], input[type="tel"], input[type="date"], input[type="password"], input[type="number"], select, textarea {
+            width: 100%; padding: 14px 16px; font-size: 1rem; border: 1px solid #cbd5e1;
+            border-radius: 8px; background-color: #fff; transition: all 0.2s; margin-top: 6px;
         }
         input:focus, select:focus { border-color: #2563eb; outline: none; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
-        label { font-weight: 600; color: #475569; font-size: 0.85rem; text-transform: uppercase; }
+        label { font-weight: 600; color: #475569; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; }
 
-        /* Action Buttons - Spaced Out */
-        .btn-edit { 
-            color: #2563eb; font-weight: 700; border: 1px solid #dbeafe; 
-            background: #eff6ff; padding: 6px 14px; border-radius: 6px; font-size: 0.85rem;
-        }
+        /* Sidebar & Notepad Menu */
+        .nav-link { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 8px; color: #475569; font-weight: 500; transition: all 0.2s; cursor: pointer; }
+        .nav-link:hover, .nav-link.active { background-color: #eff6ff; color: #2563eb; }
+        
+        .submenu { transition: max-height 0.3s ease-out; overflow: hidden; max-height: 0; background: #f8fafc; border-radius: 8px; margin-left: 12px; }
+        .submenu.open { max-height: 500px; padding: 4px 0; border: 1px solid #e2e8f0; }
+        .submenu-link { padding: 10px 16px 10px 40px; display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: #64748b; border-radius: 6px; }
+        .submenu-link:hover { color: #2563eb; background: #fff; }
+
+        /* Action Buttons */
+        .btn-edit { color: #2563eb; font-weight: 700; border: 1px solid #dbeafe; background: #eff6ff; padding: 6px 14px; border-radius: 6px; font-size: 0.85rem; }
         .btn-edit:hover { background: #dbeafe; }
-        .btn-delete { 
-            color: #dc2626; font-weight: 700; border: 1px solid #fee2e2; 
-            background: #fef2f2; padding: 6px 14px; border-radius: 6px; font-size: 0.85rem;
-        }
+        .btn-delete { color: #dc2626; font-weight: 700; border: 1px solid #fee2e2; background: #fef2f2; padding: 6px 14px; border-radius: 6px; font-size: 0.85rem; }
         .btn-delete:hover { background: #fee2e2; }
 
         .form-card { background: white; padding: 32px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05); margin-bottom: 24px; }
@@ -71,8 +54,8 @@
 
     <aside class="w-72 bg-white border-r border-slate-200 flex flex-col z-20 shadow-xl">
         <div class="p-6 border-b">
-            <h1 class="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-                <span class="material-symbols-outlined text-primary" style="font-size: 32px;">school</span> Institute Admin
+            <h1 class="text-2xl font-bold text-slate-900 flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary" style="font-size: 32px;">school</span> CST Admin
             </h1>
         </div>
         <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
@@ -109,8 +92,8 @@
             <a href="#announcements" onclick="closeAllMenus()" class="nav-link"><span class="material-symbols-outlined">campaign</span> Announcements</a>
             <a href="#bulk-upload" onclick="closeAllMenus()" class="nav-link"><span class="material-symbols-outlined">upload_file</span> Bulk Upload</a>
         </nav>
-        <div class="p-4 border-t border-slate-100">
-            <button onclick="handleLogout()" class="w-full bg-red-50 text-red-600 font-bold py-3 rounded-lg hover:bg-red-100 transition flex items-center justify-center gap-2">
+        <div class="p-4 border-t">
+            <button onclick="handleLogout()" class="w-full bg-red-50 text-red-600 font-bold py-3 rounded-lg hover:bg-red-100 flex items-center justify-center gap-2 transition">
                 <span class="material-symbols-outlined">logout</span> Logout
             </button>
         </div>
@@ -120,7 +103,7 @@
         <div class="max-w-7xl mx-auto">
             
             <div id="content-dashboard" class="content-section">
-                <h2 class="text-3xl font-bold mb-8 text-slate-800">Welcome, Admin</h2>
+                <h2 class="text-3xl font-bold mb-8 text-slate-800">Dashboard Overview</h2>
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
                         <p class="text-slate-500 font-bold text-xs uppercase">Total Teachers</p>
@@ -148,41 +131,76 @@
                             <h3 id="student-form-title" class="text-2xl font-bold text-primary">Student Registration</h3>
                             <button onclick="resetUserForm('student')" class="text-slate-400 hover:text-primary">Clear Form</button>
                         </div>
-                        <form id="student-form" class="space-y-6">
-                            <input type="hidden" id="student-id" name="id"><input type="hidden" name="role" value="student">
-                            <div class="grid grid-cols-2 gap-6 bg-slate-50 p-6 rounded-xl border">
-                                <div><label>Session (Batch) *</label><select id="student-session-select" name="session_id" required></select></div>
-                                <div><label>Enroll Course *</label><select id="student-course-select" name="course_ids" required></select></div>
+                        <form id="student-form" class="space-y-8">
+                            <input type="hidden" id="student-id" name="id">
+                            <input type="hidden" name="role" value="student">
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div class="bg-blue-50 p-6 rounded-xl border border-blue-100">
+                                    <div class="section-title"><span class="material-symbols-outlined">school</span> Academic Setup</div>
+                                    <div class="space-y-4">
+                                        <div><label>Session (Batch) *</label><select id="student-session-select" name="session_id" required></select></div>
+                                        <div><label>Enroll in Course *</label><select id="student-course-select" name="course_ids" required></select></div>
+                                    </div>
+                                </div>
+                                <div class="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                                    <div class="section-title"><span class="material-symbols-outlined">badge</span> Basic Details</div>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div class="col-span-2"><label>Full Name *</label><input type="text" id="student-name-input" name="name" required></div>
+                                        <div><label>Gender</label><select id="student-gender-select" name="gender"><option>Male</option><option>Female</option><option>Other</option></select></div>
+                                        <div><label>Date of Birth</label><input type="date" id="student-dob-input" name="dob"></div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div><label>Full Name *</label><input type="text" id="student-name-input" name="name" required></div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                                 <div><label>Email *</label><input type="email" id="student-email-input" name="email" required></div>
-                                <div><label>Phone Number</label><input type="tel" id="student-phone-input" name="phone_number"></div>
-                                <div><label>Date of Birth</label><input type="date" id="student-dob-input" name="dob"></div>
-                                <div><label>Gender</label><select id="student-gender-select" name="gender"><option>Male</option><option>Female</option></select></div>
-                                <div><label>Password</label><input type="password" name="password" placeholder="Leave blank to keep"></div>
+                                <div><label>Mobile Number</label><input type="tel" id="student-phone-input" name="phone_number"></div>
+                                <div><label>Password</label><input type="password" name="password" placeholder="Min 6 chars"></div>
                             </div>
-                            <div class="grid grid-cols-2 gap-6">
-                                <div><label>Father's Name</label><input type="text" id="student-father-name-input" name="father_name"></div>
-                                <div><label>Mother's Name</label><input type="text" id="student-mother-name-input" name="mother_name"></div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div class="form-card !p-6 shadow-none">
+                                    <h4 class="font-bold mb-4 border-b pb-2">Parent Information</h4>
+                                    <div class="space-y-4">
+                                        <div><label>Father's Name</label><input type="text" id="student-father-name-input" name="father_name"></div>
+                                        <div><label>Mother's Name</label><input type="text" id="student-mother-name-input" name="mother_name"></div>
+                                        <div><label>Link Existing Account</label><select id="student-parent-select" name="parent_id"></select></div>
+                                    </div>
+                                </div>
+                                <div class="form-card !p-6 shadow-none">
+                                    <h4 class="font-bold mb-4 border-b pb-2">Contact Address</h4>
+                                    <div class="space-y-4">
+                                        <div><label>Address Line 1</label><input type="text" id="student-address-input" name="address_line1"></div>
+                                        <div class="grid grid-cols-2 gap-4">
+                                            <div><label>City</label><input type="text" id="student-city-input" name="city"></div>
+                                            <div><label>Pincode</label><input type="text" id="student-pincode-input" name="pincode"></div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                             <div class="flex items-center gap-6 p-4 bg-white border border-dashed rounded-xl">
-                                <img id="student-photo-preview" src="https://placehold.co/100" class="w-20 h-20 rounded-full border shadow-sm">
-                                <div class="flex-1"><label>Upload Photo</label><input type="file" id="student-photo-file-input" name="profile_photo_file" accept="image/*"></div>
+
+                            <div class="flex items-center gap-6 p-6 bg-slate-50 border-2 border-dashed rounded-2xl">
+                                <img id="student-photo-preview" src="https://placehold.co/100" class="w-24 h-24 rounded-full border-4 border-white shadow-md object-cover">
+                                <div class="flex-1">
+                                    <label>Profile Photo</label>
+                                    <input type="file" id="student-photo-file-input" name="profile_photo_file" accept="image/*" class="mt-2">
+                                </div>
                             </div>
-                            <button type="submit" id="student-form-btn" class="w-full bg-primary text-white py-4 rounded-xl font-bold text-lg shadow-lg hover:bg-primary-dark">Save Student</button>
+
+                            <button type="submit" id="student-form-btn" class="w-full bg-primary text-white py-4 rounded-xl font-bold text-lg shadow-lg hover:bg-primary-dark transition transform active:scale-95">Register Student</button>
                         </form>
                     </div>
                 </div>
 
                 <div id="students-view-list" class="hidden">
-                    <div class="bg-white p-6 rounded-xl border mb-6 flex gap-4">
-                        <select id="filterSession" onchange="loadUsers()" class="w-1/3"><option value="">All Batches</option></select>
+                    <div class="bg-white p-6 rounded-2xl border mb-6 flex gap-4">
+                        <select id="filterSession" onchange="loadUsers()" class="w-1/3"><option value="">All Sessions</option></select>
                         <input type="text" id="userSearch" onkeyup="loadUsers()" placeholder="Search Name..." class="flex-1">
                     </div>
-                    <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+                    <div class="bg-white rounded-2xl shadow-sm border overflow-hidden">
                         <table>
-                            <thead><tr><th>ID</th><th>Student Name</th><th>Batch</th><th>Actions</th></tr></thead>
+                            <thead><tr><th>ID / ADM</th><th>Student Name</th><th>Batch</th><th class="text-right">Actions</th></tr></thead>
                             <tbody id="usersTableBody"></tbody>
                         </table>
                     </div>
@@ -190,13 +208,13 @@
 
                 <div id="students-view-reports" class="hidden">
                     <div class="form-card">
-                        <h3 class="text-xl font-bold mb-6">Fee Status Report</h3>
-                        <div class="grid grid-cols-2 gap-4 mb-6">
-                            <select id="report-course-filter" onchange="fetchFeePendingReport()"><option value="">All Courses</option></select>
-                            <button onclick="sendBulkFeeReminder()" class="bg-red-600 text-white font-bold rounded-lg">Send Bulk SMS Reminder</button>
+                        <div class="flex justify-between items-center mb-8 border-b pb-4">
+                            <h3 class="text-xl font-bold text-slate-800">Fee Pending Report</h3>
+                            <button onclick="sendBulkFeeReminder()" class="bg-red-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-red-700">Send Bulk SMS</button>
                         </div>
-                        <table>
-                            <thead><tr><th>Student</th><th>Pending Bal</th><th>Due Date</th><th>Action</th></tr></thead>
+                        <div class="mb-6"><label>Filter by Course</label><select id="report-course-filter" onchange="fetchFeePendingReport()"><option value="">All Courses</option></select></div>
+                        <table class="w-full">
+                            <thead><tr><th>Student</th><th>Pending</th><th>Due Date</th><th class="text-center">SMS</th></tr></thead>
                             <tbody id="fee-pending-report-body"></tbody>
                         </table>
                     </div>
@@ -205,76 +223,101 @@
 
             <div id="content-teachers" class="content-section hidden">
                 <div class="form-card">
-                    <h3 class="section-header text-primary">Teachers Management</h3>
+                    <h3 id="teacher-form-title" class="section-header text-primary">Add / Edit Teacher</h3>
                     <form id="teacher-form" class="grid grid-cols-2 gap-6">
                         <input type="hidden" id="teacher-id" name="id"><input type="hidden" name="role" value="teacher">
                         <div><label>Name</label><input type="text" id="teacher-name-input" name="name" required></div>
                         <div><label>Email</label><input type="email" id="teacher-email-input" name="email" required></div>
                         <div><label>Phone</label><input type="tel" id="teacher-phone-input" name="phone_number"></div>
                         <div><label>Password</label><input type="password" name="password"></div>
-                        <div class="col-span-2"><button type="submit" id="teacher-form-btn" class="w-full bg-primary text-white py-3 rounded-lg font-bold">Save Teacher</button></div>
+                        <div class="col-span-2"><button type="submit" id="teacher-form-btn" class="w-full bg-primary text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition">Save Teacher</button></div>
                     </form>
                 </div>
-                <div class="bg-white rounded-xl border overflow-hidden"><table class="w-full"><tbody id="teacher-table-body"></tbody></table></div>
+                <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+                    <table>
+                        <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th class="text-right">Actions</th></tr></thead>
+                        <tbody id="teacher-table-body"></tbody>
+                    </table>
+                </div>
             </div>
 
             <div id="content-parents" class="content-section hidden">
                 <div class="form-card">
-                    <h3 class="section-header text-primary">Parents Management</h3>
+                    <h3 id="parent-form-title" class="section-header text-primary">Add / Edit Parent</h3>
                     <form id="parent-form" class="grid grid-cols-2 gap-6">
                         <input type="hidden" id="parent-id" name="id"><input type="hidden" name="role" value="parent">
                         <div><label>Name</label><input type="text" id="parent-name-input" name="name" required></div>
                         <div><label>Email</label><input type="email" id="parent-email-input" name="email" required></div>
                         <div><label>Phone</label><input type="tel" id="parent-phone-input" name="phone_number"></div>
                         <div><label>Password</label><input type="password" name="password"></div>
-                        <div class="col-span-2"><button type="submit" id="parent-form-btn" class="w-full bg-primary text-white py-3 rounded-lg font-bold">Save Parent</button></div>
+                        <div class="col-span-2"><button type="submit" id="parent-form-btn" class="w-full bg-primary text-white py-3 rounded-lg font-bold transition">Save Parent</button></div>
                     </form>
                 </div>
-                <div class="bg-white rounded-xl border overflow-hidden"><table class="w-full"><tbody id="parent-table-body"></tbody></table></div>
+                <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+                    <table>
+                        <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th class="text-right">Actions</th></tr></thead>
+                        <tbody id="parent-table-body"></tbody>
+                    </table>
+                </div>
             </div>
 
             <div id="content-courses" class="content-section hidden">
                 <div class="form-card">
                     <h3 class="section-header text-primary">Courses</h3>
-                    <form id="course-form" class="grid grid-cols-2 gap-6">
+                    <form id="course-form" class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <input type="hidden" id="course-id" name="id">
                         <div><label>Course Name</label><input type="text" id="course-name" required></div>
                         <div><label>Subjects</label><input type="text" id="course-subjects" required></div>
-                        <div class="col-span-2"><label>Assign Teacher</label><select id="course-teacher"></select></div>
-                        <div class="col-span-2"><button type="submit" id="save-course-btn" class="bg-primary text-white w-full py-3 rounded-lg font-bold">Save Course</button></div>
+                        <div class="md:col-span-2"><label>Assign Teacher</label><select id="course-teacher"></select></div>
+                        <div class="md:col-span-2 pt-2"><button type="submit" id="save-course-btn" class="w-full bg-primary text-white py-3 rounded-lg font-bold transition">Save Course</button></div>
                     </form>
                 </div>
-                <div class="bg-white rounded-xl border overflow-hidden"><table class="w-full"><tbody id="course-table-body"></tbody></table></div>
+                <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+                    <table>
+                        <thead><tr><th>Course Name</th><th>Subjects</th><th>Teacher</th><th class="text-right">Actions</th></tr></thead>
+                        <tbody id="course-table-body"></tbody>
+                    </table>
+                </div>
             </div>
 
             <div id="content-sessions" class="content-section hidden">
                 <div class="form-card">
-                    <h3 class="section-header text-primary">Sessions</h3>
-                    <form id="session-form" class="grid grid-cols-2 gap-6">
+                    <h3 class="section-header text-primary">Academic Sessions</h3>
+                    <form id="session-form" class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <input type="hidden" id="session-id" name="id">
                         <div><label>Session Name</label><input type="text" id="session-name" required></div>
                         <div><label>Status</label><select id="session-status"><option>Active</option><option>Inactive</option></select></div>
                         <div><label>Start Date</label><input type="date" id="session-start-date" required></div>
                         <div><label>End Date</label><input type="date" id="session-end-date" required></div>
-                        <div class="col-span-2"><button type="submit" id="save-session-btn" class="bg-primary text-white w-full py-3 rounded-lg font-bold">Save Session</button></div>
+                        <div class="md:col-span-2 pt-2"><button type="submit" id="save-session-btn" class="w-full bg-primary text-white py-3 rounded-lg font-bold transition">Save Session</button></div>
                     </form>
                 </div>
-                <div class="bg-white rounded-xl border overflow-hidden"><table class="w-full"><tbody id="session-table-body"></tbody></table></div>
+                <div class="bg-white rounded-xl border shadow-sm overflow-hidden">
+                    <table>
+                        <thead><tr><th>Session Name</th><th>Start</th><th>End</th><th class="text-right">Actions</th></tr></thead>
+                        <tbody id="session-table-body"></tbody>
+                    </table>
+                </div>
             </div>
 
             <div id="content-fees" class="content-section hidden">
                 <div id="fees-view-struct" class="hidden">
                     <div class="form-card">
-                        <h3 class="section-header text-primary">Manage Fee Structures</h3>
+                        <h3 class="section-header text-primary">Manage Fee Structure</h3>
                         <form id="fee-structure-form" class="grid grid-cols-2 gap-6">
                             <input type="hidden" id="fee-structure-id" name="id">
                             <div class="col-span-2"><label>Name</label><input type="text" id="fee-structure-name" required></div>
                             <div><label>Session</label><select id="fee-session-select" name="academic_session_id" required></select></div>
                             <div><label>Amount (₹)</label><input type="number" id="fee-total-amount" required></div>
                             <div><label>Due Date</label><input type="date" id="fee-due-date" required></div>
-                            <div class="col-span-2"><button type="submit" id="save-fee-structure-btn" class="bg-primary text-white w-full py-3 rounded-lg font-bold">Save Structure</button></div>
+                            <div class="col-span-2"><button type="submit" id="save-fee-structure-btn" class="w-full bg-primary text-white py-3 rounded-lg font-bold transition">Save Structure</button></div>
                         </form>
-                        <div class="mt-8 border-t pt-4"><table class="w-full"><tbody id="fee-structure-table-body"></tbody></table></div>
+                        <div class="mt-8 border-t pt-4">
+                             <table>
+                                 <thead><tr><th>Fee Type</th><th>Amount</th><th class="text-right">Actions</th></tr></thead>
+                                 <tbody id="fee-structure-table-body"></tbody>
+                             </table>
+                        </div>
                     </div>
                 </div>
 
@@ -282,45 +325,39 @@
                     <div class="form-card">
                         <h3 class="section-header text-green-700">Record Fee Collection</h3>
                         <form id="payment-form" class="space-y-6">
-                            <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                                <label class="text-blue-700">Quick Filter: Select Session to find students faster</label>
-                                <select id="payment-session-filter" onchange="filterPaymentStudents()"><option value="">All Sessions</option></select>
+                            <div class="bg-blue-50 p-6 rounded-xl border border-blue-200">
+                                <label class="text-blue-700 font-bold">Step 1: Filter by Session</label>
+                                <select id="payment-session-filter" onchange="filterPaymentStudents()"><option value="">Show All Students</option></select>
                             </div>
-                            <div class="grid grid-cols-2 gap-6">
-                                <div><label>Select Student</label><select id="payment-student-select" required></select></div>
-                                <div><label>Select Fee Type</label><select id="payment-fee-structure-select" required></select></div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div><label>Step 2: Select Student</label><select id="payment-student-select" required></select></div>
+                                <div><label>Step 3: Select Fee Type</label><select id="payment-fee-structure-select" required></select></div>
                                 <div><label>Amount Paid (₹)</label><input type="number" step="0.01" id="payment-amount" required></div>
-                                <div><label>Method</label><select id="payment-method"><option>Cash</option><option>Online</option></select></div>
+                                <div><label>Payment Method</label><select id="payment-method"><option>Cash</option><option>Online</option><option>Cheque</option></select></div>
                             </div>
-                            <button type="submit" class="w-full bg-green-600 text-white py-4 rounded-xl font-bold shadow-lg">Record & Print Receipt</button>
+                            <button type="submit" class="w-full bg-green-600 text-white py-4 rounded-xl font-bold hover:bg-green-700 shadow-lg">Process Payment</button>
                         </form>
-                        <div class="mt-8 border-t pt-6"><table class="w-full"><tbody id="fee-status-table-body"></tbody></table></div>
+                        <div class="mt-8 border-t pt-6">
+                            <table>
+                                <thead><tr><th>Student</th><th>Balance</th><th class="text-right">Receipt</th></tr></thead>
+                                <tbody id="fee-status-table-body"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <div id="content-announcements" class="content-section hidden">
                 <div class="form-card">
-                    <h3 class="section-header">Post Announcement</h3>
+                    <h3 class="section-header text-primary">Post New Announcement</h3>
                      <form id="announcement-form" class="space-y-4">
                         <div><label>Title</label><input type="text" id="announcement-title" required></div>
                         <div><label>Content</label><textarea id="announcement-content" rows="3" required></textarea></div>
-                        <div><label>Target</label><select id="announcement-target-group"><option value="all">All Users</option></select></div>
-                        <button type="submit" class="bg-primary text-white px-6 py-2 rounded-lg font-bold">Submit</button>
+                        <div><label>Target Audience</label><select id="announcement-target-group"><option value="all">All Users</option><option value="students">Students Only</option></select></div>
+                        <button type="submit" class="bg-primary text-white px-8 py-3 rounded-lg font-bold">Post</button>
                      </form>
                 </div>
-                <div class="bg-white rounded-xl border overflow-hidden"><table class="w-full"><tbody id="management-announcements-body"></tbody></table></div>
-            </div>
-
-            <div id="content-bulk-upload" class="content-section hidden">
-                <div class="form-card">
-                    <h3 class="section-header">Bulk Student/User Upload</h3>
-                    <form id="bulk-upload-form" class="flex gap-4 items-end">
-                        <div class="flex-1"><label>CSV File</label><input type="file" id="bulk-file-input" accept=".csv" class="w-full mt-1"></div>
-                        <button type="submit" class="bg-green-600 text-white px-8 py-3 rounded-lg font-bold">Start Upload</button>
-                    </form>
-                    <div id="bulk-upload-results" class="mt-6 hidden p-4 bg-slate-50 rounded border"></div>
-                </div>
+                <div class="bg-white rounded-xl border overflow-hidden shadow-sm"><table class="w-full"><tbody id="management-announcements-body"></tbody></table></div>
             </div>
 
         </div>
@@ -337,9 +374,9 @@
         const arrow = document.getElementById(`${type}-arrow`);
         const isOpen = submenu.classList.contains('open');
         
-        // Notepad style close others
+        // Notepad style: Close other submenus first
         document.querySelectorAll('.submenu').forEach(m => m.classList.remove('open'));
-        document.querySelectorAll('.material-symbols-outlined').forEach(a => a.style.transform = '');
+        document.querySelectorAll('.material-symbols-outlined[id$="-arrow"]').forEach(a => a.style.transform = '');
 
         if(!isOpen) {
             submenu.classList.add('open');
@@ -349,6 +386,7 @@
 
     function closeAllMenus() {
         document.querySelectorAll('.submenu').forEach(m => m.classList.remove('open'));
+        document.querySelectorAll('.material-symbols-outlined[id$="-arrow"]').forEach(a => a.style.transform = '');
     }
 
     function showSection(hash) {
@@ -357,12 +395,21 @@
         const target = document.getElementById(`content-${targetId}`);
         if(target) target.classList.remove('hidden');
         
+        // Active Nav Styling
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        const navEl = document.getElementById(`nav-${targetId}`);
+        if(navEl) navEl.classList.add('active');
+
         loadData(targetId);
     }
 
     function switchSubView(section, view) {
         document.querySelectorAll(`[id^="${section.substring(0,3)}-view-"]`).forEach(v => v.classList.add('hidden'));
-        document.getElementById(`${section.substring(0,3)}-view-${view}`).classList.remove('hidden');
+        const viewEl = document.getElementById(`${section.substring(0,3)}-view-${view}`);
+        if(viewEl) viewEl.classList.remove('hidden');
+        
+        if(view === 'list') loadUsers();
+        if(view === 'reports') fetchFeePendingReport();
     }
 
     // --- 2. DATA LOADERS ---
@@ -372,7 +419,13 @@
         if(id === 'parents') fetchParents();
         if(id === 'courses') fetchCourses();
         if(id === 'sessions') fetchSessions();
-        if(id === 'fees') { fetchFeeStructures(); fetchFeeSessionDropdowns(); fetchStudentsForPaymentDropdown(); fetchFeeStatus(); }
+        if(id === 'fees') { 
+            await loadSessionsFilter(); // Ensure dropdowns are ready
+            fetchFeeStructures(); 
+            fetchStudentsForPaymentDropdown(); 
+            fetchFeeStatus(); 
+            switchSubView('fees', 'struct'); 
+        }
     }
 
     async function fetchStats() {
@@ -392,35 +445,33 @@
         return allUsersCache;
     }
 
-    // --- 3. FIX EDIT / NETWORK ERROR ---
+    // --- 3. EDIT LOGIC (Surgical Fix for Network Errors) ---
     window.editStudent = async function(id) {
         try {
-            // Load dropdowns first to prevent unassigned values
+            // Load dropdowns first to avoid populate error
             await loadSessionsFilter(); 
             await fetchCoursesForEnrollment();
             
             const res = await fetch(`${API_BASE_URL}/admin/student/${id}`, {credentials:'include'});
-            if(!res.ok) throw "error";
+            if(!res.ok) throw new Error("Fetch Error");
             const u = await res.json();
             
             switchSubView('students', 'add');
             populateUserForm(u, 'student');
-            document.getElementById('student-form-btn').innerText = "Update Student";
+            document.getElementById('student-form-btn').innerText = "Update Student Information";
             window.scrollTo(0,0);
-        } catch(e) { alert("Network Error: Data unreachable."); }
+        } catch(e) { alert("Network Error: Student record currently unavailable."); }
     };
 
-    window.editTeacher = (id) => editInline(id, 'teacher');
-    window.editParent = (id) => editInline(id, 'parent');
-    window.editSession = (id) => editInline(id, 'session');
-    window.editCourse = (id) => editInline(id, 'course');
-    window.editFeeStructure = (id) => editInline(id, 'fee_structure');
+    window.editTeacher = (id) => editGlobal(id, 'teacher');
+    window.editParent = (id) => editGlobal(id, 'parent');
 
-    function editInline(id, type) {
-        const item = (type==='teacher'||type==='parent') ? allUsersCache.find(x=>x.id===id) : null;
+    function editGlobal(id, type) {
+        const item = allUsersCache.find(x => x.id === id);
         if(item) {
              populateUserForm(item, type);
-             document.getElementById(`${type}-form-btn`).innerText = "Update Record";
+             document.getElementById(`${type}-form-btn`).innerText = `Update ${type}`;
+             window.scrollTo(0,0);
         }
     }
 
@@ -433,77 +484,177 @@
         
         if(role === 'student') {
             document.getElementById('student-session-select').value = u.session_id || '';
-            document.getElementById('student-course-select').value = u.course_ids ? u.course_ids[0] : '';
+            document.getElementById('student-course-select').value = u.course_ids && u.course_ids.length ? u.course_ids[0] : '';
             document.getElementById('student-gender-select').value = u.gender || '';
-            document.getElementById('student-photo-preview').src = u.profile_photo_url || 'https://placehold.co/100';
+            document.getElementById('student-dob-input').value = u.dob || '';
+            document.getElementById('student-father-name-input').value = u.father_name || '';
+            document.getElementById('student-address-input').value = u.address_line1 || '';
+            document.getElementById('student-photo-preview').src = u.profile_photo_url ? (u.profile_photo_url + '?t=' + Date.now()) : 'https://placehold.co/100';
         }
     }
 
-    // --- 4. SMS RESTORED ---
+    // --- 4. SMS & NOTIFICATIONS ---
     window.sendFeeAlert = async function(id) {
-        if(!confirm("Send SMS reminder to parent and student?")) return;
-        const res = await fetch(`${API_BASE_URL}/send_sms_alert`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            credentials: 'include',
-            body: JSON.stringify({ student_id: id })
-        });
-        const data = await res.json();
-        alert(data.message);
+        if(!confirm("Send SMS alert to parent and student?")) return;
+        try {
+            const res = await fetch(`${API_BASE_URL}/send_sms_alert`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                credentials: 'include',
+                body: JSON.stringify({ student_id: id })
+            });
+            const data = await res.json();
+            alert(data.message);
+        } catch(e) { alert("SMS Provider unreachable."); }
     };
 
-    // --- 5. FEE FILTER LOGIC ---
+    // --- 5. DATA FETCHERS ---
+    async function loadSessionsFilter() {
+        const res = await fetch(`${API_BASE_URL}/sessions`);
+        const data = await res.json();
+        allSessionsCache = data;
+        ['student-session-select', 'filterSession', 'fee-session-select', 'payment-session-filter'].forEach(id => {
+            const el = document.getElementById(id);
+            if(el) {
+                const currentVal = el.value;
+                el.innerHTML = `<option value="">${id.includes('filter') ? 'All Sessions' : '-- Select Session --'}</option>`;
+                data.forEach(s => el.innerHTML += `<option value="${s.id}">${s.name}</option>`);
+                if(currentVal) el.value = currentVal;
+            }
+        });
+    }
+
+    async function fetchCoursesForEnrollment() {
+        const res = await fetch(`${API_BASE_URL}/courses`, {credentials:'include'});
+        const data = await res.json();
+        allCoursesCache = data;
+        const s = document.getElementById('student-course-select');
+        if(s) {
+            s.innerHTML = '<option value="">Select Course</option>' + data.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        }
+    }
+
     function filterPaymentStudents() {
         const sid = document.getElementById('payment-session-filter').value;
         const sel = document.getElementById('payment-student-select');
         const filtered = allUsersCache.filter(u => u.role === 'student' && (!sid || u.session_id == sid));
-        sel.innerHTML = '<option value="">Select Student</option>' + filtered.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+        sel.innerHTML = '<option value="">Select Student</option>' + filtered.map(s => `<option value="${s.id}">${s.name} (${s.email})</option>`).join('');
     }
 
-    // --- 6. TABLE RENDERERS (With Spaced Edit/Delete Buttons) ---
     async function loadUsers() {
         const sess = document.getElementById('filterSession').value;
         const search = document.getElementById('userSearch').value;
         const res = await fetch(`${API_BASE_URL}/users?session_id=${sess}&search=${search}`, {credentials:'include'});
         const users = await res.json();
         document.getElementById('usersTableBody').innerHTML = users.filter(u=>u.role==='student').map(u => `
-            <tr><td>${u.admission_number||'-'}</td><td>${u.name}</td><td>${u.session_name}</td><td class="text-right">
-                <button onclick="editStudent(${u.id})" class="btn-edit mr-4">Edit</button>
-                <button onclick="deleteStudent(${u.id})" class="btn-delete">Delete</button>
-            </td></tr>`).join('');
+            <tr>
+                <td class="px-6 py-4 font-mono text-xs text-slate-500">${u.admission_number||'-'}</td>
+                <td class="font-bold">${u.name}</td>
+                <td><span class="bg-blue-50 text-primary px-3 py-1 rounded-full text-xs font-bold">${u.session_name}</span></td>
+                <td class="text-right">
+                    <button onclick="editStudent(${u.id})" class="btn-edit mr-4">Edit</button>
+                    <button onclick="deleteStudent(${u.id})" class="btn-delete">Delete</button>
+                </td>
+            </tr>`).join('');
     }
 
-    async function fetchTeachers() {
-        const res = await fetch(`${API_BASE_URL}/users`, {credentials:'include'});
-        const users = await res.json();
-        document.getElementById('teacher-table-body').innerHTML = users.filter(u=>u.role==='teacher').map(t => `
-            <tr><td>${t.name}</td><td>${t.email}</td><td>${t.phone_number||'-'}</td><td class="text-right">
-                <button onclick="editTeacher(${t.id})" class="btn-edit mr-4">Edit</button>
-                <button onclick="deleteTeacher(${t.id})" class="btn-delete">Delete</button>
-            </td></tr>`).join('');
-    }
-
-    // --- 7. FORM SUBMISSIONS ---
+    // --- 6. FORM HANDLING ---
     document.addEventListener('submit', async (e) => {
         if(e.target.tagName !== 'FORM') return;
         e.preventDefault();
         const form = e.target;
         const fd = new FormData(form);
         const id = form.querySelector('input[name="id"]')?.value;
+        
         let url = `${API_BASE_URL}/users`;
         if(form.id === 'course-form') url = `${API_BASE_URL}/courses`;
         else if(form.id === 'session-form') url = `${API_BASE_URL}/sessions`;
         else if(form.id === 'fee-structure-form') url = `${API_BASE_URL}/fee_structures`;
         else if(form.id === 'payment-form') url = `${API_BASE_URL}/payments`;
 
-        const res = await fetch(url, { method: (id && form.id !== 'payment-form')?'PUT':'POST', credentials:'include', body: fd });
-        if(res.ok) { alert("Successfully Saved!"); form.reset(); loadData(window.location.hash.substring(1).split('-')[0]); }
-        else { alert("Error saving."); }
+        let body = fd;
+        let headers = {};
+        if (form.id !== 'student-form' && form.id !== 'bulk-upload-form') {
+            body = JSON.stringify(Object.fromEntries(fd));
+            headers = {'Content-Type': 'application/json'};
+        }
+
+        const res = await fetch(url, { method: (id && form.id !== 'payment-form')?'PUT':'POST', credentials:'include', headers:headers, body:body });
+        if(res.ok) { alert("Operation Successful!"); form.reset(); loadData(window.location.hash.split('-')[0].substring(1)); }
+        else { const err = await res.json(); alert("Error: " + err.message); }
     });
 
-    // INIT
+    // --- RE-ADDING ALL REMOVED LISTERS ---
+    async function fetchTeachers() {
+        const users = await fetchAllUsers();
+        document.getElementById('teacher-table-body').innerHTML = users.filter(u=>u.role==='teacher').map(t => `
+            <tr><td>${t.name}</td><td>${t.email}</td><td>${t.phone_number||'-'}</td><td class="text-right">
+                <button onclick="editTeacher(${t.id})" class="btn-edit mr-3">Edit</button>
+                <button onclick="deleteTeacher(${t.id})" class="btn-delete">Del</button>
+            </td></tr>`).join('');
+    }
+    
+    async function fetchParents() {
+        const users = await fetchAllUsers();
+        document.getElementById('parent-table-body').innerHTML = users.filter(u=>u.role==='parent').map(p => `
+            <tr><td>${p.name}</td><td>${p.email}</td><td>${p.phone_number||'-'}</td><td class="text-right">
+                <button onclick="editParent(${p.id})" class="btn-edit mr-3">Edit</button>
+                <button onclick="deleteParent(${p.id})" class="btn-delete">Del</button>
+            </td></tr>`).join('');
+    }
+
+    async function fetchSessions() {
+        const res = await fetch(`${API_BASE_URL}/sessions`, {credentials:'include'});
+        const data = await res.json();
+        allSessionsCache = data;
+        document.getElementById('session-table-body').innerHTML = data.map(s => `
+            <tr><td>${s.name}</td><td>${s.start_date}</td><td>${s.status}</td><td class="text-right">
+                <button onclick="editSession(${s.id})" class="btn-edit mr-3">Edit</button>
+                <button onclick="deleteSession(${s.id})" class="btn-delete">Del</button>
+            </td></tr>`).join('');
+    }
+
+    async function fetchCourses() {
+        const res = await fetch(`${API_BASE_URL}/courses`, {credentials:'include'});
+        const data = await res.json();
+        allCoursesCache = data;
+        document.getElementById('course-table-body').innerHTML = data.map(c => `
+            <tr><td class="font-bold">${c.name}</td><td>${c.subjects}</td><td>${c.teacher_name}</td><td class="text-right">
+                <button onclick="editCourse(${c.id})" class="btn-edit mr-3">Edit</button>
+                <button onclick="deleteCourse(${c.id})" class="btn-delete">Del</button>
+            </td></tr>`).join('');
+    }
+
+    async function fetchFeeStructures() {
+        const res = await fetch(`${API_BASE_URL}/fee_structures`, {credentials:'include'});
+        const data = await res.json();
+        document.getElementById('fee-structure-table-body').innerHTML = data.map(f => `
+            <tr><td>${f.name}</td><td>₹${f.total_amount}</td><td class="text-right">
+                <button onclick="editFeeStructure(${f.id})" class="btn-edit mr-3">Edit</button>
+                <button onclick="deleteFeeStructure(${f.id})" class="btn-delete">Del</button>
+            </td></tr>`).join('');
+        const drop = document.getElementById('payment-fee-structure-select');
+        if(drop) drop.innerHTML = '<option value="">Select Fee</option>' + data.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
+    }
+
+    async function fetchFeeStatus() {
+         const res = await fetch(`${API_BASE_URL}/fee_status`, {credentials:'include'});
+         const data = await res.json();
+         document.getElementById('fee-status-table-body').innerHTML = data.map(x => `
+            <tr><td>${x.student_name}</td><td class="font-bold ${x.balance>0?'text-red-600':'text-green-600'}">₹${x.balance}</td><td class="text-right">
+                <button onclick="window.open('/api/receipt/${x.latest_payment_id}', '_blank')" class="btn-edit">Receipt</button>
+            </td></tr>`).join('');
+    }
+
+    // --- DELETE WRAPPERS ---
+    window.deleteTeacher = async (id) => { if(confirm("Del?")) { await fetch(`${API_BASE_URL}/users/${id}`, {method:'DELETE', credentials:'include'}); fetchTeachers(); } }
+    window.deleteParent = async (id) => { if(confirm("Del?")) { await fetch(`${API_BASE_URL}/users/${id}`, {method:'DELETE', credentials:'include'}); fetchParents(); } }
+    window.deleteCourse = async (id) => { if(confirm("Del?")) { await fetch(`${API_BASE_URL}/courses/${id}`, {method:'DELETE', credentials:'include'}); fetchCourses(); } }
+    window.deleteSession = async (id) => { if(confirm("Del?")) { await fetch(`${API_BASE_URL}/sessions/${id}`, {method:'DELETE', credentials:'include'}); fetchSessions(); } }
+
+    // Initialize Page
     window.addEventListener('hashchange', () => showSection(window.location.hash));
-    document.addEventListener('DOMContentLoaded', () => showSection(window.location.hash || '#dashboard'));
+    document.addEventListener('DOMContentLoaded', () => { showSection(window.location.hash || '#dashboard'); });
 </script>
 </body>
 </html>
