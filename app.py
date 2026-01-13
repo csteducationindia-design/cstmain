@@ -820,15 +820,7 @@ def api_users():
 
         db.session.commit()
         return jsonify(u.to_dict()), 200
-admission_number = request.form.get('admission_number')
 
-if role == 'student':
-    # When creating a new student (POST)
-    if request.method == 'POST':
-        new_user.admission_number = admission_number
-    # When updating an existing student (PUT)
-    else:
-        user_to_update.admission_number = admission_number
 
 @app.route('/api/admin/student/<int:id>', methods=['GET'])
 @login_required
