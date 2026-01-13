@@ -234,6 +234,7 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(60), nullable=False)
     role = db.Column(db.String(50), nullable=False)
+    admission_number = db.Column(db.String(50), unique=True, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     phone_number = db.Column(db.String(20), nullable=True)
     parent_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
@@ -282,6 +283,8 @@ def check_and_upgrade_db():
         user_cols = [c['name'] for c in insp.get_columns('user')]
         
         with db.engine.connect() as conn:
+	    if 'admission_number' not in user_cols:
+                conn.execute(text("ALTER TABLE user ADD COLUMN admission_number VARCHAR(50)"))
             # Fix for fcm_token
             if 'fcm_token' not in user_cols:
                 conn.execute(text("ALTER TABLE user ADD COLUMN fcm_token VARCHAR(500)"))
