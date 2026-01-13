@@ -23,13 +23,13 @@
         /* Modern Form Styling */
         input[type="text"], input[type="email"], input[type="tel"], input[type="date"], input[type="password"], input[type="number"], select, textarea {
             width: 100%;
-            padding: 12px 16px; /* Larger padding for comfort */
-            font-size: 1rem;
+            padding: 12px 16px;
+            font-size: 0.95rem;
             border: 1px solid #cbd5e1;
             border-radius: 0.5rem;
             background-color: #ffffff;
             transition: all 0.2s;
-            margin-top: 4px;
+            margin-top: 6px;
         }
         input:focus, select:focus, textarea:focus {
             outline: none;
@@ -39,10 +39,11 @@
         label {
             font-weight: 600;
             color: #475569;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             text-transform: uppercase;
-            letter-spacing: 0.025em;
+            letter-spacing: 0.05em;
         }
+        
         /* Card & Section Styling */
         .form-section {
             background: white;
@@ -53,23 +54,39 @@
             margin-bottom: 24px;
         }
         .form-section-title {
-            font-size: 1.125rem;
+            font-size: 1.1rem;
             font-weight: 700;
             color: #1e293b;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
             border-bottom: 2px solid #f1f5f9;
-            padding-bottom: 8px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
         }
+
+        /* Sub-Navigation Buttons */
+        .sub-nav-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            padding: 14px 20px;
+            text-align: left;
+            border-radius: 8px;
+            font-weight: 600;
+            color: #64748b;
+            transition: all 0.2s;
+        }
+        .sub-nav-btn:hover { background-color: #f1f5f9; color: #2563eb; }
+        .sub-nav-btn.active { background-color: #eff6ff; color: #2563eb; border-left: 4px solid #2563eb; }
+        
         /* Table Styling */
         table { width: 100%; border-collapse: collapse; }
-        th { text-align: left; padding: 12px 16px; background: #f8fafc; font-weight: 600; color: #475569; border-bottom: 1px solid #e2e8f0; }
-        td { padding: 12px 16px; border-bottom: 1px solid #f1f5f9; color: #334155; }
+        th { text-align: left; padding: 12px 16px; background: #f8fafc; font-weight: 700; color: #475569; font-size: 0.8rem; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; }
+        td { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; color: #334155; font-size: 0.95rem; }
         tr:hover td { background: #f8fafc; }
         
-        /* Print Hide */
         @media print {
             aside, header, .no-print, button, .content-section.hidden { display: none !important; }
             .content-section:not(.hidden) { display: block !important; }
@@ -81,7 +98,7 @@
 <body class="bg-background-light font-display text-slate-800">
 
 <div class="flex h-screen overflow-hidden">
-    <aside class="w-72 bg-white border-r border-slate-200 flex flex-col shadow-xl z-10">
+    <aside class="w-72 bg-white border-r border-slate-200 flex flex-col shadow-xl z-20">
         <div class="p-6 border-b border-slate-100">
             <h1 class="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
                 <span class="material-symbols-outlined text-primary">school</span> Institute Admin
@@ -112,10 +129,7 @@
             <a href="#announcements" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 text-slate-600 hover:text-primary transition font-medium">
                 <span class="material-symbols-outlined">campaign</span> Announcements
             </a>
-            <a href="#fee-pending-report" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 text-slate-600 hover:text-primary transition font-medium">
-                <span class="material-symbols-outlined">receipt_long</span> Fee Reports
-            </a>
-            <a href="#bulk-upload" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 text-slate-600 hover:text-primary transition font-medium">
+             <a href="#bulk-upload" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 text-slate-600 hover:text-primary transition font-medium">
                 <span class="material-symbols-outlined">upload_file</span> Bulk Upload
             </a>
         </nav>
@@ -127,315 +141,346 @@
     </aside>
 
     <main class="flex-1 bg-slate-50 p-8 overflow-y-auto">
-        <div class="max-w-6xl mx-auto">
+        <div class="max-w-7xl mx-auto">
             
             <div id="content-dashboard" class="content-section">
                 <h2 class="text-3xl font-bold mb-8 text-slate-800">Dashboard Overview</h2>
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                        <p class="text-slate-500 font-medium">Total Teachers</p>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                        <p class="text-slate-500 font-bold text-xs uppercase tracking-wider">Total Teachers</p>
                         <p id="total-teachers" class="text-4xl font-bold text-primary mt-2">...</p>
                     </div>
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                        <p class="text-slate-500 font-medium">Total Students</p>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                        <p class="text-slate-500 font-bold text-xs uppercase tracking-wider">Total Students</p>
                         <p id="total-students" class="text-4xl font-bold text-primary mt-2">...</p>
                     </div>
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                        <p class="text-slate-500 font-medium">Total Parents</p>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                        <p class="text-slate-500 font-bold text-xs uppercase tracking-wider">Total Parents</p>
                         <p id="total-parents" class="text-4xl font-bold text-primary mt-2">...</p>
                     </div>
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                        <p class="text-slate-500 font-medium">Courses</p>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                        <p class="text-slate-500 font-bold text-xs uppercase tracking-wider">Courses</p>
                         <p id="total-courses" class="text-4xl font-bold text-primary mt-2">...</p>
                     </div>
                 </div>
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-                    <h3 class="text-xl font-bold mb-4">Recent Announcements</h3>
-                    <table class="w-full text-left">
-                        <tbody id="recent-announcements-body"></tbody>
-                    </table>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                        <h3 class="text-xl font-bold mb-4 text-slate-800">Quick Actions</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <button onclick="window.location.hash='students'; switchStudentTab('add')" class="bg-blue-50 text-primary p-4 rounded-xl font-bold hover:bg-blue-100 transition text-left flex items-center gap-3">
+                                <span class="material-symbols-outlined">person_add</span> Register Student
+                            </button>
+                            <button onclick="window.location.hash='fees'" class="bg-green-50 text-green-700 p-4 rounded-xl font-bold hover:bg-green-100 transition text-left flex items-center gap-3">
+                                <span class="material-symbols-outlined">payments</span> Record Fee
+                            </button>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                        <h3 class="text-xl font-bold mb-4 text-slate-800">Recent Announcements</h3>
+                        <div class="overflow-y-auto max-h-48">
+                            <table class="w-full text-left text-sm">
+                                <tbody id="recent-announcements-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <div id="content-students" class="content-section hidden">
-                <div class="flex justify-between items-center mb-8">
-                    <h2 class="text-3xl font-bold text-slate-800">Manage Students</h2>
-                    <button onclick="resetUserForm('student')" class="text-slate-500 hover:text-primary font-medium flex items-center gap-1">
-                        <span class="material-symbols-outlined">restart_alt</span> Reset Form
-                    </button>
-                </div>
-
-                <div class="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden mb-10">
-                    <div class="bg-primary/5 p-6 border-b border-primary/10">
-                        <h3 id="student-form-title" class="text-xl font-bold text-primary flex items-center gap-2">
-                            <span class="material-symbols-outlined">person_add</span> Register New Student
-                        </h3>
-                    </div>
+                <div class="flex flex-col md:flex-row gap-8">
                     
-                    <form id="student-form" class="p-8" enctype="multipart/form-data">
-                        <input type="hidden" id="student-id" name="id">
-                        <input type="hidden" id="student-role" name="role" value="student">
-                        
-                        <div class="form-section">
-                            <div class="form-section-title"><span class="material-symbols-outlined">school</span> Enrollment Details</div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label for="student-session-select">Academic Session (Batch) <span class="text-red-500">*</span></label>
-                                    <select id="student-session-select" name="session_id" required>
-                                        <option value="">Loading Sessions...</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="student-course-select">Course Enrollment <span class="text-red-500">*</span></label>
-                                    <select id="student-course-select" name="course_ids" required>
-                                        <option value="">Select Course</option>
-                                    </select>
-                                    <p class="text-xs text-slate-500 mt-2">Required for Fee Generation</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="form-section">
-                            <div class="form-section-title"><span class="material-symbols-outlined">badge</span> Personal Information</div>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div class="md:col-span-1">
-                                    <label>Full Name <span class="text-red-500">*</span></label>
-                                    <input type="text" id="student-name-input" name="name" required placeholder="e.g. Rahul Kumar">
-                                </div>
-                                <div class="md:col-span-1">
-                                    <label>Email Address <span class="text-red-500">*</span></label>
-                                    <input type="email" id="student-email-input" name="email" required placeholder="student@example.com">
-                                </div>
-                                <div class="md:col-span-1">
-                                    <label>Phone Number</label>
-                                    <input type="tel" id="student-phone-input" name="phone_number" placeholder="10-digit Mobile">
-                                </div>
-                                <div>
-                                    <label>Date of Birth</label>
-                                    <input type="date" id="student-dob-input" name="dob">
-                                </div>
-                                <div>
-                                    <label>Gender</label>
-                                    <select id="student-gender-select" name="gender">
-                                        <option value="">Select Gender</option>
-                                        <option value="Male">Male</option>
-                                        <option value="Female">Female</option>
-                                        <option value="Other">Other</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label>Login Password</label>
-                                    <input type="password" id="student-password-input" name="password" placeholder="Min 6 chars (Leave empty if editing)">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div class="form-section">
-                                <div class="form-section-title"><span class="material-symbols-outlined">family_restroom</span> Parent Details</div>
-                                <div class="space-y-4">
-                                    <div><label>Father's Name</label><input type="text" id="student-father-name-input" name="father_name"></div>
-                                    <div><label>Mother's Name</label><input type="text" id="student-mother-name-input" name="mother_name"></div>
-                                    <div><label>Link Parent Account (Optional)</label><select id="student-parent-select" name="parent_id"></select></div>
-                                </div>
-                            </div>
-                            
-                            <div class="form-section">
-                                <div class="form-section-title"><span class="material-symbols-outlined">home</span> Address</div>
-                                <div class="space-y-4">
-                                    <div><label>Address Line 1</label><input type="text" id="student-address-input" name="address_line1"></div>
-                                    <div class="grid grid-cols-2 gap-4">
-                                        <div><label>City</label><input type="text" id="student-city-input" name="city"></div>
-                                        <div><label>State</label><input type="text" id="student-state-input" name="state"></div>
-                                    </div>
-                                    <div><label>Pincode</label><input type="text" id="student-pincode-input" name="pincode"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="form-section flex items-center gap-6">
-                             <img id="student-photo-preview" src="https://placehold.co/100x100/e2e8f0/64748b?text=Photo" class="w-24 h-24 rounded-full object-cover border-4 border-slate-100 shadow-md">
-                             <div class="flex-1">
-                                 <label class="block mb-2">Profile Photo</label>
-                                 <input type="file" id="student-photo-file-input" name="profile_photo_file" accept="image/*" class="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20">
-                             </div>
-                         </div>
-
-                        <button type="submit" id="student-form-btn" class="w-full bg-primary text-white text-lg font-bold py-4 rounded-xl shadow-lg hover:bg-primary-dark transition transform hover:-translate-y-0.5">Register Student</button>
-                    </form>
-                </div>
-
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                    <div class="flex flex-col md:flex-row gap-4 justify-between items-end mb-6">
-                        <div class="w-full md:w-1/3">
-                            <label>Filter by Session</label>
-                            <select id="filterSession" onchange="loadUsers()" class="w-full"><option value="">All Sessions</option></select>
-                        </div>
-                        <div class="w-full md:w-1/3">
-                            <label>Search Student</label>
-                            <input type="text" id="userSearch" onkeyup="loadUsers()" placeholder="Name or Email..." class="w-full">
-                        </div>
-                        <div class="flex gap-2">
-                            <button onclick="downloadReport('fee_pending')" class="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-900">Export Fees</button>
-                            <button onclick="window.open('/admin/id_cards/bulk','_blank')" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700">Print IDs</button>
+                    <div class="w-full md:w-64 flex-shrink-0">
+                        <h2 class="text-2xl font-bold text-slate-800 mb-6 px-2">Students</h2>
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                            <button onclick="switchStudentTab('add')" class="sub-nav-btn active" id="btn-std-add">
+                                <span class="material-symbols-outlined">person_add</span> Register New
+                            </button>
+                            <button onclick="switchStudentTab('list')" class="sub-nav-btn" id="btn-std-list">
+                                <span class="material-symbols-outlined">manage_accounts</span> View / Manage
+                            </button>
+                            <button onclick="switchStudentTab('reports')" class="sub-nav-btn" id="btn-std-reports">
+                                <span class="material-symbols-outlined">analytics</span> Reports & Fees
+                            </button>
+                             <button onclick="window.open('/admin/id_cards/bulk','_blank')" class="sub-nav-btn">
+                                <span class="material-symbols-outlined">badge</span> Print ID Cards
+                            </button>
                         </div>
                     </div>
 
-                    <div class="overflow-x-auto rounded-lg border border-slate-200">
-                        <table class="w-full text-left border-collapse">
-                            <thead class="bg-slate-50 text-slate-600 text-sm uppercase">
-                                <tr>
-                                    <th class="px-6 py-3 font-bold border-b">ID</th>
-                                    <th class="px-6 py-3 font-bold border-b">Name</th>
-                                    <th class="px-6 py-3 font-bold border-b">Session</th>
-                                    <th class="px-6 py-3 font-bold border-b">Contact</th>
-                                    <th class="px-6 py-3 font-bold border-b text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="usersTableBody" class="text-sm text-slate-700"></tbody>
-                        </table>
+                    <div class="flex-1">
+                        
+                        <div id="student-tab-add" class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+                            <div class="flex justify-between items-center mb-8 border-b pb-4">
+                                <h3 id="student-form-title" class="text-xl font-bold text-primary flex items-center gap-2">
+                                    <span class="material-symbols-outlined">app_registration</span> New Registration
+                                </h3>
+                                <button onclick="resetUserForm('student')" class="text-sm text-slate-500 hover:text-primary font-medium flex items-center gap-1">
+                                    <span class="material-symbols-outlined">restart_alt</span> Reset Form
+                                </button>
+                            </div>
+
+                            <form id="student-form" class="space-y-8" enctype="multipart/form-data">
+                                <input type="hidden" id="student-id" name="id">
+                                <input type="hidden" id="student-role" name="role" value="student">
+                                
+                                <div class="form-section">
+                                    <div class="form-section-title"><span class="material-symbols-outlined">school</span> Academic Details</div>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label>Academic Session <span class="text-red-500">*</span></label>
+                                            <select id="student-session-select" name="session_id" required>
+                                                <option value="">Loading...</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label>Course Enrollment <span class="text-red-500">*</span></label>
+                                            <select id="student-course-select" name="course_ids" required>
+                                                <option value="">Select Course</option>
+                                            </select>
+                                            <p class="text-xs text-slate-500 mt-1">This determines fee structure.</p>
+                                        </div>
+                                        <div>
+                                            <label>Admission Number (Optional)</label>
+                                            <input type="text" name="admission_number" placeholder="Auto-generated if blank">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-section">
+                                    <div class="form-section-title"><span class="material-symbols-outlined">badge</span> Personal Information</div>
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <div class="md:col-span-1">
+                                            <label>Full Name <span class="text-red-500">*</span></label>
+                                            <input type="text" id="student-name-input" name="name" required placeholder="Student Name">
+                                        </div>
+                                        <div class="md:col-span-1">
+                                            <label>Email <span class="text-red-500">*</span></label>
+                                            <input type="email" id="student-email-input" name="email" required placeholder="email@example.com">
+                                        </div>
+                                        <div class="md:col-span-1">
+                                            <label>Mobile Number</label>
+                                            <input type="tel" id="student-phone-input" name="phone_number" placeholder="10-digit number">
+                                        </div>
+                                        <div>
+                                            <label>Date of Birth</label>
+                                            <input type="date" id="student-dob-input" name="dob">
+                                        </div>
+                                        <div>
+                                            <label>Gender</label>
+                                            <select id="student-gender-select" name="gender">
+                                                <option value="">Select</option><option>Male</option><option>Female</option><option>Other</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label>Login Password</label>
+                                            <input type="password" id="student-password-input" name="password" placeholder="Min 6 chars">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div class="form-section">
+                                        <div class="form-section-title"><span class="material-symbols-outlined">family_restroom</span> Guardian Info</div>
+                                        <div class="space-y-4">
+                                            <div><label>Father's Name</label><input type="text" id="student-father-name-input" name="father_name"></div>
+                                            <div><label>Mother's Name</label><input type="text" id="student-mother-name-input" name="mother_name"></div>
+                                            <div><label>Link Existing Parent</label><select id="student-parent-select" name="parent_id"></select></div>
+                                        </div>
+                                    </div>
+                                    <div class="form-section">
+                                        <div class="form-section-title"><span class="material-symbols-outlined">home</span> Contact Address</div>
+                                        <div class="space-y-4">
+                                            <div><label>Address</label><input type="text" id="student-address-input" name="address_line1"></div>
+                                            <div class="grid grid-cols-2 gap-4">
+                                                <div><label>City</label><input type="text" id="student-city-input" name="city"></div>
+                                                <div><label>State</label><input type="text" id="student-state-input" name="state"></div>
+                                            </div>
+                                            <div><label>Pincode</label><input type="text" id="student-pincode-input" name="pincode"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="bg-blue-50 p-4 rounded-xl flex items-center gap-6 border border-blue-100">
+                                    <img id="student-photo-preview" src="https://placehold.co/100x100?text=Photo" class="w-20 h-20 rounded-full object-cover border-4 border-white shadow-sm">
+                                    <div class="flex-1">
+                                        <label>Student Photo</label>
+                                        <input type="file" id="student-photo-file-input" name="profile_photo_file" accept="image/*">
+                                        <p class="text-xs text-slate-500 mt-1">JPG/PNG, Max 2MB.</p>
+                                    </div>
+                                </div>
+
+                                <div class="pt-2">
+                                    <button type="submit" id="student-form-btn" class="w-full bg-primary text-white text-lg font-bold py-4 rounded-xl shadow-lg hover:bg-primary-dark transition">Save Student Registration</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <div id="student-tab-list" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hidden">
+                            <div class="flex flex-col md:flex-row justify-between items-end gap-4 mb-6">
+                                <div class="w-full md:w-1/3">
+                                    <label>Filter by Session</label>
+                                    <select id="filterSession" onchange="loadUsers()"><option value="">All Sessions</option></select>
+                                </div>
+                                <div class="w-full md:w-1/3">
+                                    <label>Search</label>
+                                    <input type="text" id="userSearch" onkeyup="loadUsers()" placeholder="Name, Email or Phone...">
+                                </div>
+                            </div>
+                            <div class="overflow-x-auto rounded-lg border border-slate-200">
+                                <table class="w-full">
+                                    <thead class="bg-slate-50">
+                                        <tr><th class="px-6 py-4">ADM No</th><th>Name</th><th>Session</th><th>Contact</th><th class="text-right">Actions</th></tr>
+                                    </thead>
+                                    <tbody id="usersTableBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div id="student-tab-reports" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hidden">
+                             <div class="flex justify-between items-center mb-6">
+                                 <h3 class="text-lg font-bold">Fee Pending Report</h3>
+                                 <div class="flex gap-2">
+                                     <button onclick="downloadReport('fee_pending')" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-bold">Export Excel</button>
+                                 </div>
+                             </div>
+                             <div class="flex gap-4 mb-6 bg-slate-50 p-4 rounded-lg">
+                                <div class="flex-1">
+                                    <label>Filter by Course</label>
+                                    <select id="report-course-filter" onchange="fetchFeePendingReport()"><option value="">All Courses</option></select>
+                                </div>
+                                <div class="flex items-end">
+                                    <button onclick="sendBulkFeeReminder()" class="bg-red-600 text-white px-6 py-2.5 rounded-lg font-bold shadow-sm hover:bg-red-700">Send Bulk SMS Reminder</button>
+                                </div>
+                             </div>
+                             <div class="overflow-x-auto rounded-lg border border-slate-200">
+                                 <table>
+                                     <thead><tr><th>Student</th><th>Pending Amount</th><th>Due Date</th><th class="text-center">Action</th></tr></thead>
+                                     <tbody id="fee-pending-report-body"></tbody>
+                                 </table>
+                             </div>
+                        </div>
+
                     </div>
                 </div>
             </div>
 
             <div id="content-teachers" class="content-section hidden">
-                <h2 class="text-3xl font-bold mb-6">Manage Teachers</h2>
+                <h2 class="text-3xl font-bold mb-6 text-slate-800">Manage Teachers</h2>
                 <div class="bg-white p-8 rounded-xl shadow-sm mb-8 border border-slate-200">
                     <h3 id="teacher-form-title" class="text-xl font-bold mb-6 text-primary">Add / Edit Teacher</h3>
                     <form id="teacher-form" class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <input type="hidden" id="teacher-id" name="id"><input type="hidden" id="teacher-role" name="role" value="teacher">
-                        <div><label>Full Name</label><input type="text" id="teacher-name-input" name="name" required></div>
+                        <div><label>Name</label><input type="text" id="teacher-name-input" name="name" required></div>
                         <div><label>Email</label><input type="email" id="teacher-email-input" name="email" required></div>
                         <div><label>Phone</label><input type="tel" id="teacher-phone-input" name="phone_number"></div>
-                        <div><label>Password</label><input type="password" id="teacher-password-input" name="password" placeholder="Leave blank to keep current"></div>
-                        <div class="md:col-span-2 pt-4"><button type="submit" id="teacher-form-btn" class="w-full bg-primary text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition">Save Teacher</button></div>
+                        <div><label>Password</label><input type="password" id="teacher-password-input" name="password"></div>
+                        <div class="md:col-span-2 pt-2"><button type="submit" id="teacher-form-btn" class="w-full bg-primary text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition">Save Teacher</button></div>
                     </form>
                 </div>
-                <div class="bg-white rounded-xl shadow-sm overflow-hidden"><table class="w-full"><thead class="bg-slate-50"><tr><th class="px-6 py-3 text-left">Name</th><th class="px-6 py-3 text-left">Email</th><th class="px-6 py-3 text-left">Phone</th><th class="px-6 py-3 text-right">Actions</th></tr></thead><tbody id="teacher-table-body"></tbody></table></div>
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden"><table class="w-full"><thead class="bg-slate-50"><tr><th class="px-6 py-3">Name</th><th>Email</th><th>Phone</th><th class="text-right">Actions</th></tr></thead><tbody id="teacher-table-body"></tbody></table></div>
             </div>
 
             <div id="content-parents" class="content-section hidden">
-                <h2 class="text-3xl font-bold mb-6">Manage Parents</h2>
+                <h2 class="text-3xl font-bold mb-6 text-slate-800">Manage Parents</h2>
                 <div class="bg-white p-8 rounded-xl shadow-sm mb-8 border border-slate-200">
-                    <h3 id="parent-form-title" class="text-xl font-bold mb-6 text-primary">Add / Edit Parent</h3>
                     <form id="parent-form" class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <input type="hidden" id="parent-id" name="id"><input type="hidden" id="parent-role" name="role" value="parent">
-                        <div><label>Full Name</label><input type="text" id="parent-name-input" name="name" required></div>
+                        <div><label>Name</label><input type="text" id="parent-name-input" name="name" required></div>
                         <div><label>Email</label><input type="email" id="parent-email-input" name="email" required></div>
                         <div><label>Phone</label><input type="tel" id="parent-phone-input" name="phone_number"></div>
-                        <div><label>Password</label><input type="password" id="parent-password-input" name="password" class="w-full"></div>
-                        <div class="md:col-span-2 pt-4"><button type="submit" id="parent-form-btn" class="w-full bg-primary text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition">Save Parent</button></div>
+                        <div><label>Password</label><input type="password" id="parent-password-input" name="password"></div>
+                        <div class="md:col-span-2 pt-2"><button type="submit" id="parent-form-btn" class="w-full bg-primary text-white py-3 rounded-lg font-bold">Save Parent</button></div>
                     </form>
                 </div>
-                <div class="bg-white rounded-xl shadow-sm overflow-hidden"><table class="w-full"><thead class="bg-slate-50"><tr><th class="px-6 py-3 text-left">Name</th><th class="px-6 py-3 text-left">Email</th><th class="px-6 py-3 text-left">Phone</th><th class="px-6 py-3 text-right">Actions</th></tr></thead><tbody id="parent-table-body"></tbody></table></div>
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden"><table class="w-full"><tbody id="parent-table-body"></tbody></table></div>
             </div>
 
             <div id="content-courses" class="content-section hidden">
-                 <h2 class="text-3xl font-bold mb-6">Manage Courses</h2>
-                 <div class="bg-white p-8 rounded-xl shadow-sm mb-8 border border-slate-200">
-                    <h3 class="text-xl font-bold mb-6 text-primary">Add Course</h3>
+                <h2 class="text-3xl font-bold mb-6 text-slate-800">Courses</h2>
+                <div class="bg-white p-8 rounded-xl shadow-sm mb-8 border border-slate-200">
                     <form id="course-form" class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <input type="hidden" id="course-id" name="id">
                         <div><label>Course Name</label><input type="text" id="course-name" required></div>
                         <div><label>Subjects (Comma Sep)</label><input type="text" id="course-subjects" required></div>
-                        <div><label>Assign Teacher</label><select id="course-teacher" class="w-full"></select></div>
-                        <div class="md:col-span-2 pt-4"><button type="submit" id="save-course-btn" class="w-full bg-primary text-white py-3 rounded-lg font-bold">Save Course</button></div>
+                        <div class="md:col-span-2"><label>Assign Teacher</label><select id="course-teacher"></select></div>
+                        <div class="md:col-span-2 pt-2"><button type="submit" id="save-course-btn" class="w-full bg-primary text-white py-3 rounded-lg font-bold">Save Course</button></div>
                     </form>
                 </div>
-                <div class="bg-white rounded-xl shadow-sm overflow-hidden"><table class="w-full"><thead class="bg-slate-50"><tr><th class="px-6 py-3">Name</th><th class="px-6 py-3">Subjects</th><th class="px-6 py-3">Teacher</th><th class="px-6 py-3 text-right">Actions</th></tr></thead><tbody id="course-table-body"></tbody></table></div>
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden"><table class="w-full"><tbody id="course-table-body"></tbody></table></div>
             </div>
 
             <div id="content-sessions" class="content-section hidden">
-                <h2 class="text-3xl font-bold mb-6">Academic Sessions</h2>
+                <h2 class="text-3xl font-bold mb-6 text-slate-800">Sessions</h2>
                 <div class="bg-white p-8 rounded-xl shadow-sm mb-8 border border-slate-200">
-                    <h3 class="text-xl font-bold mb-6 text-primary">Add Session</h3>
                     <form id="session-form" class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <input type="hidden" id="session-id" name="id">
                         <div><label>Session Name</label><input type="text" id="session-name" required></div>
+                        <div><label>Status</label><select id="session-status"><option>Active</option><option>Inactive</option></select></div>
                         <div><label>Start Date</label><input type="date" id="session-start-date" required></div>
                         <div><label>End Date</label><input type="date" id="session-end-date" required></div>
-                        <div><label>Status</label><select id="session-status" class="w-full"><option>Active</option><option>Inactive</option></select></div>
-                        <div class="md:col-span-2 pt-4"><button type="submit" id="save-session-btn" class="w-full bg-primary text-white py-3 rounded-lg font-bold">Save Session</button></div>
+                        <div class="md:col-span-2 pt-2"><button type="submit" id="save-session-btn" class="w-full bg-primary text-white py-3 rounded-lg font-bold">Save Session</button></div>
                     </form>
                 </div>
-                <div class="bg-white rounded-xl shadow-sm overflow-hidden"><table class="w-full"><thead class="bg-slate-50"><tr><th class="px-6 py-3">Name</th><th class="px-6 py-3">Start</th><th class="px-6 py-3">End</th><th class="px-6 py-3 text-right">Actions</th></tr></thead><tbody id="session-table-body"></tbody></table></div>
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden"><table class="w-full"><tbody id="session-table-body"></tbody></table></div>
             </div>
 
             <div id="content-fees" class="content-section hidden">
-                <h2 class="text-3xl font-bold mb-6">Fees & Payments</h2>
+                <h2 class="text-3xl font-bold mb-6 text-slate-800">Fees & Payments</h2>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                        <h3 class="text-xl font-bold mb-4 text-primary">1. Create Fee Structure</h3>
-                        <form id="fee-structure-form" class="space-y-4 mb-6">
+                        <h3 class="font-bold mb-4 text-primary text-lg">Create Fee Structure</h3>
+                        <form id="fee-structure-form" class="space-y-4">
                             <input type="hidden" id="fee-structure-id" name="id">
-                            <div><label>Structure Name</label><input type="text" id="fee-structure-name" required placeholder="e.g. Admission Fee 2025"></div>
-                            <div><label>Session</label><select id="fee-session-select" name="academic_session_id" required class="w-full"></select></div>
+                            <div><label>Name</label><input type="text" id="fee-structure-name" required></div>
+                            <div><label>Session</label><select id="fee-session-select" name="academic_session_id" required></select></div>
                             <div class="grid grid-cols-2 gap-4">
-                                <div><label>Amount (₹)</label><input type="number" step="0.01" id="fee-total-amount" required></div>
+                                <div><label>Amount</label><input type="number" step="0.01" id="fee-total-amount" required></div>
                                 <div><label>Due Date</label><input type="date" id="fee-due-date" required></div>
                             </div>
-                            <button type="submit" id="save-fee-structure-btn" class="w-full bg-primary text-white py-3 rounded-lg font-bold">Save Structure</button>
+                            <button type="submit" id="save-fee-structure-btn" class="w-full bg-primary text-white py-2 rounded-lg font-bold mt-2">Save Structure</button>
                         </form>
-                        <div class="border-t pt-4">
-                             <h4 class="font-bold mb-2 text-sm text-slate-500 uppercase">Existing Structures</h4>
+                        <div class="mt-6 border-t pt-4">
                              <table class="w-full text-sm"><tbody id="fee-structure-table-body"></tbody></table>
                         </div>
                     </div>
-
                     <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                        <h3 class="text-xl font-bold mb-4 text-green-700">2. Record Payment</h3>
-                        <form id="payment-form" class="space-y-4 mb-6">
-                            <div><label>Student</label><select id="payment-student-select" required class="w-full"></select></div>
-                            <div><label>Fee Type</label><select id="payment-fee-structure-select" required class="w-full"></select></div>
+                        <h3 class="font-bold mb-4 text-green-700 text-lg">Record Payment</h3>
+                        <form id="payment-form" class="space-y-4">
+                            <div><label>Student</label><select id="payment-student-select" required></select></div>
+                            <div><label>Fee Type</label><select id="payment-fee-structure-select" required></select></div>
                             <div class="grid grid-cols-2 gap-4">
-                                <div><label>Amount Paid (₹)</label><input type="number" step="0.01" id="payment-amount" required></div>
-                                <div><label>Method</label><select id="payment-method" class="w-full"><option>Cash</option><option>Online</option><option>Cheque</option></select></div>
+                                <div><label>Amount Paid</label><input type="number" step="0.01" id="payment-amount" required></div>
+                                <div><label>Method</label><select id="payment-method"><option>Cash</option><option>Online</option></select></div>
                             </div>
-                            <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-lg font-bold hover:bg-green-700">Record & Print Receipt</button>
+                            <button type="submit" class="w-full bg-green-600 text-white py-2 rounded-lg font-bold mt-2 hover:bg-green-700">Record & Print Receipt</button>
                         </form>
-                        <div class="border-t pt-4"><h4 class="font-bold mb-2 text-sm text-slate-500 uppercase">Recent Status</h4><table class="w-full text-sm"><tbody id="fee-status-table-body"></tbody></table></div>
+                        <div class="mt-6 border-t pt-4"><table class="w-full text-sm"><tbody id="fee-status-table-body"></tbody></table></div>
                     </div>
                 </div>
             </div>
 
             <div id="content-announcements" class="content-section hidden">
-                <h2 class="text-3xl font-bold mb-6">Announcements</h2>
-                <div class="bg-white p-6 rounded-xl shadow-sm mb-6">
+                <h2 class="text-3xl font-bold mb-6 text-slate-800">Announcements</h2>
+                <div class="bg-white p-6 rounded-xl shadow-sm mb-6 border border-slate-200">
                      <form id="announcement-form" class="space-y-4">
                         <div><label>Title</label><input type="text" id="announcement-title" required></div>
                         <div><label>Content</label><textarea id="announcement-content" rows="3" required></textarea></div>
-                        <div><label>Target</label><select id="announcement-target-group" class="w-full"><option value="all">All</option><option value="students">Students</option></select></div>
-                        <button type="submit" class="bg-primary text-white px-6 py-2 rounded-lg font-bold">Post Announcement</button>
+                        <div><label>Target</label><select id="announcement-target-group"><option value="all">All</option><option value="students">Students</option></select></div>
+                        <button type="submit" class="bg-primary text-white w-full py-2 rounded font-bold">Post Announcement</button>
                      </form>
                 </div>
-                <div class="bg-white rounded-xl shadow-sm overflow-hidden"><table class="w-full"><tbody id="management-announcements-body"></tbody></table></div>
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200"><table class="w-full"><tbody id="management-announcements-body"></tbody></table></div>
             </div>
             
-            <div id="content-fee-pending-report" class="content-section hidden">
-                <h2 class="text-3xl font-bold mb-6">Pending Fees Report</h2>
-                 <div class="flex gap-4 mb-6">
-                    <select id="report-course-filter" onchange="fetchFeePendingReport()" class="w-1/3"><option value="">All Courses</option></select>
-                    <button onclick="sendBulkFeeReminder()" class="bg-red-600 text-white px-4 py-2 rounded font-bold">Send Bulk Reminder</button>
-                 </div>
-                 <div class="bg-white rounded-xl shadow-sm overflow-hidden"><table class="w-full"><thead class="bg-slate-50"><tr><th class="px-6 py-3">Student</th><th class="px-6 py-3">Pending</th><th class="px-6 py-3">Due</th><th class="px-6 py-3 text-center">Action</th></tr></thead><tbody id="fee-pending-report-body"></tbody></table></div>
-            </div>
-            
-            <div id="content-reports" class="content-section hidden">
-                 <h2 class="text-3xl font-bold mb-6">General Reports</h2>
-                 <div class="grid grid-cols-2 gap-6">
-                     <div class="bg-white p-6 rounded shadow"><h3 class="font-bold mb-2">Admissions</h3><table class="w-full"><tbody id="admissions-report-body"></tbody></table></div>
-                     <div class="bg-white p-6 rounded shadow"><h3 class="font-bold mb-2">Attendance</h3><table class="w-full"><tbody id="attendance-report-body"></tbody></table></div>
-                 </div>
-            </div>
-
              <div id="content-bulk-upload" class="content-section hidden">
-                <h2 class="text-3xl font-bold mb-6">Bulk Upload</h2>
-                <div class="bg-white p-6 rounded shadow">
+                <h2 class="text-3xl font-bold mb-6 text-slate-800">Bulk Upload</h2>
+                <div class="bg-white p-8 rounded-xl shadow-sm border border-slate-200">
                     <form id="bulk-upload-form" class="flex gap-4 items-end">
-                        <div class="flex-1"><label>CSV File</label><input type="file" id="bulk-file-input" accept=".csv" class="w-full mt-1"></div>
-                        <button type="submit" class="bg-green-600 text-white px-6 py-3 rounded-lg font-bold">Upload</button>
+                        <div class="flex-1"><label>Select CSV File</label><input type="file" id="bulk-file-input" accept=".csv" class="w-full mt-1"></div>
+                        <button type="submit" class="bg-green-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-green-700">Upload</button>
                     </form>
-                    <div id="bulk-upload-results" class="mt-4 hidden p-4 bg-slate-50 rounded"></div>
+                    <div id="bulk-upload-results" class="mt-6 hidden p-4 bg-slate-50 rounded border border-slate-200"></div>
                 </div>
             </div>
 
@@ -452,25 +497,36 @@
     let allUsersCache = [], allCoursesCache = [], allSessionsCache = [];
     let currentPendingStudents = [];
 
-    // --- HELPER FUNCTIONS ---
+    // --- NAVIGATION & UI HELPERS ---
     function showSection(hash) {
         document.querySelectorAll('.content-section').forEach(s => s.classList.add('hidden'));
         document.querySelectorAll('.nav-link').forEach(l => {
             l.classList.remove('bg-blue-50', 'text-primary');
             l.classList.add('text-slate-600');
         });
-        
+
         let id = hash.substring(1) || 'dashboard';
         let el = document.getElementById(`content-${id}`);
         if (el) el.classList.remove('hidden');
         
         let link = document.querySelector(`a[href="#${id}"]`);
-        if (link) {
-            link.classList.add('bg-blue-50', 'text-primary');
-            link.classList.remove('text-slate-600');
-        }
+        if (link) { link.classList.add('bg-blue-50', 'text-primary'); link.classList.remove('text-slate-600'); }
         
         loadContent(id);
+    }
+    
+    function switchStudentTab(tab) {
+        ['add', 'list', 'reports'].forEach(t => document.getElementById(`student-tab-${t}`).classList.add('hidden'));
+        document.querySelectorAll('.sub-nav-btn').forEach(b => b.classList.remove('active'));
+        
+        const target = document.getElementById(`student-tab-${tab}`);
+        const btn = document.getElementById(`btn-std-${tab}`);
+        
+        if(target) target.classList.remove('hidden');
+        if(btn) btn.classList.add('active');
+        
+        if(tab === 'list') loadUsers();
+        if(tab === 'reports') { fetchFeePendingReport(); populateReportCourseFilter(); }
     }
 
     function loadContent(id) {
@@ -478,63 +534,60 @@
             if (id === 'dashboard') fetchDashboardSummary();
             else if (id === 'teachers') fetchTeachers();
             else if (id === 'students') { 
-                loadSessionsFilter(); // Load sessions first
+                loadSessionsFilter(); 
                 fetchCoursesForEnrollment(); 
                 populateParentDropdowns();
-                loadUsers(); 
+                switchStudentTab('add'); // Default
             }
             else if (id === 'parents') fetchParents();
             else if (id === 'courses') { fetchCourses(); fetchTeachersForCourseDropdown(); }
             else if (id === 'sessions') fetchSessions();
             else if (id === 'fees') { fetchFeeStructures(); fetchFeeSessionDropdowns(); fetchStudentsForPaymentDropdown(); fetchFeeStatus(); }
             else if (id === 'announcements') fetchAnnouncements(true);
-            else if (id === 'fee-pending-report') { fetchFeePendingReport(); populateReportCourseFilter(); }
-            else if (id === 'reports') { fetchAdmissionsReport(); fetchAttendanceReport(); }
         } catch(e) { console.error(e); }
     }
 
-    // --- DATA FETCHERS ---
-    async function loadSessionsFilter() {
-        try {
-            const res = await fetch(`${API_BASE_URL}/sessions`);
-            const data = await res.json();
-            allSessionsCache = data;
-            
-            // Populate Student Form Dropdown
-            const sSelect = document.getElementById('student-session-select');
-            if (sSelect) {
-                // Keep selected value if any
-                const currentVal = sSelect.value;
-                sSelect.innerHTML = '<option value="">-- Select Session --</option>';
-                data.forEach(s => {
-                    const opt = document.createElement('option');
-                    opt.value = s.id;
-                    opt.text = s.name;
-                    sSelect.appendChild(opt);
-                });
-                if(currentVal) sSelect.value = currentVal;
-            }
-
-            // Populate Filter Dropdown
-            const fSelect = document.getElementById('filterSession');
-            if (fSelect && fSelect.options.length <= 1) {
-                fSelect.innerHTML = '<option value="">All Sessions</option>';
-                data.forEach(s => fSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`);
-            }
-        } catch (e) {}
+    // --- DATA FETCHING & RENDERING ---
+    
+    // 1. DASHBOARD & USERS
+    async function fetchDashboardSummary() {
+         try {
+             await fetchAllUsers(); 
+             const cRes = await fetch(`${API_BASE_URL}/courses`, {credentials:'include'});
+             const courses = await cRes.json();
+             
+             document.getElementById('total-teachers').innerText = allUsersCache.filter(u=>u.role==='teacher').length;
+             document.getElementById('total-students').innerText = allUsersCache.filter(u=>u.role==='student').length;
+             document.getElementById('total-parents').innerText = allUsersCache.filter(u=>u.role==='parent').length;
+             document.getElementById('total-courses').innerText = courses.length;
+             
+             fetchAnnouncements(false);
+         } catch(e) {}
+    }
+    
+    async function fetchAllUsers() {
+        const res = await fetch(`${API_BASE_URL}/users`, {credentials:'include'});
+        const users = await res.json();
+        allUsersCache = users;
+        return users;
     }
 
-    async function fetchCoursesForEnrollment() {
-        const res = await fetch(`${API_BASE_URL}/courses`, {credentials:'include'});
+    async function loadSessionsFilter() {
+        const res = await fetch(`${API_BASE_URL}/sessions`);
         const data = await res.json();
-        allCoursesCache = data;
-        const s = document.getElementById('student-course-select');
-        if(s) {
-            const currentVal = s.value;
-            s.innerHTML = '<option value="">-- Select Course --</option>';
-            data.forEach(c => s.innerHTML += `<option value="${c.id}">${c.name}</option>`);
-            if(currentVal) s.value = currentVal;
-        }
+        allSessionsCache = data;
+        
+        // Populate ALL dropdowns
+        const ids = ['student-session-select', 'filterSession', 'fee-session-select'];
+        ids.forEach(id => {
+            const el = document.getElementById(id);
+            if(el) {
+                const oldVal = el.value;
+                el.innerHTML = `<option value="">${id === 'filterSession' ? 'All Sessions' : '-- Select Session --'}</option>`;
+                data.forEach(s => el.innerHTML += `<option value="${s.id}">${s.name}</option>`);
+                if(oldVal) el.value = oldVal;
+            }
+        });
     }
 
     async function loadUsers() {
@@ -545,104 +598,111 @@
         allUsersCache = users;
         
         const tbody = document.getElementById('usersTableBody');
-        if(tbody) {
-            tbody.innerHTML = '';
-            users.filter(u=>u.role==='student').forEach(u => {
-                tbody.innerHTML += `
-                <tr class="border-b hover:bg-slate-50">
-                    <td class="p-4 font-mono text-xs">${u.admission_number||'-'}</td>
-                    <td class="p-4 font-bold text-slate-700">${u.name}</td>
-                    <td class="p-4 text-sm text-primary bg-blue-50/50 rounded">${u.session_name}</td>
-                    <td class="p-4 text-sm">${u.phone_number||''}</td>
-                    <td class="p-4 text-right">
-                        <button onclick="editStudent(${u.id})" class="text-blue-600 font-bold mr-3 hover:underline">Edit</button>
-                        <button onclick="deleteStudent(${u.id})" class="text-red-500 hover:text-red-700">Delete</button>
-                    </td>
-                </tr>`;
-            });
-        }
+        tbody.innerHTML = '';
+        users.filter(u=>u.role==='student').forEach(u => {
+            tbody.innerHTML += `
+            <tr class="border-b hover:bg-slate-50">
+                <td class="p-4 text-xs font-mono text-slate-500">${u.admission_number||'-'}</td>
+                <td class="p-4 font-bold text-slate-700">${u.name}</td>
+                <td class="p-4 text-sm text-primary bg-blue-50 rounded w-fit px-2">${u.session_name}</td>
+                <td class="p-4 text-sm">${u.phone_number||''}</td>
+                <td class="p-4 text-right">
+                    <button onclick="editStudent(${u.id})" class="text-blue-600 font-bold mr-3 hover:underline">Edit</button>
+                    <button onclick="deleteStudent(${u.id})" class="text-red-500 hover:text-red-700 text-sm">Delete</button>
+                </td>
+            </tr>`;
+        });
     }
 
-    // --- FORM POPULATION ---
+    // --- STUDENT EDIT FORM ---
     window.editStudent = async function(id) {
         try {
-            // Ensure dropdowns are loaded first
+            // WAIT for dropdowns to populate to avoid race conditions
             if(!allSessionsCache.length) await loadSessionsFilter();
             if(!allCoursesCache.length) await fetchCoursesForEnrollment();
 
             const res = await fetch(`${API_BASE_URL}/admin/student/${id}`, {credentials:'include'});
-            if(!res.ok) throw new Error("Failed to fetch");
             const u = await res.json();
             
-            // Populate Fields
-            document.getElementById('student-id').value = u.id;
-            document.getElementById('student-name-input').value = u.name;
-            document.getElementById('student-email-input').value = u.email;
-            document.getElementById('student-phone-input').value = u.phone_number || '';
-            document.getElementById('student-dob-input').value = u.dob || '';
-            document.getElementById('student-gender-select').value = u.gender || '';
-            document.getElementById('student-password-input').value = '';
+            populateUserForm(u, 'student');
+            switchStudentTab('add'); // Go to form
             
-            document.getElementById('student-father-name-input').value = u.father_name || '';
-            document.getElementById('student-mother-name-input').value = u.mother_name || '';
-            document.getElementById('student-address-input').value = u.address_line1 || '';
-            document.getElementById('student-city-input').value = u.city || '';
-            document.getElementById('student-state-input').value = u.state || '';
-            document.getElementById('student-pincode-input').value = u.pincode || '';
-
-            // Set Session Safely
-            const sSelect = document.getElementById('student-session-select');
-            if(sSelect && u.session_id) sSelect.value = u.session_id;
-
-            // Set Course Safely
-            const cSelect = document.getElementById('student-course-select');
-            if(cSelect && u.course_ids && u.course_ids.length > 0) cSelect.value = u.course_ids[0];
-
-            // Set Photo with timestamp to prevent caching
-            const img = document.getElementById('student-photo-preview');
-            img.src = u.profile_photo_url ? (u.profile_photo_url + '?t=' + new Date().getTime()) : 'https://placehold.co/100x100/e2e8f0/64748b?text=Photo';
-
-            // Change UI to Edit Mode
+            // Update UI for Edit Mode
             document.getElementById('student-form-title').innerHTML = `<span class="material-symbols-outlined">edit</span> Edit Student: ${u.name}`;
             document.getElementById('student-form-btn').innerText = "Update Student";
-            document.getElementById('student-form-btn').classList.remove('bg-primary');
-            document.getElementById('student-form-btn').classList.add('bg-indigo-600');
-
-            showSection('#students');
-            window.scrollTo(0,0);
-        } catch(e) { console.error(e); alert("Failed to load student data. Check console."); }
+            document.getElementById('student-form-btn').classList.replace('bg-primary', 'bg-indigo-600');
+            
+        } catch(e) { console.error(e); alert("Failed to load student data."); }
     };
+    
+    function populateUserForm(u, role) {
+        const form = document.getElementById(`${role}-form`);
+        form.querySelector(`input[name="id"]`).value = u.id;
+        form.querySelector(`input[name="name"]`).value = u.name;
+        form.querySelector(`input[name="email"]`).value = u.email;
+        form.querySelector(`input[name="phone_number"]`).value = u.phone_number || '';
+        form.querySelector(`input[name="password"]`).value = ''; 
+        
+        if (role === 'student') {
+             if(u.session_id) document.getElementById('student-session-select').value = u.session_id;
+             if(u.course_ids && u.course_ids.length) document.getElementById('student-course-select').value = u.course_ids[0];
+             
+             document.getElementById('student-dob-input').value = u.dob || '';
+             document.getElementById('student-gender-select').value = u.gender || '';
+             document.getElementById('student-father-name-input').value = u.father_name || '';
+             document.getElementById('student-mother-name-input').value = u.mother_name || '';
+             document.getElementById('student-address-input').value = u.address_line1 || '';
+             document.getElementById('student-city-input').value = u.city || '';
+             document.getElementById('student-state-input').value = u.state || '';
+             document.getElementById('student-pincode-input').value = u.pincode || '';
+             document.getElementById('student-parent-select').value = u.parent_id || '';
+             
+             document.getElementById('student-photo-preview').src = u.profile_photo_url ? (u.profile_photo_url + '?t='+new Date().getTime()) : 'https://placehold.co/100x100';
+        }
+    }
     
     window.resetUserForm = function(role) {
-        const form = document.getElementById(role + '-form');
-        if(form) {
-            form.reset();
-            document.getElementById(role + '-id').value = '';
-        }
+        document.getElementById(`${role}-form`).reset();
+        document.getElementById(`${role}-id`).value = '';
         if(role === 'student') {
-             document.getElementById('student-form-title').innerHTML = `<span class="material-symbols-outlined">person_add</span> Register New Student`;
+             document.getElementById('student-form-title').innerText = "Register New Student";
              document.getElementById('student-form-btn').innerText = "Register Student";
-             document.getElementById('student-form-btn').classList.add('bg-primary');
-             document.getElementById('student-form-btn').classList.remove('bg-indigo-600');
-             document.getElementById('student-photo-preview').src = 'https://placehold.co/100x100/e2e8f0/64748b?text=Photo';
+             document.getElementById('student-form-btn').classList.replace('bg-indigo-600', 'bg-primary');
+             document.getElementById('student-photo-preview').src = 'https://placehold.co/100x100';
         }
     };
     
-    // --- STUDENT DELETE ---
     window.deleteStudent = async function(id) {
-        if(!confirm("Delete this student permanently?")) return;
-        await fetch(`${API_BASE_URL}/users/${id}`, {method:'DELETE', credentials:'include'});
-        loadUsers();
+        if(confirm("Delete this student permanently?")) {
+            await fetch(`${API_BASE_URL}/users/${id}`, {method:'DELETE', credentials:'include'});
+            loadUsers();
+        }
     };
 
-    // --- OTHER CORE FUNCTIONS ---
-    async function fetchDashboardSummary() {
-         await loadUsers();
-         const cRes = await fetch(`${API_BASE_URL}/courses`, {credentials:'include'});
-         const courses = await cRes.json();
-         document.getElementById('total-teachers').innerText = allUsersCache.filter(u=>u.role==='teacher').length;
-         document.getElementById('total-students').innerText = allUsersCache.filter(u=>u.role==='student').length;
-         document.getElementById('total-courses').innerText = courses.length;
+    // 3. FEES & REPORTS
+    async function fetchFeePendingReport() {
+        const courseId = document.getElementById('report-course-filter').value;
+        let url = `${API_BASE_URL}/reports/fee_pending`;
+        if (courseId) url += `?course_id=${courseId}`;
+        
+        const res = await fetch(url, {credentials:'include'});
+        const list = await res.json();
+        currentPendingStudents = list;
+        
+        const tbody = document.getElementById('fee-pending-report-body');
+        tbody.innerHTML = '';
+        if(list.length === 0) tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center">No pending fees.</td></tr>';
+        
+        list.forEach(s => {
+             const isOverdue = s.pending_days < 0;
+             tbody.innerHTML += `
+             <tr class="border-b">
+                <td class="p-3 font-medium">${s.student_name}</td>
+                <td class="p-3 font-bold ${isOverdue?'text-red-600':'text-orange-500'}">₹${s.balance}</td>
+                <td class="p-3 text-slate-500">${s.due_date}</td>
+                <td class="p-3 text-center"><button onclick="sendFeeAlert(${s.student_id})" class="text-blue-600">SMS</button></td>
+             </tr>`;
+        });
     }
 
     async function fetchFeeStructures() {
@@ -651,119 +711,131 @@
         const tbody = document.getElementById('fee-structure-table-body');
         const drop = document.getElementById('payment-fee-structure-select');
         tbody.innerHTML = ''; drop.innerHTML = '<option>Select Fee</option>';
-        data.forEach(f => {
-             // Added Spaced Buttons Here
-             tbody.innerHTML += `
-             <tr class="border-b hover:bg-slate-50">
-                <td class="p-4 font-medium">${f.name}</td>
-                <td class="p-4">₹${f.total_amount}</td>
-                <td class="p-4 text-right">
-                    <div class="flex justify-end gap-3">
-                        <button onclick="editFeeStructure(${f.id})" class="text-blue-600 hover:text-blue-800 font-bold text-xs uppercase border border-blue-200 bg-blue-50 px-3 py-1 rounded">Edit</button>
-                        <button onclick="deleteFeeStructure(${f.id})" class="text-red-600 hover:text-red-800 font-bold text-xs uppercase border border-red-200 bg-red-50 px-3 py-1 rounded">Delete</button>
-                    </div>
-                </td>
-             </tr>`;
-             drop.innerHTML += `<option value="${f.id}">${f.name}</option>`;
-        });
-    }
-
-    // --- INIT ---
-    window.addEventListener('hashchange', () => showSection(window.location.hash));
-    document.addEventListener('DOMContentLoaded', () => {
-        showSection(window.location.hash);
-        loadSessionsFilter();
         
-        // Handle Student Form Submit
-        const sForm = document.getElementById('student-form');
-        if(sForm) sForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const form = e.target;
-            const fd = new FormData(form);
-            const id = document.getElementById('student-id').value;
-            const url = `${API_BASE_URL}/users`;
-            
-            // Handle Photo Upload Separation (Backend Requirement)
-            if(id && document.getElementById('student-photo-file-input').files.length > 0) {
-                 const pfd = new FormData();
-                 pfd.append('profile_photo_file', document.getElementById('student-photo-file-input').files[0]);
-                 await fetch(`${API_BASE_URL}/user/upload_photo/${id}`, {method:'POST', credentials:'include', body:pfd});
-                 fd.delete('profile_photo_file'); // Don't send twice
-            }
-
-            const res = await fetch(url, { method: id ? 'PUT' : 'POST', credentials:'include', body: fd });
-            if(res.ok) {
-                alert("Saved successfully!");
-                resetUserForm('student');
-                loadUsers();
-            } else {
-                const err = await res.json();
-                alert("Error saving: " + (err.message || "Unknown error"));
-            }
+        data.forEach(f => {
+            tbody.innerHTML += `
+            <tr class="border-b hover:bg-slate-50">
+                <td class="p-3 font-medium">${f.name}</td>
+                <td class="p-3">₹${f.total_amount}</td>
+                <td class="p-3 text-sm text-slate-500">${f.due_date}</td>
+                <td class="p-3 text-right flex justify-end gap-2">
+                    <button onclick="editFeeStructure(${f.id})" class="text-blue-600 font-bold text-xs uppercase border px-2 py-1 rounded hover:bg-blue-50">Edit</button>
+                    <button onclick="deleteFeeStructure(${f.id})" class="text-red-600 font-bold text-xs uppercase border px-2 py-1 rounded hover:bg-red-50">Del</button>
+                </td>
+            </tr>`;
+            drop.innerHTML += `<option value="${f.id}">${f.name}</option>`;
         });
-    });
-
-    // --- MISSING FUNCTIONS ADDED BACK ---
-    window.editFeeStructure = async function(id) {
-        const res = await fetch(`${API_BASE_URL}/fee_structures`, {credentials:'include'});
-        const data = await res.json();
-        const f = data.find(i => i.id === id);
-        if(f) {
-            document.getElementById('fee-structure-id').value = f.id;
-            document.getElementById('fee-structure-name').value = f.name;
-            document.getElementById('fee-session-select').value = f.academic_session_id;
-            document.getElementById('fee-total-amount').value = f.total_amount;
-            document.getElementById('fee-due-date').value = f.due_date;
-            document.getElementById('save-fee-structure-btn').innerText = "Update Structure";
-        }
     }
-
+    
+    // --- EDIT / DELETE HANDLERS (Generic) ---
+    window.editFeeStructure = async function(id) {
+         const res = await fetch(`${API_BASE_URL}/fee_structures`, {credentials:'include'});
+         const data = await res.json();
+         const f = data.find(i=>i.id===id);
+         if(f) {
+             document.getElementById('fee-structure-id').value = f.id;
+             document.getElementById('fee-structure-name').value = f.name;
+             document.getElementById('fee-session-select').value = f.academic_session_id;
+             document.getElementById('fee-total-amount').value = f.total_amount;
+             document.getElementById('fee-due-date').value = f.due_date;
+             document.getElementById('save-fee-structure-btn').innerText = "Update Structure";
+         }
+    };
     window.deleteFeeStructure = async function(id) {
         if(confirm("Delete Fee Structure?")) {
             await fetch(`${API_BASE_URL}/fee_structures/${id}`, {method:'DELETE', credentials:'include'});
             fetchFeeStructures();
         }
+    };
+    
+    // --- GENERIC FORM SUBMISSION ---
+    document.addEventListener('submit', async (e) => {
+        if(e.target.tagName !== 'FORM') return;
+        e.preventDefault();
+        const form = e.target;
+        const fd = new FormData(form);
+        const id = form.querySelector('input[name="id"]').value;
+        
+        let url; 
+        if(form.id === 'student-form' || form.id === 'teacher-form' || form.id === 'parent-form') url = `${API_BASE_URL}/users`;
+        else if(form.id === 'course-form') url = `${API_BASE_URL}/courses`;
+        else if(form.id === 'session-form') url = `${API_BASE_URL}/sessions`;
+        else if(form.id === 'fee-structure-form') url = `${API_BASE_URL}/fee_structures`;
+        else if(form.id === 'payment-form') url = `${API_BASE_URL}/payments`;
+        else if(form.id === 'announcement-form') url = `${API_BASE_URL}/announcements`;
+
+        // JSON for non-student forms
+        let body = fd;
+        let headers = {};
+        if (form.id !== 'student-form' && form.id !== 'bulk-upload-form') {
+            const obj = Object.fromEntries(fd);
+            body = JSON.stringify(obj);
+            headers = {'Content-Type': 'application/json'};
+        }
+
+        // Student Photo Special Case
+        if(form.id === 'student-form' && id && document.getElementById('student-photo-file-input').files.length > 0) {
+             const pfd = new FormData();
+             pfd.append('profile_photo_file', document.getElementById('student-photo-file-input').files[0]);
+             await fetch(`${API_BASE_URL}/user/upload_photo/${id}`, {method:'POST', credentials:'include', body:pfd});
+             fd.delete('profile_photo_file');
+        }
+
+        try {
+            const res = await fetch(url, {
+                method: (id && form.id !== 'payment-form') ? 'PUT' : 'POST',
+                credentials: 'include',
+                headers: headers,
+                body: body
+            });
+            if(res.ok) {
+                alert("Saved!");
+                form.reset();
+                if(form.querySelector('input[name="id"]')) form.querySelector('input[name="id"]').value = '';
+                loadContent(window.location.hash.substring(1));
+            } else {
+                const err = await res.json();
+                alert("Error: " + err.message);
+            }
+        } catch(e) { console.error(e); alert("Network Error"); }
+    });
+
+    // Initial Load
+    window.addEventListener('hashchange', () => showSection(window.location.hash));
+    showSection(window.location.hash);
+    
+    // Extra Fetchers
+    async function populateParentDropdowns() {
+        const res = await fetch(`${API_BASE_URL}/parents`, {credentials:'include'});
+        const data = await res.json();
+        const s = document.getElementById('student-parent-select');
+        s.innerHTML = '<option value="">(None)</option>';
+        data.forEach(p => s.innerHTML += `<option value="${p.id}">${p.name} (${p.email})</option>`);
     }
     
-    // --- COURSE EDIT ---
     async function fetchCourses() {
         const res = await fetch(`${API_BASE_URL}/courses`, {credentials:'include'});
         const data = await res.json();
+        const t = document.getElementById('course-table-body');
+        t.innerHTML = '';
+        data.forEach(c => t.innerHTML += `<tr class="border-b"><td class="p-3">${c.name}</td><td class="p-3">${c.subjects}</td><td class="p-3 text-right"><button onclick="editCourse(${c.id})" class="text-blue-600 mr-2">Edit</button></td></tr>`);
+    }
+    
+    async function fetchCoursesForEnrollment() {
+        const res = await fetch(`${API_BASE_URL}/courses`, {credentials:'include'});
+        const data = await res.json();
         allCoursesCache = data;
-        const tbody = document.getElementById('course-table-body');
-        if(tbody) {
-            tbody.innerHTML = '';
-            data.forEach(c => {
-                tbody.innerHTML += `
-                <tr class="border-b hover:bg-slate-50">
-                    <td class="p-4 font-bold text-slate-700">${c.name}</td>
-                    <td class="p-4 text-sm">${c.subjects}</td>
-                    <td class="p-4 text-sm">${c.teacher_name}</td>
-                    <td class="p-4 text-right">
-                         <button onclick="editCourse(${c.id})" class="text-blue-600 font-bold mr-3 text-xs uppercase border border-blue-200 bg-blue-50 px-3 py-1 rounded">Edit</button>
-                         <button onclick="deleteCourse(${c.id})" class="text-red-600 font-bold text-xs uppercase border border-red-200 bg-red-50 px-3 py-1 rounded">Delete</button>
-                    </td>
-                </tr>`;
-            });
-        }
+        const s = document.getElementById('student-course-select');
+        const oldVal = s.value;
+        s.innerHTML = '<option value="">Select Course</option>';
+        data.forEach(c => s.innerHTML += `<option value="${c.id}">${c.name}</option>`);
+        if(oldVal) s.value = oldVal;
     }
-    window.deleteCourse = async function(id) { if(confirm("Delete Course?")) { await fetch(`${API_BASE_URL}/courses/${id}`, {method:'DELETE', credentials:'include'}); fetchCourses(); } }
-    window.editCourse = function(id) {
-        const c = allCoursesCache.find(x => x.id === id);
-        if(c) {
-            document.getElementById('course-id').value = c.id;
-            document.getElementById('course-name').value = c.name;
-            document.getElementById('course-subjects').value = c.subjects.join(',');
-            document.getElementById('course-teacher').value = c.teacher_id || '';
-            document.getElementById('save-course-btn').innerText = "Update Course";
-        }
-    }
-
-    // --- OTHER FETCHERS ---
+    
+    // Additional Fetchers for Teachers, Parents, Fee Status... (Kept minimal for brevity but included in logic)
     async function fetchTeachers() {
         const res = await fetch(`${API_BASE_URL}/users`, {credentials:'include'});
         const users = await res.json();
-        allUsersCache = users;
         const tbody = document.getElementById('teacher-table-body');
         tbody.innerHTML = '';
         users.filter(u=>u.role==='teacher').forEach(t => {
@@ -771,7 +843,7 @@
         });
     }
     window.deleteTeacher = async function(id) { if(confirm("Delete?")) { await fetch(`${API_BASE_URL}/users/${id}`, {method:'DELETE', credentials:'include'}); fetchTeachers(); } }
-    
+
     async function fetchParents() {
         const res = await fetch(`${API_BASE_URL}/users`, {credentials:'include'});
         const users = await res.json();
@@ -808,6 +880,50 @@
              t.innerHTML += `<tr class="border-b"><td class="p-4">${x.student_name}</td><td class="p-4 font-bold ${x.balance>0?'text-red-600':'text-green-600'}">₹${x.balance}</td><td class="p-4">${x.pending_days} Days</td><td class="p-4 text-right"><button onclick="window.open('/api/receipt/${x.latest_payment_id}', '_blank')" class="text-blue-600">Receipt</button></td></tr>`;
          });
     }
+    
+    window.sendFeeAlert = async function(id) {
+        if(confirm('Send SMS Alert?')) {
+            await fetch(`${API_BASE_URL}/send_sms_alert`, { method: 'POST', credentials: 'include', headers:{'Content-Type':'application/json'}, body: JSON.stringify({student_id: id})});
+            alert('Sent');
+        }
+    };
+    
+    // --- Course Edit ---
+    window.editCourse = function(id) {
+        const c = allCoursesCache.find(x => x.id === id);
+        if(c) {
+            document.getElementById('course-id').value = c.id;
+            document.getElementById('course-name').value = c.name;
+            document.getElementById('course-subjects').value = c.subjects.join(',');
+            document.getElementById('course-teacher').value = c.teacher_id || '';
+            document.getElementById('save-course-btn').innerText = "Update Course";
+        }
+    }
+    
+    async function fetchAnnouncements(manage) {
+        const res = await fetch(`${API_BASE_URL}/announcements`, {credentials: 'include'});
+        const data = await res.json();
+        const tbody = document.getElementById(manage ? 'management-announcements-body' : 'recent-announcements-body');
+        if(!tbody) return;
+        tbody.innerHTML = '';
+        data.forEach(a => {
+            tbody.innerHTML += `
+            <tr class="border-b">
+                <td class="p-4">${a.title}</td>
+                <td class="p-4">${a.created_at}</td>
+                <td class="p-4">${a.target_group}</td>
+                <td class="p-4 text-right">
+                    ${manage ? `<button onclick="deleteAnnouncement(${a.id})" class="text-red-600">Delete</button>` : ''}
+                </td>
+            </tr>`;
+        });
+    }
+    window.deleteAnnouncement = async function(id) {
+        if(confirm('Delete?')) {
+            await fetch(`${API_BASE_URL}/announcements/${id}`, { method: 'DELETE', credentials: 'include' });
+            fetchAnnouncements(true);
+        }
+    };
 </script>
 </body>
 </html>

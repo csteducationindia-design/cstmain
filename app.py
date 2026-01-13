@@ -248,15 +248,15 @@ class User(db.Model, UserMixin):
     pincode = db.Column(db.String(20), nullable=True)
     fcm_token = db.Column(db.String(500), nullable=True)
     
-    # --- THIS WAS MISSING IN YOUR FILE ---
+    # --- THIS WAS MISSING ---
     session_id = db.Column(db.Integer, db.ForeignKey('academic_session.id'), nullable=True)
+    # ------------------------
     
     children = db.relationship('User', foreign_keys=[parent_id], backref=db.backref('parent', remote_side=[id]))
     courses_enrolled = db.relationship('Course', secondary=student_course_association, lazy='subquery',
                                        backref=db.backref('students', lazy=True))
 
     def to_dict(self):
-        # Fetch session name safely
         sess_name = "Unassigned"
         if self.session_id:
             sess = db.session.get(AcademicSession, self.session_id)
@@ -271,8 +271,8 @@ class User(db.Model, UserMixin):
             "gender": self.gender, "father_name": self.father_name,
             "mother_name": self.mother_name, "address_line1": self.address_line1,
             "city": self.city, "state": self.state, "pincode": self.pincode,
-            "session_id": self.session_id,      # Critical for Edit form
-            "session_name": sess_name,          # Critical for Table display
+            "session_id": self.session_id,
+            "session_name": sess_name,
             "course_ids": [c.id for c in self.courses_enrolled] if self.role == 'student' else []
         }
 class Course(db.Model):
@@ -1488,7 +1488,7 @@ def check_and_upgrade_db():
             if 'fcm_token' not in user_cols:
                 conn.execute(text("ALTER TABLE user ADD COLUMN fcm_token VARCHAR(500)"))
             
-            # --- FIX: Ensure session_id exists ---
+            # --- FIX: Create session_id if missing ---
             if 'session_id' not in user_cols:
                 conn.execute(text("ALTER TABLE user ADD COLUMN session_id INTEGER REFERENCES academic_session(id)"))
                 
