@@ -923,17 +923,36 @@ def del_session(id):
 @login_required
 def manage_announcements():
     if request.method == 'POST':
-        if current_user.role != 'admin': return jsonify({"msg": "Denied"}), 403
+        if current_user.role != 'admin': 
+            return jsonify({"msg": "Denied"}), 403
+            
         d = request.json
+        # 1. Save announcement to database
         a = Announcement(title=d['title'], content=d['content'], target_group=d['target_group'])
         db.session.add(a)
         db.session.commit()
         
-        # Notify
-        users = User.query.all() if d['target_group'] == 'all' else User.query.filter_by(role=d['target_group'][:-1]).all()
-        for u in users: send_push_notification(u.id, d['title'], d['content'][:100])
+        # 2. Identify the target group
+        target = d['target_group'].lower()
+        if target == 'all':
+            users = User.query.all()
+        else:
+            # Fix: Database roles are 'student', 'teacher', 'parent' (singular)
+            # Convert 'students' -> 'student', 'teachers' -> 'teacher', etc.
+            singular_role = target.rstrip('s') 
+            users = User.query.filter_by(role=singular_role).all()
+        
+        # 3. Notify all users in the group via Push and SMS
+        for u in users:
+            # Send Push Notification
+            send_push_notification(u.id, d['title'], d['content'][:100])
+            # Send actual SMS if phone number exists
+            if u.phone_number:
+                send_actual_sms(u.phone_number, f"{d['title']}: {d['content'][:100]}")
         
         return jsonify(a.to_dict()), 201
+        
+    # GET request logic
     return jsonify([a.to_dict() for a in Announcement.query.order_by(Announcement.created_at.desc()).all()])
 
 @app.route('/api/announcements/<int:id>', methods=['DELETE'])
