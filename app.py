@@ -227,6 +227,7 @@ student_course_association = db.Table('student_course',
     db.Column('course_id', db.Integer, db.ForeignKey('course.id'), primary_key=True)
 )
 
+# 1. Update the User Model (Add session_id)
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -236,7 +237,6 @@ class User(db.Model, UserMixin):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     phone_number = db.Column(db.String(20), nullable=True)
     parent_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
-    can_edit = db.Column(db.Boolean, default=True)
     dob = db.Column(db.String(20), nullable=True)
     profile_photo_url = db.Column(db.String(300), nullable=True)
     gender = db.Column(db.String(20), nullable=True)
@@ -248,15 +248,15 @@ class User(db.Model, UserMixin):
     pincode = db.Column(db.String(20), nullable=True)
     fcm_token = db.Column(db.String(500), nullable=True)
     
-    # --- THIS WAS MISSING ---
+    # --- CRITICAL FIX: Add session_id ---
     session_id = db.Column(db.Integer, db.ForeignKey('academic_session.id'), nullable=True)
-    # ------------------------
     
     children = db.relationship('User', foreign_keys=[parent_id], backref=db.backref('parent', remote_side=[id]))
     courses_enrolled = db.relationship('Course', secondary=student_course_association, lazy='subquery',
                                        backref=db.backref('students', lazy=True))
 
     def to_dict(self):
+        # Fetch session name for the table view
         sess_name = "Unassigned"
         if self.session_id:
             sess = db.session.get(AcademicSession, self.session_id)
@@ -266,15 +266,28 @@ class User(db.Model, UserMixin):
             "id": self.id, "name": self.name, "email": self.email, "role": self.role,
             "created_at": self.created_at.strftime('%Y-%m-%d'),
             "phone_number": self.phone_number, "parent_id": self.parent_id,
-            "can_edit": self.can_edit, "dob": self.dob,
-            "profile_photo_url": self.profile_photo_url,
+            "dob": self.dob, "profile_photo_url": self.profile_photo_url,
             "gender": self.gender, "father_name": self.father_name,
             "mother_name": self.mother_name, "address_line1": self.address_line1,
             "city": self.city, "state": self.state, "pincode": self.pincode,
-            "session_id": self.session_id,
-            "session_name": sess_name,
+            "session_id": self.session_id, # Required for Edit form
+            "session_name": sess_name,     # Required for Table display
             "course_ids": [c.id for c in self.courses_enrolled] if self.role == 'student' else []
         }
+
+# 2. Update Migration Logic (At the bottom of app.py)
+def check_and_upgrade_db():
+    try:
+        insp = inspect(db.engine)
+        user_cols = [c['name'] for c in insp.get_columns('user')]
+        with db.engine.connect() as conn:
+            if 'session_id' not in user_cols:
+                # Add column for existing database
+                conn.execute(text("ALTER TABLE user ADD COLUMN session_id INTEGER REFERENCES academic_session(id)"))
+                conn.commit()
+                print("Database migrated: Added session_id to user table.")
+    except Exception as e: print(f"Migration Error: {e}")
+
 class Course(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150), nullable=False)
