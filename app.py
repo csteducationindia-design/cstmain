@@ -1498,21 +1498,22 @@ def check_and_upgrade_db():
         user_cols = [c['name'] for c in insp.get_columns('user')]
         
         with db.engine.connect() as conn:
+            # Add missing columns to 'user' table
             if 'fcm_token' not in user_cols:
                 conn.execute(text("ALTER TABLE user ADD COLUMN fcm_token VARCHAR(500)"))
-            
-            # --- FIX: Create session_id if missing ---
             if 'session_id' not in user_cols:
                 conn.execute(text("ALTER TABLE user ADD COLUMN session_id INTEGER REFERENCES academic_session(id)"))
-                
             conn.commit()
             
+        # Check Fee Structure table for missing course_id
         fee_cols = [c['name'] for c in insp.get_columns('fee_structure')]
         if 'course_id' not in fee_cols:
             with db.engine.connect() as conn:
                 conn.execute(text("ALTER TABLE fee_structure ADD COLUMN course_id INTEGER REFERENCES course(id)"))
                 conn.commit()
-    except Exception as e: print(f"Migration Error: {e}")
+        print("Database migration successful.")
+    except Exception as e: 
+        print(f"Migration Error: {e}")
 
 def initialize_database():
     with app.app_context():
