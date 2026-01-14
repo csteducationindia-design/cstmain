@@ -95,7 +95,10 @@
                 <span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">dashboard</span>
                 <span class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-primary dark:group-hover:text-primary-400">Dashboard</span>
             </a>
-            
+            <a href="#announcements" class="nav-link group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-primary/5 dark:hover:bg-primary/10">
+    <span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">campaign</span>
+    <span class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-primary">Announcements</span>
+</a>
             <a href="#courses" class="nav-link group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-primary/5 dark:hover:bg-primary/10">
                 <span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">book</span>
                 <span class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-primary dark:group-hover:text-primary-400">My Courses</span>
@@ -396,7 +399,64 @@
                     </div>
                 </div>
             </div>
+<div id="content-announcements" class="content-section hidden animate-fade-in">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="lg:col-span-1">
+            <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm p-6 border border-slate-100 dark:border-slate-700">
+                <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary">campaign</span>
+                    Post Announcement
+                </h3>
+                <form id="teacher-announcement-form" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Category</label>
+                        <select id="ann-category" required class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 p-3">
+                            <option>Holiday</option>
+                            <option>Assignment Test</option>
+                            <option>Practical Test</option>
+                            <option>Certificate Collection</option>
+                            <option>Python Class Start</option>
+                            <option>Java Class Start</option>
+                            <option>Batch Time Update</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Title</label>
+                        <input type="text" id="ann-title" required class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 p-3">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Message Content</label>
+                        <textarea id="ann-content" rows="4" required class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 p-3"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Target Audience</label>
+                        <select id="ann-target" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 p-3">
+                            <option value="students">Students Only</option>
+                            <option value="parents">Parents Only</option>
+                            <option value="all">Everyone</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="w-full bg-primary text-white py-3 rounded-xl font-bold hover:bg-primary-hover shadow-lg transition">Broadcast Notification</button>
+                </form>
+            </div>
+        </div>
 
+        <div class="lg:col-span-2">
+            <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+                <div class="p-6 border-b border-slate-100 dark:border-slate-700">
+                    <h3 class="font-bold">My Sent Notifications</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                        <tbody id="announcement-history-body" class="divide-y divide-slate-200 dark:divide-slate-700">
+                            <tr><td class="p-6 text-center text-slate-500">Loading history...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
             <div id="content-notes" class="content-section hidden animate-fade-in">
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div class="lg:col-span-1">
@@ -659,7 +719,10 @@
                 case '#attendance':
                     if(allTeacherStudents.length === 0) await fetchAllTeacherStudents();
                     break;
-                case '#notes':
+                case '#announcements':
+		    fetchTeacherAnnouncements(); // Custom function to load history
+		    break;
+		case '#notes':
                     fetchTeacherNotes();
                     break;
                 case '#reports':
@@ -936,7 +999,74 @@ async function submitSyllabus() {
             });
         });
 
+// --- ANNOUNCEMENT LOGIC ---
+const annForm = document.getElementById('teacher-announcement-form');
 
+annForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = annForm.querySelector('button');
+    btn.disabled = true;
+    btn.textContent = "Broadcasting...";
+
+    const payload = {
+        title: document.getElementById('ann-title').value,
+        content: document.getElementById('ann-content').value,
+        category: document.getElementById('ann-category').value,
+        target_group: document.getElementById('ann-target').value
+    };
+
+    try {
+        const res = await fetch(`${API_BASE_URL}/teacher/announcements`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            credentials: 'include',
+            body: JSON.stringify(payload)
+        });
+        if(res.ok) {
+            alert("Broadcast sent successfully to mobile devices!");
+            annForm.reset();
+            fetchTeacherAnnouncements();
+        }
+    } catch(e) {
+        alert("Broadcast failed.");
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "Broadcast Notification";
+    }
+});
+
+async function fetchTeacherAnnouncements() {
+    const tbody = document.getElementById('announcement-history-body');
+    try {
+        const res = await fetch(`${API_BASE_URL}/teacher/announcements`, { credentials: 'include' });
+        const data = await res.json();
+        tbody.innerHTML = data.map(ann => `
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition">
+                <td class="p-4">
+                    <div class="flex items-center gap-3">
+                        <span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded">${ann.category}</span>
+                        <span class="font-bold">${ann.title}</span>
+                    </div>
+                    <p class="text-sm text-slate-500 mt-1">${ann.content}</p>
+                </td>
+                <td class="p-4 text-xs text-slate-400">${ann.created_at}</td>
+                <td class="p-4 text-right">
+                    <button onclick="deleteAnnouncement(${ann.id})" class="text-red-500 hover:text-red-700">
+                        <span class="material-symbols-outlined">delete</span>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (e) {
+        tbody.innerHTML = '<tr><td class="p-6 text-center">Failed to load history.</td></tr>';
+    }
+}
+
+window.deleteAnnouncement = async (id) => {
+    if(!confirm("Delete this announcement? It will be removed from all student/parent portals.")) return;
+    await fetch(`${API_BASE_URL}/teacher/announcements?id=${id}`, { method: 'DELETE', credentials: 'include' });
+    fetchTeacherAnnouncements();
+};
         // --- NOTES LOGIC ---
         uploadNoteForm.addEventListener('submit', async (e) => {
             e.preventDefault();

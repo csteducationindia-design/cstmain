@@ -334,9 +334,20 @@ class Announcement(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(150), nullable=False)
     content = db.Column(db.Text, nullable=False)
-    target_group = db.Column(db.String(50), nullable=False)
+    category = db.Column(db.String(50), nullable=False) # e.g., 'Holiday', 'Assignment Test', 'Java Class'
+    target_group = db.Column(db.String(50), nullable=False) # 'students', 'parents', 'all'
+    teacher_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True) # Tracks who posted it
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    def to_dict(self): return {"id": self.id, "title": self.title, "content": self.content, "target_group": self.target_group, "created_at": self.created_at.strftime('%Y-%m-%d %H:%M')}
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "title": self.title,
+            "content": self.content,
+            "category": self.category,
+            "target_group": self.target_group,
+            "created_at": self.created_at.strftime('%Y-%m-%d %H:%M')
+        }
 
 class FeeStructure(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -954,6 +965,53 @@ def manage_announcements():
         
     # GET request logic
     return jsonify([a.to_dict() for a in Announcement.query.order_by(Announcement.created_at.desc()).all()])
+
+@app.route('/api/teacher/announcements', methods=['GET', 'POST', 'DELETE'])
+@login_required
+def manage_teacher_announcements():
+    # Only Admin and Teachers can manage announcements
+    if current_user.role not in ['admin', 'teacher']:
+        return jsonify({"msg": "Access Denied"}), 403
+
+    if request.method == 'POST':
+        d = request.json
+        new_ann = Announcement(
+            title=d['title'],
+            content=d['content'],
+            category=d['category'],
+            target_group=d['target_group'],
+            teacher_id=current_user.id
+        )
+        db.session.add(new_ann)
+        db.session.commit()
+
+        # Trigger Push Notification to Target Group
+        users_to_notify = []
+        if d['target_group'] == 'all':
+            users_to_notify = User.query.all()
+        else:
+            # Map plural group to singular database role
+            role = d['target_group'].rstrip('s') 
+            users_to_notify = User.query.filter_by(role=role).all()
+
+        for u in users_to_notify:
+            send_push_notification(u.id, f"[{d['category']}] {d['title']}", d['content'][:100])
+
+        return jsonify(new_ann.to_dict()), 201
+
+    if request.method == 'DELETE':
+        ann_id = request.args.get('id')
+        ann = db.session.get(Announcement, ann_id)
+        # Ensure teachers can only delete their own announcements
+        if ann and (ann.teacher_id == current_user.id or current_user.role == 'admin'):
+            db.session.delete(ann)
+            db.session.commit()
+            return jsonify({"msg": "Deleted"})
+        return jsonify({"msg": "Unauthorized"}), 403
+
+    # GET: List announcements posted by this teacher
+    anns = Announcement.query.filter_by(teacher_id=current_user.id).order_by(Announcement.created_at.desc()).all()
+    return jsonify([a.to_dict() for a in anns])
 
 @app.route('/api/announcements/<int:id>', methods=['DELETE'])
 @login_required
