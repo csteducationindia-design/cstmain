@@ -1279,7 +1279,8 @@ window.deleteAnnouncement = async (id) => {
         });
 
        
-	function initFirebase() {
+	// --- INIT FIREBASE (Final Corrected Version) ---
+        function initFirebase() {
             try {
                 const firebaseConfig = {
                     apiKey: "AIzaSyBkzEHM9fXRoCYSgEW-hk_lN7sL_nSLDfU",
@@ -1294,43 +1295,41 @@ window.deleteAnnouncement = async (id) => {
                     firebase.initializeApp(firebaseConfig);
                     const messaging = firebase.messaging();
 
-                    // --- ADDED: Request Permission and Save Token ---
-                    messaging.getToken({ 
-                        vapidKey: "YOUR_PUBLIC_VAPID_KEY_FROM_FIREBASE_CONSOLE" 
-                    }).then((currentToken) => {
-                        if (currentToken) {
-                            console.log('Token generated:', currentToken);
-                            // Send token to your Flask backend
-                            fetch(`${API_BASE_URL}/save_fcm_token`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                credentials: 'include',
-                                body: JSON.stringify({ token: currentToken })
-                            });
-                        } else {
-                            console.log('No registration token available. Request permission to generate one.');
-                        }
-                    }).catch((err) => {
-                        console.log('An error occurred while retrieving token. ', err);
-                    });
-
-                    // Foreground Message Listener
-                    messaging.onMessage((payload) => {
-                        console.log('Message received. ', payload);
-                        alert(`New Notification: ${payload.notification.title}\n${payload.notification.body}`);
-                    });
-
                     // Service Worker Registration
                     if ('serviceWorker' in navigator) {
                         navigator.serviceWorker.register('/firebase-messaging-sw.js').then((reg) => {
                             console.log('Service Worker Registered');
-                        });
+                            
+                            // Get Token for Notifications
+                            return messaging.getToken({ 
+                                vapidKey: 'BBOMxvKvbEs_t9ykKBa2zIewzCzD6FCbm9rxc8a9eWl2kjjH5vyTSH6TeQMksZ_OGl5jZyQpU2wBcf-KsZN1uko', 
+                                serviceWorkerRegistration: reg 
+                            });
+                        }).then((token) => {
+                            if (token) {
+                                fetch('/api/save_fcm_token', {
+                                    method: 'POST',
+                                    headers: {'Content-Type': 'application/json'},
+                                    credentials: 'include',
+                                    body: JSON.stringify({token})
+                                });
+                            }
+                        }).catch(err => console.log("Firebase Token Error:", err));
                     }
+
+                    messaging.onMessage((payload) => {
+                        console.log('Message received: ', payload);
+                        alert(`${payload.notification.title}: ${payload.notification.body}`);
+                    });
                 }
             } catch (e) { 
-                console.log('Firebase init skipped or error', e); 
+                console.log('Firebase init error:', e); 
             }
         }
+
+        // Initialize Page
+        checkSessionAndInit();
+    }); // This closes the document.addEventListener('DOMContentLoaded')
 </script>
 </body>
 </html>
