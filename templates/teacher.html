@@ -1278,12 +1278,9 @@ window.deleteAnnouncement = async (id) => {
             }
         });
 
-        // --- INIT FIREBASE (Corrected and Pre-filled) ---
-        function initFirebase() {
+       
+	function initFirebase() {
             try {
-                // =======================================================
-                // YOUR FIREBASE CONFIGURATION
-                // =======================================================
                 const firebaseConfig = {
                     apiKey: "AIzaSyBkzEHM9fXRoCYSgEW-hk_lN7sL_nSLDfU",
                     authDomain: "cst-institute-app.firebaseapp.com",
@@ -1297,13 +1294,33 @@ window.deleteAnnouncement = async (id) => {
                     firebase.initializeApp(firebaseConfig);
                     const messaging = firebase.messaging();
 
+                    // --- ADDED: Request Permission and Save Token ---
+                    messaging.getToken({ 
+                        vapidKey: "YOUR_PUBLIC_VAPID_KEY_FROM_FIREBASE_CONSOLE" 
+                    }).then((currentToken) => {
+                        if (currentToken) {
+                            console.log('Token generated:', currentToken);
+                            // Send token to your Flask backend
+                            fetch(`${API_BASE_URL}/save_fcm_token`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                credentials: 'include',
+                                body: JSON.stringify({ token: currentToken })
+                            });
+                        } else {
+                            console.log('No registration token available. Request permission to generate one.');
+                        }
+                    }).catch((err) => {
+                        console.log('An error occurred while retrieving token. ', err);
+                    });
+
                     // Foreground Message Listener
                     messaging.onMessage((payload) => {
                         console.log('Message received. ', payload);
-                        // Optional: Show alert to teacher if they receive a system notification
+                        alert(`New Notification: ${payload.notification.title}\n${payload.notification.body}`);
                     });
 
-                    // Service Worker Registration for background checks
+                    // Service Worker Registration
                     if ('serviceWorker' in navigator) {
                         navigator.serviceWorker.register('/firebase-messaging-sw.js').then((reg) => {
                             console.log('Service Worker Registered');
@@ -1311,13 +1328,9 @@ window.deleteAnnouncement = async (id) => {
                     }
                 }
             } catch (e) { 
-                console.log('Firebase init skipped or error (Notifications might be disabled)', e); 
+                console.log('Firebase init skipped or error', e); 
             }
         }
-
-        // Start App
-        checkSessionAndInit();
-    });
 </script>
 </body>
 </html>
