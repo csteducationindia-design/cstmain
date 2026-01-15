@@ -1618,5 +1618,8 @@ def manage_teacher_announcements():
     return jsonify([a.to_dict() for a in anns])
 
 if __name__ == '__main__':
-    initialize_database()
+    with app.app_context():
+        db.create_all()
+        check_and_upgrade_db()
+        init_firebase()
     app.run(debug=True, host='0.0.0.0', port=5000)
