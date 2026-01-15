@@ -233,20 +233,27 @@
                     <form id="student-form" class="space-y-6" enctype="multipart/form-data">
                         <input type="hidden" id="student-id" name="id">
                         <input type="hidden" id="student-role" name="role" value="student">
-                        <div class="form-group">
-    <label for="student-admission-input" class="block text-sm font-medium mb-1">
-        Admission Number (Manual)
-    </label>
-    <input type="text" 
-           id="student-admission-input" 
-           name="admission_number" 
-           placeholder="Enter Admission No. (e.g. 107)" 
-           class="w-full border-slate-300 rounded-lg bg-slate-50 p-2 border">
-    <p class="text-xs text-slate-500 mt-1">This will be used for the QR code filename (qr_107.png).</p>
-</div>
-                       
-                            <legend class="text-lg font-semibold text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-700 pb-2 mb-4">Basic Details</legend>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                       <div class="form-group">
+        <label for="student-admission-input" class="block text-sm font-medium mb-1">
+            Admission Number (Manual)
+        </label>
+        <input type="text" id="student-admission-input" name="admission_number" class="w-full border-slate-300 rounded-lg bg-slate-50 p-2 border">
+        <p class="text-xs text-slate-500 mt-1">This will be used for the QR code filename (qr_107.png).</p>
+    </div>
+
+    <div class="form-group">
+        <label for="student-session-select" class="block text-sm font-medium mb-1">
+            Academic Session (Batch) *
+        </label>
+        <select id="student-session-select" name="session_id" class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 p-2">
+            <option value="">-- Select Session --</option>
+        </select>
+    </div>
+    <fieldset>
+        <legend class="text-lg font-semibold text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-700 pb-2 mb-4">Basic Details</legend>
+        
+
+                           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div class="form-group"><label for="student-name-input" class="block text-sm font-medium mb-1">Full Name</label><input type="text" id="student-name-input" name="name" required class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800"></div>
                                 <div class="form-group"><label for="student-email-input" class="block text-sm font-medium mb-1">Email</label><input type="email" id="student-email-input" name="email" required class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800"></div>
                                 <div class="form-group"><label for="student-phone-input" class="block text-sm font-medium mb-1">Phone Number</label><input type="tel" id="student-phone-input" name="phone_number" placeholder="e.g., 9876543210" class="w-full border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800"></div>
@@ -1063,17 +1070,27 @@
             const data = await res.json();
             allSessionsCache = data;
             
-            // Populate all session dropdowns
-            ['student-session-select', 'filterSession', 'fee-session-select'].forEach(id => {
-                const el = document.getElementById(id);
-                if(el) {
-                    const saved = el.value;
-                    el.innerHTML = id === 'filterSession' ? '<option value="">All Sessions</option>' : '<option value="">-- Select Session --</option>';
-                    data.forEach(s => el.innerHTML += `<option value="${s.id}">${s.name}</option>`);
-                    if(saved) el.value = saved;
-                }
-            });
-        } catch (e) { console.error(e); }
+            // 1. Populate Filter Dropdown (Student List)
+            const fSelect = document.getElementById('filterSession');
+            if (fSelect) {
+                fSelect.innerHTML = '<option value="">All Sessions</option>';
+                data.forEach(s => fSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`);
+            }
+
+            // 2. Populate Form Dropdown (Add/Edit Student) - CRITICAL FOR SAVING
+            const sSelect = document.getElementById('student-session-select');
+            if (sSelect) {
+                sSelect.innerHTML = '<option value="">-- Select Session --</option>';
+                data.forEach(s => sSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`);
+            }
+            
+            // 3. Populate Fee Dropdown
+            const feeSel = document.getElementById('fee-session-select');
+            if (feeSel) {
+                feeSel.innerHTML = '<option value="">Select Session</option>';
+                data.forEach(s => feeSel.innerHTML += `<option value="${s.id}">${s.name}</option>`);
+            }
+        } catch (e) { console.error("Error loading sessions:", e); }
     }
 
     // Event Listeners

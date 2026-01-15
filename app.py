@@ -394,14 +394,23 @@ def sw(): return send_from_directory(app.static_folder, 'firebase-messaging-sw.j
 def api_users():
     if current_user.role != 'admin': return jsonify({"msg": "Denied"}), 403
     
+    # GET: List Users (with safer filtering)
     if request.method == 'GET':
         search = request.args.get('search', '').lower()
         session_id = request.args.get('session_id')
+        
         q = User.query
-        if session_id and session_id != 'null': q = q.filter_by(session_id=int(session_id))
-        if search: q = q.filter(or_(User.name.ilike(f'%{search}%'), User.email.ilike(f'%{search}%')))
+        
+        # FIX: Check if session_id is a valid number before converting
+        if session_id and session_id != 'null' and str(session_id).isdigit():
+             q = q.filter_by(session_id=int(session_id))
+             
+        if search: 
+            q = q.filter(or_(User.name.ilike(f'%{search}%'), User.email.ilike(f'%{search}%')))
+            
         return jsonify([u.to_dict() for u in q.all()])
 
+    # POST/PUT: Save User
     d = request.form
     if request.method == 'POST':
         if User.query.filter_by(email=d['email']).first(): return jsonify({"msg": "Email exists"}), 400
@@ -412,14 +421,21 @@ def api_users():
         if not u: return jsonify({"msg": "Not found"}), 404
         if d.get('password'): u.password = bcrypt.generate_password_hash(d['password']).decode('utf-8')
 
+    # Common Fields
     u.name = d['name']; u.email = d['email']; u.phone_number = d.get('phone_number')
-    u.admission_number = d.get('admission_number'); u.dob = d.get('dob'); u.gender = d.get('gender')
+    u.admission_number = d.get('admission_number')
+    u.dob = d.get('dob'); u.gender = d.get('gender')
     u.father_name = d.get('father_name'); u.mother_name = d.get('mother_name')
     u.address_line1 = d.get('address_line1'); u.city = d.get('city'); u.state = d.get('state'); u.pincode = d.get('pincode')
     
-    if d.get('session_id'): u.session_id = int(d.get('session_id'))
-    if d.get('parent_id'): u.parent_id = int(d.get('parent_id'))
+    # FIX: Ensure session_id is saved correctly
+    if d.get('session_id') and str(d.get('session_id')).isdigit():
+        u.session_id = int(d.get('session_id'))
+    
+    if d.get('parent_id') and str(d.get('parent_id')).isdigit():
+        u.parent_id = int(d.get('parent_id'))
 
+    # Photo Upload
     if 'profile_photo_file' in request.files:
         file = request.files['profile_photo_file']
         if file and allowed_file(file.filename, ALLOWED_IMAGE_EXTENSIONS):
@@ -428,6 +444,7 @@ def api_users():
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], uid))
             u.profile_photo_url = f"/uploads/{uid}"
 
+    # Courses
     if u.role == 'student':
         c_ids = request.form.getlist('course_ids')
         if c_ids:
