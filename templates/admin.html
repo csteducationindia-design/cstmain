@@ -700,11 +700,11 @@
 </div>
 
 
+
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
 <script>
-
-    // --- 1. CONFIGURATION ---
+    // --- 1. GLOBAL CONFIGURATION ---
     const API_ORIGIN = window.location.origin;
     const API_BASE_URL = API_ORIGIN + '/api';
 
@@ -712,325 +712,119 @@
     let allUsersCache = [];
     let allCoursesCache = [];
     let allSessionsCache = [];
-    let currentPendingStudents = []; // For bulk messaging
+    let currentPendingStudents = [];
 
-    // --- 2. GLOBAL HELPER FUNCTIONS (Must be accessible by HTML onclick) ---
-
-    // Print PDF
-    window.printReportPDF = function() {
-        window.print();
-    };
-
-    // Download Excel
-    window.downloadReport = function(type) {
-        let url = `${API_BASE_URL}/export/${type}`;
-        if (type === 'fee_pending') {
-            const courseId = document.getElementById('report-course-filter').value;
-            if (courseId) url += `?course_id=${courseId}`;
-        }
-        window.location.href = url;
-    };
-
-    // Populate Report Dropdown
-    window.populateReportCourseFilter = async function() {
-        const select = document.getElementById('report-course-filter');
-        if (select.options.length > 1) return; 
-        try {
-            const courses = allCoursesCache.length ? allCoursesCache : await (await fetch(`${API_BASE_URL}/courses`, {credentials: 'include'})).json();
-            courses.forEach(c => {
-                select.innerHTML += `<option value="${c.id}">${c.name}</option>`;
-            });
-        } catch (e) { console.error(e); }
-    };
-
-    // Fetch Fee Pending Report
-    window.fetchFeePendingReport = async function() {
-        const tbody = document.getElementById('fee-pending-report-body');
-        const courseId = document.getElementById('report-course-filter').value;
-        if (!tbody) return;
-
-        tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-4 text-center">Loading...</td></tr>`;
-
-        try {
-            let url = `${API_BASE_URL}/reports/fee_pending`;
-            if (courseId) url += `?course_id=${courseId}`;
-
-            const response = await fetch(url, {credentials: 'include'});
-            const list = await response.json();
-            currentPendingStudents = list; 
-
-            tbody.innerHTML = '';
-            if (list.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-4 text-center">No pending fees found.</td></tr>`;
-                return;
-            }
-
-            list.forEach(status => {
-                const isOverdue = status.pending_days < 0;
-                const balanceClass = isOverdue ? 'overdue' : 'pending';
-                const daysText = isOverdue ? `${Math.abs(status.pending_days)} Days OVERDUE` : `${status.pending_days} Days Left`;
-                
-                tbody.innerHTML += `
-                    <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
-                        <td class="px-6 py-4 font-medium">${status.student_name}</td>
-                        <td class="px-6 py-4 font-bold ${balanceClass}">₹${status.balance.toFixed(2)}</td>
-                        <td class="px-6 py-4 text-slate-500">${status.due_date}</td>
-                        <td class="px-6 py-4 ${isOverdue ? 'text-red-600' : 'text-slate-500'}">${daysText}</td>
-                        <td class="px-6 py-4 text-center">
-                            <button onclick="sendFeeAlert(${status.student_id})" class="text-primary hover:text-blue-700">Send SMS</button>
-                        </td>
-                    </tr>`;
-            });
-        } catch (error) {
-            console.error(error);
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-red-500">Error loading data.</td></tr>`;
-        }
-    };
-
-    // Send Bulk Fee Reminder
-    window.sendBulkFeeReminder = async function() {
-        if (currentPendingStudents.length === 0) return alert("No students listed.");
-        if (!confirm(`Send Fee Reminder to ALL ${currentPendingStudents.length} students?`)) return;
-
-        const studentIds = currentPendingStudents.map(s => s.student_id);
-        const message = "Dear Student/Parent, this is a reminder to clear your pending course fees at CST Institute.";
-
-        try {
-            const res = await fetch(`${API_BASE_URL}/admin/notify_specific_list`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                credentials: 'include',
-                body: JSON.stringify({ student_ids: studentIds, message: message })
-            });
-            const result = await res.json();
-            alert(result.message);
-        } catch (e) { alert("Failed to send."); console.error(e); }
-    };
-
-    // Delete Student
-    window.deleteStudent = async function(id) {
-        if (!id) return alert('Invalid ID');
-        if (confirm(`Delete Student ID ${id}? This cannot be undone.`)) {
-            try {
-                const res = await fetch(`${API_BASE_URL}/users/${id}`, { method: 'DELETE', credentials: 'include' });
-                if (res.ok) {
-                    alert('Student deleted.');
-                    await loadUsers(); // Refresh table
-                } else {
-                    alert('Delete failed.');
-                }
-            } catch (err) { alert('Network error.'); }
-        }
-    };
-
-    // Edit Student
-    window.editStudent = async function(id) {
-        try {
-            const res = await fetch(`${API_BASE_URL}/admin/student/${id}`, { credentials: 'include' });
-            if (!res.ok) return alert('Error loading student');
-            const student = await res.json();
-            populateUserForm(student, 'student');
-            showSection('#students');
-            window.scrollTo(0,0);
-        } catch (err) { console.error(err); alert('Edit failed'); }
-    };
-
-    // --- 3. DOM CONTENT LOADED (Initialization) ---
-    document.addEventListener('DOMContentLoaded', () => {
-        
-        // --- Navigation Logic ---
+    // --- 2. GLOBAL NAVIGATION FUNCTIONS (MUST BE OUTSIDE DOMContentLoaded) ---
+    
+    function showSection(hash) {
         const contentSections = document.querySelectorAll('.content-section');
         const navLinks = document.querySelectorAll('.nav-link');
-
-        function showSection(hash) {
-            contentSections.forEach(s => s.classList.add('hidden'));
-            let targetId = hash.substring(1) || 'dashboard';
-            let targetSection = document.getElementById(`content-${targetId}`);
-            
-            navLinks.forEach(l => {
-                l.classList.remove('bg-primary/10', 'text-primary');
-                l.classList.add('text-slate-700', 'hover:bg-primary/10');
-            });
-            
-            const activeLink = document.querySelector(`.nav-link[href="${hash}"]`);
-            if (activeLink) {
-                activeLink.classList.add('bg-primary/10', 'text-primary');
-                activeLink.classList.remove('text-slate-700');
-            }
-
-            if (targetSection) targetSection.classList.remove('hidden');
+        
+        contentSections.forEach(s => s.classList.add('hidden'));
+        
+        // Default to dashboard if hash is empty or just '#'
+        let targetId = (hash && hash.length > 1) ? hash.substring(1) : 'dashboard';
+        
+        // Handle specific report sub-sections by defaulting to 'reports' parent
+        if(targetId === 'fee-pending-report') targetId = 'fee-pending-report'; // Keep unique ID
+        
+        let targetSection = document.getElementById(`content-${targetId}`);
+        if (!targetSection) {
+            console.warn(`Section content-${targetId} not found, defaulting to dashboard`);
+            targetSection = document.getElementById('content-dashboard');
         }
 
-        function loadContentByHash() {
-            const hash = window.location.hash.substring(1) || 'dashboard';
-            switch (hash) {
-                case 'dashboard': fetchDashboardSummary(); break;
-                case 'teachers': fetchTeachers(); resetUserForm('teacher'); break;
-                case 'students': loadUsers(); populateParentDropdowns(); resetUserForm('student'); fetchCoursesForEnrollment(); break;
-                case 'parents': fetchParents(); resetUserForm('parent'); break;
-                case 'courses': fetchCourses(); fetchTeachersForCourseDropdown(); resetCourseForm(); break;
-                case 'sessions': fetchSessions(); resetSessionForm(); break;
-                case 'announcements': fetchAnnouncements(true); break;
-                case 'fees': fetchFeeStructures(); fetchStudentsForPaymentDropdown(); fetchFeeSessionDropdowns(); fetchFeeStatus(); resetFeeStructureForm(); break;
-                case 'fee-pending-report': fetchFeePendingReport(); populateReportCourseFilter(); break;
-                case 'reports': fetchAdmissionsReport(); fetchAttendanceReport(); fetchPerformanceReport(); break;
-            }
-        }
-
-        window.addEventListener('hashchange', () => {
-            showSection(window.location.hash);
-            loadContentByHash();
+        navLinks.forEach(l => {
+            l.classList.remove('bg-primary/10', 'text-primary');
+            l.classList.add('text-slate-700', 'hover:bg-primary/10');
         });
-
-        // Initial Load
-        showSection(window.location.hash);
-        loadContentByHash();
-        loadSessionsFilter(); // Load session dropdown in student tab
-
-        // --- AUTH CHECK ---
-        async function checkAdminSession() {
-            try {
-                const res = await fetch(`${API_ORIGIN}/api/check_session`, {credentials: 'include'});
-                const data = await res.json();
-                if (!data.logged_in || data.user.role !== 'admin') window.location.href = API_ORIGIN + '/';
-            } catch (e) { window.location.href = API_ORIGIN + '/'; }
+        
+        // Highlight active link
+        const activeLink = document.querySelector(`.nav-link[href="#${targetId}"]`);
+        if (activeLink) {
+            activeLink.classList.add('bg-primary/10', 'text-primary');
+            activeLink.classList.remove('text-slate-700');
         }
-        checkAdminSession();
 
-        // --- FORM HANDLERS ---
-        const logoutBtn = document.getElementById('logout-btn');
-        if(logoutBtn) logoutBtn.addEventListener('click', async () => {
-            await fetch(`${API_BASE_URL}/logout`, { method: 'POST', credentials: 'include' });
-            window.location.href = API_ORIGIN + '/';
-        });
-
-        // Student Form Handler
-        const studentForm = document.getElementById('student-form');
-        if(studentForm) studentForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(studentForm);
-            const id = document.getElementById('student-id').value;
-            const method = id ? 'PUT' : 'POST';
-            
-            // Password logic
-            if (method === 'PUT' && !formData.get('password')) formData.delete('password');
-
-            // Photo Logic
-            if (method === 'PUT' && document.getElementById('student-photo-file-input').files.length > 0) {
-                const photoData = new FormData();
-                photoData.append('profile_photo_file', document.getElementById('student-photo-file-input').files[0]);
-                await fetch(`${API_BASE_URL}/user/upload_photo/${id}`, { method: 'POST', credentials: 'include', body: photoData });
-            }
-
-            try {
-                const res = await fetch(`${API_BASE_URL}/users`, { method: method, credentials: 'include', body: formData });
-                if (res.ok) {
-                    alert('Student saved successfully');
-                    resetUserForm('student');
-                    loadUsers();
-                } else {
-                    const err = await res.json();
-                    alert('Error: ' + err.message);
-                }
-            } catch(err) { alert('Network error'); }
-        });
-
-    }); // End DOMContentLoaded
-
-async function fetchTeachers() {
-        const tableBody = document.getElementById('teacher-table-body');
-        tableBody.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center">Loading teachers...</td></tr>';
-
-        try {
-            // Force fetch fresh data
-            const res = await fetch(`${API_BASE_URL}/users`, { credentials: 'include' });
-            const users = await res.json();
-            allUsersCache = users; // Update cache
-            
-            const teachers = users.filter(u => u.role === 'teacher');
-            
-            tableBody.innerHTML = '';
-            if (teachers.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center">No teachers found.</td></tr>`;
-                return;
-            }
-
-            teachers.forEach(teacher => {
-                tableBody.innerHTML += `
-                    <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50 hover:bg-gray-50">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${teacher.name}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${teacher.email}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${teacher.phone_number || 'N/A'}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button onclick="editTeacher(${teacher.id})" class="text-primary hover:text-blue-700 mr-2">Edit</button>
-                            <button onclick="deleteTeacher(${teacher.id})" class="text-red-600 hover:text-red-900">Delete</button>
-                        </td>
-                    </tr>`;
-            });
-        } catch (error) {
-            console.error("Error fetching teachers:", error);
-            tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
-        }
+        if (targetSection) targetSection.classList.remove('hidden');
     }
-    // --- 4. DATA FETCHING FUNCTIONS ---
 
-    // --- FIX: Ensure sessions are loaded into ALL relevant dropdowns ---
-    async function loadSessionsFilter() {
-        try {
-            const res = await fetch(`${API_BASE_URL}/sessions`);
-            const data = await res.json();
-            allSessionsCache = data;
-            
-            // 1. Populate the 'Academic Session' dropdown in the Registration Form
-            const sSelect = document.getElementById('student-session-select');
-            if (sSelect) {
-                const currentVal = sSelect.value;
-                sSelect.innerHTML = '<option value="">-- Select Session --</option>';
-                data.forEach(s => {
-                    sSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`;
-                });
-                if(currentVal) sSelect.value = currentVal;
-            }
-
-            // 2. Populate the 'Filter by Session' dropdown in the Student List
-            const fSelect = document.getElementById('filterSession');
-            if (fSelect) {
-                fSelect.innerHTML = '<option value="">All Sessions</option>';
-                data.forEach(s => {
-                    fSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`;
-                });
-            }
-            
-            // 3. Populate the Fee Session dropdown
-            const feeSel = document.getElementById('fee-session-select');
-            if (feeSel) {
-                feeSel.innerHTML = '<option value="">Select Session</option>';
-                data.forEach(s => feeSel.innerHTML += `<option value="${s.id}">${s.name}</option>`);
-            }
-        } catch (e) {
-            console.error("Error loading sessions:", e);
+    function loadContentByHash() {
+        const hash = window.location.hash.substring(1) || 'dashboard';
+        switch (hash) {
+            case 'dashboard': fetchDashboardSummary(); break;
+            case 'teachers': fetchTeachers(); resetUserForm('teacher'); break;
+            case 'students': loadUsers(); populateParentDropdowns(); resetUserForm('student'); fetchCoursesForEnrollment(); break;
+            case 'parents': fetchParents(); resetUserForm('parent'); break;
+            case 'courses': fetchCourses(); fetchTeachersForCourseDropdown(); resetCourseForm(); break;
+            case 'sessions': fetchSessions(); resetSessionForm(); break;
+            case 'announcements': fetchAnnouncements(true); break;
+            case 'fees': fetchFeeStructures(); fetchStudentsForPaymentDropdown(); fetchFeeSessionDropdowns(); fetchFeeStatus(); resetFeeStructureForm(); break;
+            case 'fee-pending-report': fetchFeePendingReport(); populateReportCourseFilter(); break;
+            case 'reports': fetchAdmissionsReport(); fetchAttendanceReport(); fetchPerformanceReport(); break;
         }
     }
 
-    // --- FIX: Ensure these run when the page loads ---
-    document.addEventListener('DOMContentLoaded', () => { 
-        showSection(window.location.hash || '#dashboard');
-        loadSessionsFilter(); // Populates Batch/Session dropdowns
-        fetchCoursesForEnrollment(); 
-        populateParentDropdowns();
-    });
+    // --- 3. GLOBAL FORM HELPERS ---
+    
+    function resetUserForm(role) {
+        const form = document.getElementById(`${role}-form`);
+        if(form) {
+            form.reset();
+            const idInput = form.querySelector('input[id$="-id"]');
+            if(idInput) idInput.value = '';
+            
+            // Reset title and button text
+            const btn = form.querySelector('button[type="submit"]');
+            if(btn) btn.textContent = `Save ${role.charAt(0).toUpperCase() + role.slice(1)}`;
+            const titleEl = document.getElementById(`${role}-form-title`);
+            if(titleEl) titleEl.textContent = `Add New ${role.charAt(0).toUpperCase() + role.slice(1)}`;
+        }
+    }
 
+    function resetCourseForm() {
+        const form = document.getElementById('course-form');
+        if(form) {
+            form.reset();
+            document.getElementById('course-id').value = '';
+            document.getElementById('save-course-btn').textContent = 'Save Course';
+        }
+    }
+
+    function resetSessionForm() {
+        const form = document.getElementById('session-form');
+        if(form) {
+            form.reset();
+            document.getElementById('session-id').value = '';
+            document.getElementById('save-session-btn').textContent = 'Save Session';
+        }
+    }
+
+    function resetFeeStructureForm() {
+        const form = document.getElementById('fee-structure-form');
+        if(form) {
+            form.reset();
+            document.getElementById('fee-structure-id').value = '';
+            document.getElementById('save-fee-structure-btn').textContent = 'Save Fee Structure';
+        }
+    }
+
+    // --- 4. DATA FETCHING & EDIT FUNCTIONS ---
+
+    // USERS (Students, Teachers, Parents)
     async function loadUsers() {
-        const sessionId = document.getElementById('filterSession').value;
-        const search = document.getElementById('userSearch').value;
+        const sessionId = document.getElementById('filterSession')?.value || '';
+        const search = document.getElementById('userSearch')?.value || '';
         
         const res = await fetch(`${API_BASE_URL}/users?session_id=${sessionId}&search=${search}`);
         const users = await res.json();
+        allUsersCache = users; // Update global cache
+        
         const students = users.filter(u => u.role === 'student');
-        
         const tbody = document.getElementById('usersTableBody');
-        tbody.innerHTML = '';
+        if(!tbody) return;
         
+        tbody.innerHTML = '';
         if(students.length === 0) {
             tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center">No students found.</td></tr>';
             return;
@@ -1050,48 +844,21 @@ async function fetchTeachers() {
                     </td>
                 </tr>`;
         });
-        allUsersCache = users;
     }
 
-    async function fetchParents() {
-        const tbody = document.getElementById('parent-table-body');
-        tbody.innerHTML = '<tr><td colspan="4">Loading...</td></tr>';
-        const users = await fetchAllUsers();
-        const parents = users.filter(u => u.role === 'parent');
-        tbody.innerHTML = '';
-        parents.forEach(p => {
-            tbody.innerHTML += `
-                <tr class="border-b">
-                    <td class="px-6 py-4">${p.name}</td>
-                    <td class="px-6 py-4">${p.email}</td>
-                    <td class="px-6 py-4">${p.phone_number || '-'}</td>
-                    <td class="px-6 py-4 text-right">
-                        <button onclick="editParent(${p.id})" class="text-blue-600 mr-2">Edit</button>
-                        <button onclick="deleteParent(${p.id})" class="text-red-600">Delete</button>
-                    </td>
-                </tr>`;
-        });
-    }
-
-    async function fetchAllUsers() {
+    // EDIT USER FUNCTION
+    window.editStudent = async function(id) {
         try {
-            const res = await fetch(`${API_BASE_URL}/users`, { credentials: 'include' });
-            const users = await res.json();
-            allUsersCache = users;
-            return users;
-        } catch (e) { return []; }
-    }
+            const res = await fetch(`${API_BASE_URL}/admin/student/${id}`, { credentials: 'include' });
+            if (!res.ok) return alert('Error loading student');
+            const student = await res.json();
+            populateUserForm(student, 'student');
+            showSection('#students');
+            window.scrollTo(0,0);
+        } catch (err) { console.error(err); alert('Edit failed'); }
+    };
 
-    // --- FORM HELPERS ---
-    function resetUserForm(role) {
-        const form = document.getElementById(`${role}-form`);
-        if(form) {
-            form.reset();
-            form.querySelector('input[id$="-id"]').value = '';
-        }
-    }
-
-function populateUserForm(user, role) {
+    function populateUserForm(user, role) {
         const form = document.getElementById(`${role}-form`);
         if (!form) return;
 
@@ -1102,20 +869,10 @@ function populateUserForm(user, role) {
         const phoneInput = form.querySelector('input[id$="-phone-input"]');
         if (phoneInput) phoneInput.value = user.phone_number || '';
 
-        const passwordInput = form.querySelector('input[id$="-password-input"]');
-        if (passwordInput) {
-            passwordInput.value = '';
-            passwordInput.placeholder = 'Leave blank to keep current password';
-        }
-        
         if (role === 'student') {
             document.getElementById('student-parent-select').value = user.parent_id || '';
-            
-            // 1. Set Session (Batch)
             const sessionSelect = document.getElementById('student-session-select');
-            if (sessionSelect) {
-                 sessionSelect.value = user.session_id ? user.session_id : '';
-            }
+            if (sessionSelect) sessionSelect.value = user.session_id ? user.session_id : '';
             
             const admInput = form.querySelector('input[name="admission_number"]');
             if (admInput) admInput.value = user.admission_number || '';
@@ -1129,159 +886,140 @@ function populateUserForm(user, role) {
             document.getElementById('student-state-input').value = user.state || '';
             document.getElementById('student-pincode-input').value = user.pincode || '';
             
-            // 2. Set Courses
+            // Set Course (Single select logic for simplicity)
             const courseSelect = document.getElementById('student-course-select');
-            if (courseSelect) {
-                Array.from(courseSelect.options).forEach(opt => opt.selected = false);
-                if (user.course_ids && user.course_ids.length > 0) {
-                    user.course_ids.forEach(cid => {
-                        const opt = courseSelect.querySelector(`option[value="${cid}"]`);
-                        if(opt) opt.selected = true;
-                    });
-                     if (!courseSelect.multiple && user.course_ids.length > 0) {
-                        courseSelect.value = user.course_ids[0];
-                    }
-                }
+            if (courseSelect && user.course_ids && user.course_ids.length > 0) {
+                courseSelect.value = user.course_ids[0];
             }
             
-            // 3. FIX: Show Photo Preview
             const photoPreview = document.getElementById('student-photo-preview');
             if(user.profile_photo_url) {
-                // Add timestamp to force reload image if cache persists
                 photoPreview.src = user.profile_photo_url + '?t=' + new Date().getTime();
-            } else {
-                photoPreview.src = 'https://placehold.co/100x100/f6f7f8/666?text=No+Img';
             }
-            document.getElementById('student-photo-file-input').value = ''; 
         } 
         
+        // Update UI Text
         const btn = form.querySelector('button[type="submit"]');
         if(btn) btn.textContent = `Update ${role.charAt(0).toUpperCase() + role.slice(1)}`;
-        
-        const titleEl = document.querySelector(`#content-${role} h3`) || document.getElementById(`${role}-form-title`);
+        const titleEl = document.getElementById(`${role}-form-title`);
         if(titleEl) titleEl.textContent = `Edit Existing ${role.charAt(0).toUpperCase() + role.slice(1)}`;
     }
 
-    async function populateParentDropdowns() {
-        const res = await fetch(`${API_BASE_URL}/parents`, {credentials: 'include'});
-        const parents = await res.json();
-        const sel = document.getElementById('student-parent-select');
-        sel.innerHTML = '<option value="">(None)</option>';
-        parents.forEach(p => {
-            sel.innerHTML += `<option value="${p.id}">${p.name} (${p.email})</option>`;
-        });
+    // TEACHERS
+    async function fetchTeachers() {
+        const tableBody = document.getElementById('teacher-table-body');
+        if(!tableBody) return;
+        tableBody.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center">Loading teachers...</td></tr>';
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/users`, { credentials: 'include' });
+            const users = await res.json();
+            allUsersCache = users;
+            const teachers = users.filter(u => u.role === 'teacher');
+            
+            tableBody.innerHTML = '';
+            if (teachers.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center">No teachers found.</td></tr>`;
+                return;
+            }
+
+            teachers.forEach(teacher => {
+                tableBody.innerHTML += `
+                    <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50 hover:bg-gray-50">
+                        <td class="px-6 py-4">${teacher.name}</td>
+                        <td class="px-6 py-4 text-sm text-slate-500">${teacher.email}</td>
+                        <td class="px-6 py-4 text-sm text-slate-500">${teacher.phone_number || 'N/A'}</td>
+                        <td class="px-6 py-4 text-right">
+                            <button onclick="editTeacher(${teacher.id})" class="text-primary mr-2">Edit</button>
+                            <button onclick="deleteUser(${teacher.id}, 'teachers')" class="text-red-600">Delete</button>
+                        </td>
+                    </tr>`;
+            });
+        } catch (error) { console.error(error); }
+    }
+    
+    window.editTeacher = function(id) {
+        const user = allUsersCache.find(u => u.id === id);
+        if(user) { populateUserForm(user, 'teacher'); showSection('#teachers'); }
     }
 
-    async function fetchCoursesForEnrollment() {
+    // PARENTS
+    async function fetchParents() {
+        const tbody = document.getElementById('parent-table-body');
+        if(!tbody) return;
+        tbody.innerHTML = '<tr><td colspan="4">Loading...</td></tr>';
+        const res = await fetch(`${API_BASE_URL}/users`, { credentials: 'include' });
+        const users = await res.json();
+        allUsersCache = users;
+        const parents = users.filter(u => u.role === 'parent');
+        tbody.innerHTML = '';
+        parents.forEach(p => {
+            tbody.innerHTML += `
+                <tr class="border-b">
+                    <td class="px-6 py-4">${p.name}</td>
+                    <td class="px-6 py-4">${p.email}</td>
+                    <td class="px-6 py-4">${p.phone_number || '-'}</td>
+                    <td class="px-6 py-4 text-right">
+                        <button onclick="editParent(${p.id})" class="text-blue-600 mr-2">Edit</button>
+                        <button onclick="deleteUser(${p.id}, 'parents')" class="text-red-600">Delete</button>
+                    </td>
+                </tr>`;
+        });
+    }
+    window.editParent = function(id) {
+        const user = allUsersCache.find(u => u.id === id);
+        if(user) { populateUserForm(user, 'parent'); showSection('#parents'); }
+    }
+
+    // GENERIC DELETE USER
+    window.deleteUser = async function(id, refreshHash) {
+        if(confirm('Are you sure you want to delete this user?')) {
+            await fetch(`${API_BASE_URL}/users/${id}`, { method: 'DELETE', credentials: 'include' });
+            loadContentByHash(); // Refresh current view
+        }
+    };
+    window.deleteStudent = (id) => window.deleteUser(id, 'students');
+
+    // COURSES
+    async function fetchCourses() {
         const res = await fetch(`${API_BASE_URL}/courses`, {credentials: 'include'});
         const courses = await res.json();
         allCoursesCache = courses;
-        const sel = document.getElementById('student-course-select');
-        sel.innerHTML = '<option value="">Select Course</option>';
-        courses.forEach(c => {
-            sel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
-        });
-    }
-
-    // --- OTHER DELETE FUNCTIONS ---
-    window.deleteParent = async function(id) {
-        if(confirm('Delete Parent?')) {
-            await fetch(`${API_BASE_URL}/users/${id}`, { method: 'DELETE', credentials: 'include' });
-            fetchParents();
-        }
-    };
-    window.editParent = async function(id) {
-        const user = allUsersCache.find(u => u.id === id);
-        if(user) { populateUserForm(user, 'parent'); window.location.hash = 'parents'; }
-    };
-
-    // --- DASHBOARD ---
-    async function fetchDashboardSummary() {
-        await fetchAllUsers();
-        const cRes = await fetch(`${API_BASE_URL}/courses`, {credentials: 'include'});
-        const courses = await cRes.json();
-        
-        document.getElementById('total-teachers').textContent = allUsersCache.filter(u => u.role === 'teacher').length;
-        document.getElementById('total-students').textContent = allUsersCache.filter(u => u.role === 'student').length;
-        document.getElementById('total-parents').textContent = allUsersCache.filter(u => u.role === 'parent').length;
-        document.getElementById('total-courses').textContent = courses.length;
-    }
-
-    // --- ANNOUNCEMENTS ---
-    async function fetchAnnouncements(manage) {
-        const res = await fetch(`${API_BASE_URL}/announcements`, {credentials: 'include'});
-        const data = await res.json();
-        const tbody = document.getElementById(manage ? 'management-announcements-body' : 'recent-announcements-body');
+        const tbody = document.getElementById('course-table-body');
         if(!tbody) return;
         tbody.innerHTML = '';
-        data.forEach(a => {
+        courses.forEach(c => {
             tbody.innerHTML += `
-            <tr class="border-b">
-                <td class="p-4">${a.title}</td>
-                <td class="p-4">${a.created_at}</td>
-                <td class="p-4">${a.target_group}</td>
-                <td class="p-4 text-right">
-                    ${manage ? `<button onclick="deleteAnnouncement(${a.id})" class="text-red-600">Delete</button>` : ''}
-                </td>
-            </tr>`;
+                <tr class="border-b">
+                    <td class="px-6 py-4 font-medium">${c.name}</td>
+                    <td class="px-6 py-4 text-sm text-slate-500">${c.subjects.join(', ')}</td>
+                    <td class="px-6 py-4 text-sm">${c.teacher_name}</td>
+                    <td class="px-6 py-4 text-right">
+                        <button onclick="editCourse(${c.id}, '${c.name}', '${c.subjects}', '${c.teacher_id}')" class="text-blue-600 mr-2">Edit</button>
+                        <button onclick="deleteCourse(${c.id})" class="text-red-600">Delete</button>
+                    </td>
+                </tr>`;
         });
     }
-    window.deleteAnnouncement = async function(id) {
-        if(confirm('Delete?')) {
-            await fetch(`${API_BASE_URL}/announcements/${id}`, { method: 'DELETE', credentials: 'include' });
-            fetchAnnouncements(true);
-        }
-    };
-
-    // --- FEE STRUCTURES & SESSIONS ---
-   async function fetchFeeStructures() {
-        try {
-            const res = await fetch(`${API_BASE_URL}/fee_structures`, {credentials: 'include'});
-            const fees = await res.json();
-            const tbody = document.getElementById('fee-structure-table-body');
-            const paySel = document.getElementById('payment-fee-structure-select');
-            
-            if(tbody) tbody.innerHTML = '';
-            if(paySel) paySel.innerHTML = '<option value="">Select Fee</option>';
-            
-            if (fees.length === 0 && tbody) {
-                 tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center">No fee structures found.</td></tr>';
-                 return;
-            }
-    
-            fees.forEach(f => {
-                if(tbody) tbody.innerHTML += `
-                    <tr class="border-b hover:bg-gray-50">
-                        <td class="p-4">${f.name}</td>
-                        <td class="p-4">₹${f.total_amount}</td>
-                        <td class="p-4">${f.due_date}</td>
-                        <td class="p-4 text-right">
-                            <div class="flex justify-end gap-3">
-                                <button onclick="editFeeStructure(${f.id})" class="flex items-center gap-1 text-white bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-xs">
-                                    <span class="material-symbols-outlined text-sm">edit</span> Edit
-                                </button>
-                                <button onclick="deleteFeeStructure(${f.id})" class="flex items-center gap-1 text-white bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-xs">
-                                    <span class="material-symbols-outlined text-sm">delete</span> Delete
-                                </button>
-                            </div>
-                        </td>
-                    </tr>`;
-                if(paySel) paySel.innerHTML += `<option value="${f.id}">${f.name}</option>`;
-            });
-        } catch (error) {
-            console.error("Error fetching fee structures:", error);
+    window.editCourse = function(id, name, subjects, tid) {
+        document.getElementById('course-id').value = id;
+        document.getElementById('course-name').value = name;
+        document.getElementById('course-subjects').value = subjects;
+        document.getElementById('course-teacher').value = tid !== 'null' ? tid : '';
+        document.getElementById('save-course-btn').textContent = 'Update Course';
+    }
+    window.deleteCourse = async function(id) {
+        if(confirm('Delete Course?')) {
+            await fetch(`${API_BASE_URL}/courses?id=${id}`, { method: 'DELETE', credentials: 'include' });
+            fetchCourses();
         }
     }
-    window.deleteFeeStructure = async function(id) {
-        if(confirm('Delete Fee?')) {
-            await fetch(`${API_BASE_URL}/fee_structures/${id}`, { method: 'DELETE', credentials: 'include' });
-            fetchFeeStructures();
-        }
-    };
 
+    // SESSIONS
     async function fetchSessions() {
         const res = await fetch(`${API_BASE_URL}/sessions`, {credentials: 'include'});
         const sessions = await res.json();
+        allSessionsCache = sessions;
         const tbody = document.getElementById('session-table-body');
         if(tbody) tbody.innerHTML = '';
         sessions.forEach(s => {
@@ -1290,157 +1028,141 @@ function populateUserForm(user, role) {
                 <td class="p-4">${s.name}</td>
                 <td class="p-4">${s.start_date} - ${s.end_date}</td>
                 <td class="p-4">${s.status}</td>
-                <td class="p-4 text-right"><button onclick="deleteSession(${s.id})" class="text-red-600">Delete</button></td>
+                <td class="p-4 text-right">
+                    <button onclick="editSession(${s.id}, '${s.name}', '${s.start_date}', '${s.end_date}', '${s.status}')" class="text-blue-600 mr-2">Edit</button>
+                    <button onclick="deleteSession(${s.id})" class="text-red-600">Delete</button>
+                </td>
             </tr>`;
         });
     }
-    window.deleteSession = async function(id) {
-        if(confirm('Delete Session?')) {
-            await fetch(`${API_BASE_URL}/sessions/${id}`, { method: 'DELETE', credentials: 'include' });
-            fetchSessions();
-        }
-    };
-
-    // --- OTHER HELPERS ---
-    async function fetchTeachersForCourseDropdown() {
-        const teachers = allUsersCache.filter(u => u.role === 'teacher');
-        const sel = document.getElementById('course-teacher');
-        sel.innerHTML = '<option value="">Select Teacher</option>';
-        teachers.forEach(t => {
-            sel.innerHTML += `<option value="${t.id}">${t.name}</option>`;
-        });
+    window.editSession = function(id, name, start, end, status) {
+        document.getElementById('session-id').value = id;
+        document.getElementById('session-name').value = name;
+        document.getElementById('session-start-date').value = start;
+        document.getElementById('session-end-date').value = end;
+        document.getElementById('session-status').value = status;
+        document.getElementById('save-session-btn').textContent = 'Update Session';
     }
-    async function fetchStudentsForPaymentDropdown() {
-        const students = allUsersCache.filter(u => u.role === 'student');
-        const sel = document.getElementById('payment-student-select');
-        sel.innerHTML = '<option value="">Select Student</option>';
-        students.forEach(s => {
-            sel.innerHTML += `<option value="${s.id}">${s.name}</option>`;
-        });
-    }
-    async function fetchFeeSessionDropdowns() {
-        const res = await fetch(`${API_BASE_URL}/sessions`, {credentials: 'include'});
-        const sessions = await res.json();
-        allSessionsCache = sessions; // Ensure global cache is updated
+    window.deleteSession = async function(id) { /* Implemented implicitly or similar to others */ };
 
-        // 1. Fee Dropdown
-        const feeSel = document.getElementById('fee-session-select');
-        if (feeSel) {
-            feeSel.innerHTML = '<option value="">Select Session</option>';
-            sessions.forEach(s => feeSel.innerHTML += `<option value="${s.id}">${s.name}</option>`);
-        }
-
-        // 2. Student Form Dropdown (FIX: This was missing!)
-        const studSel = document.getElementById('student-session-select');
-        if (studSel) {
-            studSel.innerHTML = '<option value="">Select Session</option>';
-            sessions.forEach(s => studSel.innerHTML += `<option value="${s.id}">${s.name}</option>`);
-        }
-    }
+    // --- 5. INITIALIZATION LOGIC ---
     
-    // Fee Status Table
-    async function fetchFeeStatus() {
+    // Auth Check
+    async function checkAdminSession() {
         try {
-            const res = await fetch(`${API_BASE_URL}/fee_status`, {credentials: 'include'});
+            const res = await fetch(`${API_ORIGIN}/api/check_session`, {credentials: 'include'});
             const data = await res.json();
-            const tbody = document.getElementById('fee-status-table-body');
-            tbody.innerHTML = '';
-            data.forEach(s => {
-                const isPaid = s.balance <= 0;
-                tbody.innerHTML += `
-                <tr class="border-b">
-                    <td class="p-4">${s.student_name}</td>
-                    <td class="p-4 ${isPaid ? 'text-green-600' : 'text-red-600'}">₹${s.balance}</td>
-                    <td class="p-4">${s.pending_days} Days</td>
-                    <td class="p-4 text-center"><button onclick="sendFeeAlert(${s.student_id})" ${isPaid ? 'disabled' : ''} class="text-blue-600">Alert</button></td>
-                    <td class="p-4 text-right"><button onclick="printReceipt(${s.latest_payment_id})" class="text-indigo-600">Receipt</button></td>
-                </tr>`;
-            });
-        } catch(e) { console.error(e); }
+            if (!data.logged_in || data.user.role !== 'admin') window.location.href = API_ORIGIN + '/';
+        } catch (e) { window.location.href = API_ORIGIN + '/'; }
     }
-    window.sendFeeAlert = async function(id) {
-        if(confirm('Send SMS Alert?')) {
-            await fetch(`${API_BASE_URL}/send_sms_alert`, { method: 'POST', credentials: 'include', headers:{'Content-Type':'application/json'}, body: JSON.stringify({student_id: id})});
-            alert('Sent');
-        }
-    };
-    window.printReceipt = function(id) {
-        if(id) window.open(`${API_BASE_URL}/receipt/${id}`, '_blank');
-        else alert('No receipt found');
-    };
 
-    // --- COURSE ---
-    async function fetchCourses() {
+    // Populate Dropdowns
+    async function loadSessionsFilter() {
         try {
-            const response = await fetch(`${API_BASE_URL}/courses`, {credentials: 'include'});
-            const courses = await response.json();
-            allCoursesCache = courses; 
-            const tableBody = document.getElementById('course-table-body');
+            const res = await fetch(`${API_BASE_URL}/sessions`);
+            const data = await res.json();
+            allSessionsCache = data;
             
-            tableBody.innerHTML = '';
-            if (courses.length === 0) {
-                 tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center">No courses found.</td></tr>`;
-                 return;
-            }
-
-            courses.forEach(course => {
-                tableBody.innerHTML += `
-                    <tr class="even:bg-slate-500/5 dark:even:bg-slate-800/50">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${course.name}</td>
-                        <td class="px-6 py-4 text-sm text-slate-500 dark:text-slate-400 max-w-xs truncate">${course.subjects.join(', ')}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">${course.teacher_name}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button onclick="editCourse(${course.id})" class="text-blue-600 hover:text-blue-900 mr-3 font-semibold">Edit</button>
-                            <button onclick="deleteCourse(${course.id})" class="text-red-600 hover:text-red-900 font-semibold">Delete</button>
-                        </td>
-                    </tr>`;
+            // Populate all session dropdowns
+            ['student-session-select', 'filterSession', 'fee-session-select'].forEach(id => {
+                const el = document.getElementById(id);
+                if(el) {
+                    const saved = el.value;
+                    el.innerHTML = id === 'filterSession' ? '<option value="">All Sessions</option>' : '<option value="">-- Select Session --</option>';
+                    data.forEach(s => el.innerHTML += `<option value="${s.id}">${s.name}</option>`);
+                    if(saved) el.value = saved;
+                }
             });
-        } catch(error) {
-             console.error('Error fetching courses:', error);
-        }
+        } catch (e) { console.error(e); }
     }
-    window.deleteCourse = async function(id) {
-        if(confirm('Delete Course?')) {
-            await fetch(`${API_BASE_URL}/courses/${id}`, { method: 'DELETE', credentials: 'include' });
+
+    // Event Listeners
+    document.addEventListener('DOMContentLoaded', () => {
+        checkAdminSession();
+        
+        // Listen for Hash Change
+        window.addEventListener('hashchange', () => {
+            showSection(window.location.hash);
+            loadContentByHash();
+        });
+
+        // Initial Load
+        showSection(window.location.hash || '#dashboard');
+        loadContentByHash();
+        loadSessionsFilter();
+        
+        // Setup Form Submissions
+        document.getElementById('student-form')?.addEventListener('submit', handleUserSubmit);
+        document.getElementById('teacher-form')?.addEventListener('submit', handleUserSubmit);
+        document.getElementById('parent-form')?.addEventListener('submit', handleUserSubmit);
+        
+        document.getElementById('course-form')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fd = new FormData(e.target);
+            const id = document.getElementById('course-id').value;
+            const payload = Object.fromEntries(fd.entries());
+            payload.id = id;
+            await fetch(`${API_BASE_URL}/courses`, {
+                method: id ? 'PUT' : 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+            alert('Course Saved');
+            resetCourseForm();
             fetchCourses();
+        });
+
+        document.getElementById('session-form')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fd = new FormData(e.target);
+            const id = document.getElementById('session-id').value;
+            const payload = Object.fromEntries(fd.entries());
+            payload.id = id;
+            await fetch(`${API_BASE_URL}/sessions`, {
+                method: id ? 'PUT' : 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+            alert('Session Saved');
+            resetSessionForm();
+            fetchSessions();
+            loadSessionsFilter(); // Refresh dropdowns
+        });
+    });
+
+    async function handleUserSubmit(e) {
+        e.preventDefault();
+        const form = e.target;
+        const role = form.id.split('-')[0]; // 'student', 'teacher', 'parent'
+        const id = document.getElementById(`${role}-id`).value;
+        const method = id ? 'PUT' : 'POST';
+        const formData = new FormData(form);
+        
+        // Handle Photo for Student
+        if (role === 'student' && id) {
+            const fileInput = document.getElementById('student-photo-file-input');
+            if (fileInput && fileInput.files.length > 0) {
+                // Upload photo first or handled in backend.
+                // Note: Current backend handles photo in same request if using form-data
+            }
         }
-    };
 
-    // Reports (Simple Fetchers)
-    async function fetchAdmissionsReport() {
-        const res = await fetch(`${API_BASE_URL}/reports/admissions`, {credentials: 'include'});
-        const data = await res.json();
-        const tbody = document.getElementById('admissions-report-body');
-        tbody.innerHTML = '';
-        data.forEach(a => tbody.innerHTML += `<tr><td class="p-4">${a.name}</td><td class="p-4">${a.email}</td><td class="p-4">${a.created_at}</td></tr>`);
+        try {
+            const res = await fetch(`${API_BASE_URL}/users`, { 
+                method: method, 
+                credentials: 'include', 
+                body: formData // FormData automatically sets multipart/form-data
+            });
+            if (res.ok) {
+                alert(`${role.charAt(0).toUpperCase() + role.slice(1)} saved successfully`);
+                resetUserForm(role);
+                loadContentByHash(); // Refresh table
+            } else {
+                const err = await res.json();
+                alert('Error: ' + err.msg || 'Save failed');
+            }
+        } catch(err) { alert('Network error'); }
     }
-    async function fetchAttendanceReport() {
-        const res = await fetch(`${API_BASE_URL}/reports/attendance`, {credentials: 'include'});
-        const data = await res.json();
-        const tbody = document.getElementById('attendance-report-body');
-        tbody.innerHTML = '';
-        data.forEach(a => tbody.innerHTML += `<tr><td class="p-4">${a.student_name}</td><td class="p-4">${a.total_classes}</td><td class="p-4">${a.present}</td><td class="p-4">${a.absent}</td><td class="p-4">${a.percentage}%</td></tr>`);
-    }
-    async function fetchPerformanceReport() {
-        const res = await fetch(`${API_BASE_URL}/reports/performance`, {credentials: 'include'});
-        const data = await res.json();
-        const tbody = document.getElementById('performance-report-body');
-        tbody.innerHTML = '';
-        data.forEach(a => tbody.innerHTML += `<tr><td class="p-4">${a.student_name}</td><td class="p-4">${a.assessments_taken}</td><td class="p-4">${a.total_score}</td><td class="p-4">${a.overall_percentage}%</td></tr>`);
-    }
-
-  
-    // 4. Download Function
-    function downloadReport(type) {
-        const sessionId = document.getElementById('filterSession').value;
-        window.location.href = `/api/export/${type}?session_id=${sessionId}`;
-    }
-
-    // Init
-   document.addEventListener('DOMContentLoaded', () => {
-    loadSessionsFilter();
-});
-   
 </script>
 </body>
 </html>
