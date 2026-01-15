@@ -712,87 +712,322 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
 <script>
 
-    // --- GLOBAL CONFIG ---
+  
+    // =========================================================
+    // 1. GLOBAL CONFIG & CACHE
+    // =========================================================
     const API_BASE_URL = '/api';
     let allUsersCache = [];
     let allSessionsCache = [];
+    let currentPendingStudents = [];
 
-    // --- 1. CORE NAVIGATION (Must be Global) ---
+    // =========================================================
+    // 2. CORE NAVIGATION
+    // =========================================================
     function showSection(hash) {
         document.querySelectorAll('.content-section').forEach(s => s.classList.add('hidden'));
-        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('bg-primary/10', 'text-primary'));
+        document.querySelectorAll('.nav-link').forEach(l => {
+            l.classList.remove('bg-primary/10', 'text-primary');
+            l.classList.add('text-slate-700', 'hover:bg-primary/10');
+        });
         
-        // Clean hash
         let targetId = (hash && hash.length > 1) ? hash.substring(1) : 'dashboard';
         
-        // Handle dropdown filter persistence
-        if(targetId === 'dashboard') fetchDashboardSummary();
+        // Route specific reports to their container if needed, or keep as is
+        const targetSection = document.getElementById('content-' + targetId);
         
-        const target = document.getElementById('content-' + targetId);
-        if (target) {
-            target.classList.remove('hidden');
-            // Highlight sidebar
-            const link = document.querySelector(`.nav-link[href="#${targetId}"]`);
-            if(link) link.classList.add('bg-primary/10', 'text-primary');
+        if (targetSection) {
+            targetSection.classList.remove('hidden');
             
-            // PROBLEM 4 FIX: Load data specific to the section
-            if(targetId === 'courses') {
-                fetchAllUsers().then(() => fetchTeachersForCourseDropdown());
-                fetchCourses();
+            // Highlight Sidebar
+            const activeLink = document.querySelector(`.nav-link[href="#${targetId}"]`);
+            if (activeLink) {
+                activeLink.classList.add('bg-primary/10', 'text-primary');
+                activeLink.classList.remove('text-slate-700');
             }
-            if(targetId === 'students') {
-                loadSessionsFilter(); // PROBLEM 1 & 2 FIX
-                loadUsers();
+
+            // Load Data for Section
+            switch(targetId) {
+                case 'dashboard': fetchDashboardSummary(); break;
+                case 'students': loadSessionsFilter(); loadUsers(); break;
+                case 'teachers': fetchTeachers(); break;
+                case 'parents': fetchParents(); break;
+                case 'courses': fetchAllUsers().then(fetchTeachersForCourseDropdown); fetchCourses(); break;
+                case 'sessions': fetchSessions(); break;
+                case 'announcements': fetchAnnouncements(true); break;
+                case 'fees': fetchFeeStructures(); loadSessionsFilter(); fetchFeeStatus(); break;
+                case 'fee-pending-report': fetchFeePendingReport(); populateReportCourseFilter(); break;
+                case 'reports': fetchAdmissionsReport(); break; 
             }
-            if(targetId === 'fees') {
-                fetchFeeStructures();
-                loadSessionsFilter(); // Populate fee session dropdown
-            }
-            if(targetId === 'announcements') fetchAnnouncements(true);
-            if(targetId === 'sessions') fetchSessions();
         }
     }
 
-    // --- 2. DATA LOADERS ---
+    // =========================================================
+    // 3. DATA FETCHING FUNCTIONS (Restored)
+    // =========================================================
 
-    // PROBLEM 1 & 2 FIX: Load Sessions and Populate ALL Dropdowns
+    // --- DASHBOARD ---
+    async function fetchDashboardSummary() {
+        try {
+            await fetchAllUsers(); // Updates cache
+            const cRes = await fetch(`${API_BASE_URL}/courses`);
+            const courses = await cRes.json();
+            
+            document.getElementById('total-teachers').textContent = allUsersCache.filter(u => u.role === 'teacher').length;
+            document.getElementById('total-students').textContent = allUsersCache.filter(u => u.role === 'student').length;
+            document.getElementById('total-parents').textContent = allUsersCache.filter(u => u.role === 'parent').length;
+            document.getElementById('total-courses').textContent = courses.length;
+        } catch (e) { console.error("Dashboard Error", e); }
+    }
+
+    // --- SESSIONS ---
+    async function fetchSessions() {
+        try {
+            const res = await fetch(`${API_BASE_URL}/sessions`);
+            const sessions = await res.json();
+            allSessionsCache = sessions; // Cache for dropdowns
+            
+            const tbody = document.getElementById('session-table-body');
+            if(tbody) {
+                tbody.innerHTML = sessions.map(s => `
+                    <tr class="border-b">
+                        <td class="p-4 font-medium">${s.name}</td>
+                        <td class="p-4">${s.start_date}</td>
+                        <td class="p-4">${s.end_date}</td>
+                        <td class="p-4"><span class="px-2 py-1 rounded text-xs font-bold ${s.status==='Active'?'bg-green-100 text-green-700':'bg-gray-100 text-gray-700'}">${s.status}</span></td>
+                        <td class="p-4 text-right">
+                            <button onclick="editSession(${s.id}, '${s.name}', '${s.start_date}', '${s.end_date}', '${s.status}')" class="text-blue-600 mr-2">Edit</button>
+                            <button onclick="deleteSession(${s.id})" class="text-red-600">Delete</button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        } catch(e) { console.error(e); }
+    }
+
+    // --- ANNOUNCEMENTS ---
+    async function fetchAnnouncements(isManage) {
+        try {
+            const res = await fetch(`${API_BASE_URL}/announcements`);
+            const data = await res.json();
+            const tbody = document.getElementById(isManage ? 'management-announcements-body' : 'recent-announcements-body');
+            
+            if(tbody) {
+                tbody.innerHTML = data.length ? data.map(a => `
+                    <tr class="border-b">
+                        <td class="p-4 font-medium">${a.title}</td>
+                        <td class="p-4 text-sm text-gray-500">${a.created_at}</td>
+                        <td class="p-4 text-sm"><span class="bg-blue-50 text-blue-600 px-2 py-1 rounded">${a.category || 'General'}</span></td>
+                        <td class="p-4 text-right">
+                            ${isManage ? `<button onclick="deleteAnnouncement(${a.id})" class="text-red-600 hover:text-red-800">Delete</button>` : ''}
+                        </td>
+                    </tr>
+                `).join('') : '<tr><td colspan="4" class="p-4 text-center text-gray-400">No announcements found.</td></tr>';
+            }
+        } catch(e) { console.error(e); }
+    }
+
+    // --- COURSES ---
+    async function fetchCourses() {
+        try {
+            const res = await fetch(`${API_BASE_URL}/courses`);
+            const courses = await res.json();
+            const tbody = document.getElementById('course-table-body');
+            if(tbody) {
+                tbody.innerHTML = courses.map(c => `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="p-4 font-medium">${c.name}</td>
+                        <td class="p-4 text-sm text-gray-500">${c.subjects.join(', ')}</td>
+                        <td class="p-4 text-sm">${c.teacher_name}</td>
+                        <td class="p-4 text-right">
+                            <button onclick="deleteCourse(${c.id})" class="text-red-600">Delete</button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        } catch(e) { console.error(e); }
+    }
+
+    // --- FEES ---
+    async function fetchFeeStructures() {
+        try {
+            const res = await fetch(`${API_BASE_URL}/fee_structures`);
+            const fees = await res.json();
+            const tbody = document.getElementById('fee-structure-table-body');
+            const paySel = document.getElementById('payment-fee-structure-select');
+            
+            if(tbody) {
+                tbody.innerHTML = fees.map(f => `
+                    <tr class="border-b">
+                        <td class="p-4 font-medium">${f.name}</td>
+                        <td class="p-4">₹${f.total_amount}</td>
+                        <td class="p-4">${f.due_date}</td>
+                        <td class="p-4 text-right"><button onclick="deleteFeeStructure(${f.id})" class="text-red-600">Delete</button></td>
+                    </tr>
+                `).join('');
+            }
+            if(paySel) {
+                paySel.innerHTML = '<option value="">Select Fee Structure</option>' + 
+                    fees.map(f => `<option value="${f.id}">${f.name} (₹${f.total_amount})</option>`).join('');
+            }
+        } catch(e) { console.error(e); }
+    }
+
+    async function fetchFeeStatus() {
+        try {
+            const res = await fetch(`${API_BASE_URL}/fee_status`);
+            const data = await res.json();
+            const tbody = document.getElementById('fee-status-table-body');
+            if(tbody) {
+                tbody.innerHTML = data.map(s => {
+                    const isPaid = s.balance <= 0;
+                    return `
+                    <tr class="border-b">
+                        <td class="p-4 font-medium">${s.student_name}</td>
+                        <td class="p-4 ${isPaid ? 'text-green-600' : 'text-red-600'}">₹${s.balance}</td>
+                        <td class="p-4 text-sm text-gray-500">${s.pending_days} days</td>
+                        <td class="p-4 text-center">
+                            <button onclick="sendFeeAlert(${s.student_id})" ${isPaid ? 'disabled' : ''} class="text-blue-600 hover:underline disabled:text-gray-300">Alert</button>
+                        </td>
+                        <td class="p-4 text-right">
+                            <button onclick="printReceipt(${s.latest_payment_id})" class="text-indigo-600">Print</button>
+                        </td>
+                    </tr>`;
+                }).join('');
+            }
+        } catch(e) { console.error(e); }
+    }
+
+    async function fetchFeePendingReport() {
+        const tbody = document.getElementById('fee-pending-report-body');
+        if(!tbody) return;
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4">Loading...</td></tr>';
+        
+        try {
+            // Using fee_status as base for the report since specific report endpoint might be missing
+            const res = await fetch(`${API_BASE_URL}/fee_status`);
+            const data = await res.json();
+            
+            // Filter only pending
+            const pending = data.filter(s => s.balance > 0);
+            currentPendingStudents = pending; // Store for bulk SMS
+
+            tbody.innerHTML = pending.length ? pending.map(s => `
+                <tr class="border-b hover:bg-red-50">
+                    <td class="p-4 font-medium">${s.student_name}</td>
+                    <td class="p-4 text-red-600 font-bold">₹${s.balance}</td>
+                    <td class="p-4">${s.due_date}</td>
+                    <td class="p-4 text-red-500">${s.pending_days} Days Overdue</td>
+                    <td class="p-4 text-center">
+                        <button onclick="sendFeeAlert(${s.student_id})" class="bg-red-100 text-red-700 px-3 py-1 rounded text-xs font-bold hover:bg-red-200">Send Reminder</button>
+                    </td>
+                </tr>
+            `).join('') : '<tr><td colspan="5" class="text-center p-4 text-green-600">No pending fees!</td></tr>';
+            
+        } catch(e) { console.error(e); tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4 text-red-500">Error loading report</td></tr>'; }
+    }
+
+    // =========================================================
+    // 4. DROPDOWN & FILTER HELPERS
+    // =========================================================
     async function loadSessionsFilter() {
         try {
             const res = await fetch(`${API_BASE_URL}/sessions`);
             const sessions = await res.json();
             allSessionsCache = sessions;
 
-            // Helper to populate a specific select ID
-            const populate = (id, defaultText) => {
+            const populate = (id, def) => {
                 const el = document.getElementById(id);
-                if (el) {
-                    const oldVal = el.value;
-                    el.innerHTML = `<option value="">${defaultText}</option>` + 
-                        sessions.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-                    if(oldVal) el.value = oldVal;
-                }
+                if(el) el.innerHTML = `<option value="">${def}</option>` + sessions.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
             };
 
-            // Populate Student List Filter
             populate('filterSession', 'All Sessions');
-            // Populate Student Add Form (PROBLEM 2 FIX)
             populate('student-session-select', '-- Select Batch * --');
-            // Populate Fee Form
             populate('fee-session-select', 'Select Academic Session');
-
-        } catch (e) { console.error("Session load error", e); }
+        } catch(e) { console.error(e); }
     }
 
-    // PROBLEM 4 FIX: Fetch Teachers
     async function fetchTeachersForCourseDropdown() {
-        // Ensure we have users
-        if (allUsersCache.length === 0) await fetchAllUsers();
-        
         const teachers = allUsersCache.filter(u => u.role === 'teacher');
         const sel = document.getElementById('course-teacher');
-        if (sel) {
-            sel.innerHTML = '<option value="">Select Teacher</option>' + 
-                teachers.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+        if(sel) {
+            sel.innerHTML = '<option value="">Select Teacher</option>' + teachers.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+        }
+    }
+
+    async function fetchStudentsForPaymentDropdown() {
+        const students = allUsersCache.filter(u => u.role === 'student');
+        const sel = document.getElementById('payment-student-select');
+        if(sel) {
+            sel.innerHTML = '<option value="">Select Student</option>' + students.map(s => `<option value="${s.id}">${s.name} (${s.admission_number || 'No ID'})</option>`).join('');
+        }
+    }
+
+    async function populateReportCourseFilter() {
+        const res = await fetch(`${API_BASE_URL}/courses`);
+        const courses = await res.json();
+        const sel = document.getElementById('report-course-filter');
+        if(sel) {
+            sel.innerHTML = '<option value="">All Courses</option>' + courses.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        }
+    }
+
+    // =========================================================
+    // 5. USER MANAGEMENT (Student/Teacher/Parent)
+    // =========================================================
+    async function loadUsers() {
+        const sessId = document.getElementById('filterSession')?.value || '';
+        const search = document.getElementById('userSearch')?.value || '';
+        
+        const res = await fetch(`${API_BASE_URL}/users?session_id=${sessId}&search=${search}`);
+        const users = await res.json();
+        allUsersCache = users; // Update global cache
+        
+        const tbody = document.getElementById('usersTableBody');
+        if(tbody) {
+            tbody.innerHTML = users.filter(u => u.role === 'student').map(u => `
+                <tr class="border-b hover:bg-gray-50">
+                    <td class="p-4">${u.admission_number || '-'}</td>
+                    <td class="p-4 font-bold">${u.name}</td>
+                    <td class="p-4">${u.email}</td>
+                    <td class="p-4 text-blue-600">${u.session_name || 'Unassigned'}</td>
+                    <td class="p-4 text-right">
+                        <a href="/admin/id_card/${u.id}" target="_blank" class="text-indigo-600 mr-2 hover:underline">ID Card</a>
+                        <button onclick="editStudent(${u.id})" class="text-blue-600 mr-2 hover:underline">Edit</button>
+                        <button onclick="deleteUser(${u.id})" class="text-red-600 hover:underline">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+    }
+
+    async function fetchTeachers() {
+        await fetchAllUsers();
+        const tbody = document.getElementById('teacher-table-body');
+        if(tbody) {
+            tbody.innerHTML = allUsersCache.filter(u => u.role === 'teacher').map(t => `
+                <tr class="border-b">
+                    <td class="p-4 font-medium">${t.name}</td>
+                    <td class="p-4">${t.email}</td>
+                    <td class="p-4">${t.phone_number || '-'}</td>
+                    <td class="p-4 text-right"><button onclick="deleteUser(${t.id})" class="text-red-600">Delete</button></td>
+                </tr>
+            `).join('');
+        }
+    }
+
+    async function fetchParents() {
+        await fetchAllUsers();
+        const tbody = document.getElementById('parent-table-body');
+        if(tbody) {
+            tbody.innerHTML = allUsersCache.filter(u => u.role === 'parent').map(p => `
+                <tr class="border-b">
+                    <td class="p-4 font-medium">${p.name}</td>
+                    <td class="p-4">${p.email}</td>
+                    <td class="p-4">${p.phone_number || '-'}</td>
+                    <td class="p-4 text-right"><button onclick="deleteUser(${p.id})" class="text-red-600">Delete</button></td>
+                </tr>
+            `).join('');
         }
     }
 
@@ -805,128 +1040,150 @@
         } catch (e) { return []; }
     }
 
-    // --- 3. STUDENTS & USERS ---
-    async function loadUsers() {
-        const sessId = document.getElementById('filterSession')?.value || '';
-        const search = document.getElementById('userSearch')?.value || '';
-        
-        const res = await fetch(`${API_BASE_URL}/users?session_id=${sessId}&search=${search}`);
-        const users = await res.json();
-        
-        const tbody = document.getElementById('usersTableBody');
-        if(tbody) {
-            tbody.innerHTML = users.filter(u => u.role === 'student').map(u => `
-                <tr class="border-b hover:bg-gray-50">
-                    <td class="p-4">${u.admission_number || '-'}</td>
-                    <td class="p-4 font-bold">${u.name}</td>
-                    <td class="p-4">${u.email}</td>
-                    <td class="p-4 text-blue-600">${u.session_name || 'Unassigned'}</td>
-                    <td class="p-4 text-right">
-                        <a href="/admin/id_card/${u.id}" target="_blank" class="text-indigo-600 mr-2">ID Card</a>
-                        <button onclick="editStudent(${u.id})" class="text-blue-600">Edit</button>
-                    </td>
-                </tr>
-            `).join('') || '<tr><td colspan="5" class="p-4 text-center">No students found</td></tr>';
-        }
-    }
-
+    // =========================================================
+    // 6. FORM HANDLERS & ACTIONS
+    // =========================================================
+    
+    // EDIT & DELETE
     window.editStudent = async function(id) {
         const res = await fetch(`${API_BASE_URL}/admin/student/${id}`);
         const u = await res.json();
-        
-        // Switch to tab
         showSection('#students');
         
-        // Populate Form
         document.getElementById('student-id').value = u.id;
         document.getElementById('student-name-input').value = u.name;
         document.getElementById('student-email-input').value = u.email;
         document.getElementById('student-phone-input').value = u.phone_number || '';
         document.getElementById('student-admission-input').value = u.admission_number || '';
-        
-        // PROBLEM 2 FIX: Select correct session
         if(u.session_id) document.getElementById('student-session-select').value = u.session_id;
         
-        document.getElementById('student-form-btn').textContent = "Update Student";
-        document.getElementById('student-form-title').textContent = "Edit Student";
         window.scrollTo(0,0);
     };
 
-    // --- 4. FEES & COURSES (PROBLEM 6 FIX) ---
-    async function fetchFeeStructures() {
-        const res = await fetch(`${API_BASE_URL}/fee_structures`);
-        const fees = await res.json();
-        const tbody = document.getElementById('fee-structure-table-body');
-        if(tbody) {
-            tbody.innerHTML = fees.map(f => `
-                <tr class="border-b">
-                    <td class="p-4">${f.name}</td>
-                    <td class="p-4">₹${f.total_amount}</td>
-                    <td class="p-4">${f.due_date}</td>
-                    <td class="p-4 text-right">
-                        <button onclick="deleteFeeStructure(${f.id})" class="text-red-600">Delete</button>
-                    </td>
-                </tr>
-            `).join('');
+    window.deleteUser = async (id) => { if(confirm('Delete User?')) { await fetch(`${API_BASE_URL}/users/${id}`, {method:'DELETE'}); loadUsers(); fetchTeachers(); fetchParents(); }};
+    window.deleteCourse = async (id) => { if(confirm('Delete Course?')) { await fetch(`${API_BASE_URL}/courses?id=${id}`, {method:'DELETE'}); fetchCourses(); }};
+    window.deleteSession = async (id) => { if(confirm('Delete Session?')) { await fetch(`${API_BASE_URL}/sessions?id=${id}`, {method:'DELETE'}); fetchSessions(); }}; // Note: Changed to sessions endpoint
+    window.deleteFeeStructure = async (id) => { if(confirm('Delete Fee?')) { await fetch(`${API_BASE_URL}/fee_structures?id=${id}`, {method:'DELETE'}); fetchFeeStructures(); }};
+    window.deleteAnnouncement = async (id) => { if(confirm('Delete?')) { await fetch(`${API_BASE_URL}/announcements?id=${id}`, {method:'DELETE'}); fetchAnnouncements(true); }};
+
+    window.editSession = function(id, name, start, end, status) {
+        document.getElementById('session-id').value = id;
+        document.getElementById('session-name').value = name;
+        document.getElementById('session-start-date').value = start;
+        document.getElementById('session-end-date').value = end;
+        document.getElementById('session-status').value = status;
+        showSection('#sessions');
+    }
+
+    // ALERTS & REPORTS
+    window.sendFeeAlert = async function(id) {
+        if(confirm('Send SMS Reminder?')) {
+            const res = await fetch(`${API_BASE_URL}/send_sms_alert`, {
+                method: 'POST', 
+                headers:{'Content-Type':'application/json'}, 
+                body: JSON.stringify({student_id: id})
+            });
+            const data = await res.json();
+            alert(data.message);
+        }
+    };
+
+    window.sendBulkFeeReminder = async function() {
+        if(!currentPendingStudents.length) return alert("No pending students.");
+        if(confirm(`Send SMS to ${currentPendingStudents.length} students?`)) {
+            for(let s of currentPendingStudents) {
+                await fetch(`${API_BASE_URL}/send_sms_alert`, {
+                    method: 'POST', 
+                    headers:{'Content-Type':'application/json'}, 
+                    body: JSON.stringify({student_id: s.student_id})
+                });
+            }
+            alert("Bulk process started.");
         }
     }
 
-    // --- 5. INITIALIZATION ---
-    document.addEventListener('DOMContentLoaded', () => {
-        // Initial Load
-        loadSessionsFilter(); // Critical for Dropdowns
-        fetchAllUsers();      // Critical for Teachers/Students
-        
-        // Handle Hash
-        showSection(window.location.hash || '#dashboard');
-        window.addEventListener('hashchange', () => showSection(window.location.hash));
+    window.downloadReport = (type) => alert("Download feature requires backend CSV generator.");
+    window.printReportPDF = () => window.print();
+    window.printReceipt = (id) => window.open(`${API_BASE_URL}/receipt/${id}`, '_blank');
 
-        // Form Listeners
+    // REPORT STUBS (To prevent crashes if backend route missing)
+    async function fetchAdmissionsReport() {
+        await loadUsers();
+        const tbody = document.getElementById('admissions-report-body');
+        if(tbody) tbody.innerHTML = allUsersCache.filter(u => u.role === 'student').slice(0, 20).map(u => `
+            <tr><td class="p-4">${u.name}</td><td class="p-4">${u.email}</td><td class="p-4">${u.created_at || 'N/A'}</td></tr>
+        `).join('');
+    }
+
+    // =========================================================
+    // 7. INITIALIZATION & EVENT LISTENERS
+    // =========================================================
+    document.addEventListener('DOMContentLoaded', () => {
+        // Initial Data Load
+        loadSessionsFilter();
+        fetchAllUsers();
+        
+        // Handle Navigation
+        window.addEventListener('hashchange', () => showSection(window.location.hash));
+        showSection(window.location.hash || '#dashboard');
+
+        // Form Submit Handlers
         document.getElementById('student-form')?.addEventListener('submit', async (e) => {
             e.preventDefault();
             const fd = new FormData(e.target);
-            // Fix: Add role if missing
             if(!fd.get('role')) fd.append('role', 'student');
-            
-            await fetch(`${API_BASE_URL}/users`, { method: 'POST', body: fd }); // Use POST for both add/edit logic in backend
-            alert('Saved!');
-            document.getElementById('student-form').reset();
-            loadUsers();
+            await fetch(`${API_BASE_URL}/users`, { method: 'POST', body: fd });
+            alert('Saved!'); e.target.reset(); loadUsers();
         });
-        
+
+        document.getElementById('teacher-form')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fd = new FormData(e.target);
+            await fetch(`${API_BASE_URL}/users`, { method: 'POST', body: fd });
+            alert('Saved!'); e.target.reset(); fetchTeachers();
+        });
+
+        document.getElementById('parent-form')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fd = new FormData(e.target);
+            await fetch(`${API_BASE_URL}/users`, { method: 'POST', body: fd });
+            alert('Saved!'); e.target.reset(); fetchParents();
+        });
+
         document.getElementById('course-form')?.addEventListener('submit', async (e) => {
             e.preventDefault();
             const fd = new FormData(e.target);
-            const id = document.getElementById('course-id').value;
-            // Convert FormData to JSON for this endpoint
             const data = Object.fromEntries(fd.entries());
-            if(id) data.id = id;
-            
-            await fetch(`${API_BASE_URL}/courses`, { 
-                method: id ? 'PUT' : 'POST', 
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(data) 
-            });
-            alert('Course Saved');
-            fetchCourses();
+            await fetch(`${API_BASE_URL}/courses`, { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
+            alert('Saved!'); e.target.reset(); fetchCourses();
+        });
+
+        document.getElementById('session-form')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fd = new FormData(e.target);
+            const data = Object.fromEntries(fd.entries());
+            await fetch(`${API_BASE_URL}/sessions`, { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
+            alert('Saved!'); e.target.reset(); fetchSessions(); loadSessionsFilter();
+        });
+
+        document.getElementById('fee-structure-form')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fd = new FormData(e.target);
+            const data = Object.fromEntries(fd.entries());
+            await fetch(`${API_BASE_URL}/fee_structures`, { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
+            alert('Saved!'); e.target.reset(); fetchFeeStructures();
+        });
+
+        document.getElementById('announcement-form')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const title = document.getElementById('announcement-title').value;
+            const content = document.getElementById('announcement-content').value;
+            const target = document.getElementById('announcement-target-group').value;
+            await fetch(`${API_BASE_URL}/announcements`, { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({title, content, target_group: target}) });
+            alert('Published!'); e.target.reset(); fetchAnnouncements(true);
         });
     });
-    
-    // Stub functions for other entities
-    async function fetchCourses() {
-        const res = await fetch(`${API_BASE_URL}/courses`);
-        const data = await res.json();
-        document.getElementById('course-table-body').innerHTML = data.map(c => `
-            <tr class="border-b"><td class="p-4">${c.name}</td><td class="p-4">${c.teacher_name}</td>
-            <td class="p-4 text-right"><button onclick="deleteCourse(${c.id})" class="text-red-600">Delete</button></td></tr>
-        `).join('');
-    }
-    
-    // ... Add other delete/fetch functions as needed ...
-    window.deleteFeeStructure = async (id) => { 
-        if(confirm('Delete?')) await fetch(`${API_BASE_URL}/fee_structures?id=${id}`, {method:'DELETE'}); 
-        fetchFeeStructures(); 
-    };
+
 
 </script>
 </body>
