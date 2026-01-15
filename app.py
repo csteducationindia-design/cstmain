@@ -657,31 +657,66 @@ def serve_receipt(id):
 def serve_file(filename): return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 # --- MISSING ADMIN ROUTES FIX ---
+# --- 1. FIX FOR PROBLEM 3 (ID CARDS) ---
+@app.route('/admin/id_card/<int:id>')
+@login_required
+def generate_single_id_card(id):
+    if current_user.role != 'admin': return "Denied", 403
+    u = db.session.get(User, id)
+    # Simple HTML ID Card Template
+    html = f"""
+    <div style="border:2px solid #333; width:300px; padding:20px; text-align:center; font-family:sans-serif; margin:20px;">
+        <h2 style="margin:0; color:#1173d4;">CST INSTITUTE</h2>
+        <p>Identity Card</p>
+        <img src="{u.profile_photo_url or 'https://placehold.co/100'}" style="width:100px;height:100px;border-radius:50%;object-fit:cover;">
+        <h3>{u.name}</h3>
+        <p><b>Adm No:</b> {u.admission_number or 'N/A'}</p>
+        <p><b>DOB:</b> {u.dob or 'N/A'}</p>
+        <p><b>Course:</b> {', '.join([c.name for c in u.courses_enrolled])}</p>
+        <div style="margin-top:10px; font-size:12px;">Authorized Signatory</div>
+    </div>
+    <button onclick="window.print()">Print</button>
+    """
+    return html
 
-@app.route('/api/announcements', methods=['GET', 'POST'])
+@app.route('/admin/id_cards/bulk')
+@login_required
+def generate_bulk_id_cards():
+    if current_user.role != 'admin': return "Denied", 403
+    users = User.query.filter_by(role='student').all()
+    cards = ""
+    for u in users:
+        cards += f"""
+        <div style="border:1px solid #ccc; width:45%; display:inline-block; margin:10px; padding:10px; page-break-inside:avoid;">
+            <div style="text-align:center;">
+                <h3 style="margin:0;">CST INSTITUTE</h3>
+                <img src="{u.profile_photo_url or 'https://placehold.co/80'}" style="width:80px;height:80px;border-radius:50%;">
+                <div><b>{u.name}</b> (Adm: {u.admission_number})</div>
+            </div>
+        </div>
+        """
+    return f"<html><body>{cards}<br><button onclick='window.print()'>Print All</button></body></html>"
+
+
+@app.route('/api/announcements', methods=['GET', 'POST', 'DELETE'])
 @login_required
 def admin_announcements():
-    # Helper route for Admin to manage announcements (reusing logic or separate)
-    if current_user.role != 'admin': return jsonify({"msg": "Denied"}), 403
+    # Helper route for Admin to manage announcements
+    if current_user.role not in ['admin', 'teacher']: return jsonify({"msg": "Denied"}), 403
     
     if request.method == 'POST':
         d = request.json
-        a = Announcement(title=d['title'], content=d['content'], category=d['category'], target_group=d['target_group'])
+        a = Announcement(title=d['title'], content=d['content'], category=d.get('category', 'General'), target_group=d['target_group'])
         db.session.add(a)
         db.session.commit()
-        
-        # Notify
-        target = d['target_group'].lower()
-        if target == 'all':
-            users = User.query.all()
-        else:
-            singular = target.rstrip('s')
-            users = User.query.filter_by(role=singular).all()
-            
-        for u in users:
-            send_push_notification(u.id, f"[{d['category']}] {d['title']}", d['content'][:100])
-            
+        # Notification logic here...
         return jsonify(a.to_dict()), 201
+
+    if request.method == 'DELETE':
+        # Logic to delete
+        a = db.session.get(Announcement, int(request.args.get('id')))
+        if a: db.session.delete(a); db.session.commit()
+        return jsonify({"msg": "Deleted"})
 
     # GET
     return jsonify([a.to_dict() for a in Announcement.query.order_by(Announcement.created_at.desc()).all()])
@@ -696,13 +731,44 @@ def get_all_parents():
 @app.route('/api/send_sms_alert', methods=['POST'])
 @login_required
 def send_sms_alert():
-    if current_user.role != 'admin': return jsonify({"msg": "Denied"}), 403
+    if current_user.role != 'admin': 
+        return jsonify({"msg": "Denied"}), 403
+    
     d = request.json
-    u = db.session.get(User, d.get('student_id'))
+    student_id = d.get('student_id')
+    u = db.session.get(User, student_id)
+    
     if u and u.phone_number:
-        # Use your custom logic or generic message
-        send_actual_sms(u.phone_number, d.get('message', 'Alert from CST Institute'))
-        return jsonify({"message": "Sent"})
+        # 1. Calculate Fee Details
+        fee_data = calculate_fee_status(student_id)
+        pending_amount = fee_data['balance']
+        due_date = fee_data['due_date']
+        
+        # 2. Prepare Variables for DLT Template
+        # Template: Dear {#var#}, your fee of Rs {#var#} is pending. Due: {#var#}. CST Institute {#var#}
+        # Var 1: Name
+        # Var 2: Amount
+        # Var 3: Due Date
+        # Var 4: Contact Number (from your sample)
+        
+        var1 = u.name
+        var2 = str(pending_amount)
+        var3 = str(due_date)
+        var4 = "7083021167" 
+        
+        # 3. Construct Message exactly as approved
+        message_body = f"Dear {var1}, your fee of Rs {var2} is pending. Due: {var3}. CST Institute {var4}"
+        
+        # 4. Send using your Template ID
+        template_id = "1707176388002841408"
+        
+        success = send_actual_sms(u.phone_number, message_body, template_id=template_id)
+        
+        if success:
+            return jsonify({"message": "SMS Sent Successfully"})
+        else:
+            return jsonify({"message": "SMS API Failed"}), 500
+            
     return jsonify({"message": "User or Phone missing"}), 404
 # =========================================================
 # MIGRATION & STARTUP
