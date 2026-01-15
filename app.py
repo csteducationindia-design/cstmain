@@ -1526,22 +1526,45 @@ def debug_fb():
     f = os.path.exists(os.path.join(basedir, 'firebase_credentials.json'))
     return jsonify({"Credential File Exists": f, "Firebase Init": bool(firebase_admin._apps)})
 
+# Consolidation of all migration and startup logic
 def check_and_upgrade_db():
     try:
         insp = inspect(db.engine)
+        
         with db.engine.connect() as conn:
+            # 1. Upgrade 'user' table columns
             user_cols = [c['name'] for c in insp.get_columns('user')]
-            if 'admission_number' not in user_cols: conn.execute(text("ALTER TABLE user ADD COLUMN admission_number VARCHAR(50)"))
-            if 'session_id' not in user_cols: conn.execute(text("ALTER TABLE user ADD COLUMN session_id INTEGER"))
-            if 'fcm_token' not in user_cols: conn.execute(text("ALTER TABLE user ADD COLUMN fcm_token VARCHAR(500)"))
+            if 'admission_number' not in user_cols:
+                conn.execute(text("ALTER TABLE user ADD COLUMN admission_number VARCHAR(50)"))
+            if 'session_id' not in user_cols:
+                conn.execute(text("ALTER TABLE user ADD COLUMN session_id INTEGER"))
+            if 'fcm_token' not in user_cols:
+                conn.execute(text("ALTER TABLE user ADD COLUMN fcm_token VARCHAR(500)"))
             
+            # 2. Upgrade 'announcement' table columns
             ann_cols = [c['name'] for c in insp.get_columns('announcement')]
-            if 'category' not in ann_cols: conn.execute(text("ALTER TABLE announcement ADD COLUMN category VARCHAR(50) DEFAULT 'General'"))
-            if 'teacher_id' not in ann_cols: conn.execute(text("ALTER TABLE announcement ADD COLUMN teacher_id INTEGER"))
+            if 'category' not in ann_cols:
+                conn.execute(text("ALTER TABLE announcement ADD COLUMN category VARCHAR(50) DEFAULT 'General'"))
+            if 'teacher_id' not in ann_cols:
+                conn.execute(text("ALTER TABLE announcement ADD COLUMN teacher_id INTEGER"))
+                
+            # 3. Upgrade 'fee_structure' table columns
+            fee_cols = [c['name'] for c in insp.get_columns('fee_structure')]
+            if 'course_id' not in fee_cols:
+                conn.execute(text("ALTER TABLE fee_structure ADD COLUMN course_id INTEGER REFERENCES course(id)"))
+            
             conn.commit()
         print("Database migration successful.")
     except Exception as e: 
         print(f"Migration Error: {e}")
+
+# The correct startup block
+if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()
+        check_and_upgrade_db()
+        init_firebase()
+    app.run(debug=True, host='0.0.0.0', port=5000)
 
 def initialize_database():
     with app.app_context():
