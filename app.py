@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify, render_template, redirect, url_for, send_from_directory, send_file
+from sqlalchemy import or_, inspect, text
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
@@ -296,13 +297,13 @@ def check_and_upgrade_db():
                 conn.execute(text("ALTER TABLE user ADD COLUMN session_id INTEGER REFERENCES academic_session(id)"))
                
 	    # Inside with db.engine.connect() as conn:
-        ann_cols = [c['name'] for c in insp.get_columns('announcement')]
-        if 'category' not in ann_cols:
-            conn.execute(text("ALTER TABLE announcement ADD COLUMN category VARCHAR(50) DEFAULT 'General'"))
-        if 'teacher_id' not in ann_cols:
-            conn.execute(text("ALTER TABLE announcement ADD COLUMN teacher_id INTEGER REFERENCES user(id)"))
-        conn.commit()
-            conn.commit()
+        	ann_cols = [c['name'] for c in insp.get_columns('announcement')]
+            if 'category' not in ann_cols:
+                conn.execute(text("ALTER TABLE announcement ADD COLUMN category VARCHAR(50) DEFAULT 'General'"))
+            if 'teacher_id' not in ann_cols:
+                conn.execute(text("ALTER TABLE announcement ADD COLUMN teacher_id INTEGER REFERENCES user(id)"))
+
+                conn.commit()
             
         # Check Fee Structure table
         fee_cols = [c['name'] for c in insp.get_columns('fee_structure')]
@@ -737,62 +738,60 @@ def health_check(): return "OK", 200
 def api_users():
     if current_user.role != 'admin': return jsonify({"msg": "Denied"}), 403
     
-    # --- GET USERS ---
     if request.method == 'GET':
         search = request.args.get('search', '').lower()
         session_id = request.args.get('session_id')
         q = User.query
-        
         if session_id and session_id != 'null' and session_id != '':
-             if hasattr(User, 'session_id'):
-                 q = q.filter_by(session_id=int(session_id))
-
+             q = q.filter_by(session_id=int(session_id))
         if search: 
             q = q.filter(or_(User.name.ilike(f'%{search}%'), User.email.ilike(f'%{search}%')))
-            
         return jsonify([u.to_dict() for u in q.all()])
 
-    # --- CREATE USER (POST) ---
-    if request.method == 'POST':
-        d = request.form
-        if User.query.filter_by(email=d['email']).first(): return jsonify({"msg": "Email exists"}), 400
+    # POST and PUT handling
+    d = request.form
+    method = request.method
+    role = d.get('role', 'student') # Ensure role is defined
+
+    if method == 'POST':
+        if User.query.filter_by(email=d['email']).first(): 
+            return jsonify({"msg": "Email exists"}), 400
         pw = bcrypt.generate_password_hash(d['password']).decode('utf-8')
-
-        photo_url = None
-        if 'profile_photo_file' in request.files:
-            f = request.files['profile_photo_file']
-            if allowed_file(f.filename, ALLOWED_IMAGE_EXTENSIONS):
-                fn = secure_filename(f.filename)
-                uid = f"{uuid.uuid4()}{os.path.splitext(fn)[1]}"
-                f.save(os.path.join(app.config['UPLOAD_FOLDER'], uid))
-                photo_url = f"/uploads/{uid}"
-
-        u = User(
-            name=d['name'], email=d['email'], password=pw, role=d['role'], 
-            phone_number=d.get('phone_number'),
-            parent_id=d.get('parent_id') if d.get('parent_id') else None,
-            profile_photo_url=photo_url, dob=d.get('dob'), gender=d.get('gender'),
-            father_name=d.get('father_name'), mother_name=d.get('mother_name'), 
-            address_line1=d.get('address_line1'), city=d.get('city'), 
-            state=d.get('state'), pincode=d.get('pincode')
-        )
-        if hasattr(User, 'session_id') and d.get('session_id'):
-            u.session_id = int(d.get('session_id'))
-
+        u = User(name=d['name'], email=d['email'], password=pw, role=role)
         db.session.add(u)
-        
-        if u.role == 'student':
-            c_ids = request.form.getlist('course_ids')
-            if not c_ids and d.get('course_ids'): c_ids = [d.get('course_ids')]
-            if c_ids:
-                valid_ids = [int(cid) for cid in c_ids if cid.isdigit()]
-                if valid_ids:
-                    courses = Course.query.filter(Course.id.in_(valid_ids)).all()
-                    u.courses_enrolled.extend(courses)
+    else: # PUT
+        u = db.session.get(User, int(d['id']))
+        if not u: return jsonify({"msg": "Not found"}), 404
+        if d.get('password'):
+            u.password = bcrypt.generate_password_hash(d['password']).decode('utf-8')
 
-        db.session.commit()
-        return jsonify(u.to_dict()), 201
+    # Update Common Fields
+    u.name = d.get('name', u.name)
+    u.email = d.get('email', u.email)
+    u.phone_number = d.get('phone_number', u.phone_number)
+    u.admission_number = d.get('admission_number', u.admission_number)
+    u.dob = d.get('dob', u.dob)
+    u.gender = d.get('gender', u.gender)
+    u.father_name = d.get('father_name', u.father_name)
+    u.mother_name = d.get('mother_name', u.mother_name)
+    u.address_line1 = d.get('address_line1', u.address_line1)
+    u.city = d.get('city', u.city)
+    u.state = d.get('state', u.state)
+    u.pincode = d.get('pincode', u.pincode)
 
+    if d.get('session_id'):
+        u.session_id = int(d.get('session_id'))
+    if d.get('parent_id'):
+        u.parent_id = int(d.get('parent_id'))
+
+    if role == 'student':
+        c_ids = request.form.getlist('course_ids')
+        if c_ids:
+            valid_ids = [int(cid) for cid in c_ids if str(cid).isdigit()]
+            u.courses_enrolled = Course.query.filter(Course.id.in_(valid_ids)).all()
+
+    db.session.commit()
+    return jsonify(u.to_dict()), (201 if method == 'POST' else 200)
     # --- UPDATE USER (PUT) ---
     if request.method == 'PUT':
         d = request.form
