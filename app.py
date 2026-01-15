@@ -639,6 +639,7 @@ def serve_receipt(id):
 @app.route('/uploads/<filename>')
 def serve_file(filename): return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
+
 # =========================================================
 # MIGRATION & STARTUP
 # =========================================================
@@ -662,9 +663,18 @@ def check_and_upgrade_db():
         print("Migration successful.")
     except Exception as e: print(f"Migration Error: {e}")
 
-if __name__ == '__main__':
+# --- ADD THIS FUNCTION BACK TO FIX IMPORT ERROR ---
+def initialize_database():
     with app.app_context():
         db.create_all()
         check_and_upgrade_db()
         init_firebase()
+
+# Ensure tables exist when running via Gunicorn
+with app.app_context():
+    db.create_all()
+    check_and_upgrade_db()
+
+if __name__ == '__main__':
+    initialize_database()
     app.run(debug=True, host='0.0.0.0', port=5000)
