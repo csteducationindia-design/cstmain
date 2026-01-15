@@ -646,7 +646,12 @@ def p_data(id):
 @login_required
 def fee_status():
     if current_user.role != 'admin': return jsonify({"msg": "Denied"}), 403
-    return jsonify([{"student_name": s.name, **calculate_fee_status(s.id)} for s in User.query.filter_by(role='student').all()])
+    # FIX: Explicitly include 'student_id': s.id so the frontend button works
+    return jsonify([{
+        "student_id": s.id, 
+        "student_name": s.name, 
+        **calculate_fee_status(s.id)
+    } for s in User.query.filter_by(role='student').all()])
 
 @app.route('/api/receipt/<int:id>')
 def serve_receipt(id):
@@ -731,45 +736,21 @@ def get_all_parents():
 @app.route('/api/send_sms_alert', methods=['POST'])
 @login_required
 def send_sms_alert():
-    if current_user.role != 'admin': 
-        return jsonify({"msg": "Denied"}), 403
+    if current_user.role != 'admin': return jsonify({"msg": "Denied"}), 403
     
     d = request.json
     student_id = d.get('student_id')
+    
+    if not student_id:
+        return jsonify({"message": "Error: Student ID not received from button."}), 400
+
     u = db.session.get(User, student_id)
     
-    if u and u.phone_number:
-        # 1. Calculate Fee Details
-        fee_data = calculate_fee_status(student_id)
-        pending_amount = fee_data['balance']
-        due_date = fee_data['due_date']
+    if not u:
+        return jsonify({"message": "Error: Student not found in database."}), 404
         
-        # 2. Prepare Variables for DLT Template
-        # Template: Dear {#var#}, your fee of Rs {#var#} is pending. Due: {#var#}. CST Institute {#var#}
-        # Var 1: Name
-        # Var 2: Amount
-        # Var 3: Due Date
-        # Var 4: Contact Number (from your sample)
-        
-        var1 = u.name
-        var2 = str(pending_amount)
-        var3 = str(due_date)
-        var4 = "7083021167" 
-        
-        # 3. Construct Message exactly as approved
-        message_body = f"Dear {var1}, your fee of Rs {var2} is pending. Due: {var3}. CST Institute {var4}"
-        
-        # 4. Send using your Template ID
-        template_id = "1707176388002841408"
-        
-        success = send_actual_sms(u.phone_number, message_body, template_id=template_id)
-        
-        if success:
-            return jsonify({"message": "SMS Sent Successfully"})
-        else:
-            return jsonify({"message": "SMS API Failed"}), 500
-            
-    return jsonify({"message": "User or Phone missing"}), 404
+    if not u.phone_number:
+        return jsonify({"message": f"Error: No phone number saved for {u.name}."}), 404
 # =========================================================
 # MIGRATION & STARTUP
 # =========================================================
