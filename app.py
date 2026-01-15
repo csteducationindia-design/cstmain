@@ -307,31 +307,45 @@ class AssignmentSubmission(db.Model):
 # HELPERS
 # =========================================================
 
+# --- HELPER FUNCTION FOR FEES (Must be in app.py) ---
 def calculate_fee_status(student_id):
-    student = db.session.get(User, student_id)
-    if not student: return {"total_due": 0, "total_paid": 0, "balance": 0, "due_date": "N/A", "pending_days": 0}
+    try:
+        student = db.session.get(User, student_id)
+        if not student: 
+            return {"total_due": 0, "total_paid": 0, "balance": 0, "due_date": "N/A", "pending_days": 0}
 
-    payments = Payment.query.filter_by(student_id=student_id).all()
-    total_paid = sum(p.amount_paid for p in payments)
-    total_due = 0.0
-    due_dates = []
+        payments = Payment.query.filter_by(student_id=student_id).all()
+        total_paid = sum(p.amount_paid for p in payments)
+        total_due = 0.0
+        due_dates = []
 
-    if student.courses_enrolled:
-        for course in student.courses_enrolled:
-            for fee_struct in FeeStructure.query.filter_by(course_id=course.id).all():
-                total_due += fee_struct.total_amount
-                if fee_struct.due_date: due_dates.append(fee_struct.due_date)
-    
-    if student.session_id:
-        for gf in FeeStructure.query.filter(FeeStructure.course_id == None, FeeStructure.academic_session_id == student.session_id).all():
-            total_due += gf.total_amount
-            if gf.due_date: due_dates.append(gf.due_date)
+        # Calculate Course Fees
+        if student.courses_enrolled:
+            for course in student.courses_enrolled:
+                for fee_struct in FeeStructure.query.filter_by(course_id=course.id).all():
+                    total_due += fee_struct.total_amount
+                    if fee_struct.due_date: due_dates.append(fee_struct.due_date)
+        
+        # Calculate Session Fees
+        if student.session_id:
+            for gf in FeeStructure.query.filter(FeeStructure.course_id == None, FeeStructure.academic_session_id == student.session_id).all():
+                total_due += gf.total_amount
+                if gf.due_date: due_dates.append(gf.due_date)
 
-    final_due_date = min(due_dates) if due_dates else date.today()
-    balance = total_due - total_paid
-    pending_days = (date.today() - final_due_date).days if balance > 0 and date.today() > final_due_date else 0
+        final_due_date = min(due_dates) if due_dates else date.today()
+        balance = total_due - total_paid
+        pending_days = (date.today() - final_due_date).days if balance > 0 and date.today() > final_due_date else 0
 
-    return {"total_due": total_due, "total_paid": total_paid, "balance": balance, "due_date": final_due_date.strftime('%Y-%m-%d') if due_dates else "N/A", "pending_days": pending_days}
+        return {
+            "total_due": total_due, 
+            "total_paid": total_paid, 
+            "balance": balance, 
+            "due_date": final_due_date.strftime('%d-%b-%Y'), # Formats as 25-Nov-2025
+            "pending_days": pending_days
+        }
+    except Exception as e:
+        print(f"Fee Calculation Error: {e}")
+        return {"balance": 0, "due_date": "N/A"}
 
 def send_fee_alert_notifications(student_id):
     student = db.session.get(User, student_id)
@@ -736,21 +750,52 @@ def get_all_parents():
 @app.route('/api/send_sms_alert', methods=['POST'])
 @login_required
 def send_sms_alert():
-    if current_user.role != 'admin': return jsonify({"msg": "Denied"}), 403
+    if current_user.role != 'admin': 
+        return jsonify({"msg": "Denied"}), 403
     
-    d = request.json
-    student_id = d.get('student_id')
-    
-    if not student_id:
-        return jsonify({"message": "Error: Student ID not received from button."}), 400
-
-    u = db.session.get(User, student_id)
-    
-    if not u:
-        return jsonify({"message": "Error: Student not found in database."}), 404
+    try:
+        d = request.json
+        student_id = d.get('student_id')
         
-    if not u.phone_number:
-        return jsonify({"message": f"Error: No phone number saved for {u.name}."}), 404
+        if not student_id:
+            return jsonify({"message": "Error: Student ID Missing"}), 400
+
+        u = db.session.get(User, student_id)
+        if not u:
+            return jsonify({"message": "Error: Student Not Found"}), 404
+            
+        if not u.phone_number:
+            return jsonify({"message": f"Error: No phone for {u.name}"}), 404
+        
+        # 1. Calculate Fees
+        fee_data = calculate_fee_status(student_id)
+        pending_amount = fee_data.get('balance', 0)
+        due_date = fee_data.get('due_date', 'N/A')
+        
+        # 2. Prepare Template Variables
+        var1 = u.name
+        var2 = str(int(pending_amount)) if pending_amount else "0"
+        var3 = str(due_date)
+        var4 = "7083021167" 
+        
+        # 3. Construct Message
+        message_body = f"Dear {var1}, your fee of Rs {var2} is pending. Due: {var3}. CST Institute {var4}"
+        
+        # 4. Send
+        template_id = "1707176388002841408"
+        print(f"Sending SMS to {u.phone_number}: {message_body}") # Log to console
+        
+        success = send_actual_sms(u.phone_number, message_body, template_id=template_id)
+        
+        if success:
+            return jsonify({"message": "SMS Sent Successfully"})
+        else:
+            return jsonify({"message": "SMS API returned failure"}), 500
+
+    except Exception as e:
+        # This catches the crash and shows it in your browser console!
+        print(f"SMS CRASH: {str(e)}")
+        return jsonify({"message": f"Server Error: {str(e)}"}), 500
 # =========================================================
 # MIGRATION & STARTUP
 # =========================================================
