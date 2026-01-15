@@ -278,32 +278,7 @@ class User(db.Model, UserMixin):
         }
 
 # 2. Update Migration Logic (At the bottom of app.py)
-def check_and_upgrade_db():
-    try:
-        insp = inspect(db.engine)
-        user_cols = [c['name'] for c in insp.get_columns('user')]
-        
-        with db.engine.connect() as conn:
-            # Check and add fcm_token
-            if 'fcm_token' not in user_cols:
-                conn.execute(text("ALTER TABLE user ADD COLUMN fcm_token VARCHAR(500)"))
-            
-            # Check and add admission_number
-            if 'admission_number' not in user_cols:
-                conn.execute(text("ALTER TABLE user ADD COLUMN admission_number VARCHAR(50)"))
-            
-            # Check and add session_id
-            if 'session_id' not in user_cols:
-                conn.execute(text("ALTER TABLE user ADD COLUMN session_id INTEGER REFERENCES academic_session(id)"))
-               
-	    # Inside with db.engine.connect() as conn:
-        	ann_cols = [c['name'] for c in insp.get_columns('announcement')]
-            if 'category' not in ann_cols:
-                conn.execute(text("ALTER TABLE announcement ADD COLUMN category VARCHAR(50) DEFAULT 'General'"))
-            if 'teacher_id' not in ann_cols:
-                conn.execute(text("ALTER TABLE announcement ADD COLUMN teacher_id INTEGER REFERENCES user(id)"))
 
-                conn.commit()
             
         # Check Fee Structure table
         fee_cols = [c['name'] for c in insp.get_columns('fee_structure')]
@@ -1554,22 +1529,30 @@ def debug_fb():
 def check_and_upgrade_db():
     try:
         insp = inspect(db.engine)
-        user_cols = [c['name'] for c in insp.get_columns('user')]
         
         with db.engine.connect() as conn:
-            # Add missing columns to 'user' table
+            # 1. Upgrade 'user' table columns
+            user_cols = [c['name'] for c in insp.get_columns('user')]
+            if 'admission_number' not in user_cols:
+                conn.execute(text("ALTER TABLE user ADD COLUMN admission_number VARCHAR(50)"))
+            if 'session_id' not in user_cols:
+                conn.execute(text("ALTER TABLE user ADD COLUMN session_id INTEGER"))
             if 'fcm_token' not in user_cols:
                 conn.execute(text("ALTER TABLE user ADD COLUMN fcm_token VARCHAR(500)"))
-            if 'session_id' not in user_cols:
-                conn.execute(text("ALTER TABLE user ADD COLUMN session_id INTEGER REFERENCES academic_session(id)"))
-            conn.commit()
             
-        # Check Fee Structure table for missing course_id
-        fee_cols = [c['name'] for c in insp.get_columns('fee_structure')]
-        if 'course_id' not in fee_cols:
-            with db.engine.connect() as conn:
+            # 2. Upgrade 'announcement' table columns
+            ann_cols = [c['name'] for c in insp.get_columns('announcement')]
+            if 'category' not in ann_cols:
+                conn.execute(text("ALTER TABLE announcement ADD COLUMN category VARCHAR(50) DEFAULT 'General'"))
+            if 'teacher_id' not in ann_cols:
+                conn.execute(text("ALTER TABLE announcement ADD COLUMN teacher_id INTEGER"))
+                
+            # 3. Upgrade 'fee_structure' table columns
+            fee_cols = [c['name'] for c in insp.get_columns('fee_structure')]
+            if 'course_id' not in fee_cols:
                 conn.execute(text("ALTER TABLE fee_structure ADD COLUMN course_id INTEGER REFERENCES course(id)"))
-                conn.commit()
+            
+            conn.commit()
         print("Database migration successful.")
     except Exception as e: 
         print(f"Migration Error: {e}")
