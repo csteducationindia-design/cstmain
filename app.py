@@ -639,7 +639,54 @@ def serve_receipt(id):
 @app.route('/uploads/<filename>')
 def serve_file(filename): return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
+# --- MISSING ADMIN ROUTES FIX ---
 
+@app.route('/api/announcements', methods=['GET', 'POST'])
+@login_required
+def admin_announcements():
+    # Helper route for Admin to manage announcements (reusing logic or separate)
+    if current_user.role != 'admin': return jsonify({"msg": "Denied"}), 403
+    
+    if request.method == 'POST':
+        d = request.json
+        a = Announcement(title=d['title'], content=d['content'], category=d['category'], target_group=d['target_group'])
+        db.session.add(a)
+        db.session.commit()
+        
+        # Notify
+        target = d['target_group'].lower()
+        if target == 'all':
+            users = User.query.all()
+        else:
+            singular = target.rstrip('s')
+            users = User.query.filter_by(role=singular).all()
+            
+        for u in users:
+            send_push_notification(u.id, f"[{d['category']}] {d['title']}", d['content'][:100])
+            
+        return jsonify(a.to_dict()), 201
+
+    # GET
+    return jsonify([a.to_dict() for a in Announcement.query.order_by(Announcement.created_at.desc()).all()])
+
+@app.route('/api/parents', methods=['GET'])
+@login_required
+def get_all_parents():
+    if current_user.role != 'admin': return jsonify({"msg": "Denied"}), 403
+    parents = User.query.filter_by(role='parent').all()
+    return jsonify([p.to_dict() for p in parents])
+
+@app.route('/api/send_sms_alert', methods=['POST'])
+@login_required
+def send_sms_alert():
+    if current_user.role != 'admin': return jsonify({"msg": "Denied"}), 403
+    d = request.json
+    u = db.session.get(User, d.get('student_id'))
+    if u and u.phone_number:
+        # Use your custom logic or generic message
+        send_actual_sms(u.phone_number, d.get('message', 'Alert from CST Institute'))
+        return jsonify({"message": "Sent"})
+    return jsonify({"message": "User or Phone missing"}), 404
 # =========================================================
 # MIGRATION & STARTUP
 # =========================================================
