@@ -1558,20 +1558,6 @@ def check_and_upgrade_db():
     except Exception as e: 
         print(f"Migration Error: {e}")
 
-# The correct startup block
-if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
-        check_and_upgrade_db()
-        init_firebase()
-    app.run(debug=True, host='0.0.0.0', port=5000)
-
-def initialize_database():
-    with app.app_context():
-        db.create_all()
-        check_and_upgrade_db()
-        init_firebase()
-
 # Create DB tables automatically when app loads (Required for Gunicorn/Production)
 with app.app_context():
     db.create_all()
