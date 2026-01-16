@@ -409,7 +409,23 @@
                 </form>
             </div>
         </div>
-
+<div id="content-bulk" class="content-section hidden">
+        <h2 class="text-3xl font-bold mb-6">Bulk Data Upload</h2>
+        <div class="bg-white dark:bg-slate-900 p-8 rounded-xl shadow-sm max-w-2xl border border-slate-100">
+            <p class="mb-4 text-gray-600 dark:text-gray-300">
+                Upload a CSV file to add students. Headers required: 
+                <b class="font-mono text-red-500">name, email, password, role, phone_number, admission_number</b>
+            </p>
+            <form id="bulk-form" class="space-y-4">
+                <div class="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center bg-slate-50 cursor-pointer hover:bg-white transition-colors">
+                    <input type="file" name="file" class="w-full cursor-pointer" accept=".csv" required>
+                </div>
+                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg w-full flex justify-center items-center gap-2 transition-colors">
+                    <span class="material-symbols-outlined">upload</span> Upload CSV File
+                </button>
+            </form>
+        </div>
+    </div>
     </main>
 </div>
 
