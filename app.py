@@ -663,38 +663,56 @@ def serve_receipt(id):
 # TEACHER SPECIFIC ROUTES
 # =========================================================
 
+# 2. GET STUDENTS (With Debugging & robust filtering)
 @app.route('/api/teacher/students', methods=['GET'])
 @login_required
 def teacher_students():
     session_id = request.args.get('session_id')
     course_id = request.args.get('course_id')
     
+    print(f"DEBUG: Fetching students for Teacher {current_user.name} (ID: {current_user.id})")
+    print(f"DEBUG: Filters -> Session: {session_id}, Course: {course_id}")
+
     # 1. Get courses taught by this teacher
     query = Course.query.filter_by(teacher_id=current_user.id)
-    if course_id: 
+    if course_id and str(course_id).isdigit():
         query = query.filter_by(id=int(course_id))
     courses = query.all()
     
+    if not courses:
+        print("DEBUG: No courses found for this teacher.")
+        return jsonify([])
+
     students_list = []
     seen_ids = set()
     
     for c in courses:
-        # 2. Filter students in those courses
-        # If session_id is provided, only show students from that session
-        valid_students = [s for s in c.students if (not session_id or str(s.session_id) == str(session_id))]
+        print(f"DEBUG: Checking Course '{c.name}' - Total Enrolled: {len(c.students)}")
         
-        for s in valid_students:
+        for s in c.students:
+            # DEBUG: Print student details to console
+            # print(f" - Student: {s.name}, SessionID: {s.session_id}")
+
+            # 2. Filter Logic
+            # If session_id is selected, ONLY show students in that session.
+            # If s.session_id is None, they will disappear here (Which is technically correct behavior).
+            # To fix missing students, you must assign them a session in Admin Panel.
+            if session_id and str(session_id).isdigit():
+                if str(s.session_id) != str(session_id):
+                    continue 
+
             if s.id not in seen_ids:
                 students_list.append({
                     "id": s.id,
-                    "name": s.name,  # REAL NAME FROM DB
-                    "admission_number": s.admission_number,
-                    "profile_photo_url": s.profile_photo_url, # PHOTO URL
-                    "session_name": s.to_dict().get('session_name', 'N/A'),
+                    "name": s.name,
+                    "admission_number": s.admission_number or "N/A",
+                    "profile_photo_url": s.profile_photo_url,
+                    "session_name": s.to_dict().get('session_name', 'Unassigned'),
                     "course_name": c.name
                 })
                 seen_ids.add(s.id)
                 
+    print(f"DEBUG: Returning {len(students_list)} students.")
     return jsonify(students_list)
 
 # 2. ANNOUNCEMENTS (GET & POST)
