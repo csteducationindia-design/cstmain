@@ -263,6 +263,11 @@ class SharedNote(db.Model):
 # =========================================================
 # HELPER FUNCTIONS
 # =========================================================
+def send_whatsapp_message(phone, msg):
+    # This acts as a placeholder. In production, paste your WhatsApp API code here.
+    # For now, it logs to the console so you can verify it works.
+    logger.info(f"WHATSAPP SENT TO {phone}: {msg}")
+    return True
 
 def calculate_fee_status(student_id):
     try:
@@ -662,23 +667,34 @@ def serve_receipt(id):
 @app.route('/api/teacher/students', methods=['GET'])
 @login_required
 def teacher_students():
-    if current_user.role != 'teacher': return jsonify({"msg": "Denied"}), 403
+    session_id = request.args.get('session_id')
+    course_id = request.args.get('course_id') # New: Filter by Course
     
-    # Find courses taught by this teacher
-    courses = Course.query.filter_by(teacher_id=current_user.id).all()
-    student_list = []
-    seen_ids = set()
+    # 1. Get courses taught by this teacher
+    query = Course.query.filter_by(teacher_id=current_user.id)
+    if course_id: 
+        query = query.filter_by(id=int(course_id))
+    courses = query.all()
+    
+    students = []
+    seen = set()
     
     for c in courses:
-        for s in c.students:
-            if s.id not in seen_ids:
-                student_list.append({
-                    "id": s.id, "name": s.name, "email": s.email,
-                    "admission_number": s.admission_number, "course_name": c.name,
-                    "phone_number": s.phone_number
+        # 2. Filter students in those courses
+        valid_students = [s for s in c.students if (not session_id or str(s.session_id) == str(session_id))]
+        
+        for s in valid_students:
+            if s.id not in seen:
+                students.append({
+                    "id": s.id,
+                    "name": s.name,
+                    "admission_number": s.admission_number,
+                    "profile_photo_url": s.profile_photo_url, # New: Send Photo URL
+                    "session_name": s.to_dict().get('session_name', 'N/A'),
+                    "course_name": c.name
                 })
-                seen_ids.add(s.id)
-    return jsonify(student_list)
+                seen.add(s.id)
+    return jsonify(students)
 
 # 2. ANNOUNCEMENTS (GET & POST)
 @app.route('/api/teacher/announcements', methods=['GET', 'POST'])
@@ -717,6 +733,7 @@ def teacher_announcements():
         (Announcement.teacher_id == current_user.id) | (Announcement.target_group == 'teachers')
     ).order_by(Announcement.created_at.desc()).all()
     return jsonify([a.to_dict() for a in anns])
+
 
 # 3. NOTES (Sharing Material)
 @app.route('/api/teacher/notes', methods=['GET', 'POST'])
@@ -759,39 +776,23 @@ def teacher_notes():
 @app.route('/api/teacher/daily_topic', methods=['POST'])
 @login_required
 def daily_topic():
-    if current_user.role != 'teacher': return jsonify({"msg": "Denied"}), 403
     d = request.json
+    c = db.session.get(Course, d['course_id'])
     
-    course_id = d.get('course_id')
-    topic = d.get('topic')
-    
-    if not course_id or not topic: return jsonify({"msg": "Missing Data"}), 400
-    
-    course = db.session.get(Course, course_id)
-    if not course: return jsonify({"msg": "Course not found"}), 404
-    
-    # 1. Log it as a "Syllabus" Announcement
-    a = Announcement(
-        title=f"Daily Topic: {course.name}",
-        content=f"Today's Topic: {topic}",
-        category="Syllabus",
-        target_group="students",
-        teacher_id=current_user.id
-    )
-    db.session.add(a)
+    # Save Record
+    db.session.add(Announcement(title=f"Topic: {c.name}", content=d['topic'], category="Syllabus", target_group="students", teacher_id=current_user.id))
     db.session.commit()
     
-    # 2. Send Notifications
-    for s in course.students:
-        send_push_notification(s.id, f"Daily Topic: {course.name}", f"Today we covered: {topic}")
-        # SMS to Parent
+    # Notify Parents
+    for s in c.students:
+        send_push_notification(s.id, f"Daily Topic: {c.name}", d['topic'])
+        
         if s.parent_id:
             parent = db.session.get(User, s.parent_id)
             if parent and parent.phone_number:
-                msg = f"CST Update: Today in {course.name}, your child learned: {topic}."
-                send_actual_sms(parent.phone_number, msg, template_id="YOUR_DLT_TEMPLATE_ID")
+                send_whatsapp_message(parent.phone_number, f"Today in {c.name}, we taught: {d['topic']}")
                 
-    return jsonify({"msg": "Syllabus updated and notifications sent"}), 200
+    return jsonify({"msg": "Syllabus Sent to Parents"})
 
 # 5. ATTENDANCE REPORT
 @app.route('/api/teacher/reports/attendance', methods=['GET'])
@@ -813,6 +814,43 @@ def teacher_att_report():
 def t_courses(): 
     if current_user.role != 'teacher': return jsonify({"msg": "Denied"}), 403
     return jsonify([c.to_dict() for c in Course.query.filter_by(teacher_id=current_user.id).all()])
+
+@app.route('/api/teacher/attendance', methods=['POST'])
+@login_required
+def save_attendance():
+    d = request.json
+    dt = datetime.strptime(d['date'], '%Y-%m-%d')
+    
+    for r in d['attendance_data']:
+        sid = r['student_id']
+        stat = r['status']
+        
+        # Save to DB
+        exist = Attendance.query.filter(Attendance.student_id==sid, db.func.date(Attendance.check_in_time)==dt.date()).first()
+        if exist: 
+            exist.status = stat
+        else: 
+            db.session.add(Attendance(student_id=sid, check_in_time=dt, status=stat))
+        
+        # NOTIFICATION LOGIC (New)
+        if stat == 'Absent':
+            # 1. Notify Student App
+            send_push_notification(sid, "Attendance Alert", f"You were marked ABSENT on {d['date']}")
+            
+            # 2. Notify Parent (App + WhatsApp)
+            student = db.session.get(User, sid)
+            if student.parent_id:
+                # App Push
+                send_push_notification(student.parent_id, "Absent Alert", f"Your child {student.name} is marked ABSENT today.")
+                
+                # WhatsApp/SMS
+                parent = db.session.get(User, student.parent_id)
+                if parent and parent.phone_number:
+                    msg = f"Alert: Your child {student.name} is marked ABSENT on {d['date']}. Please contact CST Institute."
+                    send_whatsapp_message(parent.phone_number, msg)
+            
+    db.session.commit()
+    return jsonify({"msg": "Attendance Saved & Parents Notified"})
 
 # --- STUDENT/PARENT ROUTES ---
 @app.route('/api/student/fees', methods=['GET'])

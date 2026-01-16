@@ -260,33 +260,42 @@
                 </div>
             </div>
 
-            <div id="content-attendance" class="content-section hidden animate-fade-in">
-                <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-md p-8 border border-slate-100 dark:border-slate-700 mb-8 relative overflow-hidden">
-                    <div class="absolute top-0 left-0 w-1 h-full bg-primary"></div>
-                    <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-6">Step 1: Select Class & Date</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        <div>
-                            <label for="attendance-course-select" class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Select Course</label>
-                            <select id="attendance-course-select" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary p-2.5 shadow-sm transition">
-                                <option value="">-- Choose Course --</option>
-                            </select>
-                            <p class="text-xs text-slate-500 mt-2 flex items-center gap-1"><span class="material-symbols-outlined text-sm">info</span> Only students in this course will appear.</p>
-                        </div>
-                        <div>
-                            <label for="attendance-date" class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Select Date</label>
-                            <input type="date" id="attendance-date" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary p-2.5 shadow-sm transition">
-                        </div>
-                        <div class="flex items-end">
-                            <div class="text-sm text-blue-700 bg-blue-50 dark:bg-blue-900/30 p-4 rounded-xl w-full border border-blue-100 dark:border-blue-800 flex gap-3 items-start">
-                                <span class="material-symbols-outlined text-blue-600">lightbulb</span>
-                                <div>
-                                    <span class="font-bold block mb-1">Tip:</span> 
-                                    Ensure you select the correct course to avoid mixing students from different batches.
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <div id="content-attendance" class="content-section hidden">
+    <div class="bg-white p-6 rounded shadow">
+        <h2 class="text-lg font-bold mb-4">Mark Attendance</h2>
+        
+        <div class="flex flex-wrap gap-4 mb-6">
+            <div class="flex-1 min-w-[200px]">
+                <label class="block text-sm font-bold mb-1">1. Select Batch (Session)</label>
+                <select id="att-session" class="w-full border p-2 rounded" onchange="loadStudents()"></select>
+            </div>
+            <div class="flex-1 min-w-[200px]">
+                <label class="block text-sm font-bold mb-1">2. Select Course (Subject)</label>
+                <select id="att-course" class="w-full border p-2 rounded" onchange="loadStudents()"></select>
+            </div>
+            <div>
+                <label class="block text-sm font-bold mb-1">3. Date</label>
+                <input type="date" id="att-date" class="border p-2 rounded">
+            </div>
+        </div>
+
+        <form id="att-form">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="p-3">Photo</th>
+                            <th class="p-3">Student Details</th>
+                            <th class="p-3">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="att-body"></tbody>
+                </table>
+            </div>
+            <button class="bg-green-600 text-white px-6 py-2 rounded mt-6 w-full font-bold hover:bg-green-700">Submit Attendance</button>
+        </form>
+    </div>
+</div>
 
                 <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm overflow-hidden border border-slate-100 dark:border-slate-700 mb-6">
                     <div class="p-4 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center flex-wrap gap-4">
@@ -1143,7 +1152,63 @@ window.deleteAnnouncement = async (id) => {
 
 
         // --- REPORTS LOGIC (Updated with Photo & Messaging) ---
-        async function fetchTeacherAttendanceReport() {
+async function loadStudents() {
+    const sid = document.getElementById('att-session').value;
+    const cid = document.getElementById('att-course').value;
+    
+    // Only load if both Session AND Course are selected
+    if(!sid || !cid) return; 
+
+    const res = await fetch(`${API}/teacher/students?session_id=${sid}&course_id=${cid}`);
+    const students = await res.json();
+    
+    const tbody = document.getElementById('att-body');
+    
+    if (students.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-red-500">No students found for this Batch & Course.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = students.map(s => `
+        <tr class="border-b hover:bg-gray-50">
+            <td class="p-3">
+                <img src="${s.profile_photo_url || 'https://placehold.co/50'}" class="w-12 h-12 rounded-full border object-cover">
+            </td>
+            <td class="p-3">
+                <div class="font-bold text-gray-800">${s.name}</div>
+                <div class="text-xs text-gray-500">Adm: ${s.admission_number || '-'}</div>
+            </td>
+            <td class="p-3">
+                <div class="flex gap-4">
+                    <label class="flex items-center gap-1 cursor-pointer">
+                        <input type="radio" name="att-${s.id}" value="Present" checked class="w-4 h-4 text-green-600"> 
+                        <span class="text-green-700 font-medium">Present</span>
+                    </label>
+                    <label class="flex items-center gap-1 cursor-pointer">
+                        <input type="radio" name="att-${s.id}" value="Absent" class="w-4 h-4 text-red-600"> 
+                        <span class="text-red-700 font-medium">Absent</span>
+                    </label>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+        async function init() {
+    document.getElementById('att-date').valueAsDate = new Date();
+    
+    // Load Sessions & Courses
+    const [sRes, cRes] = await Promise.all([fetch(API+'/teacher/sessions'), fetch(API+'/teacher/courses')]);
+    sessions = await sRes.json(); 
+    courses = await cRes.json();
+    
+    const fill = (id, list) => document.getElementById(id).innerHTML = '<option value="">Select...</option>' + list.map(i=>`<option value="${i.id}">${i.name}</option>`).join('');
+    
+    fill('att-session', sessions);
+    fill('att-course', courses); // Fills the new Course Dropdown
+    fill('syl-course', courses);
+}
+
+	async function fetchTeacherAttendanceReport() {
             const tbody = document.getElementById('teacher-reports-body');
             try {
                 const res = await fetch(`${API_BASE_URL}/teacher/reports/attendance`, { credentials: 'include' });
