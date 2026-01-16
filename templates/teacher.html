@@ -530,39 +530,36 @@
                 </div>
             </div>
 
-            <div id="content-reports" class="content-section hidden animate-fade-in">
-                <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm p-6 mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 border border-slate-100 dark:border-slate-700">
+            <div id="content-reports" class="content-section hidden">
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <h2 class="text-xl font-bold mb-4">Student Attendance Report</h2>
+                
+                <div class="flex flex-wrap gap-4 mb-6">
+                    <div class="flex-1 min-w-[200px]">
+                        <label class="block text-sm font-bold mb-1">Batch</label>
+                        <select id="report-session" class="w-full border p-2 rounded-lg" onchange="loadReport()"></select>
+                    </div>
+                    <div class="flex-1 min-w-[200px]">
+                        <label class="block text-sm font-bold mb-1">Course</label>
+                        <select id="report-course" class="w-full border p-2 rounded-lg" onchange="loadReport()"></select>
+                    </div>
                     <div>
-                        <h2 class="text-xl font-bold text-slate-900 dark:text-white">Student Reports</h2>
-                        <p class="text-sm text-slate-500 mt-1">View comprehensive student data by course.</p>
-                    </div>
-                    <div class="w-full md:w-72">
-                        <label for="report-course-select" class="block text-xs font-bold uppercase text-slate-400 mb-1">Filter by Course</label>
-                        <select id="report-course-select" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm p-2.5 focus:ring-primary">
-                            <option value="">Show All Students</option>
-                        </select>
+                        <label class="block text-sm font-bold mb-1">Date</label>
+                        <input type="date" id="report-date" class="border p-2 rounded-lg" onchange="loadReport()">
                     </div>
                 </div>
 
-                <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm overflow-hidden border border-slate-100 dark:border-slate-700">
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                            <thead class="bg-slate-50 dark:bg-slate-800">
-                                <tr>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Photo</th>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Name</th>
-                                    <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Attendance</th>
-                                    <th class="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Quick Remarks & Message</th>
-                                </tr>
-                            </thead>
-                            <tbody id="teacher-reports-body" class="divide-y divide-slate-200 dark:divide-slate-700 bg-white dark:bg-surface-dark">
-                                <tr><td colspan="4" class="px-6 py-12 text-center text-slate-500">Loading reports data...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                <table class="w-full text-left">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="p-3">Profile</th>
+                            <th class="p-3">Student Details</th>
+                            <th class="p-3">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="report-body"></tbody>
+                </table>
             </div>
-
         </div>
     </main>
 </div>
@@ -1152,6 +1149,7 @@ window.deleteAnnouncement = async (id) => {
 
 
         // --- REPORTS LOGIC (Updated with Photo & Messaging) ---
+
 async function loadStudents() {
         const sid = document.getElementById('att-session').value;
         const cid = document.getElementById('att-course').value;
@@ -1183,9 +1181,10 @@ async function loadStudents() {
                 <td class="p-3">
                     <div class="flex gap-4">
                         <label class="flex items-center gap-1 cursor-pointer">
-                            <input type="radio" name="att-${s.id}" value="Present" checked class="w-4 h-4 text-green-600"> 
+                            <input type="radio" name="att-${s.id}" value="Present" class="w-4 h-4 text-green-600"> 
                             <span class="text-green-700 font-medium">Present</span>
                         </label>
+                        
                         <label class="flex items-center gap-1 cursor-pointer">
                             <input type="radio" name="att-${s.id}" value="Absent" class="w-4 h-4 text-red-600"> 
                             <span class="text-red-700 font-medium">Absent</span>
@@ -1195,20 +1194,37 @@ async function loadStudents() {
             </tr>
         `).join('');
     }
+
         async function init() {
-    document.getElementById('att-date').valueAsDate = new Date();
-    
-    // Load Sessions & Courses
-    const [sRes, cRes] = await Promise.all([fetch(API+'/teacher/sessions'), fetch(API+'/teacher/courses')]);
-    sessions = await sRes.json(); 
-    courses = await cRes.json();
-    
-    const fill = (id, list) => document.getElementById(id).innerHTML = '<option value="">Select...</option>' + list.map(i=>`<option value="${i.id}">${i.name}</option>`).join('');
-    
-    fill('att-session', sessions);
-    fill('att-course', courses); // Fills the new Course Dropdown
-    fill('syl-course', courses);
-}
+        document.getElementById('att-date').valueAsDate = new Date();
+        document.getElementById('report-date').valueAsDate = new Date();
+        
+        // Load Sessions & Courses
+        const [sRes, cRes] = await Promise.all([
+            fetch(API + '/teacher/sessions'),
+            fetch(API + '/teacher/courses')
+        ]);
+        sessions = await sRes.json();
+        courses = await cRes.json();
+
+        // Helper to fill dropdowns
+        const fill = (id, list) => {
+            const el = document.getElementById(id);
+            if(el) el.innerHTML = '<option value="">Select...</option>' + list.map(i => `<option value="${i.id}">${i.name}</option>`).join('');
+        };
+        
+        fill('att-session', sessions);
+        fill('att-course', courses);
+        
+        // NEW: Fill Report Dropdowns
+        fill('report-session', sessions);
+        fill('report-course', courses);
+        
+        fill('syl-course', courses);
+        fill('notes-course', courses);
+        
+        loadNotices();
+    }
 
 	async function fetchTeacherAttendanceReport() {
             const tbody = document.getElementById('teacher-reports-body');
@@ -1220,6 +1236,43 @@ async function loadStudents() {
                 tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-red-500">Error loading report.</td></tr>';
             }
         }
+async function loadReport() {
+        const sid = document.getElementById('report-session').value;
+        const cid = document.getElementById('report-course').value; // Get Course
+        const date = document.getElementById('report-date').value;
+        
+        // Require filters
+        if(!sid || !cid) return;
+
+        const res = await fetch(`${API}/teacher/reports/attendance?session_id=${sid}&course_id=${cid}&date=${date}`);
+        const data = await res.json();
+        
+        const tbody = document.getElementById('report-body');
+        
+        if(data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" class="p-4 text-center">No students found.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = data.map(r => `
+            <tr class="border-b">
+                <td class="p-3">
+                    <img src="${r.photo_url || 'https://placehold.co/50'}" class="w-10 h-10 rounded-full object-cover border">
+                </td>
+                <td class="p-3">
+                    <div class="font-bold text-gray-800">${r.student_name}</div>
+                    <div class="text-xs text-gray-500">Adm: ${r.admission_number || '-'}</div>
+                </td>
+                <td class="p-3">
+                    <span class="px-3 py-1 rounded-full text-xs font-bold 
+                        ${r.status==='Present' ? 'bg-green-100 text-green-800' : 
+                          r.status==='Absent' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-600'}">
+                        ${r.status}
+                    </span>
+                </td>
+            </tr>
+        `).join('');
+    }
 
         function renderReportTable(data) {
             const tbody = document.getElementById('teacher-reports-body');
