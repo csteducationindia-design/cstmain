@@ -663,12 +663,11 @@ def serve_receipt(id):
 # TEACHER SPECIFIC ROUTES
 # =========================================================
 
-# 1. GET ALL STUDENTS FOR TEACHER
 @app.route('/api/teacher/students', methods=['GET'])
 @login_required
 def teacher_students():
     session_id = request.args.get('session_id')
-    course_id = request.args.get('course_id') # New: Filter by Course
+    course_id = request.args.get('course_id')
     
     # 1. Get courses taught by this teacher
     query = Course.query.filter_by(teacher_id=current_user.id)
@@ -676,25 +675,27 @@ def teacher_students():
         query = query.filter_by(id=int(course_id))
     courses = query.all()
     
-    students = []
-    seen = set()
+    students_list = []
+    seen_ids = set()
     
     for c in courses:
         # 2. Filter students in those courses
+        # If session_id is provided, only show students from that session
         valid_students = [s for s in c.students if (not session_id or str(s.session_id) == str(session_id))]
         
         for s in valid_students:
-            if s.id not in seen:
-                students.append({
+            if s.id not in seen_ids:
+                students_list.append({
                     "id": s.id,
-                    "name": s.name,
+                    "name": s.name,  # REAL NAME FROM DB
                     "admission_number": s.admission_number,
-                    "profile_photo_url": s.profile_photo_url, # New: Send Photo URL
+                    "profile_photo_url": s.profile_photo_url, # PHOTO URL
                     "session_name": s.to_dict().get('session_name', 'N/A'),
                     "course_name": c.name
                 })
-                seen.add(s.id)
-    return jsonify(students)
+                seen_ids.add(s.id)
+                
+    return jsonify(students_list)
 
 # 2. ANNOUNCEMENTS (GET & POST)
 @app.route('/api/teacher/announcements', methods=['GET', 'POST'])
@@ -799,14 +800,32 @@ def daily_topic():
 @login_required
 def teacher_att_report():
     if current_user.role != 'teacher': return jsonify({"msg": "Denied"}), 403
-    # Return recent attendance logs for students in teacher's courses
-    # Simplified logic:
-    atts = Attendance.query.order_by(Attendance.check_in_time.desc()).limit(50).all()
-    return jsonify([{
-        "student_name": f"Student {a.student_id}", 
-        "date": a.check_in_time.strftime('%Y-%m-%d'),
-        "status": a.status
-    } for a in atts])
+    
+    date_filter = request.args.get('date', date.today().strftime('%Y-%m-%d'))
+    session_id = request.args.get('session_id')
+    
+    # Get attendance records for the date
+    atts = Attendance.query.filter(db.func.date(Attendance.check_in_time) == date_filter).all()
+    
+    report = []
+    for a in atts:
+        # Fetch the REAL User to get Name and Photo
+        u = db.session.get(User, a.student_id)
+        
+        if u:
+            # Apply Batch Filter if selected
+            if session_id and str(u.session_id) != str(session_id):
+                continue
+                
+            report.append({
+                "student_name": u.name,  # REAL NAME
+                "photo_url": u.profile_photo_url, # REAL PHOTO
+                "admission_number": u.admission_number,
+                "status": a.status,
+                "date": a.check_in_time.strftime('%Y-%m-%d')
+            })
+            
+    return jsonify(report)
 
 # 6. GET TEACHER COURSES
 @app.route('/api/teacher/courses', methods=['GET'])
