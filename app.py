@@ -654,14 +654,170 @@ def serve_receipt(id):
     p = db.session.get(Payment, id)
     return f"<h1>Receipt #{p.id}</h1><p>Amount: {p.amount_paid}</p><button onclick='window.print()'>Print</button>" if p else "Not Found"
 
-# --- STUDENT/TEACHER/PARENT ROUTES ---
+# =========================================================
+# TEACHER SPECIFIC ROUTES
+# =========================================================
+
+# 1. GET ALL STUDENTS FOR TEACHER
+@app.route('/api/teacher/students', methods=['GET'])
+@login_required
+def teacher_students():
+    if current_user.role != 'teacher': return jsonify({"msg": "Denied"}), 403
+    
+    # Find courses taught by this teacher
+    courses = Course.query.filter_by(teacher_id=current_user.id).all()
+    student_list = []
+    seen_ids = set()
+    
+    for c in courses:
+        for s in c.students:
+            if s.id not in seen_ids:
+                student_list.append({
+                    "id": s.id, "name": s.name, "email": s.email,
+                    "admission_number": s.admission_number, "course_name": c.name,
+                    "phone_number": s.phone_number
+                })
+                seen_ids.add(s.id)
+    return jsonify(student_list)
+
+# 2. ANNOUNCEMENTS (GET & POST)
+@app.route('/api/teacher/announcements', methods=['GET', 'POST'])
+@login_required
+def teacher_announcements():
+    if current_user.role != 'teacher': return jsonify({"msg": "Denied"}), 403
+    
+    if request.method == 'POST':
+        d = request.json
+        # Save Announcement
+        a = Announcement(
+            title=d['title'], 
+            content=d['content'], 
+            category=d.get('category', 'Class Update'), 
+            target_group=d.get('target_group', 'students'), 
+            teacher_id=current_user.id
+        )
+        db.session.add(a)
+        db.session.commit()
+        
+        # NOTIFICATION LOGIC
+        courses = Course.query.filter_by(teacher_id=current_user.id).all()
+        notified_ids = set()
+        
+        for c in courses:
+            for s in c.students:
+                if s.id not in notified_ids:
+                    # Send Push
+                    send_push_notification(s.id, f"Class Update: {d['title']}", d['content'])
+                    notified_ids.add(s.id)
+        
+        return jsonify(a.to_dict()), 201
+
+    # GET
+    anns = Announcement.query.filter(
+        (Announcement.teacher_id == current_user.id) | (Announcement.target_group == 'teachers')
+    ).order_by(Announcement.created_at.desc()).all()
+    return jsonify([a.to_dict() for a in anns])
+
+# 3. NOTES (Sharing Material)
+@app.route('/api/teacher/notes', methods=['GET', 'POST'])
+@login_required
+def teacher_notes():
+    if current_user.role != 'teacher': return jsonify({"msg": "Denied"}), 403
+
+    if request.method == 'POST':
+        if 'file' not in request.files: return jsonify({"msg": "No file"}), 400
+        f = request.files['file']
+        if f.filename == '': return jsonify({"msg": "No file selected"}), 400
+        
+        fn = secure_filename(f.filename)
+        uid = f"{uuid.uuid4()}{os.path.splitext(fn)[1]}"
+        f.save(os.path.join(app.config['UPLOAD_FOLDER'], uid))
+        
+        note = SharedNote(
+            title=request.form['title'],
+            description=request.form.get('description', ''),
+            filename=uid,
+            original_filename=fn,
+            course_id=int(request.form['course_id']),
+            teacher_id=current_user.id
+        )
+        db.session.add(note)
+        db.session.commit()
+        
+        # Notify Students
+        course = db.session.get(Course, int(request.form['course_id']))
+        for s in course.students:
+            send_push_notification(s.id, "New Study Material", f"{current_user.name} posted: {request.form['title']}")
+            
+        return jsonify({"msg": "Uploaded Successfully"}), 201
+
+    # GET
+    notes = SharedNote.query.filter_by(teacher_id=current_user.id).order_by(SharedNote.created_at.desc()).all()
+    return jsonify([n.to_dict() for n in notes])
+
+# 4. DAILY TOPIC / SYLLABUS UPDATE (New Feature)
+@app.route('/api/teacher/daily_topic', methods=['POST'])
+@login_required
+def daily_topic():
+    if current_user.role != 'teacher': return jsonify({"msg": "Denied"}), 403
+    d = request.json
+    
+    course_id = d.get('course_id')
+    topic = d.get('topic')
+    
+    if not course_id or not topic: return jsonify({"msg": "Missing Data"}), 400
+    
+    course = db.session.get(Course, course_id)
+    if not course: return jsonify({"msg": "Course not found"}), 404
+    
+    # 1. Log it as a "Syllabus" Announcement
+    a = Announcement(
+        title=f"Daily Topic: {course.name}",
+        content=f"Today's Topic: {topic}",
+        category="Syllabus",
+        target_group="students",
+        teacher_id=current_user.id
+    )
+    db.session.add(a)
+    db.session.commit()
+    
+    # 2. Send Notifications
+    for s in course.students:
+        send_push_notification(s.id, f"Daily Topic: {course.name}", f"Today we covered: {topic}")
+        # SMS to Parent
+        if s.parent_id:
+            parent = db.session.get(User, s.parent_id)
+            if parent and parent.phone_number:
+                msg = f"CST Update: Today in {course.name}, your child learned: {topic}."
+                send_actual_sms(parent.phone_number, msg, template_id="YOUR_DLT_TEMPLATE_ID")
+                
+    return jsonify({"msg": "Syllabus updated and notifications sent"}), 200
+
+# 5. ATTENDANCE REPORT
+@app.route('/api/teacher/reports/attendance', methods=['GET'])
+@login_required
+def teacher_att_report():
+    if current_user.role != 'teacher': return jsonify({"msg": "Denied"}), 403
+    # Return recent attendance logs for students in teacher's courses
+    # Simplified logic:
+    atts = Attendance.query.order_by(Attendance.check_in_time.desc()).limit(50).all()
+    return jsonify([{
+        "student_name": f"Student {a.student_id}", 
+        "date": a.check_in_time.strftime('%Y-%m-%d'),
+        "status": a.status
+    } for a in atts])
+
+# 6. GET TEACHER COURSES
+@app.route('/api/teacher/courses', methods=['GET'])
+@login_required
+def t_courses(): 
+    if current_user.role != 'teacher': return jsonify({"msg": "Denied"}), 403
+    return jsonify([c.to_dict() for c in Course.query.filter_by(teacher_id=current_user.id).all()])
+
+# --- STUDENT/PARENT ROUTES ---
 @app.route('/api/student/fees', methods=['GET'])
 @login_required
 def s_fees(): return jsonify(calculate_fee_status(current_user.id))
-
-@app.route('/api/teacher/courses', methods=['GET'])
-@login_required
-def t_courses(): return jsonify([c.to_dict() for c in Course.query.filter_by(teacher_id=current_user.id).all()])
 
 # =========================================================
 # MIGRATION & STARTUP

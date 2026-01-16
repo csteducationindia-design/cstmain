@@ -64,6 +64,9 @@
             <a href="#reports" class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-primary/10 transition-colors">
                 <span class="material-symbols-outlined">analytics</span> General Reports
             </a>
+            <a href="#bulk" class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-primary/10 transition-colors text-green-700 font-bold bg-green-50">
+                <span class="material-symbols-outlined">upload_file</span> Bulk Upload
+            </a>
         </nav>
         <div class="p-6 border-t dark:border-slate-800">
             <button id="logout-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2 rounded-lg transition-colors">Logout</button>
@@ -136,6 +139,28 @@
                     <div>
                         <label class="block text-sm font-medium mb-1">Date of Birth</label>
                         <input name="dob" id="student-dob" type="date" class="w-full border p-2 rounded-lg bg-slate-50">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Address Line 1</label>
+                        <input name="address_line1" id="student-addr" class="w-full border p-2 rounded-lg bg-slate-50">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">City</label>
+                        <input name="city" id="student-city" class="w-full border p-2 rounded-lg bg-slate-50">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">State</label>
+                        <input name="state" id="student-state" class="w-full border p-2 rounded-lg bg-slate-50">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Pincode</label>
+                        <input name="pincode" id="student-pincode" class="w-full border p-2 rounded-lg bg-slate-50">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Link Parent</label>
+                        <select name="parent_id" id="student-parent" class="w-full border p-2 rounded-lg bg-slate-50">
+                            <option value="">-- Select Parent --</option>
+                        </select>
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">Gender</label>
@@ -367,6 +392,24 @@
             </div>
         </div>
 
+        <div id="content-bulk" class="content-section hidden">
+            <h2 class="text-3xl font-bold mb-6">Bulk Data Upload</h2>
+            <div class="bg-white dark:bg-slate-900 p-8 rounded-xl shadow-sm max-w-2xl border border-slate-100">
+                <p class="mb-4 text-gray-600 dark:text-gray-300">Upload a CSV file to add students in bulk. The CSV must have the following headers:</p>
+                <code class="block bg-slate-100 p-4 rounded mb-6 text-sm text-slate-800 font-mono">
+                    name, email, password, role, phone_number, admission_number
+                </code>
+                <form id="bulk-form" class="space-y-4">
+                    <div class="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center bg-slate-50 hover:bg-white transition-colors cursor-pointer">
+                        <input type="file" name="file" class="w-full cursor-pointer" accept=".csv" required>
+                    </div>
+                    <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg w-full transition-colors flex justify-center items-center gap-2">
+                        <span class="material-symbols-outlined">upload</span> Upload CSV File
+                    </button>
+                </form>
+            </div>
+        </div>
+
     </main>
 </div>
 
@@ -374,7 +417,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
 <script>
     const API_BASE_URL = '/api';
-    let users = [], sessions = [], courses = [];
+    let users = [], sessions = [], courses = [], pendingStudents = [];
 
     // =========================================================
     // 1. CORE NAVIGATION
@@ -473,6 +516,14 @@
         const res = await fetch(`${API_BASE_URL}/users?session_id=${sid}&search=${term}`);
         users = await res.json();
         
+        // Update Parent Dropdown in Student Form
+        const parents = users.filter(u => u.role === 'parent');
+        const pSel = document.getElementById('student-parent');
+        if(pSel) {
+            pSel.innerHTML = '<option value="">-- Select Parent --</option>' + 
+                parents.map(p => `<option value="${p.id}">${p.name} (${p.phone_number})</option>`).join('');
+        }
+
         document.getElementById('usersTableBody').innerHTML = users.filter(u=>u.role==='student').map(u => `
             <tr class="border-b hover:bg-slate-50">
                 <td class="p-3">${u.admission_number||'-'}</td>
@@ -624,6 +675,11 @@
             document.getElementById('student-session-select').value = u.session_id || '';
             document.getElementById('student-dob').value = u.dob || '';
             document.getElementById('student-gender').value = u.gender || 'Male';
+            document.getElementById('student-addr').value = u.address_line1 || '';
+            document.getElementById('student-city').value = u.city || '';
+            document.getElementById('student-state').value = u.state || '';
+            document.getElementById('student-pincode').value = u.pincode || '';
+            document.getElementById('student-parent').value = u.parent_id || '';
         }
         
         showSection('#' + role + 's');
@@ -728,6 +784,19 @@
         const g = document.getElementById('announcement-target-group').value;
         await fetch(API_BASE_URL + '/announcements', { method: 'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title:t, content:c, target_group:g}) });
         alert('Published'); e.target.reset(); loadAnnouncements();
+    });
+
+    // Bulk Upload Form
+    document.getElementById('bulk-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        try {
+            const res = await fetch(API_BASE_URL + '/bulk_upload', { method: 'POST', body: fd });
+            const data = await res.json();
+            alert(data.msg);
+        } catch(e) {
+            alert("Upload Failed");
+        }
     });
 
     // Logout
