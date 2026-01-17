@@ -669,21 +669,46 @@ def serve_receipt(id):
 @app.route('/api/my/profile', methods=['GET'])
 @login_required
 def my_profile():
-    # Returns the logged-in user's profile
     return jsonify(current_user.to_dict())
 
 @app.route('/api/my/attendance', methods=['GET'])
 @login_required
 def my_attendance():
     uid = current_user.id
-    # If Parent, fetch Child's data
     if current_user.role == 'parent':
         child = User.query.filter_by(parent_id=current_user.id).first()
         if not child: return jsonify([])
         uid = child.id
         
     atts = Attendance.query.filter_by(student_id=uid).order_by(Attendance.check_in_time.desc()).limit(30).all()
-    return jsonify([{"date": a.check_in_time.strftime('%Y-%m-%d'), "status": a.status} for a in atts])
+    # Format for frontend chart/list
+    return jsonify([{
+        "date": a.check_in_time.strftime('%Y-%m-%d'), 
+        "time": a.check_in_time.strftime('%I:%M %p'),
+        "status": a.status
+    } for a in atts])
+
+@app.route('/api/student/balance', methods=['GET']) # Fixed route name to match student.html
+@login_required
+def my_balance():
+    uid = current_user.id
+    if current_user.role == 'parent':
+        child = User.query.filter_by(parent_id=current_user.id).first()
+        if not child: return jsonify({"balance": 0})
+        uid = child.id
+    return jsonify(calculate_fee_status(uid))
+
+@app.route('/api/student/notes', methods=['GET']) # Fixed route name to match student.html
+@login_required
+def my_notes():
+    # Fetch notes for courses the student is enrolled in
+    notes = SharedNote.query.join(student_course_association, (SharedNote.course_id == student_course_association.c.course_id)).filter(student_course_association.c.student_id == current_user.id).order_by(SharedNote.created_at.desc()).all()
+    return jsonify([n.to_dict() for n in notes])
+
+@app.route('/api/student/grades', methods=['GET']) # Stub for grades
+@login_required
+def my_grades():
+    return jsonify([]) # Return empty list if no grade system yet
 
 @app.route('/api/my/fees', methods=['GET'])
 @login_required
@@ -703,57 +728,74 @@ def my_announcements():
     target = 'parents' if current_user.role == 'parent' else 'students'
     anns = Announcement.query.filter(Announcement.target_group.in_(['all', target])).order_by(Announcement.created_at.desc()).all()
     return jsonify([a.to_dict() for a in anns])
+
 # 2. GET STUDENTS (With Debugging & robust filtering)
 @app.route('/api/teacher/students', methods=['GET'])
 @login_required
 def teacher_students():
-    session_id = request.args.get('session_id')
-    course_id = request.args.get('course_id')
-    
-    print(f"DEBUG: Fetching students for Teacher {current_user.name} (ID: {current_user.id})")
-    print(f"DEBUG: Filters -> Session: {session_id}, Course: {course_id}")
-
-    # 1. Get courses taught by this teacher
+    sid, cid = request.args.get('session_id'), request.args.get('course_id')
     query = Course.query.filter_by(teacher_id=current_user.id)
-    if course_id and str(course_id).isdigit():
-        query = query.filter_by(id=int(course_id))
+    if cid: query = query.filter_by(id=int(cid))
+    courses = query.all()
+# ...
+    valid = [s for s in c.students if (not sid or str(s.session_id) == str(sid))]
+    
+    students = []
+    seen = set()
+    for c in courses:
+        # Fix: If sid is empty (None or ""), show all students. Otherwise check session_id.
+        valid = [s for s in c.students if (not sid or str(s.session_id) == str(sid))]
+        for s in valid:
+            if s.id not in seen:
+                students.append({
+                    "id": s.id, "name": s.name, "admission_number": s.admission_number,
+                    "profile_photo_url": s.profile_photo_url, "session_name": s.to_dict().get('session_name', 'N/A')
+                })
+                seen.add(s.id)
+    return jsonify(students)
+
+# 2. FIXED TEACHER REPORT (Shows Not Marked)
+# FIX: Added Attendance Analytics (Present/Total) & Student ID
+@app.route('/api/teacher/reports/attendance', methods=['GET'])
+@login_required
+def teacher_reports():
+    if current_user.role != 'teacher': return jsonify({"msg": "Denied"}), 403
+    
+    dt = request.args.get('date', date.today().strftime('%Y-%m-%d'))
+    sid = request.args.get('session_id')
+    cid = request.args.get('course_id')
+    
+    # 1. Get Students
+    query = Course.query.filter_by(teacher_id=current_user.id)
+    if cid: query = query.filter_by(id=int(cid))
     courses = query.all()
     
-    if not courses:
-        print("DEBUG: No courses found for this teacher.")
-        return jsonify([])
-
-    students_list = []
-    seen_ids = set()
+    report = []
+    seen = set()
     
     for c in courses:
-        print(f"DEBUG: Checking Course '{c.name}' - Total Enrolled: {len(c.students)}")
-        
-        for s in c.students:
-            # DEBUG: Print student details to console
-            # print(f" - Student: {s.name}, SessionID: {s.session_id}")
-
-            # 2. Filter Logic
-            # If session_id is selected, ONLY show students in that session.
-            # If s.session_id is None, they will disappear here (Which is technically correct behavior).
-            # To fix missing students, you must assign them a session in Admin Panel.
-            if session_id and str(session_id).isdigit():
-                if str(s.session_id) != str(session_id):
-                    continue 
-
-            if s.id not in seen_ids:
-                students_list.append({
-                    "id": s.id,
-                    "name": s.name,
-                    "admission_number": s.admission_number or "N/A",
-                    "profile_photo_url": s.profile_photo_url,
-                    "session_name": s.to_dict().get('session_name', 'Unassigned'),
-                    "course_name": c.name
-                })
-                seen_ids.add(s.id)
+        valid = [s for s in c.students if (not sid or str(s.session_id) == str(sid))]
+        for s in valid:
+            if s.id not in seen:
+                # 2. Get Today's Status
+                att = Attendance.query.filter(Attendance.student_id==s.id, db.func.date(Attendance.check_in_time)==dt).first()
                 
-    print(f"DEBUG: Returning {len(students_list)} students.")
-    return jsonify(students_list)
+                # 3. Calculate Analytics (AI Feature: Performance Tracking)
+                total_classes = Attendance.query.filter_by(student_id=s.id).count()
+                present_count = Attendance.query.filter_by(student_id=s.id, status='Present').count()
+                
+                report.append({
+                    "student_id": s.id,  # CRITICAL FIX for Buttons
+                    "student_name": s.name,
+                    "photo_url": s.profile_photo_url,
+                    "admission_number": s.admission_number,
+                    "status": att.status if att else "Not Marked",
+                    "total_classes": total_classes,
+                    "present": present_count
+                })
+                seen.add(s.id)
+                
+    return jsonify(report)
 
 # 2. ANNOUNCEMENTS (GET & POST)
 @app.route('/api/teacher/announcements', methods=['GET', 'POST'])
@@ -795,7 +837,7 @@ def teacher_announcements():
 
 
 # 3. NOTES (Sharing Material)
-@app.route('/api/teacher/notes', methods=['GET', 'POST'])
+@app.route('/api/teacher/notes', methods=['GET', 'POST', 'DELETE'])
 @login_required
 def teacher_notes():
     if current_user.role != 'teacher': return jsonify({"msg": "Denied"}), 403
@@ -844,7 +886,7 @@ def daily_topic():
     
     # Notify Parents
     for s in c.students:
-        send_push_notification(s.id, f"Daily Topic: {c.name}", d['topic'])
+        send_push_notification(s.id, f"Syllabus: {c.name}", d['topic'])
         
         if s.parent_id:
             parent = db.session.get(User, s.parent_id)
