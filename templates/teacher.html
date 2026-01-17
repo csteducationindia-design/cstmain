@@ -260,77 +260,54 @@
                 </div>
             </div>
 
-            <div id="content-attendance" class="content-section hidden animate-fade-in">
+<div id="content-attendance" class="content-section hidden animate-fade-in">
                 <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-md p-8 border border-slate-100 dark:border-slate-700 mb-8 relative overflow-hidden">
                     <div class="absolute top-0 left-0 w-1 h-full bg-primary"></div>
                     <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-6">Step 1: Select Class & Date</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                         <div>
-                            <label for="attendance-course-select" class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Select Course</label>
-                            <select id="attendance-course-select" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary p-2.5 shadow-sm transition">
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">1. Select Batch</label>
+                            <select id="att-session" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-primary p-2.5 shadow-sm" onchange="loadStudents()">
+                                <option value="">All Batches</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">2. Select Course</label>
+                            <select id="att-course" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-primary p-2.5 shadow-sm" onchange="loadStudents()">
                                 <option value="">-- Choose Course --</option>
                             </select>
-                            <p class="text-xs text-slate-500 mt-2 flex items-center gap-1"><span class="material-symbols-outlined text-sm">info</span> Only students in this course will appear.</p>
                         </div>
                         <div>
-                            <label for="attendance-date" class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Select Date</label>
-                            <input type="date" id="attendance-date" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary p-2.5 shadow-sm transition">
-                        </div>
-                        <div class="flex items-end">
-                            <div class="text-sm text-blue-700 bg-blue-50 dark:bg-blue-900/30 p-4 rounded-xl w-full border border-blue-100 dark:border-blue-800 flex gap-3 items-start">
-                                <span class="material-symbols-outlined text-blue-600">lightbulb</span>
-                                <div>
-                                    <span class="font-bold block mb-1">Tip:</span> 
-                                    Ensure you select the correct course to avoid mixing students from different batches.
-                                </div>
-                            </div>
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">3. Date</label>
+                            <input type="date" id="att-date" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white p-2.5 shadow-sm">
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm overflow-hidden border border-slate-100 dark:border-slate-700 mb-6">
-                    <div class="p-4 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center flex-wrap gap-4">
-                        <h3 class="font-bold text-slate-700 dark:text-slate-200 text-lg">Student List</h3>
-                        <div class="space-x-3">
-                            <button id="mark-present-btn" disabled class="px-5 py-2.5 bg-green-100 text-green-700 rounded-lg text-sm font-bold hover:bg-green-200 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm flex-inline items-center gap-2">
-                                <span class="material-symbols-outlined text-sm">check_circle</span> Mark Selected Present
-                            </button>
-                            <button id="mark-absent-btn" disabled class="px-5 py-2.5 bg-red-100 text-red-700 rounded-lg text-sm font-bold hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm flex-inline items-center gap-2">
-                                <span class="material-symbols-outlined text-sm">cancel</span> Mark Selected Absent
-                            </button>
+                <form id="att-form">
+                    <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm overflow-hidden border border-slate-100 dark:border-slate-700 mb-6">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                                <thead class="bg-slate-50 dark:bg-slate-800">
+                                    <tr>
+                                        <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Photo</th>
+                                        <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Student Name</th>
+                                        <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Mark Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="att-body" class="divide-y divide-slate-200 dark:divide-slate-700 bg-white dark:bg-surface-dark">
+                                    <tr><td colspan="3" class="px-6 py-16 text-center text-slate-400">Select a Course to load students.</td></tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-                    
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                            <thead class="bg-slate-50 dark:bg-slate-800">
-                                <tr>
-                                    <th class="px-6 py-4 text-left w-16">
-                                        <input type="checkbox" id="select-all-students" class="rounded border-slate-300 text-primary focus:ring-primary w-5 h-5 cursor-pointer" disabled>
-                                    </th>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">ID</th>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Student Name</th>
-                                    <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Current Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="attendance-table-body" class="divide-y divide-slate-200 dark:divide-slate-700 bg-white dark:bg-surface-dark">
-                                <tr><td colspan="4" class="px-6 py-16 text-center text-slate-400">
-                                    <div class="flex flex-col items-center gap-2">
-                                        <span class="material-symbols-outlined text-4xl text-slate-300">fact_check</span>
-                                        <p>Please select a course above to load the student list.</p>
-                                    </div>
-                                </td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
 
-                <div class="flex justify-end pb-8">
-                    <button id="submit-attendance-btn" disabled class="bg-primary text-white font-bold py-3.5 px-10 rounded-xl shadow-lg shadow-blue-200 dark:shadow-none hover:bg-primary-hover transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transform active:scale-95">
-                        <span class="material-symbols-outlined">save</span>
-                        Submit Attendance Log
-                    </button>
-                </div>
+                    <div class="flex justify-end pb-8">
+                        <button type="submit" class="bg-green-600 text-white font-bold py-3.5 px-10 rounded-xl shadow-lg hover:bg-green-700 transition flex items-center gap-2">
+                            <span class="material-symbols-outlined">save</span> Submit Attendance
+                        </button>
+                    </div>
+                </form>
             </div>
 
             <div id="content-syllabus" class="content-section hidden animate-fade-in">
@@ -783,22 +760,7 @@
         }
 
 
-        function populateDropdowns() {
-            const selects = [attendanceCourseSelect, noteCourseSelect, syllabusCourseSelect, assignmentCourseSelect, reportCourseSelect];
-            selects.forEach(select => {
-                if(!select) return;
-                const currentVal = select.value;
-                const defaultOption = select.id === 'report-course-select' 
-                    ? '<option value="">Show All Students</option>' 
-                    : '<option value="">-- Select Course --</option>';
-                
-                select.innerHTML = defaultOption + allTeacherCourses.map(c => 
-                    `<option value="${c.id}">${c.name}</option>`
-                ).join('');
-                
-                if(currentVal) select.value = currentVal;
-            });
-        }
+        
 
         async function fetchDashboardData() {
             document.getElementById('total-my-courses').textContent = allTeacherCourses.length;
@@ -830,49 +792,199 @@
 
         // --- ATTENDANCE LOGIC (Course-Wise Filter) ---
         
-        function renderAttendanceTable(courseId) {
-            const tbody = document.getElementById('attendance-table-body');
-            tbody.innerHTML = '';
-            currentAttendanceStatus = {};
+       // --- UPDATED INITIALIZATION ---
+    async function init() {
+        document.getElementById('att-date').valueAsDate = new Date();
+        document.getElementById('report-date').valueAsDate = new Date();
+        
+        try {
+            // Check Session
+            const sessionRes = await fetch(API_BASE_URL + '/check_session', {credentials: 'include'});
+            const sessionData = await sessionRes.json();
+            if(!sessionData.logged_in || sessionData.user.role !== 'teacher') {
+                window.location.href = '/'; return;
+            }
+
+            // Load Data
+            const [sRes, cRes] = await Promise.all([
+                fetch(API_BASE_URL + '/teacher/sessions', {credentials: 'include'}),
+                fetch(API_BASE_URL + '/teacher/courses', {credentials: 'include'})
+            ]);
+            sessions = await sRes.json();
+            courses = await cRes.json();
+
+            // Populate All Dropdowns (Attendance, Reports, Notes, etc)
+            const fill = (id, list, defaultText) => {
+                const el = document.getElementById(id);
+                if(el) el.innerHTML = `<option value="">${defaultText}</option>` + 
+                    list.map(i => `<option value="${i.id}">${i.name}</option>`).join('');
+            };
             
-            if(!courseId) {
-                tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-16 text-center text-slate-400 flex flex-col items-center"><span class="material-symbols-outlined text-4xl mb-2">arrow_upward</span>Please select a course above to load student list.</td></tr>';
-                updateAttendanceButtons();
-                return;
-            }
+            // Attendance Tab
+            fill('att-session', sessions, "All Batches");
+            fill('att-course', courses, "-- Select Course --");
+            
+            // Other Tabs
+            fill('report-session', sessions, "All Batches");
+            fill('report-course', courses, "-- Select Course --");
+            fill('note-course-select', courses, "-- Select Course --");
+            fill('syllabus-course-select', courses, "-- Select Course --");
+            fill('assignment-course-select', courses, "-- Select Course --");
 
-            // Filter students by Course ID using the cached 'course_ids' array in student objects
-            const filteredStudents = allTeacherStudents.filter(s => s.course_ids && s.course_ids.includes(parseInt(courseId)));
+            // Init Firebase
+            initFirebase();
 
-            if(filteredStudents.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-16 text-center text-slate-400">No students found enrolled in this course.</td></tr>';
-                updateAttendanceButtons();
-                return;
-            }
+        } catch(e) { console.error("Init Error", e); }
+    }
 
-            filteredStudents.forEach(s => {
-                currentAttendanceStatus[s.id] = 'Present'; // Default
-                
-                // FIXED COLUMN ORDER: Checkbox -> ID -> Name -> Status
-                tbody.innerHTML += `
-                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition group border-b border-slate-50 dark:border-slate-800">
-                        <td class="px-6 py-4">
-                            <input type="checkbox" class="student-checkbox rounded border-slate-300 text-primary focus:ring-primary w-5 h-5 cursor-pointer" data-id="${s.id}">
-                        </td>
-                        <td class="px-6 py-4 text-xs text-slate-400 font-mono">#${s.id}</td>
-                        <td class="px-6 py-4 text-sm font-medium text-slate-900 dark:text-white flex items-center gap-3">
-                            <div class="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-bold shadow-sm">${s.name.charAt(0)}</div>
-                            ${s.name}
-                        </td>
-                        <td class="px-6 py-4 text-center">
-                            <span id="status-${s.id}" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 shadow-sm border border-green-200">Present</span>
-                        </td>
-                    </tr>
-                `;
+//QR scanner
+
+let html5QrCode;
+
+function startScanner() {
+    document.getElementById('qr-modal').classList.remove('hidden');
+    html5QrCode = new Html5Qrcode("reader");
+    
+    html5QrCode.start(
+        { facingMode: "environment" }, 
+        { fps: 10, qrbox: 250 },
+        (decodedText) => {
+            // DECODED TEXT = ADMISSION NUMBER (e.g., "101")
+            // 1. Find the student row based on admission number text in the table
+            // Note: Our radio buttons use ID, so we might need to map Adm No -> ID, 
+            // OR simpler: Assume QR contains Student ID. 
+            // If QR has "101" (Adm No), we need to find the checkbox/row with that text.
+            
+            // Search table for Admission Number
+            const rows = document.querySelectorAll('#att-body tr');
+            let found = false;
+            
+            rows.forEach(row => {
+                if(row.innerText.includes(decodedText)) {
+                    // Found the row! Mark Present
+                    const radio = row.querySelector('input[value="Present"]');
+                    if(radio) {
+                        radio.checked = true;
+                        found = true;
+                        
+                        // Auto-Submit immediately for "Real-time Entry" feeling?
+                        // Or just visual feedback:
+                        alert(`Marked Present: ${decodedText}`);
+                        
+                        // Optional: Call API immediately for single student
+                        // markSinglePresent(radio.name.split('-')[1]); 
+                    }
+                }
             });
-            updateAttendanceButtons();
+
+            if(found) {
+                stopScanner();
+            } else {
+                alert(`Student ${decodedText} not found in this list. Correct Batch?`);
+                // Don't stop scanner, let them try again
+            }
+        },
+        (errorMessage) => { /* scanning... */ }
+    ).catch(err => console.log(err));
+}
+
+function stopScanner() {
+    if(html5QrCode) {
+        html5QrCode.stop().then(() => {
+            document.getElementById('qr-modal').classList.add('hidden');
+            html5QrCode.clear();
+        });
+    } else {
+        document.getElementById('qr-modal').classList.add('hidden');
+    }
+}
+
+
+
+    // --- NEW: FETCH STUDENTS DIRECTLY FROM API ---
+    async function loadStudents() {
+        const sid = document.getElementById('att-session').value;
+        const cid = document.getElementById('att-course').value;
+        const tbody = document.getElementById('att-body');
+        
+        // Only Course is mandatory
+        if(!cid) return; 
+
+        tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-12 text-center text-slate-500">Loading students...</td></tr>';
+
+        // Fetch students filtered by Course AND Session
+        const res = await fetch(`${API_BASE_URL}/teacher/students?session_id=${sid}&course_id=${cid}`, { credentials: 'include' });
+        const students = await res.json();
+        
+        if (students.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-12 text-center text-red-500">No students found. Try selecting "All Batches".</td></tr>';
+            return;
         }
 
+        tbody.innerHTML = students.map(s => `
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition border-b border-slate-100 dark:border-slate-800">
+                <td class="px-6 py-4">
+                    <img src="${s.profile_photo_url || 'https://placehold.co/50'}" class="w-12 h-12 rounded-full border-2 border-white shadow-sm object-cover">
+                </td>
+                <td class="px-6 py-4">
+                    <div class="font-bold text-slate-900 dark:text-white">${s.name}</div>
+                    <div class="text-xs text-slate-500">ID: ${s.admission_number || '-'}</div>
+                </td>
+                <td class="px-6 py-4 text-center">
+                    <div class="flex justify-center gap-4">
+                        <label class="cursor-pointer flex items-center gap-2 bg-green-50 px-4 py-2 rounded-xl border border-green-200 hover:bg-green-100 transition">
+                            <input type="radio" name="att-${s.id}" value="Present" checked class="w-4 h-4 text-green-600 focus:ring-green-500"> 
+                            <span class="text-green-800 font-bold text-sm">Present</span>
+                        </label>
+                        <label class="cursor-pointer flex items-center gap-2 bg-red-50 px-4 py-2 rounded-xl border border-red-200 hover:bg-red-100 transition">
+                            <input type="radio" name="att-${s.id}" value="Absent" class="w-4 h-4 text-red-600 focus:ring-red-500"> 
+                            <span class="text-red-800 font-bold text-sm">Absent</span>
+                        </label>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    // --- SUBMIT ATTENDANCE ---
+    document.getElementById('att-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const rows = document.getElementById('att-body').querySelectorAll('tr');
+        // Check if rows exist and it's not the "Loading/Empty" message row
+        if (rows.length === 0 || rows[0].cells.length < 2) return alert("No students loaded.");
+
+        const data = [];
+        rows.forEach(r => {
+            const input = r.querySelector('input[type="radio"]:checked');
+            if(input) {
+                const id = input.name.split('-')[1];
+                data.push({ student_id: parseInt(id), status: input.value });
+            }
+        });
+
+        const btn = e.target.querySelector('button');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = 'Saving...';
+        btn.disabled = true;
+
+        try {
+            await fetch(`${API_BASE_URL}/teacher/attendance`, {
+                method:'POST', 
+                headers:{'Content-Type':'application/json'},
+                credentials: 'include',
+                body: JSON.stringify({ 
+                    date: document.getElementById('att-date').value, 
+                    attendance_data: data 
+                })
+            });
+            alert('Attendance Saved! Absent notifications sent to parents.');
+        } catch(err) {
+            alert('Error saving attendance.');
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    });
         function updateAttendanceButtons() {
             const hasStudents = Object.keys(currentAttendanceStatus).length > 0;
             const dateSet = !!attendanceDateInput.value;
