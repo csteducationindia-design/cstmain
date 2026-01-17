@@ -239,7 +239,7 @@
             </div>
 
             <div class="footer">
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ student.id }}" alt="QR" class="qr-placeholder">
+                <img src="{{ url_for('static', filename='qr_codes/qr_' ~ student.admission_number ~ '.png') }}" alt="QR" class="qr-placeholder">
                 
                 <div class="signature-line">
                     <span class="sign-label">Authorized Signatory</span>

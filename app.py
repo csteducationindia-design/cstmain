@@ -582,74 +582,23 @@ def send_sms_alert():
         return jsonify({"message": f"Server Error: {str(e)}"}), 500
 
 # --- SPECIAL ADMIN ROUTES (ID Card) ---
+
 @app.route('/admin/id_card/<int:id>')
 @login_required
 def generate_single_id_card(id):
     if current_user.role != 'admin': return "Denied", 403
-    u = db.session.get(User, id)
-    qr_url = url_for('static', filename=f'qr_codes/qr_{u.admission_number}.png')
-    
-    # PROBLEM 4 FIX: Professional Layout with QR
-    html = f"""
-    <html>
-    <head>
-        <style>
-            @media print {{ @page {{ margin: 0; }} body {{ margin: 1cm; }} }}
-            .id-card {{
-                width: 3.375in; height: 2.125in; border: 1px solid #000;
-                position: relative; font-family: Arial, sans-serif;
-                background: white; overflow: hidden; margin-bottom: 20px;
-            }}
-            .header {{ background: #1173d4; color: white; height: 40px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px; }}
-            .photo {{ position: absolute; left: 10px; top: 50px; width: 80px; height: 100px; border: 1px solid #ccc; object-fit: cover; }}
-            .info {{ position: absolute; left: 100px; top: 50px; font-size: 12px; line-height: 1.4; }}
-            .qr {{ position: absolute; right: 10px; bottom: 10px; width: 60px; height: 60px; }}
-            .footer {{ position: absolute; bottom: 5px; left: 10px; font-size: 10px; font-weight: bold; color: #1173d4; }}
-        </style>
-    </head>
-    <body>
-        <div class="id-card">
-            <div class="header">CST INSTITUTE</div>
-            <img src="{u.profile_photo_url or 'https://placehold.co/100'}" class="photo">
-            <div class="info">
-                <b>Name:</b> {u.name}<br>
-                <b>Adm No:</b> {u.admission_number}<br>
-                <b>DOB:</b> {u.dob}<br>
-                <b>Contact:</b> {u.phone_number}<br>
-            </div>
-            <img src="{qr_url}" class="qr" onerror="this.style.display='none'">
-            <div class="footer">Authorized Signatory</div>
-        </div>
-        <script>window.print();</script>
-    </body>
-    </html>
-    """
-    return html
+    student = db.session.get(User, id)
+    if not student: return "Student not found", 404
+    # Render the proper HTML template
+    return render_template('id_card.html', student=student)
 
 @app.route('/admin/id_cards/bulk')
 @login_required
 def generate_bulk_id_cards():
     if current_user.role != 'admin': return "Denied", 403
-    users = User.query.filter_by(role='student').all()
-    cards = ""
-    for u in users:
-        qr_url = url_for('static', filename=f'qr_codes/qr_{u.admission_number}.png')
-        cards += f"""
-        <div class="id-card" style="display: inline-block; margin: 10px;">
-            <div class="header" style="background:#1173d4;color:white;text-align:center;padding:5px;font-weight:bold;">CST INSTITUTE</div>
-            <div style="padding:10px; position:relative; height:130px;">
-                <img src="{u.profile_photo_url or 'https://placehold.co/80'}" style="width:70px;height:90px;border:1px solid #ccc;float:left;margin-right:10px;">
-                <div style="font-size:12px;line-height:1.4;">
-                    <b>{u.name}</b><br>
-                    Adm: {u.admission_number}<br>
-                    DOB: {u.dob}<br>
-                    Phone: {u.phone_number}
-                </div>
-                <img src="{qr_url}" style="width:50px;height:50px;position:absolute;right:0;bottom:0;" onerror="this.style.display='none'">
-            </div>
-        </div>
-        """
-    return f"<html><body style='font-family:Arial;'>{cards}<button onclick='window.print()' style='position:fixed;top:10px;right:10px;'>Print All</button></body></html>"
+    students = User.query.filter_by(role='student').all()
+    # Render the proper HTML template
+    return render_template('id_cards_bulk.html', students=students)
 
 @app.route('/uploads/<filename>')
 def serve_file(filename): return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
@@ -680,10 +629,11 @@ def my_attendance():
         if not child: return jsonify([])
         uid = child.id
         
-    atts = Attendance.query.filter_by(student_id=uid).order_by(Attendance.check_in_time.desc()).limit(30).all()
-    # Format for frontend chart/list
+    atts = Attendance.query.filter_by(student_id=uid).order_by(Attendance.check_in_time.desc()).limit(50).all()
+    
+    # FIX: Added 'time' field so it shows up in the app
     return jsonify([{
-        "date": a.check_in_time.strftime('%Y-%m-%d'), 
+        "date": a.check_in_time.strftime('%Y-%m-%d'),
         "time": a.check_in_time.strftime('%I:%M %p'),
         "status": a.status
     } for a in atts])

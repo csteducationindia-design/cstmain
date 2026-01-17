@@ -156,7 +156,7 @@
                     
                     <div class="flex flex-col items-center">
                         {% if student.qr_code %}
-                            <img src="{{ url_for('static', filename='qr_codes/' + student.qr_code) }}" 
+                            <img src="{{ url_for('static', filename='qr_codes/qr_' ~ student.admission_number ~ '.png') }}"
                                  alt="QR" 
                                  style="width: 38px; height: 38px; object-fit: contain; display: block;">
                         {% else %}
