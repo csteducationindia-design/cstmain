@@ -1045,43 +1045,53 @@
         });
 
 // --- SYLLABUS SUBMIT LOGIC ---
-    const syllabusForm = document.getElementById('syllabus-form');
-    if(syllabusForm) {
-        syllabusForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const cid = document.getElementById('syllabus-course-select').value;
-            const sid = document.getElementById('syllabus-session-select').value;
-            const date = document.getElementById('syllabus-date').value;
-            const topic = document.getElementById('syllabus-topic').value;
-            
-            // Get Names for Notification
-            const courseName = allTeacherCourses.find(c => c.id == cid)?.name || 'Course';
-            const sessionName = allSessions.find(s => s.id == sid)?.name || 'All Batches';
-            
-            // Combine topic with batch info if specific batch selected
-            const finalTopic = sid ? `[${sessionName}] ${topic}` : topic;
+// --- SYLLABUS SUBMIT LOGIC (Fixed: Sends Batch ID) ---
+const syllabusForm = document.getElementById('syllabus-form');
+if(syllabusForm) {
+    syllabusForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const cid = document.getElementById('syllabus-course-select').value;
+        const sid = document.getElementById('syllabus-session-select').value;
+        const date = document.getElementById('syllabus-date').value;
+        const topic = document.getElementById('syllabus-topic').value;
+        
+        // Get Names for nicer alert
+        const sessionName = allSessions.find(s => s.id == sid)?.name || 'All Batches';
+        
+        // Prepare Payload with Session ID
+        const payload = {
+            course_id: parseInt(cid),
+            session_id: sid ? parseInt(sid) : null, // <--- SENDING SESSION ID NOW
+            topic: topic, 
+            date: date
+        };
 
-            const payload = {
-                course_id: parseInt(cid),
-                topic: finalTopic, // Saves " [Jan Batch] Loops..." 
-                date: date
-            };
+        const btn = syllabusForm.querySelector('button');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = 'Sending...';
+        btn.disabled = true;
 
-            try {
-                const res = await fetch(`${API_BASE_URL}/teacher/daily_topic`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    credentials: 'include',
-                    body: JSON.stringify(payload)
-                });
-                alert('Syllabus Logged & Notification Sent to Parents!');
-                syllabusForm.reset();
-            } catch(e) {
-                console.error(e);
-                alert("Error saving syllabus.");
-            }
-        });
-    }
+        try {
+            const res = await fetch(`${API_BASE_URL}/teacher/daily_topic`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                credentials: 'include',
+                body: JSON.stringify(payload)
+            });
+            
+            const result = await res.json();
+            alert(result.msg); // Show Backend Response
+            syllabusForm.reset();
+        } catch(e) {
+            console.error(e);
+            alert("Error saving syllabus.");
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    });
+}   
+
         // --- ASSIGNMENTS MOCK LOGIC ---
         // --- ASSIGNMENTS LOGIC (With Batch Filtering) ---
     const assignCourseSelect = document.getElementById('assignment-course-select');
