@@ -611,6 +611,14 @@ def serve_receipt(id):
 # =========================================================
 # TEACHER SPECIFIC ROUTES
 # =========================================================
+
+# --- FIX: Add this route so Teachers can see Batches ---
+@app.route('/api/teacher/sessions', methods=['GET'])
+@login_required
+def teacher_sessions():
+    # Allow logged-in teachers to fetch all academic sessions
+    sessions = AcademicSession.query.all()
+    return jsonify([s.to_dict() for s in sessions])
 # =========================================================
 # STUDENT & PARENT ROUTES (ADD THIS SECTION)
 # =========================================================
