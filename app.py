@@ -683,6 +683,7 @@ def my_announcements():
 # --- 1. ROBUST STUDENT FETCHING (Fixes "No Data" issue) ---
 # FIX: Robust Filtering for Students
 # FIX: Added 'course_ids' so frontend filtering works
+# FIX: Added 'course_ids' so frontend filtering works
 @app.route('/api/teacher/students', methods=['GET'])
 @login_required
 def teacher_students():
@@ -713,7 +714,6 @@ def teacher_students():
                 })
                 seen.add(s.id)
     return jsonify(students_list)
-
 
 # --- 2. ROBUST REPORTS (Fixes Empty Reports) ---
 @app.route('/api/teacher/reports/attendance', methods=['GET'])
