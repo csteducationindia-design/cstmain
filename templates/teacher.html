@@ -902,48 +902,59 @@ function stopScanner() {
 
 
     // --- NEW: FETCH STUDENTS DIRECTLY FROM API ---
-    async function loadStudents() {
+async function loadStudents() {
         const sid = document.getElementById('att-session').value;
         const cid = document.getElementById('att-course').value;
         const tbody = document.getElementById('att-body');
         
-        // Only Course is mandatory
+        // FIX: Only Course is required to load data. 
+        // If Batch is empty, the backend now handles it nicely.
         if(!cid) return; 
 
         tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-12 text-center text-slate-500">Loading students...</td></tr>';
 
-        // Fetch students filtered by Course AND Session
-        const res = await fetch(`${API_BASE_URL}/teacher/students?session_id=${sid}&course_id=${cid}`, { credentials: 'include' });
-        const students = await res.json();
-        
-        if (students.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-12 text-center text-red-500">No students found. Try selecting "All Batches".</td></tr>';
-            return;
-        }
+        try {
+            const res = await fetch(`${API_BASE_URL}/teacher/students?session_id=${sid}&course_id=${cid}`, { credentials: 'include' });
+            const students = await res.json();
+            
+            if (students.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="3" class="px-6 py-12 text-center text-red-500">
+                            <p class="font-bold">No students found.</p>
+                            <p class="text-xs text-gray-400 mt-1">Tip: Check if students are enrolled in this Course in Admin Panel.</p>
+                        </td>
+                    </tr>`;
+                return;
+            }
 
-        tbody.innerHTML = students.map(s => `
-            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition border-b border-slate-100 dark:border-slate-800">
-                <td class="px-6 py-4">
-                    <img src="${s.profile_photo_url || 'https://placehold.co/50'}" class="w-12 h-12 rounded-full border-2 border-white shadow-sm object-cover">
-                </td>
-                <td class="px-6 py-4">
-                    <div class="font-bold text-slate-900 dark:text-white">${s.name}</div>
-                    <div class="text-xs text-slate-500">ID: ${s.admission_number || '-'}</div>
-                </td>
-                <td class="px-6 py-4 text-center">
-                    <div class="flex justify-center gap-4">
-                        <label class="cursor-pointer flex items-center gap-2 bg-green-50 px-4 py-2 rounded-xl border border-green-200 hover:bg-green-100 transition">
-                            <input type="radio" name="att-${s.id}" value="Present" checked class="w-4 h-4 text-green-600 focus:ring-green-500"> 
-                            <span class="text-green-800 font-bold text-sm">Present</span>
-                        </label>
-                        <label class="cursor-pointer flex items-center gap-2 bg-red-50 px-4 py-2 rounded-xl border border-red-200 hover:bg-red-100 transition">
-                            <input type="radio" name="att-${s.id}" value="Absent" class="w-4 h-4 text-red-600 focus:ring-red-500"> 
-                            <span class="text-red-800 font-bold text-sm">Absent</span>
-                        </label>
-                    </div>
-                </td>
-            </tr>
-        `).join('');
+            tbody.innerHTML = students.map(s => `
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition border-b border-slate-100 dark:border-slate-800">
+                    <td class="px-6 py-4">
+                        <img src="${s.profile_photo_url || 'https://placehold.co/50'}" class="w-12 h-12 rounded-full border-2 border-white shadow-sm object-cover">
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="font-bold text-slate-900 dark:text-white">${s.name}</div>
+                        <div class="text-xs text-slate-500">ID: ${s.admission_number || '-'}</div>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <div class="flex justify-center gap-4">
+                            <label class="cursor-pointer flex items-center gap-2 bg-green-50 px-4 py-2 rounded-xl border border-green-200 hover:bg-green-100 transition">
+                                <input type="radio" name="att-${s.id}" value="Present" checked class="w-4 h-4 text-green-600"> 
+                                <span class="text-green-800 font-bold text-sm">Present</span>
+                            </label>
+                            <label class="cursor-pointer flex items-center gap-2 bg-red-50 px-4 py-2 rounded-xl border border-red-200 hover:bg-red-100 transition">
+                                <input type="radio" name="att-${s.id}" value="Absent" class="w-4 h-4 text-red-600"> 
+                                <span class="text-red-800 font-bold text-sm">Absent</span>
+                            </label>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        } catch (e) {
+            console.error("Error loading students:", e);
+            tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-12 text-center text-red-500">Error loading data.</td></tr>';
+        }
     }
 
     // --- SUBMIT ATTENDANCE ---

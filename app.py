@@ -680,42 +680,55 @@ def my_announcements():
     return jsonify([a.to_dict() for a in anns])
 
 # 2. GET STUDENTS (With Debugging & robust filtering)
+# --- 1. ROBUST STUDENT FETCHING (Fixes "No Data" issue) ---
 @app.route('/api/teacher/students', methods=['GET'])
 @login_required
 def teacher_students():
-    sid, cid = request.args.get('session_id'), request.args.get('course_id')
+    sid = request.args.get('session_id')
+    cid = request.args.get('course_id')
+    
+    # FIX: Sanitize inputs to prevent matching errors
+    if sid in ['null', 'undefined', '', 'None']: sid = None
+    if cid in ['null', 'undefined', '', 'None']: cid = None
+    
     query = Course.query.filter_by(teacher_id=current_user.id)
     if cid: query = query.filter_by(id=int(cid))
     courses = query.all()
-# ...
-    valid = [s for s in c.students if (not sid or str(s.session_id) == str(sid))]
     
-    students = []
+    students_list = []
     seen = set()
+    
     for c in courses:
-        # Fix: If sid is empty (None or ""), show all students. Otherwise check session_id.
-        valid = [s for s in c.students if (not sid or str(s.session_id) == str(sid))]
-        for s in valid:
+        # Logic: If No Session selected (sid is None), show ALL students in course.
+        # Otherwise, only show students matching that session.
+        for s in c.students:
+            if sid and str(s.session_id) != str(sid):
+                continue # Skip if session doesn't match
+                
             if s.id not in seen:
-                students.append({
-                    "id": s.id, "name": s.name, "admission_number": s.admission_number,
-                    "profile_photo_url": s.profile_photo_url, "session_name": s.to_dict().get('session_name', 'N/A')
+                students_list.append({
+                    "id": s.id, 
+                    "name": s.name, 
+                    "admission_number": s.admission_number,
+                    "profile_photo_url": s.profile_photo_url, 
+                    "session_name": s.to_dict().get('session_name', 'N/A')
                 })
                 seen.add(s.id)
-    return jsonify(students)
+                
+    return jsonify(students_list)
 
-# 2. FIXED TEACHER REPORT (Shows Not Marked)
-# FIX: Added Attendance Analytics (Present/Total) & Student ID
+# --- 2. ROBUST REPORTS (Fixes Empty Reports) ---
 @app.route('/api/teacher/reports/attendance', methods=['GET'])
 @login_required
 def teacher_reports():
-    if current_user.role != 'teacher': return jsonify({"msg": "Denied"}), 403
-    
     dt = request.args.get('date', date.today().strftime('%Y-%m-%d'))
     sid = request.args.get('session_id')
     cid = request.args.get('course_id')
     
-    # 1. Get Students
+    # FIX: Sanitize inputs
+    if sid in ['null', 'undefined', '', 'None']: sid = None
+    if cid in ['null', 'undefined', '', 'None']: cid = None
+    
     query = Course.query.filter_by(teacher_id=current_user.id)
     if cid: query = query.filter_by(id=int(cid))
     courses = query.all()
@@ -724,29 +737,30 @@ def teacher_reports():
     seen = set()
     
     for c in courses:
-        valid = [s for s in c.students if (not sid or str(s.session_id) == str(sid))]
-        for s in valid:
+        for s in c.students:
+            if sid and str(s.session_id) != str(sid):
+                continue
+                
             if s.id not in seen:
-                # 2. Get Today's Status
+                # Analytics
+                total = Attendance.query.filter_by(student_id=s.id).count()
+                present = Attendance.query.filter_by(student_id=s.id, status='Present').count()
+                
+                # Today's Status
                 att = Attendance.query.filter(Attendance.student_id==s.id, db.func.date(Attendance.check_in_time)==dt).first()
                 
-                # 3. Calculate Analytics (AI Feature: Performance Tracking)
-                total_classes = Attendance.query.filter_by(student_id=s.id).count()
-                present_count = Attendance.query.filter_by(student_id=s.id, status='Present').count()
-                
                 report.append({
-                    "student_id": s.id,  # CRITICAL FIX for Buttons
-                    "student_name": s.name,
-                    "photo_url": s.profile_photo_url,
-                    "admission_number": s.admission_number,
+                    "student_id": s.id,
+                    "student_name": s.name, 
+                    "photo_url": s.profile_photo_url, 
+                    "admission_number": s.admission_number, 
                     "status": att.status if att else "Not Marked",
-                    "total_classes": total_classes,
-                    "present": present_count
+                    "total_classes": total,
+                    "present": present
                 })
                 seen.add(s.id)
                 
     return jsonify(report)
-
 # 2. ANNOUNCEMENTS (GET & POST)
 @app.route('/api/teacher/announcements', methods=['GET', 'POST'])
 @login_required
