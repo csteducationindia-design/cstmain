@@ -662,7 +662,47 @@ def serve_receipt(id):
 # =========================================================
 # TEACHER SPECIFIC ROUTES
 # =========================================================
+# =========================================================
+# STUDENT & PARENT ROUTES (ADD THIS SECTION)
+# =========================================================
 
+@app.route('/api/my/profile', methods=['GET'])
+@login_required
+def my_profile():
+    # Returns the logged-in user's profile
+    return jsonify(current_user.to_dict())
+
+@app.route('/api/my/attendance', methods=['GET'])
+@login_required
+def my_attendance():
+    uid = current_user.id
+    # If Parent, fetch Child's data
+    if current_user.role == 'parent':
+        child = User.query.filter_by(parent_id=current_user.id).first()
+        if not child: return jsonify([])
+        uid = child.id
+        
+    atts = Attendance.query.filter_by(student_id=uid).order_by(Attendance.check_in_time.desc()).limit(30).all()
+    return jsonify([{"date": a.check_in_time.strftime('%Y-%m-%d'), "status": a.status} for a in atts])
+
+@app.route('/api/my/fees', methods=['GET'])
+@login_required
+def my_fees():
+    uid = current_user.id
+    # If Parent, fetch Child's data
+    if current_user.role == 'parent':
+        child = User.query.filter_by(parent_id=current_user.id).first()
+        if not child: return jsonify({"balance": 0})
+        uid = child.id
+    return jsonify(calculate_fee_status(uid))
+
+@app.route('/api/my/announcements', methods=['GET'])
+@login_required
+def my_announcements():
+    # Fetch announcements targeted at 'all', 'students', or 'parents'
+    target = 'parents' if current_user.role == 'parent' else 'students'
+    anns = Announcement.query.filter(Announcement.target_group.in_(['all', target])).order_by(Announcement.created_at.desc()).all()
+    return jsonify([a.to_dict() for a in anns])
 # 2. GET STUDENTS (With Debugging & robust filtering)
 @app.route('/api/teacher/students', methods=['GET'])
 @login_required
