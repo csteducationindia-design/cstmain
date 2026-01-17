@@ -907,9 +907,10 @@ def teacher_att_report():
 # 6. GET TEACHER COURSES
 @app.route('/api/teacher/courses', methods=['GET'])
 @login_required
-def t_courses(): 
-    if current_user.role != 'teacher': return jsonify({"msg": "Denied"}), 403
-    return jsonify([c.to_dict() for c in Course.query.filter_by(teacher_id=current_user.id).all()])
+def teacher_courses():
+    # Fetch courses assigned to the logged-in teacher
+    courses = Course.query.filter_by(teacher_id=current_user.id).all()
+    return jsonify([c.to_dict() for c in courses])
 
 @app.route('/api/teacher/attendance', methods=['POST'])
 @login_required
