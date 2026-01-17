@@ -339,7 +339,7 @@
                 </div>
             </div>
 
-            <div id="content-syllabus" class="content-section hidden animate-fade-in">
+<div id="content-syllabus" class="content-section hidden animate-fade-in">
                 <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm p-8 border border-slate-100 dark:border-slate-700 max-w-4xl mx-auto">
                     <div class="flex items-center gap-3 mb-6 pb-6 border-b border-slate-100 dark:border-slate-700">
                         <div class="p-3 bg-indigo-50 text-indigo-600 rounded-xl"><span class="material-symbols-outlined">menu_book</span></div>
@@ -349,25 +349,31 @@
                         </div>
                     </div>
                     
-                    <form class="space-y-6" onsubmit="event.preventDefault(); alert('Syllabus log saved (Mock)!');">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <form id="syllabus-form" class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div>
-                                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Course</label>
-                                <select id="syllabus-course-select" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-sm p-3 focus:ring-primary">
+                                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">1. Select Batch</label>
+                                <select id="syllabus-session-select" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-sm p-3 focus:ring-primary">
+                                    <option value="">-- All Batches --</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">2. Select Course</label>
+                                <select id="syllabus-course-select" required class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-sm p-3 focus:ring-primary">
                                     <option value="">-- Choose Course --</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Date</label>
-                                <input type="date" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-sm p-3 focus:ring-primary">
+                                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">3. Date</label>
+                                <input type="date" id="syllabus-date" required class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-sm p-3 focus:ring-primary">
                             </div>
                         </div>
                         <div>
                             <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Topics Covered Today</label>
-                            <textarea rows="4" placeholder="e.g. Introduction to Loops, While Loop syntax, Practice problems..." class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-sm p-3 focus:ring-primary"></textarea>
+                            <textarea id="syllabus-topic" rows="4" required placeholder="e.g. Introduction to Loops, While Loop syntax..." class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-sm p-3 focus:ring-primary"></textarea>
                         </div>
                         <div class="flex justify-end">
-                            <button class="bg-indigo-600 text-white font-bold py-3 px-8 rounded-xl hover:bg-indigo-700 shadow-md transition flex items-center gap-2">
+                            <button type="submit" class="bg-indigo-600 text-white font-bold py-3 px-8 rounded-xl hover:bg-indigo-700 shadow-md transition flex items-center gap-2">
                                 <span class="material-symbols-outlined text-sm">save_as</span>
                                 Save Syllabus Log
                             </button>
@@ -376,11 +382,18 @@
                 </div>
             </div>
 
-            <div id="content-assignments" class="content-section hidden animate-fade-in">
+            
+<div id="content-assignments" class="content-section hidden animate-fade-in">
                 <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm p-6 border border-slate-100 dark:border-slate-700 mb-6">
-                    <div class="flex items-end gap-4">
-                        <div class="w-full md:w-1/2">
-                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Select Course to View Students</label>
+                    <div class="flex flex-col md:flex-row items-end gap-4">
+                        <div class="w-full md:w-1/3">
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">1. Select Batch</label>
+                            <select id="assignment-session-select" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm p-3 focus:ring-primary">
+                                <option value="">-- All Batches --</option>
+                            </select>
+                        </div>
+                        <div class="w-full md:w-1/3">
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">2. Select Course</label>
                             <select id="assignment-course-select" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm p-3 focus:ring-primary">
                                 <option value="">-- Choose Course --</option>
                             </select>
@@ -394,17 +407,19 @@
                             <thead class="bg-slate-50 dark:bg-slate-800">
                                 <tr>
                                     <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Student Name</th>
+                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Batch</th>
                                     <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Assignment Status</th>
                                     <th class="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Action</th>
                                 </tr>
                             </thead>
                             <tbody id="assignment-table-body" class="divide-y divide-slate-200 dark:divide-slate-700">
-                                <tr><td colspan="3" class="px-6 py-12 text-center text-slate-500">Please select a course to track assignments.</td></tr>
+                                <tr><td colspan="4" class="px-6 py-12 text-center text-slate-500">Please select a Course to track assignments.</td></tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
+
 <div id="content-announcements" class="content-section hidden animate-fade-in">
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div class="lg:col-span-1">
@@ -796,20 +811,33 @@
 
 
         function populateDropdowns() {
-        // Populate Course Dropdowns (Existing)
-        const courseSelects = [document.getElementById('attendance-course-select'), document.getElementById('note-course-select'), document.getElementById('report-course-select')];
+        // 1. Populate COURSE Dropdowns
+        const courseSelects = [
+            document.getElementById('attendance-course-select'), 
+            document.getElementById('note-course-select'), 
+            document.getElementById('report-course-select'),
+            document.getElementById('syllabus-course-select'),   // Updated
+            document.getElementById('assignment-course-select')  // Updated
+        ];
+        
         courseSelects.forEach(select => {
             if(!select) return;
             select.innerHTML = '<option value="">-- Select Course --</option>' + 
                 allTeacherCourses.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
         });
 
-        // NEW: Populate Batch/Session Dropdown
-        const sessionSelect = document.getElementById('attendance-session-select');
-        if(sessionSelect) {
-            sessionSelect.innerHTML = '<option value="">All Batches</option>' + 
+        // 2. Populate BATCH/SESSION Dropdowns
+        const sessionSelects = [
+            document.getElementById('attendance-session-select'),
+            document.getElementById('syllabus-session-select'),   // New
+            document.getElementById('assignment-session-select')  // New
+        ];
+
+        sessionSelects.forEach(select => {
+            if(!select) return;
+            select.innerHTML = '<option value="">All Batches</option>' + 
                 allSessions.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-        }
+        });
     }
 
         async function fetchDashboardData() {
@@ -1016,37 +1044,97 @@
             }
         });
 
-
-        // --- ASSIGNMENTS MOCK LOGIC ---
-        assignmentCourseSelect.addEventListener('change', (e) => {
-            const cid = e.target.value;
-            const tbody = document.getElementById('assignment-table-body');
-            tbody.innerHTML = '';
-            if(!cid) { tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-12 text-center text-slate-500">Please select a course to view students.</td></tr>'; return; }
+// --- SYLLABUS SUBMIT LOGIC ---
+    const syllabusForm = document.getElementById('syllabus-form');
+    if(syllabusForm) {
+        syllabusForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const cid = document.getElementById('syllabus-course-select').value;
+            const sid = document.getElementById('syllabus-session-select').value;
+            const date = document.getElementById('syllabus-date').value;
+            const topic = document.getElementById('syllabus-topic').value;
             
-            const filtered = allTeacherStudents.filter(s => s.course_ids && s.course_ids.includes(parseInt(cid)));
-            if(filtered.length === 0) { tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-12 text-center text-slate-500">No students enrolled in this course.</td></tr>'; return; }
+            // Get Names for Notification
+            const courseName = allTeacherCourses.find(c => c.id == cid)?.name || 'Course';
+            const sessionName = allSessions.find(s => s.id == sid)?.name || 'All Batches';
+            
+            // Combine topic with batch info if specific batch selected
+            const finalTopic = sid ? `[${sessionName}] ${topic}` : topic;
 
-            filtered.forEach(s => {
-                tbody.innerHTML += `
-                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition border-b border-slate-50 dark:border-slate-800">
-                        <td class="px-6 py-4 font-medium text-slate-900 dark:text-white flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-xs font-bold">${s.name.charAt(0)}</div>
-                            ${s.name}
-                        </td>
-                        <td class="px-6 py-4">
-                            <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 text-amber-600 rounded-lg text-xs font-bold border border-amber-100">
-                                <span class="w-2 h-2 rounded-full bg-amber-500"></span> Pending Submission
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 text-right">
-                            <button class="text-primary hover:text-blue-700 text-xs font-bold border border-primary/20 hover:bg-primary/5 px-3 py-1.5 rounded-lg transition" onclick="alert('Assignment marked as submitted for ${s.name} (Mock)')">
-                                Mark as Submitted
-                            </button>
-                        </td>
-                    </tr>`;
-            });
+            const payload = {
+                course_id: parseInt(cid),
+                topic: finalTopic, // Saves " [Jan Batch] Loops..." 
+                date: date
+            };
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/teacher/daily_topic`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    credentials: 'include',
+                    body: JSON.stringify(payload)
+                });
+                alert('Syllabus Logged & Notification Sent to Parents!');
+                syllabusForm.reset();
+            } catch(e) {
+                console.error(e);
+                alert("Error saving syllabus.");
+            }
         });
+    }
+        // --- ASSIGNMENTS MOCK LOGIC ---
+        // --- ASSIGNMENTS LOGIC (With Batch Filtering) ---
+    const assignCourseSelect = document.getElementById('assignment-course-select');
+    const assignSessionSelect = document.getElementById('assignment-session-select');
+
+    function loadAssignments() {
+        const cid = assignCourseSelect.value;
+        const sid = assignSessionSelect.value;
+        const tbody = document.getElementById('assignment-table-body');
+        
+        tbody.innerHTML = '';
+        
+        if(!cid) { 
+            tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-12 text-center text-slate-500">Please select a course to view students.</td></tr>'; 
+            return; 
+        }
+        
+        // Filter by Course AND Batch
+        const filtered = allTeacherStudents.filter(s => {
+            const courseMatch = s.course_ids && s.course_ids.includes(parseInt(cid));
+            const sessionMatch = !sid || s.session_id == sid; // Match batch if selected
+            return courseMatch && sessionMatch;
+        });
+
+        if(filtered.length === 0) { 
+            tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-12 text-center text-slate-500">No students found for this Batch/Course.</td></tr>'; 
+            return; 
+        }
+
+        filtered.forEach(s => {
+            tbody.innerHTML += `
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition border-b border-slate-50 dark:border-slate-800">
+                    <td class="px-6 py-4 font-medium text-slate-900 dark:text-white flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-xs font-bold">${s.name.charAt(0)}</div>
+                        ${s.name}
+                    </td>
+                    <td class="px-6 py-4 text-xs text-blue-600 font-bold">${s.session_name || '-'}</td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 text-amber-600 rounded-lg text-xs font-bold border border-amber-100">
+                            <span class="w-2 h-2 rounded-full bg-amber-500"></span> Pending
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <button class="text-primary hover:text-blue-700 text-xs font-bold border border-primary/20 hover:bg-primary/5 px-3 py-1.5 rounded-lg transition" onclick="alert('Marked as submitted for ${s.name}')">
+                            Mark Done
+                        </button>
+                    </td>
+                </tr>`;
+        });
+    }
+
+    if(assignCourseSelect) assignCourseSelect.addEventListener('change', loadAssignments);
+    if(assignSessionSelect) assignSessionSelect.addEventListener('change', loadAssignments);
 
 // --- ANNOUNCEMENT LOGIC ---
 const annForm = document.getElementById('teacher-announcement-form');
