@@ -262,21 +262,28 @@
 
             <div id="content-attendance" class="content-section hidden animate-fade-in">
                 <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-md p-8 border border-slate-100 dark:border-slate-700 mb-8 relative overflow-hidden">
-                    <div class="absolute top-0 left-0 w-1 h-full bg-primary"></div>
-                    <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-6">Step 1: Select Class & Date</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        <div>
-                            <label for="attendance-course-select" class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Select Course</label>
-                            <select id="attendance-course-select" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary p-2.5 shadow-sm transition">
-                                <option value="">-- Choose Course --</option>
-                            </select>
-                            <p class="text-xs text-slate-500 mt-2 flex items-center gap-1"><span class="material-symbols-outlined text-sm">info</span> Only students in this course will appear.</p>
-                        </div>
-                        <div>
-                            <label for="attendance-date" class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Select Date</label>
-                            <input type="date" id="attendance-date" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary p-2.5 shadow-sm transition">
-                        </div>
-                        <div class="flex items-end">
+    <div class="absolute top-0 left-0 w-1 h-full bg-primary"></div>
+    <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-6">Step 1: Select Batch, Course & Date</h3>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div>
+            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">1. Select Batch (Session)</label>
+            <select id="attendance-session-select" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary p-2.5 shadow-sm transition">
+                <option value="">All Batches</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">2. Select Course</label>
+            <select id="attendance-course-select" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary p-2.5 shadow-sm transition">
+                <option value="">-- Choose Course --</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">3. Select Date</label>
+            <input type="date" id="attendance-date" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary p-2.5 shadow-sm transition">
+        </div>
+    </div>
+</div>
+
                             <div class="text-sm text-blue-700 bg-blue-50 dark:bg-blue-900/30 p-4 rounded-xl w-full border border-blue-100 dark:border-blue-800 flex gap-3 items-start">
                                 <span class="material-symbols-outlined text-blue-600">lightbulb</span>
                                 <div>
@@ -735,35 +742,41 @@
         window.addEventListener('hashchange', loadContent);
 
         // --- AUTH & SESSION CHECK ---
-        async function checkSessionAndInit() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/check_session`, {credentials: 'include'});
-                const result = await response.json();
-                if (!response.ok || !result.logged_in || result.user.role !== 'teacher') {
-                    window.location.href = API_ORIGIN + '/';
-                    return;
-                }
-                
-                // Set Welcome Message
-                const date = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                document.getElementById('welcome-message').textContent = `Welcome back, ${result.user.name.split(' ')[0]}.`;
-                document.getElementById('current-date-display').textContent = date;
-                
-                loadContent();
-                
-                // Initialize Firebase late to allow page load
-                setTimeout(initFirebase, 2000);
+        // Add a global variable for sessions
+    let allSessions = []; 
 
-            } catch (error) {
-                console.error("Session Check Failed:", error);
+    async function checkSessionAndInit() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/check_session`, {credentials: 'include'});
+            const result = await response.json();
+            if (!response.ok || !result.logged_in || result.user.role !== 'teacher') {
                 window.location.href = API_ORIGIN + '/';
+                return;
             }
-        }
+            
+            // WELCOME MESSAGE
+            document.getElementById('welcome-message').textContent = `Welcome back, ${result.user.name}.`;
+            
+            // LOAD DATA (Now fetching Sessions too)
+            await Promise.all([
+                fetchTeacherCourses(),
+                fetchSessions() // <--- NEW FUNCTION CALL
+            ]);
+            
+            populateDropdowns();
+            loadContent();
+            setTimeout(initFirebase, 2000);
 
-        logoutBtn.addEventListener('click', async () => {
-            await fetch(`${API_BASE_URL}/logout`, { method: 'POST', credentials: 'include' });
-            window.location.href = API_ORIGIN + '/';
-        });
+        } catch (error) { console.error("Init Failed:", error); }
+    }
+
+    // NEW FUNCTION TO FETCH SESSIONS
+    async function fetchSessions() {
+        try {
+            const res = await fetch(`${API_BASE_URL}/teacher/sessions`, { credentials: 'include' });
+            allSessions = await res.json();
+        } catch (e) { console.error(e); }
+    }
 
         // --- DATA FETCHING FUNCTIONS ---
         async function fetchTeacherCourses() {
@@ -784,21 +797,21 @@
 
 
         function populateDropdowns() {
-            const selects = [attendanceCourseSelect, noteCourseSelect, syllabusCourseSelect, assignmentCourseSelect, reportCourseSelect];
-            selects.forEach(select => {
-                if(!select) return;
-                const currentVal = select.value;
-                const defaultOption = select.id === 'report-course-select' 
-                    ? '<option value="">Show All Students</option>' 
-                    : '<option value="">-- Select Course --</option>';
-                
-                select.innerHTML = defaultOption + allTeacherCourses.map(c => 
-                    `<option value="${c.id}">${c.name}</option>`
-                ).join('');
-                
-                if(currentVal) select.value = currentVal;
-            });
+        // Populate Course Dropdowns (Existing)
+        const courseSelects = [document.getElementById('attendance-course-select'), document.getElementById('note-course-select'), document.getElementById('report-course-select')];
+        courseSelects.forEach(select => {
+            if(!select) return;
+            select.innerHTML = '<option value="">-- Select Course --</option>' + 
+                allTeacherCourses.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        });
+
+        // NEW: Populate Batch/Session Dropdown
+        const sessionSelect = document.getElementById('attendance-session-select');
+        if(sessionSelect) {
+            sessionSelect.innerHTML = '<option value="">All Batches</option>' + 
+                allSessions.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
         }
+    }
 
         async function fetchDashboardData() {
             document.getElementById('total-my-courses').textContent = allTeacherCourses.length;
@@ -831,46 +844,89 @@
         // --- ATTENDANCE LOGIC (Course-Wise Filter) ---
         
         function renderAttendanceTable(courseId) {
-            const tbody = document.getElementById('attendance-table-body');
-            tbody.innerHTML = '';
-            currentAttendanceStatus = {};
-            
-            if(!courseId) {
-                tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-16 text-center text-slate-400 flex flex-col items-center"><span class="material-symbols-outlined text-4xl mb-2">arrow_upward</span>Please select a course above to load student list.</td></tr>';
-                updateAttendanceButtons();
-                return;
-            }
+            // --- NEW SERVER-SIDE FILTERING LOGIC ---
 
-            // Filter students by Course ID using the cached 'course_ids' array in student objects
-            const filteredStudents = allTeacherStudents.filter(s => s.course_ids && s.course_ids.includes(parseInt(courseId)));
+    // 1. Add Event Listeners for BOTH Dropdowns
+    // This ensures the list updates when you change Batch OR Course
+    const sessionDropdown = document.getElementById('attendance-session-select');
+    const courseDropdown = document.getElementById('attendance-course-select');
 
-            if(filteredStudents.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-16 text-center text-slate-400">No students found enrolled in this course.</td></tr>';
-                updateAttendanceButtons();
-                return;
-            }
+    if(sessionDropdown) sessionDropdown.addEventListener('change', loadAttendanceStudents);
+    if(courseDropdown) courseDropdown.addEventListener('change', loadAttendanceStudents);
 
-            filteredStudents.forEach(s => {
-                currentAttendanceStatus[s.id] = 'Present'; // Default
-                
-                // FIXED COLUMN ORDER: Checkbox -> ID -> Name -> Status
-                tbody.innerHTML += `
-                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition group border-b border-slate-50 dark:border-slate-800">
-                        <td class="px-6 py-4">
-                            <input type="checkbox" class="student-checkbox rounded border-slate-300 text-primary focus:ring-primary w-5 h-5 cursor-pointer" data-id="${s.id}">
-                        </td>
-                        <td class="px-6 py-4 text-xs text-slate-400 font-mono">#${s.id}</td>
-                        <td class="px-6 py-4 text-sm font-medium text-slate-900 dark:text-white flex items-center gap-3">
-                            <div class="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-bold shadow-sm">${s.name.charAt(0)}</div>
-                            ${s.name}
-                        </td>
-                        <td class="px-6 py-4 text-center">
-                            <span id="status-${s.id}" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 shadow-sm border border-green-200">Present</span>
-                        </td>
-                    </tr>
-                `;
-            });
+    // 2. The New Data Loading Function
+    async function loadAttendanceStudents() {
+        const sid = document.getElementById('attendance-session-select').value;
+        const cid = document.getElementById('attendance-course-select').value;
+        const tbody = document.getElementById('attendance-table-body');
+        
+        // Reset Status Tracking
+        currentAttendanceStatus = {};
+        
+        // Validation: Course is mandatory
+        if(!cid) {
+            tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-16 text-center text-slate-400 flex flex-col items-center"><span class="material-symbols-outlined text-4xl mb-2">arrow_upward</span>Please select a Course to view students.</td></tr>';
             updateAttendanceButtons();
+            return;
+        }
+
+        tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-12 text-center text-slate-500">Loading students from server...</td></tr>';
+
+        try {
+            // BUILD URL: Send both Course ID and Session ID to backend
+            let url = `${API_BASE_URL}/teacher/students?course_id=${cid}`;
+            if(sid && sid !== "") {
+                url += `&session_id=${sid}`;
+            }
+
+            const res = await fetch(url, { credentials: 'include' });
+            const students = await res.json();
+
+            if (students.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="px-6 py-16 text-center text-red-500">
+                            <div class="font-bold">No students found.</div>
+                            <div class="text-xs text-slate-400 mt-1">Check if students are enrolled in this specific Batch & Course.</div>
+                        </td>
+                    </tr>`;
+                updateAttendanceButtons();
+                return;
+            }
+
+            // RENDER ROWS
+            tbody.innerHTML = students.map(s => {
+                // Set default status for logic
+                currentAttendanceStatus[s.id] = 'Present';
+
+                return `
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition border-b border-slate-100 dark:border-slate-800">
+                    <td class="px-6 py-4">
+                        <input type="checkbox" class="student-checkbox w-5 h-5 text-primary rounded border-slate-300 focus:ring-primary cursor-pointer" data-id="${s.id}">
+                    </td>
+                    <td class="px-6 py-4 text-xs text-slate-400 font-mono">#${s.admission_number || s.id}</td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <img src="${s.profile_photo_url ? API_ORIGIN + s.profile_photo_url : 'https://placehold.co/40'}" class="w-9 h-9 rounded-full object-cover border border-slate-200 shadow-sm">
+                            <div>
+                                <div class="font-bold text-slate-900 dark:text-white text-sm">${s.name}</div>
+                                <div class="text-xs text-blue-600 font-medium bg-blue-50 inline-block px-1.5 rounded mt-0.5">${s.session_name || 'No Batch'}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <span id="status-${s.id}" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 border border-green-200 shadow-sm">Present</span>
+                    </td>
+                </tr>`;
+            }).join('');
+            
+            updateAttendanceButtons();
+
+        } catch (e) {
+            console.error("Load Error:", e);
+            tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-12 text-center text-red-500">System Error. Check Console.</td></tr>';
+        }
+    }
         }
 
         function updateAttendanceButtons() {
