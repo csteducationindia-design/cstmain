@@ -679,26 +679,37 @@
     }
 
     // --- 4. ATTENDANCE LOGIC ---
-    async function loadStudents() {
+async function loadStudents() {
         const sid = document.getElementById('att-session').value;
         const cid = document.getElementById('att-course').value;
         const tbody = document.getElementById('att-body');
         
-        // Only Course is required
-        if(!cid) return; 
+        // Only Course is required to start loading
+        if(!cid) {
+            tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-12 text-center text-slate-400">Please select a Course first.</td></tr>';
+            return;
+        } 
 
         tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-12 text-center text-slate-500">Loading students...</td></tr>';
 
         try {
-            // Robust URL construction
-            let url = `${API_BASE_URL}/teacher/students?course_id=${cid}`;
-            if(sid) url += `&session_id=${sid}`;
+            // FIX: Build URL safely
+            const url = new URL(`${API_BASE_URL}/teacher/students`);
+            url.searchParams.append('course_id', cid);
+            // Only append session_id if it has a real value
+            if(sid) url.searchParams.append('session_id', sid);
 
             const res = await fetch(url, { credentials: 'include' });
             const students = await res.json();
             
             if (students.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-12 text-center text-red-500 font-bold">No students found in this course/batch.</td></tr>';
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="3" class="px-6 py-12 text-center text-red-500">
+                            <div class="font-bold">No students found.</div>
+                            <div class="text-xs mt-1 text-gray-500">Tip: Ensure students are enrolled in this Course in the Admin Panel.</div>
+                        </td>
+                    </tr>`;
                 return;
             }
 
@@ -725,15 +736,9 @@
                     </td>
                 </tr>
             `).join('');
-            
-            // Update Dashboard Count
-            if(document.getElementById('total-my-students')) {
-                document.getElementById('total-my-students').textContent = students.length;
-            }
-
-        } catch(e) {
-            console.error("Load Students Error:", e);
-            tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-12 text-center text-red-500">Error fetching student list.</td></tr>';
+        } catch (e) {
+            console.error("Load Error:", e);
+            tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-12 text-center text-red-500">System Error. Check Console.</td></tr>';
         }
     }
 

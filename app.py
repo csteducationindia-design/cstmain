@@ -681,36 +681,40 @@ def my_announcements():
 
 # 2. GET STUDENTS (With Debugging & robust filtering)
 # --- 1. ROBUST STUDENT FETCHING (Fixes "No Data" issue) ---
+# FIX: Robust Filtering for Students
 @app.route('/api/teacher/students', methods=['GET'])
 @login_required
 def teacher_students():
     sid = request.args.get('session_id')
     cid = request.args.get('course_id')
     
-    # FIX: Sanitize inputs to prevent matching errors
-    if sid in ['null', 'undefined', '', 'None']: sid = None
-    if cid in ['null', 'undefined', '', 'None']: cid = None
-    
+    # 1. Get Courses for this Teacher
     query = Course.query.filter_by(teacher_id=current_user.id)
-    if cid: query = query.filter_by(id=int(cid))
+    
+    # Apply Course Filter if provided
+    if cid and cid not in ['null', 'undefined', '']:
+        query = query.filter_by(id=int(cid))
+    
     courses = query.all()
     
     students_list = []
     seen = set()
     
     for c in courses:
-        # Logic: If No Session selected (sid is None), show ALL students in course.
-        # Otherwise, only show students matching that session.
         for s in c.students:
-            if sid and str(s.session_id) != str(sid):
-                continue # Skip if session doesn't match
-                
+            # 2. BATCH FILTER LOGIC
+            # Only filter by session if a specific session is selected (not empty)
+            if sid and sid not in ['null', 'undefined', '']:
+                # Convert both to strings for safe comparison
+                if str(s.session_id) != str(sid):
+                    continue 
+
             if s.id not in seen:
                 students_list.append({
-                    "id": s.id, 
-                    "name": s.name, 
+                    "id": s.id,
+                    "name": s.name,
                     "admission_number": s.admission_number,
-                    "profile_photo_url": s.profile_photo_url, 
+                    "profile_photo_url": s.profile_photo_url,
                     "session_name": s.to_dict().get('session_name', 'N/A')
                 })
                 seen.add(s.id)
