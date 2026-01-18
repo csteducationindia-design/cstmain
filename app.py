@@ -260,6 +260,14 @@ class SharedNote(db.Model):
     course = db.relationship('Course', backref=db.backref('notes', lazy=True))
     def to_dict(self): return {"id": self.id, "title": self.title, "course_name": self.course.name if self.course else "N/A", "filename": self.filename, "created_at": self.created_at.strftime('%Y-%m-%d')}
 
+class Exam(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.Integer, db.ForeignKey('academic_session.id'), nullable=False)
+    exam_date = db.Column(db.Date, nullable=False)
+    exam_time = db.Column(db.String(20), nullable=False)
+    instructions = db.Column(db.Text, nullable=True)
+
+
 # =========================================================
 # HELPER FUNCTIONS
 # =========================================================
@@ -422,69 +430,73 @@ def print_receipt(id):
     """
 
 # 3. GENERATE HALL TICKET (HTML View)
-@app.route('/admin/hallticket/<int:student_id>')
-def print_hallticket(student_id):
-    student = db.session.get(User, student_id)
-    if not student: return "Student not found"
-    
-    courses = ", ".join([c.name for c in student.courses_enrolled])
-    photo = student.profile_photo_url if student.profile_photo_url else "https://placehold.co/150"
-    
-    return f"""
-    <html>
-    <head><title>Hall Ticket - {student.name}</title></head>
-    <body onload="window.print()" style="font-family: sans-serif; padding: 20px;">
-        <div style="border: 3px solid #000; padding: 20px; max-width: 700px; margin: auto;">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 15px;">
-                <div>
-                    <h1 style="margin: 0; font-size: 24px;">CST INSTITUTE</h1>
-                    <p style="margin: 0;">Exam Hall Ticket</p>
-                </div>
-                <div style="text-align: right;">
-                    <p><strong>Session:</strong> {student.session_name or 'Current'}</p>
-                </div>
-            </div>
-            
-            <div style="display: flex; margin-top: 20px; gap: 20px;">
-                <img src="{photo}" style="width: 120px; height: 140px; object-fit: cover; border: 1px solid #000;">
-                <div style="flex: 1; line-height: 1.6;">
-                    <p><strong>Name:</strong> {student.name.upper()}</p>
-                    <p><strong>Admission No:</strong> {student.admission_number}</p>
-                    <p><strong>Exam Center:</strong> CST Main Campus</p>
-                    <p><strong>Course(s):</strong> {courses}</p>
-                </div>
-            </div>
 
-            <table style="width: 100%; border-collapse: collapse; margin-top: 30px; border: 1px solid #000;">
-                <tr style="background: #eee;">
-                    <th style="border: 1px solid #000; padding: 10px;">Subject / Course</th>
-                    <th style="border: 1px solid #000; padding: 10px;">Exam Date</th>
-                    <th style="border: 1px solid #000; padding: 10px;">Supervisor Sign</th>
-                </tr>
-                <tr>
-                    <td style="border: 1px solid #000; padding: 15px;">{courses} Final Exam</td>
-                    <td style="border: 1px solid #000; padding: 15px;">___ / ___ / 2026</td>
-                    <td style="border: 1px solid #000; padding: 15px;"></td>
-                </tr>
-            </table>
 
-            <div style="margin-top: 40px; font-size: 12px;">
-                <strong>Instructions:</strong>
-                <ul>
-                    <li>Candidate must carry this Hall Ticket to the exam hall.</li>
-                    <li>Report 15 minutes before exam time.</li>
-                </ul>
-            </div>
-        </div>
-    </body>
-    </html>
-    """
+@app.route('/api/exams', methods=['POST'])
+@login_required
+def save_exam():
+    if current_user.role != 'admin':
+        return jsonify({"msg": "Denied"}), 403
+
+    d = request.json
+    exam = Exam(
+        session_id=int(d['session_id']),
+        exam_date=datetime.strptime(d['exam_date'], '%Y-%m-%d').date(),
+        exam_time=d['exam_time'],
+        instructions=d.get('instructions', '')
+    )
+    db.session.add(exam)
+    db.session.commit()
+    return jsonify({"msg": "Exam saved"})
 
 # --- ADMIN ROUTES ---
 @app.route('/api/users', methods=['GET', 'POST', 'PUT'])
 @login_required
 def api_users():
-    if current_user.role != 'admin': return jsonify({"msg": "Denied"}), 403
+    if current_user.role != 'admin':
+        return jsonify({"msg": "Denied"}), 403
+
+@app.route('/admin/hallticket/<int:student_id>')
+@login_required
+def print_hallticket(student_id):
+
+    # 1️⃣ Security
+    if current_user.role != 'admin':
+        return "Denied", 403
+
+    # 2️⃣ Get student
+    student = db.session.get(User, student_id)
+    if not student:
+        return "Student not found", 404
+
+    # 3️⃣ Get session name safely
+    session_name = "Not Assigned"
+    if student.session_id:
+        sess = db.session.get(AcademicSession, student.session_id)
+        if sess:
+            session_name = sess.name
+
+    # 4️⃣ ✅ THIS IS WHERE THE LINE GOES ✅
+    exam = None
+    if student.session_id:
+        exam = Exam.query.filter_by(
+            session_id=student.session_id
+        ).order_by(Exam.id.desc()).first()
+
+    # 5️⃣ Other data
+    courses = ", ".join([c.name for c in student.courses_enrolled]) or "N/A"
+    photo = student.profile_photo_url if student.profile_photo_url else "https://placehold.co/150"
+
+    # 6️⃣ Send everything to template
+    return render_template(
+        "hallticket.html",
+        student=student,
+        session_name=session_name,
+        courses=courses,
+        photo=photo,
+        exam=exam
+    )
+: return jsonify({"msg": "Denied"}), 403
     
     if request.method == 'GET':
         search = request.args.get('search', '').lower()

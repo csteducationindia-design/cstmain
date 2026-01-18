@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hall Ticket</title>
+    <style>
+        body { font-family: Arial; }
+        .card { border: 2px solid #000; padding: 20px; max-width: 700px; margin: auto; }
+    </style>
+</head>
+<body onload="window.print()">
+
+<div class="card">
+    <h2 style="text-align:center;">CST INSTITUTE – HALL TICKET</h2>
+
+    <p><b>Name:</b> {{ student.name }}</p>
+    <p><b>Admission No:</b> {{ student.admission_number }}</p>
+    <p><b>Batch:</b> {{ session_name }}</p>
+    <p><b>Course(s):</b> {{ courses }}</p>
+
+    <hr>
+
+    <p><b>Exam Date:</b> {{ exam.exam_date if exam else 'TBA' }}</p>
+    <p><b>Exam Time:</b> {{ exam.exam_time if exam else 'TBA' }}</p>
+
+    <hr>
+
+    <b>Instructions:</b>
+    <ol>
+        <li>Reach exam hall 15 minutes early.</li>
+        <li>Mobile phones strictly prohibited.</li>
+        <li>Carry ID card and hall ticket.</li>
+        <li>{{ exam.instructions if exam else '' }}</li>
+    </ol>
+
+    <br><br>
+    <p style="text-align:right;">Authorized Signatory</p>
+</div>
+
+</body>
+</html>
