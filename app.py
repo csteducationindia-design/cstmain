@@ -550,7 +550,7 @@ def print_hallticket(student_id):
         photo=photo,
         exam=exam
     )
-: return jsonify({"msg": "Denied"}), 403
+
     
     if request.method == 'GET':
         search = request.args.get('search', '').lower()
