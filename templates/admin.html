@@ -330,7 +330,7 @@
             <button type="submit" class="bg-green-600 text-white font-bold py-2 rounded-lg col-span-1 md:col-span-4 hover:bg-green-700">Receive Payment & Print Receipt</button>
         </form>
     </div>
-
+</div>
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100 h-fit">
             <h3 class="font-bold mb-4 text-gray-700">Fee Structures</h3>
@@ -436,23 +436,6 @@
                 </form>
             </div>
         </div>
-<div id="content-bulk" class="content-section hidden">
-        <h2 class="text-3xl font-bold mb-6">Bulk Data Upload</h2>
-        <div class="bg-white dark:bg-slate-900 p-8 rounded-xl shadow-sm max-w-2xl border border-slate-100">
-            <p class="mb-4 text-gray-600 dark:text-gray-300">
-                Upload a CSV file to add students. Headers required: 
-                <b class="font-mono text-red-500">name, email, password, role, phone_number, admission_number</b>
-            </p>
-            <form id="bulk-form" class="space-y-4">
-                <div class="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center bg-slate-50 cursor-pointer hover:bg-white transition-colors">
-                    <input type="file" name="file" class="w-full cursor-pointer" accept=".csv" required>
-                </div>
-                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg w-full flex justify-center items-center gap-2 transition-colors">
-                    <span class="material-symbols-outlined">upload</span> Upload CSV File
-                </button>
-            </form>
-        </div>
-    </div>
     </main>
 </div>
 
@@ -466,35 +449,40 @@
     // 1. CORE NAVIGATION
     // =========================================================
     function showSection(hash) {
-        // Hide all sections
-        document.querySelectorAll('.content-section').forEach(el => el.classList.add('hidden'));
-        document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('bg-primary/10', 'text-primary'));
-        
-        let id = (hash || '#dashboard').replace('#', '');
-        // Validate ID exists, else default to dashboard
-        if (!document.getElementById('content-' + id)) id = 'dashboard';
-        
-        document.getElementById('content-' + id).classList.remove('hidden');
-        
-        // Highlight Sidebar Link
-        const link = document.querySelector(`a[href="#${id}"]`);
-        if(link) link.classList.add('bg-primary/10', 'text-primary');
+    document.querySelectorAll('.content-section')
+        .forEach(el => el.classList.add('hidden'));
 
-        // Lazy Load Data for current section
-        if(id === 'dashboard') fetchDashboard();
-        if(id === 'students') { loadSessions(); loadUsers(); }
-        if(id === 'teachers') loadTeachers();
-        if(id === 'parents') loadParents();
-        if(id === 'courses') { loadTeachers(); loadCourses(); }
-        if(id === 'sessions') loadSessions();
-        if(id === 'fees') {
-	    loadSessions();
-	    loadCourses().then(loadFeeReport);
-	    loadFees();
-	    loadFeeCollectionData();}
-        if(id === 'announcements') loadAnnouncements();
-        if(id === 'reports') loadAdmissions();
+    document.querySelectorAll('.nav-link')
+        .forEach(el => el.classList.remove('bg-primary/10', 'text-primary'));
+
+    let id = (hash || '#dashboard').replace('#', '');
+    if (!document.getElementById('content-' + id)) id = 'dashboard';
+
+    document.getElementById('content-' + id).classList.remove('hidden');
+
+    const link = document.querySelector(`a[href="#${id}"]`);
+    if (link) link.classList.add('bg-primary/10', 'text-primary');
+
+    // 🔥 DATA LOADERS
+    if(id === 'dashboard') fetchDashboard();
+    if(id === 'students') { loadSessions(); loadUsers(); }
+    if(id === 'teachers') loadTeachers();
+    if(id === 'parents') loadParents();
+    if(id === 'courses') { loadTeachers(); loadCourses(); }
+    if(id === 'sessions') loadSessions();
+    if(id === 'fees') {
+        loadSessions();
+        loadCourses().then(loadFeeReport);
+        loadFees();
+        loadFeeCollectionData();
     }
+    if(id === 'halltickets') {
+        loadUsers().then(loadHallTicketList);
+    }
+    if(id === 'announcements') loadAnnouncements();
+    if(id === 'reports') loadAdmissions();
+}
+
     
     // Listen for hash changes
     window.addEventListener('hashchange', () => showSection(window.location.hash));
