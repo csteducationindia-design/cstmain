@@ -487,7 +487,11 @@
         if(id === 'parents') loadParents();
         if(id === 'courses') { loadTeachers(); loadCourses(); }
         if(id === 'sessions') loadSessions();
-        if(id === 'fees') { loadSessions(); loadCourses(); loadFees(); loadFeeReport(); }
+        if(id === 'fees') {
+	    loadSessions();
+	    loadCourses().then(loadFeeReport);
+	    loadFees();
+	    loadFeeCollectionData();}
         if(id === 'announcements') loadAnnouncements();
         if(id === 'reports') loadAdmissions();
     }

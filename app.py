@@ -654,19 +654,31 @@ def get_all_parents():
 @app.route('/api/fee_status', methods=['GET'])
 @login_required
 def fee_status():
-    if current_user.role != 'admin': return jsonify({"msg": "Denied"}), 403
-    
-    course_id = request.args.get('course_id')
+    if current_user.role != 'admin':
+        return jsonify({"msg": "Denied"}), 403
+
+    course_id = request.args.get('course_id', type=int)
+
     query = User.query.filter_by(role='student')
-    
-    if course_id and str(course_id).isdigit():
-        query = query.filter(User.courses_enrolled.any(id=int(course_id)))
-        
-    return jsonify([{
-        "student_id": s.id, 
-        "student_name": s.name, 
-        **calculate_fee_status(s.id)
-    } for s in query.all()])
+
+    if course_id:
+        query = query.join(User.courses_enrolled).filter(Course.id == course_id)
+
+    students = query.all()
+
+    res = []
+    for s in students:
+        st = calculate_fee_status(s.id)
+        if st['balance'] > 0:
+            res.append({
+                "student_id": s.id,
+                "student_name": s.name,
+                "balance": st['balance'],
+                "due_date": st['due_date']
+            })
+
+    return jsonify(res)
+
 
 @app.route('/api/send_sms_alert', methods=['POST'])
 @login_required
