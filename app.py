@@ -453,8 +453,62 @@ def save_exam():
 @app.route('/api/users', methods=['GET', 'POST', 'PUT'])
 @login_required
 def api_users():
-    if current_user.role != 'admin':
-        return jsonify({"msg": "Denied"}), 403
+    if current_user.role != 'admin': return jsonify({"msg": "Denied"}), 403
+    
+    if request.method == 'GET':
+        search = request.args.get('search', '').lower()
+        session_id = request.args.get('session_id')
+        
+        q = User.query
+        
+        if session_id and session_id != 'null' and str(session_id).isdigit():
+             q = q.filter_by(session_id=int(session_id))
+             
+        if search: 
+            q = q.filter(or_(User.name.ilike(f'%{search}%'), User.email.ilike(f'%{search}%')))
+            
+        return jsonify([u.to_dict() for u in q.all()])
+
+    d = request.form
+    # Check if ID exists for Update vs Insert
+    if request.method == 'POST' and not d.get('id'):
+        if User.query.filter_by(email=d['email']).first(): return jsonify({"msg": "Email exists"}), 400
+        u = User(name=d['name'], email=d['email'], password=bcrypt.generate_password_hash(d['password']).decode('utf-8'), role=d.get('role', 'student'))
+        db.session.add(u)
+    else: # Update existing (POST with ID or PUT)
+        u_id = d.get('id')
+        if not u_id: return jsonify({"msg": "Missing ID for update"}), 400
+        u = db.session.get(User, int(u_id))
+        if not u: return jsonify({"msg": "Not found"}), 404
+        if d.get('password'): u.password = bcrypt.generate_password_hash(d['password']).decode('utf-8')
+
+    u.name = d['name']; u.email = d['email']; u.phone_number = d.get('phone_number')
+    u.admission_number = d.get('admission_number')
+    u.dob = d.get('dob'); u.gender = d.get('gender')
+    u.father_name = d.get('father_name'); u.mother_name = d.get('mother_name')
+    u.address_line1 = d.get('address_line1'); u.city = d.get('city'); u.state = d.get('state'); u.pincode = d.get('pincode')
+    
+    if d.get('session_id') and str(d.get('session_id')).isdigit():
+        u.session_id = int(d.get('session_id'))
+    
+    if d.get('parent_id') and str(d.get('parent_id')).isdigit():
+        u.parent_id = int(d.get('parent_id'))
+
+    if 'profile_photo_file' in request.files:
+        file = request.files['profile_photo_file']
+        if file and allowed_file(file.filename, ALLOWED_IMAGE_EXTENSIONS):
+            fn = secure_filename(file.filename)
+            uid = f"{uuid.uuid4()}{os.path.splitext(fn)[1]}"
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], uid))
+            u.profile_photo_url = f"/uploads/{uid}"
+
+    if u.role == 'student':
+        c_ids = request.form.getlist('course_ids')
+        if c_ids:
+            u.courses_enrolled = Course.query.filter(Course.id.in_([int(cid) for cid in c_ids if str(cid).isdigit()])).all()
+
+    db.session.commit()
+    return jsonify(u.to_dict())
 
 @app.route('/admin/hallticket/<int:student_id>')
 @login_required
