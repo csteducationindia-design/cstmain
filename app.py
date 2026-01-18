@@ -360,6 +360,126 @@ def serve_role_page(role):
 @app.route('/firebase-messaging-sw.js')
 def sw(): return send_from_directory(app.static_folder, 'firebase-messaging-sw.js')
 
+# =========================================================
+# NEW FEATURES: FEES & HALL TICKETS
+# =========================================================
+
+# 1. COLLECT FEE ROUTE
+@app.route('/api/fees/collect', methods=['POST'])
+@login_required
+def collect_fee():
+    if current_user.role != 'admin': return jsonify({"msg": "Denied"}), 403
+    d = request.json
+    try:
+        # Create Payment Record
+        pay = Payment(
+            student_id=int(d['student_id']),
+            fee_structure_id=int(d['fee_structure_id']),
+            amount_paid=float(d['amount']),
+            payment_method=d.get('payment_method', 'Cash')
+        )
+        db.session.add(pay)
+        db.session.commit()
+        return jsonify({"msg": "Payment Recorded Successfully", "payment_id": pay.id})
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+
+# 2. PRINT RECEIPT (HTML View)
+@app.route('/admin/receipt/<int:id>')
+def print_receipt(id):
+    pay = db.session.get(Payment, id)
+    if not pay: return "Receipt not found"
+    
+    student = db.session.get(User, pay.student_id)
+    fee = db.session.get(FeeStructure, pay.fee_structure_id)
+    
+    # Receipt Template
+    return f"""
+    <html>
+    <head><title>Receipt #{pay.id}</title></head>
+    <body onload="window.print()" style="font-family: sans-serif; padding: 40px;">
+        <div style="border: 2px solid #333; padding: 30px; max-width: 600px; margin: auto;">
+            <div style="text-align: center; border-bottom: 2px solid #333; margin-bottom: 20px;">
+                <h1 style="margin:0;">CST INSTITUTE</h1>
+                <p style="margin:5px 0 20px;">Fee Payment Receipt</p>
+            </div>
+            <table style="width: 100%; line-height: 2;">
+                <tr><td><strong>Receipt No:</strong> {pay.id}</td> <td style="text-align:right;"><strong>Date:</strong> {pay.payment_date.strftime('%d-%b-%Y')}</td></tr>
+                <tr><td><strong>Student Name:</strong> {student.name}</td> <td style="text-align:right;"><strong>Adm No:</strong> {student.admission_number}</td></tr>
+            </table>
+            <hr style="margin: 20px 0;">
+            <p><strong>Fee Description:</strong> {fee.name}</p>
+            <p><strong>Payment Mode:</strong> {pay.payment_method}</p>
+            <h2 style="text-align: right; background: #eee; padding: 10px;">Amount Paid: ₹{pay.amount_paid}/-</h2>
+            <br><br><br>
+            <div style="display: flex; justify-content: space-between; font-size: 12px;">
+                <span>Student Signature</span>
+                <span>Authorized Signatory</span>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+# 3. GENERATE HALL TICKET (HTML View)
+@app.route('/admin/hallticket/<int:student_id>')
+def print_hallticket(student_id):
+    student = db.session.get(User, student_id)
+    if not student: return "Student not found"
+    
+    courses = ", ".join([c.name for c in student.courses_enrolled])
+    photo = student.profile_photo_url if student.profile_photo_url else "https://placehold.co/150"
+    
+    return f"""
+    <html>
+    <head><title>Hall Ticket - {student.name}</title></head>
+    <body onload="window.print()" style="font-family: sans-serif; padding: 20px;">
+        <div style="border: 3px solid #000; padding: 20px; max-width: 700px; margin: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 15px;">
+                <div>
+                    <h1 style="margin: 0; font-size: 24px;">CST INSTITUTE</h1>
+                    <p style="margin: 0;">Exam Hall Ticket</p>
+                </div>
+                <div style="text-align: right;">
+                    <p><strong>Session:</strong> {student.session_name or 'Current'}</p>
+                </div>
+            </div>
+            
+            <div style="display: flex; margin-top: 20px; gap: 20px;">
+                <img src="{photo}" style="width: 120px; height: 140px; object-fit: cover; border: 1px solid #000;">
+                <div style="flex: 1; line-height: 1.6;">
+                    <p><strong>Name:</strong> {student.name.upper()}</p>
+                    <p><strong>Admission No:</strong> {student.admission_number}</p>
+                    <p><strong>Exam Center:</strong> CST Main Campus</p>
+                    <p><strong>Course(s):</strong> {courses}</p>
+                </div>
+            </div>
+
+            <table style="width: 100%; border-collapse: collapse; margin-top: 30px; border: 1px solid #000;">
+                <tr style="background: #eee;">
+                    <th style="border: 1px solid #000; padding: 10px;">Subject / Course</th>
+                    <th style="border: 1px solid #000; padding: 10px;">Exam Date</th>
+                    <th style="border: 1px solid #000; padding: 10px;">Supervisor Sign</th>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #000; padding: 15px;">{courses} Final Exam</td>
+                    <td style="border: 1px solid #000; padding: 15px;">___ / ___ / 2026</td>
+                    <td style="border: 1px solid #000; padding: 15px;"></td>
+                </tr>
+            </table>
+
+            <div style="margin-top: 40px; font-size: 12px;">
+                <strong>Instructions:</strong>
+                <ul>
+                    <li>Candidate must carry this Hall Ticket to the exam hall.</li>
+                    <li>Report 15 minutes before exam time.</li>
+                </ul>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
 # --- ADMIN ROUTES ---
 @app.route('/api/users', methods=['GET', 'POST', 'PUT'])
 @login_required
@@ -691,7 +811,7 @@ def my_announcements():
 # --- 1. ROBUST STUDENT FETCHING (Fixes "No Data" issue) ---
 # FIX: Robust Filtering for Students
 # FIX: Added 'course_ids' so frontend filtering works
-# FIX: Added 'course_ids' so frontend filtering works
+
 @app.route('/api/teacher/students', methods=['GET'])
 @login_required
 def teacher_students():
@@ -843,27 +963,59 @@ def teacher_notes():
     notes = SharedNote.query.filter_by(teacher_id=current_user.id).order_by(SharedNote.created_at.desc()).all()
     return jsonify([n.to_dict() for n in notes])
 
-# 4. DAILY TOPIC / SYLLABUS UPDATE (New Feature)
+
+# 4. DAILY TOPIC / SYLLABUS UPDATE (Batch-Aware)
 @app.route('/api/teacher/daily_topic', methods=['POST'])
 @login_required
 def daily_topic():
     d = request.json
-    c = db.session.get(Course, d['course_id'])
+    course_id = d.get('course_id')
+    session_id = d.get('session_id') # Get Batch ID
+    topic = d.get('topic')
     
-    # Save Record
-    db.session.add(Announcement(title=f"Topic: {c.name}", content=d['topic'], category="Syllabus", target_group="students", teacher_id=current_user.id))
+    course = db.session.get(Course, course_id)
+    if not course: return jsonify({"msg": "Error: Course not found"}), 404
+    
+    # 1. Format Topic Title
+    title = f"Syllabus: {course.name}"
+    if session_id:
+        session = db.session.get(AcademicSession, session_id)
+        if session: title += f" ({session.name})"
+
+    # 2. Save Announcement to DB
+    db.session.add(Announcement(
+        title=title, 
+        content=topic, 
+        category="Syllabus", 
+        target_group="students", 
+        teacher_id=current_user.id
+    ))
     db.session.commit()
     
-    # Notify Parents
-    for s in c.students:
-        send_push_notification(s.id, f"Syllabus: {c.name}", d['topic'])
+    # 3. Filter Students (Batch-Wise)
+    # Start with all students in the course
+    students_to_notify = course.students
+    
+    # If a specific batch was selected, filter the list
+    if session_id:
+        students_to_notify = [s for s in course.students if s.session_id == int(session_id)]
+    
+    # 4. Send Notifications
+    count = 0
+    for s in students_to_notify:
+        # Notify Student App
+        send_push_notification(s.id, title, f"Covered today: {topic}")
+        count += 1
         
+        # Notify Parent (WhatsApp/SMS)
         if s.parent_id:
             parent = db.session.get(User, s.parent_id)
             if parent and parent.phone_number:
-                send_whatsapp_message(parent.phone_number, f"Today in {c.name}, we taught: {d['topic']}")
+                # Placeholder for WhatsApp API
+                msg = f"CST Update: Today in {course.name}, we covered '{topic}'. Batch: {title}"
+                send_whatsapp_message(parent.phone_number, msg)
                 
-    return jsonify({"msg": "Syllabus Sent to Parents"})
+    return jsonify({"msg": f"Saved & Sent to {count} students in this batch."})
 
 # 5. ATTENDANCE REPORT
 # 7. TEACHER REPORTS (Fixed: Shows All Students + Course Filter)
@@ -920,40 +1072,53 @@ def teacher_courses():
 
 @app.route('/api/teacher/attendance', methods=['POST'])
 @login_required
+# FIX: Sends notifications for PRESENT and ABSENT, and fixes "undefined" alert
+@app.route('/api/teacher/attendance', methods=['POST'])
+@login_required
 def save_attendance():
     d = request.json
     dt = datetime.strptime(d['date'], '%Y-%m-%d')
     
     for r in d['attendance_data']:
-        sid = r['student_id']
+        sid = int(r['student_id'])
         stat = r['status']
         
-        # Save to DB
-        exist = Attendance.query.filter(Attendance.student_id==sid, db.func.date(Attendance.check_in_time)==dt.date()).first()
+        # 1. Save/Update DB
+        exist = Attendance.query.filter(
+            Attendance.student_id == sid, 
+            db.func.date(Attendance.check_in_time) == dt.date()
+        ).first()
+        
         if exist: 
             exist.status = stat
         else: 
             db.session.add(Attendance(student_id=sid, check_in_time=dt, status=stat))
         
-        # NOTIFICATION LOGIC (New)
-        if stat == 'Absent':
-            # 1. Notify Student App
-            send_push_notification(sid, "Attendance Alert", f"You were marked ABSENT on {d['date']}")
-            
-            # 2. Notify Parent (App + WhatsApp)
-            student = db.session.get(User, sid)
+        # 2. NOTIFICATION LOGIC (Updated)
+        # Send App Notification to Student (Entry OR Absent)
+        student = db.session.get(User, sid)
+        if student:
+            title = "Attendance Update"
+            body = f"You have been marked {stat.upper()} today ({d['date']})."
+            send_push_notification(sid, title, body)
+
+            # 3. Notify Parent
             if student.parent_id:
-                # App Push
-                send_push_notification(student.parent_id, "Absent Alert", f"Your child {student.name} is marked ABSENT today.")
+                # Always send App Push to Parent (Free)
+                p_body = f"Your child {student.name} is marked {stat} today."
+                send_push_notification(student.parent_id, "Attendance Alert", p_body)
                 
-                # WhatsApp/SMS
-                parent = db.session.get(User, student.parent_id)
-                if parent and parent.phone_number:
-                    msg = f"Alert: Your child {student.name} is marked ABSENT on {d['date']}. Please contact CST Institute."
-                    send_whatsapp_message(parent.phone_number, msg)
+                # Send SMS/WhatsApp ONLY if Absent (To reduce cost/spam)
+                if stat == 'Absent':
+                    parent = db.session.get(User, student.parent_id)
+                    if parent and parent.phone_number:
+                        msg = f"Alert: {student.name} is marked ABSENT on {d['date']}. Please contact CST Institute."
+                        # Use your preferred SMS function here
+                        send_whatsapp_message(parent.phone_number, msg) 
             
     db.session.commit()
-    return jsonify({"msg": "Attendance Saved & Parents Notified"})
+    # FIX: Changed 'msg' to 'message' so the Frontend Alert displays text instead of "undefined"
+    return jsonify({"message": "Attendance Saved & Notifications Sent!"})
 
 # --- STUDENT/PARENT ROUTES ---
 @app.route('/api/student/fees', methods=['GET'])

@@ -58,7 +58,10 @@
             <a href="#fees" class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-primary/10 transition-colors">
                 <span class="material-symbols-outlined">payments</span> Fees & Reports
             </a>
-            <a href="#announcements" class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-primary/10 transition-colors">
+            <a href="#halltickets" class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-primary/10 transition-colors">
+    		<span class="material-symbols-outlined">badge</span> Hall Tickets
+	    </a>
+	    <a href="#announcements" class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-primary/10 transition-colors">
                 <span class="material-symbols-outlined">campaign</span> Announcements
             </a>
             <a href="#reports" class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-primary/10 transition-colors">
@@ -307,33 +310,54 @@
         </div>
 
         <div id="content-fees" class="content-section hidden">
-            <h2 class="text-3xl font-bold mb-6">Fees & Financials</h2>
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100 h-fit">
-                    <h3 class="font-bold mb-4 text-primary text-lg">Create Fee Structure</h3>
-                    <form id="fee-structure-form" class="space-y-4">
-                        <input type="hidden" id="fee-structure-id" name="id">
-                        <input name="name" id="fee-name" placeholder="Fee Name (e.g. Course Fee)" class="w-full border p-2 rounded-lg bg-slate-50" required>
-                        <select name="academic_session_id" id="fee-session-select" class="w-full border p-2 rounded-lg bg-slate-50" required></select>
-                        <select name="course_id" id="fee-course-select" class="w-full border p-2 rounded-lg bg-slate-50">
-                            <option value="">-- Apply to All Courses --</option>
-                        </select>
-                        <div class="grid grid-cols-2 gap-2">
-                            <input name="total_amount" id="fee-amount" type="number" placeholder="Amount (Rs)" class="w-full border p-2 rounded-lg bg-slate-50" required>
-                            <input name="due_date" id="fee-date" type="date" class="w-full border p-2 rounded-lg bg-slate-50" required>
-                        </div>
-                        <button type="submit" class="w-full bg-primary text-white py-2 rounded-lg hover:bg-blue-700 transition-colors">Save Structure</button>
-                    </form>
-                    
-                    <div class="mt-6 border-t pt-4">
-                        <h4 class="font-bold text-sm text-gray-500 mb-2">Existing Fee Structures</h4>
-                        <div class="overflow-y-auto max-h-48">
-                            <table class="w-full text-sm text-left">
-                                <tbody id="fee-structure-table-body" class="divide-y"></tbody>
-                            </table>
-                        </div>
-                    </div>
+    <h2 class="text-3xl font-bold mb-6">Fees & Collection</h2>
+    
+    <div class="bg-blue-50 dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-blue-100 mb-8">
+        <h3 class="font-bold mb-4 text-primary text-lg flex items-center gap-2">
+            <span class="material-symbols-outlined">payments</span> Collect Fee
+        </h3>
+        <form id="collect-fee-form" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <select id="pay-student" name="student_id" class="border p-2 rounded-lg" required>
+                <option value="">Select Student</option>
+            </select>
+            <select id="pay-structure" name="fee_structure_id" class="border p-2 rounded-lg" required>
+                <option value="">Select Fee Type</option>
+            </select>
+            <input name="amount" type="number" placeholder="Amount (₹)" class="border p-2 rounded-lg" required>
+            <select name="payment_method" class="border p-2 rounded-lg">
+                <option>Cash</option><option>Online</option><option>Cheque</option>
+            </select>
+            <button type="submit" class="bg-green-600 text-white font-bold py-2 rounded-lg col-span-1 md:col-span-4 hover:bg-green-700">Receive Payment & Print Receipt</button>
+        </form>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100 h-fit">
+            <h3 class="font-bold mb-4 text-gray-700">Fee Structures</h3>
+            <form id="fee-structure-form" class="space-y-4 mb-4">
+                <input type="hidden" id="fee-structure-id" name="id">
+                <input name="name" id="fee-name" placeholder="Fee Name" class="w-full border p-2 rounded-lg" required>
+                <div class="grid grid-cols-2 gap-2">
+                    <input name="total_amount" id="fee-amount" type="number" placeholder="Amount" class="w-full border p-2 rounded-lg" required>
+                    <input name="due_date" id="fee-date" type="date" class="w-full border p-2 rounded-lg" required>
                 </div>
+                <select name="academic_session_id" id="fee-session-select" class="w-full border p-2 rounded-lg" required></select>
+                <button type="submit" class="w-full bg-slate-800 text-white py-2 rounded-lg">Save Structure</button>
+            </form>
+            <div class="overflow-y-auto max-h-48">
+                <table class="w-full text-sm text-left"><tbody id="fee-structure-table-body" class="divide-y"></tbody></table>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100">
+            <h3 class="font-bold mb-4 text-red-600">Fee Pending Report</h3>
+            <select id="report-course-filter" class="border p-2 rounded-lg w-full mb-4" onchange="loadFeeReport()"><option value="">All Courses</option></select>
+            <div class="overflow-y-auto h-64 border rounded-lg">
+                <table class="w-full text-sm text-left"><tbody id="fee-pending-report-body" class="divide-y"></tbody></table>
+            </div>
+        </div>
+    </div>
+</div>
 
                 <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100">
                     <h3 class="font-bold mb-4 text-primary text-lg">Fee Pending Report</h3>
@@ -354,7 +378,20 @@
                 </div>
             </div>
         </div>
-
+<div id="content-halltickets" class="content-section hidden">
+    <h2 class="text-3xl font-bold mb-6">Exam Hall Tickets</h2>
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100">
+        <div class="flex gap-4 mb-4">
+            <input id="ht-search" placeholder="Search Student Name..." class="border p-2 rounded-lg w-full" onkeyup="loadHallTicketList()">
+        </div>
+        <table class="w-full text-left">
+            <thead class="bg-slate-100 dark:bg-slate-800">
+                <tr><th class="p-3">Adm No</th><th class="p-3">Name</th><th class="p-3">Batch</th><th class="p-3 text-right">Action</th></tr>
+            </thead>
+            <tbody id="hallticket-table-body" class="divide-y divide-slate-100"></tbody>
+        </table>
+    </div>
+</div>
         <div id="content-announcements" class="content-section hidden">
             <h2 class="text-3xl font-bold mb-6">Announcements</h2>
             <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm mb-6 border border-slate-100">
@@ -670,6 +707,70 @@
             </tr>
         `).join('');
     }
+
+// --- 1. NEW: FEE COLLECTION LOGIC ---
+    async function loadFeeCollectionData() {
+        // Load Students into Dropdown
+        const sSelect = document.getElementById('pay-student');
+        sSelect.innerHTML = '<option value="">Select Student</option>' + 
+            users.filter(u => u.role === 'student').map(u => `<option value="${u.id}">${u.name} (ID: ${u.admission_number})</option>`).join('');
+            
+        // Load Fee Structures into Dropdown
+        const res = await fetch(API_BASE_URL + '/fee_structures');
+        const fees = await res.json();
+        const fSelect = document.getElementById('pay-structure');
+        fSelect.innerHTML = '<option value="">Select Fee Type</option>' + 
+            fees.map(f => `<option value="${f.id}">${f.name} - ₹${f.total_amount}</option>`).join('');
+    }
+
+    document.getElementById('collect-fee-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const payload = Object.fromEntries(fd);
+        
+        try {
+            const res = await fetch(API_BASE_URL + '/fees/collect', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            
+            if(res.ok) {
+                if(confirm("Payment Successful! Print Receipt now?")) {
+                    window.open(`/admin/receipt/${data.payment_id}`, '_blank');
+                }
+                e.target.reset();
+                loadFeeReport(); // Refresh pending list
+            } else {
+                alert("Error: " + data.msg);
+            }
+        } catch(err) { alert("Server Error"); }
+    });
+
+    // --- 2. NEW: HALL TICKET LOGIC ---
+    function loadHallTicketList() {
+        const term = document.getElementById('ht-search').value.toLowerCase();
+        const students = users.filter(u => u.role === 'student' && u.name.toLowerCase().includes(term));
+        
+        document.getElementById('hallticket-table-body').innerHTML = students.map(s => `
+            <tr class="border-b hover:bg-slate-50">
+                <td class="p-3">${s.admission_number}</td>
+                <td class="p-3 font-bold">${s.name}</td>
+                <td class="p-3 text-sm">${s.session_name}</td>
+                <td class="p-3 text-right">
+                    <button onclick="window.open('/admin/hallticket/${s.id}', '_blank')" class="bg-indigo-600 text-white px-3 py-1 rounded text-sm font-bold hover:bg-indigo-700">
+                        <span class="material-symbols-outlined text-sm align-middle">print</span> Generate
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    // --- UPDATE SHOW SECTION ---
+    // Add these lines inside your existing showSection function:
+    // if(id === 'fees') { ... existing loaders ...; loadFeeCollectionData(); }
+    // if(id === 'halltickets') { loadUsers().then(loadHallTicketList); }
 
     // =========================================================
     // 3. EDIT & ACTION FUNCTIONS
