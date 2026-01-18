@@ -1097,48 +1097,6 @@ def daily_topic():
 
 # 5. ATTENDANCE REPORT
 # 7. TEACHER REPORTS (Fixed: Shows All Students + Course Filter)
-@app.route('/api/teacher/reports/attendance', methods=['GET'])
-@login_required
-def teacher_att_report():
-    if current_user.role != 'teacher': return jsonify({"msg": "Denied"}), 403
-    
-    date_filter = request.args.get('date', date.today().strftime('%Y-%m-%d'))
-    session_id = request.args.get('session_id')
-    course_id = request.args.get('course_id') # New Filter
-    
-    # 1. Get Students based on filters (Session + Course)
-    query = Course.query.filter_by(teacher_id=current_user.id)
-    if course_id: query = query.filter_by(id=int(course_id))
-    courses = query.all()
-    
-    students_to_check = []
-    seen = set()
-    for c in courses:
-        # Filter by Session
-        valid = [s for s in c.students if (not session_id or str(s.session_id) == str(session_id))]
-        for s in valid:
-            if s.id not in seen:
-                students_to_check.append(s)
-                seen.add(s.id)
-
-    # 2. Build Report
-    report = []
-    for s in students_to_check:
-        # Check attendance for this specific student & date
-        att = Attendance.query.filter(
-            Attendance.student_id == s.id, 
-            db.func.date(Attendance.check_in_time) == date_filter
-        ).first()
-        
-        report.append({
-            "student_name": s.name,
-            "photo_url": s.profile_photo_url, # Consistent Key
-            "admission_number": s.admission_number,
-            "status": att.status if att else "Not Marked",
-            "date": date_filter
-        })
-        
-    return jsonify(report)
 
 # 6. GET TEACHER COURSES
 @app.route('/api/teacher/courses', methods=['GET'])
@@ -1220,6 +1178,9 @@ def check_and_upgrade_db():
             
             fee_cols = [c['name'] for c in insp.get_columns('fee_structure')]
             if 'course_id' not in fee_cols: conn.execute(text("ALTER TABLE fee_structure ADD COLUMN course_id INTEGER"))
+	# Ensure exam table exists
+	    if 'exam' not in inspect(db.engine).get_table_names():
+            Exam.__table__.create(db.engine)
             conn.commit()
         print("Migration successful.")
     except Exception as e: print(f"Migration Error: {e}")
