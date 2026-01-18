@@ -309,67 +309,121 @@
             </div>
         </div>
 
-        <div id="content-fees" class="content-section hidden">
+        <!-- ================= FEES & REPORTS ================= -->
+<div id="content-fees" class="content-section hidden">
+
     <h2 class="text-3xl font-bold mb-6">Fees & Collection</h2>
-    
+
+    <!-- ===== Collect Fee ===== -->
     <div class="bg-blue-50 dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-blue-100 mb-8">
         <h3 class="font-bold mb-4 text-primary text-lg flex items-center gap-2">
-            <span class="material-symbols-outlined">payments</span> Collect Fee
+            <span class="material-symbols-outlined">payments</span>
+            Collect Fee
         </h3>
+
         <form id="collect-fee-form" class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <select id="pay-student" name="student_id" class="border p-2 rounded-lg" required>
                 <option value="">Select Student</option>
             </select>
+
             <select id="pay-structure" name="fee_structure_id" class="border p-2 rounded-lg" required>
                 <option value="">Select Fee Type</option>
             </select>
-            <input name="amount" type="number" placeholder="Amount (₹)" class="border p-2 rounded-lg" required>
+
+            <input name="amount" type="number" placeholder="Amount (₹)"
+                   class="border p-2 rounded-lg" required>
+
             <select name="payment_method" class="border p-2 rounded-lg">
-                <option>Cash</option><option>Online</option><option>Cheque</option>
+                <option>Cash</option>
+                <option>Online</option>
+                <option>Cheque</option>
             </select>
-            <button type="submit" class="bg-green-600 text-white font-bold py-2 rounded-lg col-span-1 md:col-span-4 hover:bg-green-700">Receive Payment & Print Receipt</button>
+
+            <button type="submit"
+                    class="bg-green-600 text-white font-bold py-2 rounded-lg col-span-1 md:col-span-4 hover:bg-green-700">
+                Receive Payment & Print Receipt
+            </button>
         </form>
     </div>
 
+    <!-- ===== Fee Structure + Pending Report ===== -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100 h-fit">
+
+        <!-- Fee Structure -->
+        <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100">
             <h3 class="font-bold mb-4 text-gray-700">Fee Structures</h3>
+
             <form id="fee-structure-form" class="space-y-4 mb-4">
                 <input type="hidden" id="fee-structure-id" name="id">
-                <input name="name" id="fee-name" placeholder="Fee Name" class="w-full border p-2 rounded-lg" required>
+
+                <input id="fee-name" name="name"
+                       placeholder="Fee Name"
+                       class="w-full border p-2 rounded-lg" required>
+
                 <div class="grid grid-cols-2 gap-2">
-                    <input name="total_amount" id="fee-amount" type="number" placeholder="Amount" class="w-full border p-2 rounded-lg" required>
-                    <input name="due_date" id="fee-date" type="date" class="w-full border p-2 rounded-lg" required>
+                    <input id="fee-amount" name="total_amount" type="number"
+                           placeholder="Amount"
+                           class="w-full border p-2 rounded-lg" required>
+
+                    <input id="fee-date" name="due_date" type="date"
+                           class="w-full border p-2 rounded-lg" required>
                 </div>
-                
-                <select name="academic_session_id" id="fee-session-select" class="w-full border p-2 rounded-lg" required></select>
-                <button type="submit" class="w-full bg-slate-800 text-white py-2 rounded-lg">Save Structure</button>
+
+                <select id="fee-session-select" name="academic_session_id"
+                        class="w-full border p-2 rounded-lg" required>
+                </select>
+
+                <button type="submit"
+                        class="w-full bg-slate-800 text-white py-2 rounded-lg">
+                    Save Structure
+                </button>
             </form>
+
             <div class="overflow-y-auto max-h-48">
-                <table class="w-full text-sm text-left"><tbody id="fee-structure-table-body" class="divide-y"></tbody></table>
+                <table class="w-full text-sm text-left">
+                    <tbody id="fee-structure-table-body" class="divide-y"></tbody>
+                </table>
             </div>
         </div>
 
- 
-                <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100">
-                    <h3 class="font-bold mb-4 text-primary text-lg">Fee Pending Report</h3>
-                    <div class="flex gap-2 mb-4">
-                        <select id="report-course-filter" class="border p-2 rounded-lg bg-slate-50 flex-1" onchange="loadFeeReport()">
-                            <option value="">All Courses</option>
-                        </select>
-                        <button onclick="loadFeeReport()" class="bg-gray-200 hover:bg-gray-300 px-4 rounded-lg">Refresh</button>
-                    </div>
-		
-                    <div class="overflow-y-auto h-[500px] border rounded-lg">
-                        <table class="w-full text-sm text-left">
-                            <thead class="bg-gray-50 sticky top-0">
-                                <tr><th class="p-3">Student Name</th><th class="p-3">Balance</th><th class="p-3 text-right">Action</th></tr>
-                            </thead>
-                            <tbody id="fee-pending-report-body" class="divide-y divide-slate-100"></tbody>
-                        </table>
-                    </div>
-                </div>
+        <!-- Fee Pending Report -->
+        <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100">
+            <h3 class="font-bold mb-4 text-primary text-lg">Fee Pending Report</h3>
+
+            <div class="flex gap-2 mb-4">
+                <select id="report-course-filter"
+                        class="border p-2 rounded-lg bg-slate-50 flex-1"
+                        onchange="loadFeeReport()">
+                    <option value="">All Courses</option>
+                </select>
+
+                <button onclick="loadFeeReport()"
+                        class="bg-gray-200 hover:bg-gray-300 px-4 rounded-lg">
+                    Refresh
+                </button>
+            </div>
+
+            <div class="overflow-y-auto h-[500px] border rounded-lg">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-gray-50 sticky top-0">
+                        <tr>
+                            <th class="p-3">Student Name</th>
+                            <th class="p-3">Balance</th>
+                            <th class="p-3 text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="fee-pending-report-body"
+                           class="divide-y divide-slate-100">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
 </div>
+<!-- ================= END FEES ================= -->
+
          	
 <div id="content-halltickets" class="content-section hidden">
     <h2 class="text-3xl font-bold mb-6">Exam Hall Tickets</h2>
