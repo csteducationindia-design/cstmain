@@ -1070,8 +1070,6 @@ def teacher_courses():
     courses = Course.query.filter_by(teacher_id=current_user.id).all()
     return jsonify([c.to_dict() for c in courses])
 
-@app.route('/api/teacher/attendance', methods=['POST'])
-@login_required
 # FIX: Sends notifications for PRESENT and ABSENT, and fixes "undefined" alert
 @app.route('/api/teacher/attendance', methods=['POST'])
 @login_required
