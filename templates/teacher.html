@@ -384,41 +384,36 @@
 
             
 <div id="content-assignments" class="content-section hidden animate-fade-in">
-                <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm p-6 border border-slate-100 dark:border-slate-700 mb-6">
-                    <div class="flex flex-col md:flex-row items-end gap-4">
-                        <div class="w-full md:w-1/3">
-                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">1. Select Batch</label>
-                            <select id="assignment-session-select" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm p-3 focus:ring-primary">
-                                <option value="">-- All Batches --</option>
-                            </select>
-                        </div>
-                        <div class="w-full md:w-1/3">
-                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">2. Select Course</label>
-                            <select id="assignment-course-select" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm p-3 focus:ring-primary">
-                                <option value="">-- Choose Course --</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm overflow-hidden border border-slate-100 dark:border-slate-700">
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                            <thead class="bg-slate-50 dark:bg-slate-800">
-                                <tr>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Student Name</th>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Batch</th>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Assignment Status</th>
-                                    <th class="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="assignment-table-body" class="divide-y divide-slate-200 dark:divide-slate-700">
-                                <tr><td colspan="4" class="px-6 py-12 text-center text-slate-500">Please select a Course to track assignments.</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+    <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm p-6 border border-slate-100 dark:border-slate-700 mb-8">
+        <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">add_task</span>
+            Create New Assignment
+        </h3>
+        <form id="create-assignment-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="md:col-span-2">
+                <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Assignment Title</label>
+                <input type="text" id="assign-title" required class="w-full rounded-xl border border-slate-300 p-3" placeholder="e.g. Write a C program for Matrix Multiplication">
             </div>
+            <div>
+                <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Select Course</label>
+                <select id="assign-course-select" required class="w-full rounded-xl border border-slate-300 p-3 bg-white"></select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Due Date</label>
+                <input type="date" id="assign-date" required class="w-full rounded-xl border border-slate-300 p-3">
+            </div>
+            <div class="md:col-span-2">
+                <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Description / Instructions</label>
+                <textarea id="assign-desc" rows="3" class="w-full rounded-xl border border-slate-300 p-3" placeholder="Detailed instructions..."></textarea>
+            </div>
+            <div class="md:col-span-2 text-right">
+                <button type="submit" class="bg-primary text-white font-bold py-3 px-8 rounded-xl hover:bg-primary-hover shadow-lg">
+                    Post Assignment
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 
 <div id="content-announcements" class="content-section hidden animate-fade-in">
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -431,15 +426,19 @@
                 <form id="teacher-announcement-form" class="space-y-4">
                     <div>
                         <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Category</label>
-                        <select id="ann-category" required class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 p-3">
-                            <option>Holiday</option>
-                            <option>Assignment Test</option>
-                            <option>Practical Test</option>
-                            <option>Certificate Collection</option>
-                            <option>Python Class Start</option>
-                            <option>Java Class Start</option>
-                            <option>Batch Time Update</option>
-                        </select>
+                        <input list="category-suggestions" id="ann-category" required 
+                               class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 p-3 placeholder-slate-400" 
+                               placeholder="Select or type (e.g. Tally Class Start)...">
+                        
+                        <datalist id="category-suggestions">
+                            <option value="Class Start">
+                            <option value="Holiday">
+                            <option value="Assignment Test">
+                            <option value="Practical Test">
+                            <option value="Certificate Collection">
+                            <option value="Batch Time Update">
+                            <option value="Exam Notice">
+                        </datalist>
                     </div>
                     <div>
                         <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Title</label>
@@ -1043,7 +1042,38 @@
                 submitAttendanceBtn.disabled = false;
             }
         });
+// --- CREATE ASSIGNMENT LOGIC ---
+const assignForm = document.getElementById('create-assignment-form');
+if(assignForm) {
+    // Populate Course Dropdown
+    const sel = document.getElementById('assign-course-select');
+    // Ensure allTeacherCourses is loaded, then:
+    // sel.innerHTML = allTeacherCourses.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
 
+    assignForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const payload = {
+            title: document.getElementById('assign-title').value,
+            course_id: document.getElementById('assign-course-select').value,
+            due_date: document.getElementById('assign-date').value,
+            description: document.getElementById('assign-desc').value
+        };
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/teacher/assignments/create`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                credentials: 'include',
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            alert(data.msg);
+            assignForm.reset();
+        } catch(e) {
+            alert("Error creating assignment");
+        }
+    });
+}
 // --- SYLLABUS SUBMIT LOGIC ---
 // --- SYLLABUS SUBMIT LOGIC (Fixed: Sends Batch ID) ---
 const syllabusForm = document.getElementById('syllabus-form');
@@ -1367,63 +1397,104 @@ window.deleteAnnouncement = async (id) => {
 
 
         // --- MESSAGING MODAL LOGIC ---
+
         window.openMessageModal = function(id, name) {
             document.getElementById('notify-student-id').value = id;
             document.getElementById('notify-modal-title').textContent = `Message ${name}`;
-            notifyModal.classList.remove('hidden');
-        };
-        
-        window.sendRemark = (id, name, type) => {
-            const msg = type === 'star' ? `Great job in class today, ${name}!` : `Please pay more attention in class, ${name}.`;
-            if(confirm(`Send automatic remark to parent?\n\n"${msg}"`)) alert("Remark sent successfully! (Mock)");
+            document.getElementById('notify-modal').classList.remove('hidden');
         };
 
-        const closeModal = () => notifyModal.classList.add('hidden');
-        cancelNotifyBtn.addEventListener('click', closeModal);
-        notifyBackdrop.addEventListener('click', closeModal);
-
-        sendNotifyBtn.addEventListener('click', async () => {
-            const btn = sendNotifyBtn;
-            const sid = document.getElementById('notify-student-id').value;
-            const sub = document.getElementById('notify-subject').value;
-            const body = document.getElementById('notify-body').value;
-            const type = document.getElementById('notify-type').value;
-
-            if(!sub || !body) return alert("Subject and message are required.");
-
-            // WhatsApp Direct Link (Client Side)
-            if (type === 'whatsapp') {
-                const student = allTeacherStudents.find(s => s.id == sid);
-                if (student && student.phone_number) {
-                    window.open(`https://wa.me/${student.phone_number}?text=${encodeURIComponent(sub + ": " + body)}`, '_blank');
-                    closeModal();
-                } else {
-                    alert("Student phone number not found in database.");
-                }
-                return;
-            }
-
-            // Server Side Sending (Email/SMS/Portal)
-            btn.disabled = true;
-            btn.textContent = "Sending...";
+        // 1. REAL REMARK LOGIC (Praise/Warn)
+        window.sendRemark = async (id, name, type) => {
+            const subject = type === 'star' ? "🌟 Praise from Teacher" : "⚠️ Class Warning";
+            const body = type === 'star' 
+                ? `Great job in class today, ${name}! Keep it up.` 
+                : `Please pay more attention in class, ${name}. Improvement needed.`;
             
+            if(!confirm(`Send this ${type === 'star' ? 'Praise' : 'Warning'} to ${name} and their parent?`)) return;
+
             try {
                 const res = await fetch(`${API_BASE_URL}/teacher/notify`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     credentials: 'include',
-                    body: JSON.stringify({ student_id: sid, subject: sub, body: body, type: type })
+                    body: JSON.stringify({ 
+                        student_id: id, 
+                        subject: subject, 
+                        body: body, 
+                        type: 'portal' // Default to Push Notification
+                    })
                 });
-                const result = await res.json();
-                alert(result.message);
-                if(res.ok) closeModal();
+                
+                const data = await res.json();
+                if(res.ok) alert("Remark sent successfully!");
+                else alert("Error: " + data.message);
+                
             } catch(e) {
-                alert("Failed to send message. Please check connection.");
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<span class="material-symbols-outlined text-sm">send</span> Send Message';
+                console.error(e);
+                alert("Failed to send remark. Check connection.");
             }
-        });
+        };
+
+        // 2. MODAL SEND LOGIC
+        const closeModal = () => document.getElementById('notify-modal').classList.add('hidden');
+        if(document.getElementById('cancel-notify-btn')) document.getElementById('cancel-notify-btn').addEventListener('click', closeModal);
+        if(document.getElementById('modal-backdrop')) document.getElementById('modal-backdrop').addEventListener('click', closeModal);
+
+        const sendBtn = document.getElementById('send-notify-btn');
+        if(sendBtn) {
+            sendBtn.addEventListener('click', async () => {
+                const sid = document.getElementById('notify-student-id').value;
+                const sub = document.getElementById('notify-subject').value;
+                const body = document.getElementById('notify-body').value;
+                const type = document.getElementById('notify-type').value;
+
+                if(!sub || !body) return alert("Subject and message are required.");
+
+                // WhatsApp Logic (Client Side)
+                if (type === 'whatsapp') {
+                    const student = allTeacherStudents.find(s => s.id == sid);
+                    const phone = student?.phone_number; 
+                    
+                    if (phone) {
+                        const url = `https://wa.me/91${phone.replace(/\D/g,'')}?text=${encodeURIComponent(`*${sub}*\n${body}`)}`;
+                        window.open(url, '_blank');
+                        closeModal();
+                    } else {
+                        alert("Student phone number not found.");
+                    }
+                    return;
+                }
+
+                // Server Side Sending
+                sendBtn.disabled = true;
+                const originalText = sendBtn.innerHTML;
+                sendBtn.textContent = "Sending...";
+                
+                try {
+                    const res = await fetch(`${API_BASE_URL}/teacher/notify`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        credentials: 'include',
+                        body: JSON.stringify({ student_id: sid, subject: sub, body: body, type: type })
+                    });
+                    const result = await res.json();
+                    
+                    if(res.ok) {
+                        alert(result.message);
+                        closeModal();
+                    } else {
+                        alert("Error: " + result.message);
+                    }
+                } catch(e) {
+                    console.error(e);
+                    alert("Failed to send message. Please check connection.");
+                } finally {
+                    sendBtn.disabled = false;
+                    sendBtn.innerHTML = originalText;
+                }
+            });
+        }
 
        
 	// --- INIT FIREBASE (Final Corrected Version) ---
@@ -1473,7 +1544,23 @@ window.deleteAnnouncement = async (id) => {
                 console.log('Firebase init error:', e); 
             }
         }
-
+// --- LOGOUT LOGIC ---
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', async () => {
+                try {
+                    // We must include 'credentials' so the server knows which cookie to delete
+                    await fetch(`${API_BASE_URL}/logout`, { 
+                        method: 'POST',
+                        credentials: 'include' 
+                    });
+                } catch (e) {
+                    console.error("Logout failed", e);
+                } finally {
+                    // Redirect to login page regardless of server response
+                    window.location.href = '/'; 
+                }
+            });
+        }
         // Initialize Page
         checkSessionAndInit();
     }); // This closes the document.addEventListener('DOMContentLoaded')
