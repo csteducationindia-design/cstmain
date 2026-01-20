@@ -815,26 +815,31 @@
             document.getElementById('attendance-course-select'), 
             document.getElementById('note-course-select'), 
             document.getElementById('report-course-select'),
-            document.getElementById('syllabus-course-select'),   // Updated
-            document.getElementById('assignment-course-select')  // Updated
+            document.getElementById('syllabus-course-select'),
+            document.getElementById('assign-course-select') // <--- FIXED: Added correct ID for Assignment Form
         ];
         
         courseSelects.forEach(select => {
             if(!select) return;
-            select.innerHTML = '<option value="">-- Select Course --</option>' + 
+            // Keep existing options (like "Select Course") and append courses
+            const defaultOption = select.querySelector('option')?.outerHTML || '<option value="">-- Select Course --</option>';
+            
+            select.innerHTML = defaultOption + 
                 allTeacherCourses.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
         });
 
         // 2. Populate BATCH/SESSION Dropdowns
         const sessionSelects = [
             document.getElementById('attendance-session-select'),
-            document.getElementById('syllabus-session-select'),   // New
-            document.getElementById('assignment-session-select')  // New
+            document.getElementById('syllabus-session-select'),
+            document.getElementById('assignment-session-select')
         ];
 
         sessionSelects.forEach(select => {
             if(!select) return;
-            select.innerHTML = '<option value="">All Batches</option>' + 
+            const defaultOption = select.querySelector('option')?.outerHTML || '<option value="">All Batches</option>';
+            
+            select.innerHTML = defaultOption + 
                 allSessions.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
         });
     }
