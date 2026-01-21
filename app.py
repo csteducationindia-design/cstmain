@@ -267,6 +267,26 @@ class Exam(db.Model):
     exam_time = db.Column(db.String(20), nullable=False)
     instructions = db.Column(db.Text, nullable=True)
 
+class AssignmentTask(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(150), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
+    teacher_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    due_date = db.Column(db.Date, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    course = db.relationship('Course', backref=db.backref('assignments', lazy=True))
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "title": self.title,
+            "description": self.description,
+            "course_name": self.course.name,
+            "due_date": self.due_date.strftime('%Y-%m-%d'),
+            "created_at": self.created_at.strftime('%Y-%m-%d')
+        }
 
 # =========================================================
 # HELPER FUNCTIONS
@@ -368,6 +388,41 @@ def serve_role_page(role):
 @app.route('/firebase-messaging-sw.js')
 def sw(): return send_from_directory(app.static_folder, 'firebase-messaging-sw.js')
 
+# --- NEW: TEACHER NOTIFICATION ROUTE ---
+@app.route('/api/teacher/notify', methods=['POST'])
+@login_required
+def teacher_notify_student():
+    d = request.json
+    student_id = d.get('student_id')
+    subject = d.get('subject', 'Notification')
+    body = d.get('body')
+    channel = d.get('type', 'portal') 
+
+    student = db.session.get(User, student_id)
+    if not student:
+        return jsonify({"message": "Student not found"}), 404
+
+    try:
+        if channel == 'portal' or channel == 'push':
+            send_push_notification(student.id, subject, body)
+            if student.parent_id:
+                send_push_notification(student.parent_id, f"Parent Alert: {subject}", f"Regarding {student.name}: {body}")
+            return jsonify({"message": "Push notification sent successfully!"})
+
+        elif channel == 'sms':
+            if student.phone_number:
+                send_actual_sms(student.phone_number, f"{subject}: {body}")
+            if student.parent_id:
+                parent = db.session.get(User, student.parent_id)
+                if parent and parent.phone_number:
+                    send_actual_sms(parent.phone_number, f"CST Alert: {body}")
+            return jsonify({"message": "SMS sent successfully!"})
+
+        return jsonify({"message": "Invalid channel selected."}), 400
+
+    except Exception as e:
+        return jsonify({"message": f"Server Error: {str(e)}"}), 500
+
 # =========================================================
 # NEW FEATURES: FEES & HALL TICKETS
 # =========================================================
@@ -428,9 +483,6 @@ def print_receipt(id):
     </body>
     </html>
     """
-
-# 3. GENERATE HALL TICKET (HTML View)
-
 
 @app.route('/api/exams', methods=['POST'])
 @login_required
@@ -530,7 +582,7 @@ def print_hallticket(student_id):
         if sess:
             session_name = sess.name
 
-    # 4️⃣ ✅ THIS IS WHERE THE LINE GOES ✅
+    # 4️⃣ Get exam details
     exam = None
     if student.session_id:
         exam = Exam.query.filter_by(
@@ -551,61 +603,36 @@ def print_hallticket(student_id):
         exam=exam
     )
 
+# --- BULK HALL TICKET GENERATION ---
+@app.route('/admin/halltickets/bulk')
+@login_required
+def print_bulk_halltickets():
+    if current_user.role != 'admin': return "Denied", 403
     
-    if request.method == 'GET':
-        search = request.args.get('search', '').lower()
-        session_id = request.args.get('session_id')
-        
-        q = User.query
-        
-        if session_id and session_id != 'null' and str(session_id).isdigit():
-             q = q.filter_by(session_id=int(session_id))
-             
-        if search: 
-            q = q.filter(or_(User.name.ilike(f'%{search}%'), User.email.ilike(f'%{search}%')))
-            
-        return jsonify([u.to_dict() for u in q.all()])
-
-    d = request.form
-    # Check if ID exists for Update vs Insert
-    if request.method == 'POST' and not d.get('id'):
-        if User.query.filter_by(email=d['email']).first(): return jsonify({"msg": "Email exists"}), 400
-        u = User(name=d['name'], email=d['email'], password=bcrypt.generate_password_hash(d['password']).decode('utf-8'), role=d.get('role', 'student'))
-        db.session.add(u)
-    else: # Update existing (POST with ID or PUT)
-        u_id = d.get('id')
-        if not u_id: return jsonify({"msg": "Missing ID for update"}), 400
-        u = db.session.get(User, int(u_id))
-        if not u: return jsonify({"msg": "Not found"}), 404
-        if d.get('password'): u.password = bcrypt.generate_password_hash(d['password']).decode('utf-8')
-
-    u.name = d['name']; u.email = d['email']; u.phone_number = d.get('phone_number')
-    u.admission_number = d.get('admission_number')
-    u.dob = d.get('dob'); u.gender = d.get('gender')
-    u.father_name = d.get('father_name'); u.mother_name = d.get('mother_name')
-    u.address_line1 = d.get('address_line1'); u.city = d.get('city'); u.state = d.get('state'); u.pincode = d.get('pincode')
+    # 1. Get Input Data from URL parameters
+    session_id = request.args.get('session_id')
+    exam_date = request.args.get('exam_date')
+    exam_time = request.args.get('exam_time')
     
-    if d.get('session_id') and str(d.get('session_id')).isdigit():
-        u.session_id = int(d.get('session_id'))
+    if not session_id: return "Error: Batch (Session) is required"
+
+    # 2. Fetch Session & Students
+    session = db.session.get(AcademicSession, int(session_id))
+    if not session: return "Session not found"
+
+    # Fetch only students in this batch
+    students = User.query.filter_by(session_id=int(session_id), role='student').all()
     
-    if d.get('parent_id') and str(d.get('parent_id')).isdigit():
-        u.parent_id = int(d.get('parent_id'))
+    if not students: return "No students found in this batch."
 
-    if 'profile_photo_file' in request.files:
-        file = request.files['profile_photo_file']
-        if file and allowed_file(file.filename, ALLOWED_IMAGE_EXTENSIONS):
-            fn = secure_filename(file.filename)
-            uid = f"{uuid.uuid4()}{os.path.splitext(fn)[1]}"
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], uid))
-            u.profile_photo_url = f"/uploads/{uid}"
-
-    if u.role == 'student':
-        c_ids = request.form.getlist('course_ids')
-        if c_ids:
-            u.courses_enrolled = Course.query.filter(Course.id.in_([int(cid) for cid in c_ids if str(cid).isdigit()])).all()
-
-    db.session.commit()
-    return jsonify(u.to_dict())
+    # 3. Render the Bulk Template
+    return render_template(
+        'halltickets_bulk.html',
+        students=students,
+        session=session,
+        exam_date=exam_date, # Passed from the modal
+        exam_time=exam_time  # Passed from the modal
+    )
 
 @app.route('/api/users/<int:id>', methods=['DELETE'])
 @login_required
@@ -778,6 +805,40 @@ def send_sms_alert():
     except Exception as e:
         print(f"SMS CRASH: {str(e)}")
         return jsonify({"message": f"Server Error: {str(e)}"}), 500
+
+# 1. TEACHER: Create Assignment
+@app.route('/api/teacher/assignments/create', methods=['POST'])
+@login_required
+def create_assignment():
+    d = request.json
+    task = AssignmentTask(
+        title=d['title'],
+        description=d['description'],
+        course_id=int(d['course_id']),
+        teacher_id=current_user.id,
+        due_date=datetime.strptime(d['due_date'], '%Y-%m-%d').date()
+    )
+    db.session.add(task)
+    db.session.commit()
+    
+    # Notify Students
+    course = db.session.get(Course, task.course_id)
+    for s in course.students:
+        send_push_notification(s.id, "New Assignment", f"Task: {task.title} in {course.name}")
+        
+    return jsonify({"msg": "Assignment Created & Students Notified"})
+
+# 2. STUDENT: Get My Assignments
+@app.route('/api/student/assignments', methods=['GET'])
+@login_required
+def get_my_assignments():
+    # Find courses the student is enrolled in
+    enrolled_courses = [c.id for c in current_user.courses_enrolled]
+    
+    # Fetch assignments for those courses
+    tasks = AssignmentTask.query.filter(AssignmentTask.course_id.in_(enrolled_courses)).order_by(AssignmentTask.due_date.desc()).all()
+    
+    return jsonify([t.to_dict() for t in tasks])
 
 # --- SPECIAL ADMIN ROUTES (ID Card) ---
 
@@ -1095,9 +1156,6 @@ def daily_topic():
                 
     return jsonify({"msg": f"Saved & Sent to {count} students in this batch."})
 
-# 5. ATTENDANCE REPORT
-# 7. TEACHER REPORTS (Fixed: Shows All Students + Course Filter)
-
 # 6. GET TEACHER COURSES
 @app.route('/api/teacher/courses', methods=['GET'])
 @login_required
@@ -1111,47 +1169,57 @@ def teacher_courses():
 @login_required
 def save_attendance():
     d = request.json
-    dt = datetime.strptime(d['date'], '%Y-%m-%d')
+    
+    # 1. Parse the selected date (This defaults to 00:00:00)
+    selected_date = datetime.strptime(d['date'], '%Y-%m-%d').date()
+    
+    # 2. Get current time to make it look realistic
+    current_time = datetime.utcnow().time()
+    
+    # 3. Combine Date + Current Time
+    # If teacher submits at 5:30 PM, this saves "2026-01-20 17:30:00"
+    final_dt = datetime.combine(selected_date, current_time)
     
     for r in d['attendance_data']:
         sid = int(r['student_id'])
         stat = r['status']
         
-        # 1. Save/Update DB
+        # Check if record exists for this DATE
         exist = Attendance.query.filter(
             Attendance.student_id == sid, 
-            db.func.date(Attendance.check_in_time) == dt.date()
+            db.func.date(Attendance.check_in_time) == selected_date
         ).first()
         
         if exist: 
             exist.status = stat
+            # Optional: Update time to now if they change status? 
+            # exist.check_in_time = final_dt 
         else: 
-            db.session.add(Attendance(student_id=sid, check_in_time=dt, status=stat))
+            # FIX: Use 'final_dt' instead of just 'dt'
+            db.session.add(Attendance(student_id=sid, check_in_time=final_dt, status=stat))
         
-        # 2. NOTIFICATION LOGIC (Updated)
-        # Send App Notification to Student (Entry OR Absent)
+        # NOTIFICATION LOGIC
+        # Send App Notification to Student
         student = db.session.get(User, sid)
         if student:
             title = "Attendance Update"
             body = f"You have been marked {stat.upper()} today ({d['date']})."
             send_push_notification(sid, title, body)
 
-            # 3. Notify Parent
+            # Notify Parent
             if student.parent_id:
-                # Always send App Push to Parent (Free)
+                # App Push to Parent
                 p_body = f"Your child {student.name} is marked {stat} today."
                 send_push_notification(student.parent_id, "Attendance Alert", p_body)
                 
-                # Send SMS/WhatsApp ONLY if Absent (To reduce cost/spam)
+                # Send SMS ONLY if Absent
                 if stat == 'Absent':
                     parent = db.session.get(User, student.parent_id)
                     if parent and parent.phone_number:
                         msg = f"Alert: {student.name} is marked ABSENT on {d['date']}. Please contact CST Institute."
-                        # Use your preferred SMS function here
                         send_whatsapp_message(parent.phone_number, msg) 
             
     db.session.commit()
-    # FIX: Changed 'msg' to 'message' so the Frontend Alert displays text instead of "undefined"
     return jsonify({"message": "Attendance Saved & Notifications Sent!"})
 
 # --- STUDENT/PARENT ROUTES ---
