@@ -660,7 +660,36 @@ def print_hallticket(student_id):
 
     db.session.commit()
     return jsonify(u.to_dict())
+# --- BULK HALL TICKET GENERATION ---
+@app.route('/admin/halltickets/bulk')
+@login_required
+def print_bulk_halltickets():
+    if current_user.role != 'admin': return "Denied", 403
+    
+    # 1. Get Input Data from URL parameters
+    session_id = request.args.get('session_id')
+    exam_date = request.args.get('exam_date')
+    exam_time = request.args.get('exam_time')
+    
+    if not session_id: return "Error: Batch (Session) is required"
 
+    # 2. Fetch Session & Students
+    session = db.session.get(AcademicSession, int(session_id))
+    if not session: return "Session not found"
+
+    # Fetch only students in this batch
+    students = User.query.filter_by(session_id=int(session_id), role='student').all()
+    
+    if not students: return "No students found in this batch."
+
+    # 3. Render the Bulk Template
+    return render_template(
+        'halltickets_bulk.html',
+        students=students,
+        session=session,
+        exam_date=exam_date, # Passed from the modal
+        exam_time=exam_time  # Passed from the modal
+    )
 @app.route('/api/users/<int:id>', methods=['DELETE'])
 @login_required
 def delete_user(id):
