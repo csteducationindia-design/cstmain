@@ -277,6 +277,7 @@ class AssignmentTask(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     course = db.relationship('Course', backref=db.backref('assignments', lazy=True))
+<<<<<<< HEAD
 
     def to_dict(self):
         return {
@@ -287,7 +288,18 @@ class AssignmentTask(db.Model):
             "due_date": self.due_date.strftime('%Y-%m-%d'),
             "created_at": self.created_at.strftime('%Y-%m-%d')
         }
+=======
+>>>>>>> 1c525741633a52980dab0e8f32b11b390375a571
 
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "title": self.title,
+            "description": self.description,
+            "course_name": self.course.name,
+            "due_date": self.due_date.strftime('%Y-%m-%d'),
+            "created_at": self.created_at.strftime('%Y-%m-%d')
+        }
 # =========================================================
 # HELPER FUNCTIONS
 # =========================================================
@@ -389,6 +401,10 @@ def serve_role_page(role):
 def sw(): return send_from_directory(app.static_folder, 'firebase-messaging-sw.js')
 
 # --- NEW: TEACHER NOTIFICATION ROUTE ---
+<<<<<<< HEAD
+=======
+# --- NEW: TEACHER NOTIFICATION ROUTE ---
+>>>>>>> 1c525741633a52980dab0e8f32b11b390375a571
 @app.route('/api/teacher/notify', methods=['POST'])
 @login_required
 def teacher_notify_student():
@@ -422,7 +438,10 @@ def teacher_notify_student():
 
     except Exception as e:
         return jsonify({"message": f"Server Error: {str(e)}"}), 500
+<<<<<<< HEAD
 
+=======
+>>>>>>> 1c525741633a52980dab0e8f32b11b390375a571
 # =========================================================
 # NEW FEATURES: FEES & HALL TICKETS
 # =========================================================
@@ -625,6 +644,7 @@ def print_bulk_halltickets():
     
     if not students: return "No students found in this batch."
 
+<<<<<<< HEAD
     # 3. Render the Bulk Template
     return render_template(
         'halltickets_bulk.html',
@@ -633,7 +653,53 @@ def print_bulk_halltickets():
         exam_date=exam_date, # Passed from the modal
         exam_time=exam_time  # Passed from the modal
     )
+=======
+    if 'profile_photo_file' in request.files:
+        file = request.files['profile_photo_file']
+        if file and allowed_file(file.filename, ALLOWED_IMAGE_EXTENSIONS):
+            fn = secure_filename(file.filename)
+            uid = f"{uuid.uuid4()}{os.path.splitext(fn)[1]}"
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], uid))
+            u.profile_photo_url = f"/uploads/{uid}"
 
+    if u.role == 'student':
+        c_ids = request.form.getlist('course_ids')
+        if c_ids:
+            u.courses_enrolled = Course.query.filter(Course.id.in_([int(cid) for cid in c_ids if str(cid).isdigit()])).all()
+
+    db.session.commit()
+    return jsonify(u.to_dict())
+# --- BULK HALL TICKET GENERATION ---
+@app.route('/admin/halltickets/bulk')
+@login_required
+def print_bulk_halltickets():
+    if current_user.role != 'admin': return "Denied", 403
+    
+    # 1. Get Input Data from URL parameters
+    session_id = request.args.get('session_id')
+    exam_date = request.args.get('exam_date')
+    exam_time = request.args.get('exam_time')
+    
+    if not session_id: return "Error: Batch (Session) is required"
+>>>>>>> 1c525741633a52980dab0e8f32b11b390375a571
+
+    # 2. Fetch Session & Students
+    session = db.session.get(AcademicSession, int(session_id))
+    if not session: return "Session not found"
+
+    # Fetch only students in this batch
+    students = User.query.filter_by(session_id=int(session_id), role='student').all()
+    
+    if not students: return "No students found in this batch."
+
+    # 3. Render the Bulk Template
+    return render_template(
+        'halltickets_bulk.html',
+        students=students,
+        session=session,
+        exam_date=exam_date, # Passed from the modal
+        exam_time=exam_time  # Passed from the modal
+    )
 @app.route('/api/users/<int:id>', methods=['DELETE'])
 @login_required
 def delete_user(id):
@@ -840,6 +906,17 @@ def get_my_assignments():
     
     return jsonify([t.to_dict() for t in tasks])
 
+<<<<<<< HEAD
+=======
+# --- UPDATE MIGRATION FUNCTION ---
+def check_and_upgrade_db():
+    # ... existing code ...
+    try:
+        with app.app_context():
+            db.create_all() # This will automatically create the new table if it doesn't exist
+            print("Database checked.")
+    except Exception as e: print(e)
+>>>>>>> 1c525741633a52980dab0e8f32b11b390375a571
 # --- SPECIAL ADMIN ROUTES (ID Card) ---
 
 @app.route('/admin/id_card/<int:id>')
