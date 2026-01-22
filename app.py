@@ -1224,6 +1224,125 @@ def save_attendance():
 @login_required
 def s_fees(): return jsonify(calculate_fee_status(current_user.id))
 
+# --- STUDENT: DOWNLOAD HALL TICKET ---
+@app.route('/student/my_hallticket')
+@login_required
+def my_hallticket():
+    if current_user.role != 'student': return "Denied", 403
+    
+    student = current_user
+    
+    # 1. Get Session Name
+    session_name = "Not Assigned"
+    if student.session_id:
+        sess = db.session.get(AcademicSession, student.session_id)
+        if sess: session_name = sess.name
+
+    # 2. Get Exam Details (Latest Exam for this session)
+    exam = None
+    if student.session_id:
+        exam = Exam.query.filter_by(
+            session_id=student.session_id
+        ).order_by(Exam.id.desc()).first()
+
+    # 3. Format Data
+    courses = ", ".join([c.name for c in student.courses_enrolled]) or "N/A"
+    photo = student.profile_photo_url if student.profile_photo_url else "https://placehold.co/150"
+
+    # 4. Reuse the existing Hall Ticket Template
+    return render_template(
+        "hallticket.html",
+        student=student,
+        session_name=session_name,
+        courses=courses,
+        photo=photo,
+        exam=exam
+    )
+# =========================================================
+# COMPREHENSIVE REPORTS (EXCEL & PDF)
+# =========================================================
+
+@app.route('/api/reports/download')
+@login_required
+def download_excel_report():
+    if current_user.role != 'admin': return jsonify({"msg": "Denied"}), 403
+    
+    session_id = request.args.get('session_id')
+    query = User.query.filter_by(role='student')
+    
+    if session_id and session_id != 'null':
+        query = query.filter_by(session_id=int(session_id))
+        
+    students = query.all()
+    data = []
+    
+    for s in students:
+        # Calculate Fee
+        fee = calculate_fee_status(s.id)
+        
+        # Calculate Attendance
+        total_days = Attendance.query.filter_by(student_id=s.id).count()
+        present_days = Attendance.query.filter_by(student_id=s.id, status='Present').count()
+        att_pct = f"{round((present_days/total_days)*100, 1)}%" if total_days > 0 else "0%"
+        
+        data.append({
+            "Admission No": s.admission_number,
+            "Name": s.name,
+            "Batch": s.to_dict().get('session_name', 'N/A'),
+            "Phone": s.phone_number,
+            "Father Name": s.father_name,
+            "Total Fee": fee['total_due'],
+            "Paid Fee": fee['total_paid'],
+            "Balance Fee": fee['balance'],
+            "Attendance %": att_pct
+        })
+    
+    # Generate CSV (Compatible with Excel)
+    df = pd.DataFrame(data)
+    output = BytesIO()
+    df.to_csv(output, index=False)
+    output.seek(0)
+    
+    return send_file(
+        output, 
+        mimetype="text/csv", 
+        as_attachment=True, 
+        download_name=f"Student_Report_{date.today()}.csv"
+    )
+
+@app.route('/admin/report/print')
+@login_required
+def print_comprehensive_report():
+    if current_user.role != 'admin': return "Denied", 403
+    
+    session_id = request.args.get('session_id')
+    query = User.query.filter_by(role='student')
+    session_name = "All Batches"
+    
+    if session_id and session_id != 'null':
+        query = query.filter_by(session_id=int(session_id))
+        sess = db.session.get(AcademicSession, int(session_id))
+        if sess: session_name = sess.name
+        
+    students = query.all()
+    report_data = []
+    
+    for s in students:
+        fee = calculate_fee_status(s.id)
+        # Get raw counts for the report
+        present = Attendance.query.filter_by(student_id=s.id, status='Present').count()
+        total = Attendance.query.filter_by(student_id=s.id).count()
+        
+        report_data.append({
+            "name": s.name,
+            "adm_no": s.admission_number,
+            "batch": s.to_dict().get('session_name', ''),
+            "phone": s.phone_number,
+            "balance": fee['balance'],
+            "attendance": f"{present}/{total}"
+        })
+        
+    return render_template('report_print.html', students=report_data, session_name=session_name, report_date=date.today())
 # =========================================================
 # MIGRATION & STARTUP
 # =========================================================
