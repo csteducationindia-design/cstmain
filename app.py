@@ -287,12 +287,11 @@ class AssignmentTask(db.Model):
             "due_date": self.due_date.strftime('%Y-%m-%d'),
             "created_at": self.created_at.strftime('%Y-%m-%d')
         }
+
 # =========================================================
 # HELPER FUNCTIONS
 # =========================================================
 def send_whatsapp_message(phone, msg):
-    # This acts as a placeholder. In production, paste your WhatsApp API code here.
-    # For now, it logs to the console so you can verify it works.
     logger.info(f"WHATSAPP SENT TO {phone}: {msg}")
     return True
 
@@ -388,7 +387,6 @@ def serve_role_page(role):
 def sw(): return send_from_directory(app.static_folder, 'firebase-messaging-sw.js')
 
 # --- NEW: TEACHER NOTIFICATION ROUTE ---
-# --- NEW: TEACHER NOTIFICATION ROUTE ---
 @app.route('/api/teacher/notify', methods=['POST'])
 @login_required
 def teacher_notify_student():
@@ -422,6 +420,7 @@ def teacher_notify_student():
 
     except Exception as e:
         return jsonify({"message": f"Server Error: {str(e)}"}), 500
+
 # =========================================================
 # NEW FEATURES: FEES & HALL TICKETS
 # =========================================================
@@ -482,9 +481,6 @@ def print_receipt(id):
     </body>
     </html>
     """
-
-# 3. GENERATE HALL TICKET (HTML View)
-
 
 @app.route('/api/exams', methods=['POST'])
 @login_required
@@ -567,35 +563,34 @@ def api_users():
 @app.route('/admin/hallticket/<int:student_id>')
 @login_required
 def print_hallticket(student_id):
-
-    # 1️⃣ Security
+    # 1. Security Check
     if current_user.role != 'admin':
         return "Denied", 403
 
-    # 2️⃣ Get student
+    # 2. Get Student
     student = db.session.get(User, student_id)
     if not student:
         return "Student not found", 404
 
-    # 3️⃣ Get session name safely
+    # 3. Get Session Name
     session_name = "Not Assigned"
     if student.session_id:
         sess = db.session.get(AcademicSession, student.session_id)
         if sess:
             session_name = sess.name
 
-    # 4️⃣ ✅ THIS IS WHERE THE LINE GOES ✅
+    # 4. Get Exam Details
     exam = None
     if student.session_id:
         exam = Exam.query.filter_by(
             session_id=student.session_id
         ).order_by(Exam.id.desc()).first()
 
-    # 5️⃣ Other data
+    # 5. Format Data
     courses = ", ".join([c.name for c in student.courses_enrolled]) or "N/A"
     photo = student.profile_photo_url if student.profile_photo_url else "https://placehold.co/150"
 
-    # 6️⃣ Send everything to template
+    # 6. Render Template
     return render_template(
         "hallticket.html",
         student=student,
@@ -605,61 +600,36 @@ def print_hallticket(student_id):
         exam=exam
     )
 
+# --- BULK HALL TICKET GENERATION ---
+@app.route('/admin/halltickets/bulk')
+@login_required
+def print_bulk_halltickets():
+    if current_user.role != 'admin': return "Denied", 403
     
-    if request.method == 'GET':
-        search = request.args.get('search', '').lower()
-        session_id = request.args.get('session_id')
-        
-        q = User.query
-        
-        if session_id and session_id != 'null' and str(session_id).isdigit():
-             q = q.filter_by(session_id=int(session_id))
-             
-        if search: 
-            q = q.filter(or_(User.name.ilike(f'%{search}%'), User.email.ilike(f'%{search}%')))
-            
-        return jsonify([u.to_dict() for u in q.all()])
-
-    d = request.form
-    # Check if ID exists for Update vs Insert
-    if request.method == 'POST' and not d.get('id'):
-        if User.query.filter_by(email=d['email']).first(): return jsonify({"msg": "Email exists"}), 400
-        u = User(name=d['name'], email=d['email'], password=bcrypt.generate_password_hash(d['password']).decode('utf-8'), role=d.get('role', 'student'))
-        db.session.add(u)
-    else: # Update existing (POST with ID or PUT)
-        u_id = d.get('id')
-        if not u_id: return jsonify({"msg": "Missing ID for update"}), 400
-        u = db.session.get(User, int(u_id))
-        if not u: return jsonify({"msg": "Not found"}), 404
-        if d.get('password'): u.password = bcrypt.generate_password_hash(d['password']).decode('utf-8')
-
-    u.name = d['name']; u.email = d['email']; u.phone_number = d.get('phone_number')
-    u.admission_number = d.get('admission_number')
-    u.dob = d.get('dob'); u.gender = d.get('gender')
-    u.father_name = d.get('father_name'); u.mother_name = d.get('mother_name')
-    u.address_line1 = d.get('address_line1'); u.city = d.get('city'); u.state = d.get('state'); u.pincode = d.get('pincode')
+    # 1. Get Input Data from URL parameters
+    session_id = request.args.get('session_id')
+    exam_date = request.args.get('exam_date')
+    exam_time = request.args.get('exam_time')
     
-    if d.get('session_id') and str(d.get('session_id')).isdigit():
-        u.session_id = int(d.get('session_id'))
+    if not session_id: return "Error: Batch (Session) is required"
+
+    # 2. Fetch Session & Students
+    session = db.session.get(AcademicSession, int(session_id))
+    if not session: return "Session not found"
+
+    # Fetch only students in this batch
+    students = User.query.filter_by(session_id=int(session_id), role='student').all()
     
-    if d.get('parent_id') and str(d.get('parent_id')).isdigit():
-        u.parent_id = int(d.get('parent_id'))
+    if not students: return "No students found in this batch."
 
-    if 'profile_photo_file' in request.files:
-        file = request.files['profile_photo_file']
-        if file and allowed_file(file.filename, ALLOWED_IMAGE_EXTENSIONS):
-            fn = secure_filename(file.filename)
-            uid = f"{uuid.uuid4()}{os.path.splitext(fn)[1]}"
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], uid))
-            u.profile_photo_url = f"/uploads/{uid}"
-
-    if u.role == 'student':
-        c_ids = request.form.getlist('course_ids')
-        if c_ids:
-            u.courses_enrolled = Course.query.filter(Course.id.in_([int(cid) for cid in c_ids if str(cid).isdigit()])).all()
-
-    db.session.commit()
-    return jsonify(u.to_dict())
+    # 3. Render the Bulk Template
+    return render_template(
+        'halltickets_bulk.html',
+        students=students,
+        session=session,
+        exam_date=exam_date, # Passed from the modal
+        exam_time=exam_time  # Passed from the modal
+    )
 
 @app.route('/api/users/<int:id>', methods=['DELETE'])
 @login_required
@@ -867,14 +837,6 @@ def get_my_assignments():
     
     return jsonify([t.to_dict() for t in tasks])
 
-# --- UPDATE MIGRATION FUNCTION ---
-def check_and_upgrade_db():
-    # ... existing code ...
-    try:
-        with app.app_context():
-            db.create_all() # This will automatically create the new table if it doesn't exist
-            print("Database checked.")
-    except Exception as e: print(e)
 # --- SPECIAL ADMIN ROUTES (ID Card) ---
 
 @app.route('/admin/id_card/<int:id>')
@@ -1190,9 +1152,6 @@ def daily_topic():
                 send_whatsapp_message(parent.phone_number, msg)
                 
     return jsonify({"msg": f"Saved & Sent to {count} students in this batch."})
-
-# 5. ATTENDANCE REPORT
-# 7. TEACHER REPORTS (Fixed: Shows All Students + Course Filter)
 
 # 6. GET TEACHER COURSES
 @app.route('/api/teacher/courses', methods=['GET'])
