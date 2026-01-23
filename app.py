@@ -1345,6 +1345,22 @@ def print_comprehensive_report():
         })
         
     return render_template('report_print.html', students=report_data, session_name=session_name, report_date=date.today())
+# --- SPECIAL ROUTE: SERVE TAILWIND FROM ROOT ---
+@app.route('/tailwind.js')
+def serve_tailwind_manual():
+    try:
+        # basedir is defined at the top of your file, pointing to the app's folder
+        file_path = os.path.join(basedir, 'tailwind.js')
+        
+        # Check if file actually exists before sending
+        if not os.path.exists(file_path):
+            logger.error(f"Tailwind file not found at: {file_path}")
+            return "Error: File not found on server", 404
+            
+        return send_file(file_path, mimetype='application/javascript')
+    except Exception as e:
+        logger.error(f"Tailwind Serve Error: {str(e)}")
+        return f"Error: {str(e)}", 500
 # =========================================================
 # MIGRATION & STARTUP
 # =========================================================
@@ -1383,14 +1399,7 @@ def initialize_database():
         db.create_all()
         check_and_upgrade_db()
         init_firebase()
-# --- SPECIAL ROUTE: SERVE TAILWIND FROM ROOT ---
-@app.route('/tailwind.js')
-def serve_tailwind_manual():
-    try:
-        # This looks for 'tailwind.js' in the SAME folder as app.py
-        return send_file('tailwind.js', mimetype='application/javascript')
-    except Exception as e:
-        return f"Error: tailwind.js not found in app folder. {str(e)}", 404
+
 if __name__ == '__main__':
     initialize_database()
     app.run(debug=False, host='0.0.0.0', port=5000)
