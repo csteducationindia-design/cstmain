@@ -1457,19 +1457,7 @@ window.deleteAnnouncement = async (id) => {
                 if(!sub || !body) return alert("Subject and message are required.");
 
                 // WhatsApp Logic (Client Side)
-                if (type === 'whatsapp') {
-                    const student = allTeacherStudents.find(s => s.id == sid);
-                    const phone = student?.phone_number; 
-                    
-                    if (phone) {
-                        const url = `https://wa.me/91${phone.replace(/\D/g,'')}?text=${encodeURIComponent(`*${sub}*\n${body}`)}`;
-                        window.open(url, '_blank');
-                        closeModal();
-                    } else {
-                        alert("Student phone number not found.");
-                    }
-                    return;
-                }
+                
 
                 // Server Side Sending
                 sendBtn.disabled = true;
