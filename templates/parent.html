@@ -8,7 +8,7 @@
     <link rel="manifest" href="/static/manifest.json">
     <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
     <link as="style" href="https://fonts.googleapis.com/css2?display=swap&family=Inter:wght@400;500;700;900" onload="this.rel='stylesheet'" rel="stylesheet"/>
-   <script src="/tailwind.js?v=2"></script>
+<script src="{{ url_for('static', filename='style.js') }}"></script>
     <script>
         tailwind.config = {
             darkMode: "class",

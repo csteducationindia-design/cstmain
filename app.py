@@ -1345,22 +1345,7 @@ def print_comprehensive_report():
         })
         
     return render_template('report_print.html', students=report_data, session_name=session_name, report_date=date.today())
-# --- SPECIAL ROUTE: SERVE TAILWIND FROM ROOT ---
-@app.route('/tailwind.js')
-def serve_tailwind_manual():
-    try:
-        # basedir is defined at the top of your file, pointing to the app's folder
-        file_path = os.path.join(basedir, 'tailwind.js')
-        
-        # Check if file actually exists before sending
-        if not os.path.exists(file_path):
-            logger.error(f"Tailwind file not found at: {file_path}")
-            return "Error: File not found on server", 404
-            
-        return send_file(file_path, mimetype='application/javascript')
-    except Exception as e:
-        logger.error(f"Tailwind Serve Error: {str(e)}")
-        return f"Error: {str(e)}", 500
+
 # =========================================================
 # MIGRATION & STARTUP
 # =========================================================
