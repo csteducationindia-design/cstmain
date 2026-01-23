@@ -1,40 +1,170 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Hall Ticket</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hall Ticket - {{ student.name }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: Arial; }
-        .card { border: 2px solid #000; padding: 20px; max-width: 700px; margin: auto; }
+        body { font-family: 'Inter', sans-serif; background: #f3f4f6; }
+        
+        /* Card Design */
+        .ticket-card {
+            background: white;
+            width: 100%;
+            max-width: 210mm; /* A4 Width Limit */
+            margin: 20px auto;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Print Specifics */
+        @media print {
+            body { background: white; margin: 0; padding: 0; }
+            .ticket-card {
+                box-shadow: none;
+                border: 2px solid #000;
+                margin: 0;
+                width: 100%;
+                max-width: 100%;
+                border-radius: 0;
+            }
+            .no-print { display: none !important; }
+            /* Force background colors to print */
+            * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
     </style>
 </head>
-<body onload="window.print()">
+<body class="p-4 md:p-8 min-h-screen flex flex-col items-center">
 
-<div class="card">
-    <h2 style="text-align:center;">CST INSTITUTE – HALL TICKET</h2>
+    <div class="w-full max-w-[210mm] flex justify-end mb-6 no-print">
+        <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-xl shadow-lg flex items-center gap-2 transition-all transform hover:scale-105">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+            Download PDF / Print
+        </button>
+    </div>
 
-    <p><b>Name:</b> {{ student.name }}</p>
-    <p><b>Admission No:</b> {{ student.admission_number }}</p>
-    <p><b>Batch:</b> {{ session_name }}</p>
-    <p><b>Course(s):</b> {{ courses }}</p>
+    <div class="ticket-card rounded-3xl">
+        
+        <div class="bg-gradient-to-r from-blue-700 to-blue-600 text-white p-6 md:p-8 flex justify-between items-center relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-2xl"></div>
+            
+            <div class="relative z-10">
+                <h1 class="text-2xl md:text-3xl font-extrabold uppercase tracking-tight">CST Institute</h1>
+                <p class="text-blue-100 text-xs md:text-sm font-medium tracking-widest mt-1 uppercase opacity-90">Excellence in Education</p>
+            </div>
+            
+            <div class="text-right relative z-10">
+                <div class="inline-block border border-white/30 bg-white/10 backdrop-blur-md rounded-lg px-4 py-1.5">
+                    <h2 class="text-lg md:text-xl font-bold">HALL TICKET</h2>
+                </div>
+                <p class="text-[10px] md:text-xs text-blue-100 mt-2 uppercase font-medium">Session: {{ session_name }}</p>
+            </div>
+        </div>
 
-    <hr>
+        <div class="p-6 md:p-8 grid grid-cols-1 md:grid-cols-4 gap-8 items-start border-b border-gray-100">
+            
+            <div class="md:col-span-1 flex justify-center md:justify-start">
+                <div class="w-32 h-40 bg-gray-50 border-2 border-gray-200 rounded-xl overflow-hidden shadow-sm flex items-center justify-center relative">
+                    {% if student.profile_photo_url %}
+                        <img src="{{ student.profile_photo_url }}" class="w-full h-full object-cover">
+                    {% else %}
+                        <div class="text-center p-4">
+                            <svg class="w-8 h-8 text-gray-300 mx-auto mb-2" fill="currentColor" viewBox="0 0 24 24"><path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                            <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Student Photo</span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
 
-    <p><b>Exam Date:</b> {{ exam.exam_date if exam else 'TBA' }}</p>
-    <p><b>Exam Time:</b> {{ exam.exam_time if exam else 'TBA' }}</p>
+            <div class="md:col-span-3 space-y-5">
+                <div class="grid grid-cols-2 gap-y-5 gap-x-8">
+                    <div>
+                        <p class="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-1">Candidate Name</p>
+                        <p class="text-lg md:text-xl font-bold text-gray-900 leading-tight">{{ student.name }}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-1">Admission No</p>
+                        <p class="text-lg font-bold text-gray-900 font-mono tracking-tight">{{ student.admission_number or 'N/A' }}</p>
+                    </div>
+                    <div class="col-span-2">
+                        <p class="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-1">Registered Course / Subject</p>
+                        <p class="text-base font-semibold text-blue-700 bg-blue-50 inline-block px-3 py-1 rounded-md border border-blue-100">
+                            {{ courses }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-    <hr>
+        <div class="p-6 md:p-8 bg-gray-50/50">
+            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Examination Details
+            </h3>
+            
+            <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="bg-gray-100/80 border-b border-gray-200">
+                            <th class="px-5 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Subject Paper</th>
+                            <th class="px-5 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider w-1/4">Exam Date</th>
+                            <th class="px-5 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider w-1/4">Reporting Time</th>
+                            <th class="px-5 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider w-1/4 text-center">Invigilator</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        <tr>
+                            <td class="px-5 py-4 font-bold text-gray-800 text-sm">
+                                {% if courses != 'N/A' %}{{ courses }}{% else %}Standard Assessment{% endif %}
+                            </td>
+                            <td class="px-5 py-4 text-gray-700 font-medium text-sm">
+                                {{ exam.exam_date.strftime('%d-%b-%Y') if exam and exam.exam_date else 'TBA' }}
+                            </td>
+                            <td class="px-5 py-4 text-gray-700 font-medium text-sm">
+                                {{ exam.exam_time if exam else 'TBA' }}
+                            </td>
+                            <td class="px-5 py-4 border-l border-dashed border-gray-200"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-    <b>Instructions:</b>
-    <ol>
-        <li>Reach exam hall 15 minutes early.</li>
-        <li>Mobile phones strictly prohibited.</li>
-        <li>Carry ID card and hall ticket.</li>
-        <li>{{ exam.instructions if exam else '' }}</li>
-    </ol>
+        <div class="p-6 md:p-8 flex flex-col md:flex-row justify-between items-end gap-8 pt-2">
+            <div class="flex-1 bg-amber-50 border border-amber-100 rounded-xl p-4 w-full md:w-auto">
+                <h4 class="text-[10px] font-bold text-amber-700 uppercase mb-2 flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
+                    Student Instructions
+                </h4>
+                <ul class="text-[10px] text-amber-900/70 list-disc pl-3 space-y-1 font-medium leading-relaxed">
+                    <li>Please be present at the examination hall 15 minutes before commencement.</li>
+                    <li>Electronic gadgets (Mobile, Smartwatch) are strictly prohibited inside the hall.</li>
+                    <li>You must carry this Hall Ticket and a valid ID proof.</li>
+                    {% if exam and exam.instructions %}
+                    <li class="font-bold text-amber-800">{{ exam.instructions }}</li>
+                    {% endif %}
+                </ul>
+            </div>
+            
+            <div class="text-center w-40 flex-shrink-0">
+                {% if url_for('static', filename='signature_director.png') %}
+                <img src="{{ url_for('static', filename='signature_director.png') }}" class="h-12 mx-auto mb-2 object-contain" alt="Signature">
+                {% else %}
+                <div class="h-12 w-full"></div>
+                {% endif %}
+                <div class="border-t-2 border-gray-300 pt-2">
+                    <p class="text-[10px] font-bold text-gray-900 uppercase tracking-wider">Director Sign</p>
+                    <p class="text-[8px] text-gray-400">Authorized Signatory</p>
+                </div>
+            </div>
+        </div>
 
-    <br><br>
-    <p style="text-align:right;">Authorized Signatory</p>
-</div>
+    </div>
 
 </body>
 </html>

@@ -427,10 +427,19 @@
          	
 <div id="content-halltickets" class="content-section hidden">
     <h2 class="text-3xl font-bold mb-6">Exam Hall Tickets</h2>
+    
     <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100">
-        <div class="flex gap-4 mb-4">
-            <input id="ht-search" placeholder="Search Student Name..." class="border p-2 rounded-lg w-full" onkeyup="loadHallTicketList()">
+        <div class="flex flex-col md:flex-row gap-4 mb-6 justify-between items-end">
+            <div class="w-full md:w-1/2">
+                <input id="ht-search" placeholder="Search Student Name..." class="border p-2 rounded-lg w-full bg-slate-50" onkeyup="loadHallTicketList()">
+            </div>
+            
+            <button onclick="openBulkHallTicketModal()" class="bg-purple-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-purple-700 shadow-md flex items-center gap-2 transition-colors">
+                <span class="material-symbols-outlined">print</span>
+                Generate Batch Tickets
+            </button>
         </div>
+
         <table class="w-full text-left">
             <thead class="bg-slate-100 dark:bg-slate-800">
                 <tr><th class="p-3">Adm No</th><th class="p-3">Name</th><th class="p-3">Batch</th><th class="p-3 text-right">Action</th></tr>
@@ -465,6 +474,27 @@
 
         <div id="content-reports" class="content-section hidden">
             <h2 class="text-3xl font-bold mb-6">General Reports</h2>
+            
+            <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100 mb-6">
+                <h3 class="text-lg font-bold mb-4 text-slate-700 dark:text-white">Generate Comprehensive Report</h3>
+                <div class="flex flex-col md:flex-row gap-4 items-end">
+                    <div class="w-full md:w-1/3">
+                        <label class="block text-sm font-bold text-slate-500 mb-1">Select Batch / Session</label>
+                        <select id="report-session-select" class="w-full border p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800">
+                            <option value="">All Batches</option>
+                        </select>
+                    </div>
+                    
+                    <button onclick="downloadExcelReport()" class="bg-green-600 text-white font-bold py-2.5 px-6 rounded-lg hover:bg-green-700 flex items-center gap-2">
+                        <span class="material-symbols-outlined">table_view</span> Download Excel
+                    </button>
+                    
+                    <button onclick="printPdfReport()" class="bg-red-600 text-white font-bold py-2.5 px-6 rounded-lg hover:bg-red-700 flex items-center gap-2">
+                        <span class="material-symbols-outlined">picture_as_pdf</span> Print / PDF
+                    </button>
+                </div>
+            </div>
+
             <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm overflow-hidden border border-slate-100">
                 <h3 class="font-bold mb-4 text-lg">Recent Admissions (Last 30 Days)</h3>
                 <table class="w-full text-left">
@@ -498,10 +528,69 @@
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
+
+<div id="bulk-ht-modal" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center backdrop-blur-sm">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-8 w-full max-w-md border border-slate-100 transform transition-all scale-100">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                <span class="material-symbols-outlined text-purple-600">badge</span>
+                Batch Exam Details
+            </h3>
+            <button onclick="document.getElementById('bulk-ht-modal').classList.add('hidden')" class="text-slate-400 hover:text-red-500">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        
+        <form id="bulk-ht-form" class="space-y-5">
+            <div>
+                <label class="block text-sm font-bold text-slate-600 dark:text-slate-400 mb-1">Select Batch</label>
+                <select id="bulk-ht-session" required class="w-full border p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900"></select>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-bold text-slate-600 dark:text-slate-400 mb-1">Exam Date</label>
+                    <input type="date" id="bulk-ht-date" required class="w-full border p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-slate-600 dark:text-slate-400 mb-1">Exam Time</label>
+                    <input type="text" id="bulk-ht-time" placeholder="e.g. 10:00 AM" required class="w-full border p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900">
+                </div>
+            </div>
+
+            <button type="submit" class="w-full py-3 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 shadow-lg transition-transform active:scale-95 flex justify-center items-center gap-2">
+                <span class="material-symbols-outlined">print_connect</span>
+                Generate & Print
+            </button>
+        </form>
+    </div>
+</div>
 <script>
     const API_BASE_URL = '/api';
     let users = [], sessions = [], courses = [], pendingStudents = [];
+// --- REPORT GENERATION FUNCTIONS ---
+    
+    // 1. Populate Report Dropdown (Call this in loadSessions)
+    // Note: I already updated loadSessions() in previous steps to target 'report-session-select'
+    // If not, add 'report-session-select' to the dropdowns array in loadSessions()
 
+    function downloadExcelReport() {
+        const sid = document.getElementById('report-session-select').value;
+        window.open(`${API_BASE_URL}/reports/download?session_id=${sid}`, '_blank');
+    }
+
+    function printPdfReport() {
+        const sid = document.getElementById('report-session-select').value;
+        window.open(`/admin/report/print?session_id=${sid}`, '_blank');
+    }
+    
+    // IMPORTANT: Make sure to update loadSessions() to include the new dropdown ID:
+    /* async function loadSessions() {
+        // ... fetch code ...
+        const dropdowns = [..., 'report-session-select']; // Add it here
+        // ... loop code ...
+    }
+    */
     // =========================================================
     // 1. CORE NAVIGATION
     // =========================================================
@@ -787,6 +876,7 @@
         } catch(err) { alert("Server Error"); }
     });
 
+
     // --- 2. NEW: HALL TICKET LOGIC ---
     function loadHallTicketList() {
         const term = document.getElementById('ht-search').value.toLowerCase();
@@ -806,6 +896,34 @@
         `).join('');
     }
 
+// --- BULK HALL TICKET FUNCTIONS ---
+    
+    function openBulkHallTicketModal() {
+        // Populate the Batch Dropdown inside the modal
+        const select = document.getElementById('bulk-ht-session');
+        select.innerHTML = '<option value="">-- Select Batch --</option>' + 
+            sessions.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+        
+        // Show Modal
+        document.getElementById('bulk-ht-modal').classList.remove('hidden');
+    }
+
+    // Handle Form Submission
+    document.getElementById('bulk-ht-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const sid = document.getElementById('bulk-ht-session').value;
+        const date = document.getElementById('bulk-ht-date').value;
+        const time = document.getElementById('bulk-ht-time').value;
+        
+        if(!sid) return alert("Please select a batch");
+
+        // Open the Bulk Print View in a new tab
+        const url = `/admin/halltickets/bulk?session_id=${sid}&exam_date=${date}&exam_time=${time}`;
+        window.open(url, '_blank');
+        
+        document.getElementById('bulk-ht-modal').classList.add('hidden');
+    });
     // --- UPDATE SHOW SECTION ---
     // Add these lines inside your existing showSection function:
     // if(id === 'fees') { ... existing loaders ...; loadFeeCollectionData(); }
