@@ -359,6 +359,8 @@ def logout():
     logout_user()
     return jsonify({"message": "OK"})
 
+
+
 @app.route('/api/check_session')
 def check_session():
     if current_user.is_authenticated: return jsonify({"logged_in": True, "user": current_user.to_dict()})
@@ -1381,7 +1383,14 @@ def initialize_database():
         db.create_all()
         check_and_upgrade_db()
         init_firebase()
-
+# --- SPECIAL ROUTE: SERVE TAILWIND FROM ROOT ---
+@app.route('/tailwind.js')
+def serve_tailwind_manual():
+    try:
+        # This looks for 'tailwind.js' in the SAME folder as app.py
+        return send_file('tailwind.js', mimetype='application/javascript')
+    except Exception as e:
+        return f"Error: tailwind.js not found in app folder. {str(e)}", 404
 if __name__ == '__main__':
     initialize_database()
     app.run(debug=False, host='0.0.0.0', port=5000)
