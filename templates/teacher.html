@@ -10,7 +10,7 @@
     <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
     <link as="style" href="https://fonts.googleapis.com/css2?display=swap&family=Inter:wght@400;500;600;700;900" onload="this.rel='stylesheet'" rel="stylesheet"/>
     
-    <script src="{{ url_for('static', filename='tailwind.js') }}"></script>
+<script src="{{ url_for('static', filename='tailwind.js') }}"></script>
     <script>
         tailwind.config = {
             darkMode: "class",
@@ -1446,7 +1446,11 @@ window.deleteAnnouncement = async (id) => {
         if(document.getElementById('cancel-notify-btn')) document.getElementById('cancel-notify-btn').addEventListener('click', closeModal);
         if(document.getElementById('modal-backdrop')) document.getElementById('modal-backdrop').addEventListener('click', closeModal);
 
+<<<<<<< HEAD
         const sendBtn = document.getElementById('send-notify-btn');
+=======
+const sendBtn = document.getElementById('send-notify-btn');
+>>>>>>> 4b2af15014d601192356438279c53828e0b366a6
         if(sendBtn) {
             sendBtn.addEventListener('click', async () => {
                 const sid = document.getElementById('notify-student-id').value;
@@ -1456,6 +1460,7 @@ window.deleteAnnouncement = async (id) => {
 
                 if(!sub || !body) return alert("Subject and message are required.");
 
+<<<<<<< HEAD
                 // WhatsApp Logic (Client Side)
                 if (type === 'whatsapp') {
                     const student = allTeacherStudents.find(s => s.id == sid);
@@ -1472,6 +1477,9 @@ window.deleteAnnouncement = async (id) => {
                 }
 
                 // Server Side Sending
+=======
+                // Server Side Sending (Handled by app.py)
+>>>>>>> 4b2af15014d601192356438279c53828e0b366a6
                 sendBtn.disabled = true;
                 const originalText = sendBtn.innerHTML;
                 sendBtn.textContent = "Sending...";
