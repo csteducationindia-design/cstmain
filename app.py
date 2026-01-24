@@ -292,8 +292,44 @@ class AssignmentTask(db.Model):
 # HELPER FUNCTIONS
 # =========================================================
 def send_whatsapp_message(phone, msg):
-    logger.info(f"WHATSAPP SENT TO {phone}: {msg}")
-    return True
+    try:
+        # --- CREDENTIALS (Update if you registered a new account) ---
+        INSTANCE_ID = "instance159860" 
+        TOKEN = "m24ozhanmom1ev3c"
+        
+        if not phone: return False
+        
+        # 1. Clean Phone Number (Remove spaces, dashes, etc.)
+        import re
+        clean_phone = re.sub(r'\D', '', str(phone)) 
+        
+        # Add '91' (India) if it is just a 10-digit number
+        if len(clean_phone) == 10: 
+            clean_phone = "91" + clean_phone
+            
+        # 2. Prepare the API Request
+        url = f"https://api.ultramsg.com/{INSTANCE_ID}/messages/chat"
+        
+        payload = {
+            "token": TOKEN,
+            "to": clean_phone,
+            "body": msg
+        }
+        headers = {'content-type': 'application/x-www-form-urlencoded'}
+        
+        # 3. Send the Request
+        response = requests.post(url, data=payload, headers=headers)
+        
+        if response.status_code == 200:
+            logger.info(f"WhatsApp sent successfully to {clean_phone}")
+            return True
+        else:
+            logger.error(f"UltraMsg API Error: {response.text}")
+            return False
+            
+    except Exception as e:
+        logger.error(f"WhatsApp System Error: {str(e)}")
+        return False
 
 def calculate_fee_status(student_id):
     try:
