@@ -1381,7 +1381,134 @@ def print_comprehensive_report():
         })
         
     return render_template('report_print.html', students=report_data, session_name=session_name, report_date=date.today())
+# --- NEW FEE REPORT FEATURES ---
 
+@app.route('/api/reports/collections', methods=['GET'])
+@login_required
+def api_collection_report():
+    if current_user.role != 'admin': return jsonify({"msg": "Denied"}), 403
+    
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+
+    # Query Payments joined with Student Data
+    query = db.session.query(Payment, User).join(User, Payment.student_id == User.id)
+
+    # Apply Date Filters
+    if start_date:
+        query = query.filter(db.func.date(Payment.payment_date) >= start_date)
+    if end_date:
+        query = query.filter(db.func.date(Payment.payment_date) <= end_date)
+
+    # Get Results sorted by newest first
+    results = query.order_by(Payment.payment_date.desc()).all()
+
+    data = []
+    total_collected = 0
+
+    for pay, student in results:
+        total_collected += pay.amount_paid
+        # Get fee name
+        fee_struct = db.session.get(FeeStructure, pay.fee_structure_id)
+        fee_name = fee_struct.name if fee_struct else "Unknown Fee"
+        
+        data.append({
+            "id": pay.id,
+            "date": pay.payment_date.strftime('%Y-%m-%d'),
+            "time": pay.payment_date.strftime('%I:%M %p'),
+            "student_name": student.name,
+            "adm_no": student.admission_number,
+            "fee_name": fee_name,
+            "mode": pay.payment_method,
+            "amount": pay.amount_paid
+        })
+
+    return jsonify({"transactions": data, "total": total_collected})
+
+
+@app.route('/admin/print/collections')
+@login_required
+def print_collection_report():
+    if current_user.role != 'admin': return "Denied", 403
+    
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    
+    # Re-run query for the print view
+    query = db.session.query(Payment, User).join(User, Payment.student_id == User.id)
+    if start_date: query = query.filter(db.func.date(Payment.payment_date) >= start_date)
+    if end_date: query = query.filter(db.func.date(Payment.payment_date) <= end_date)
+    
+    results = query.order_by(Payment.payment_date.asc()).all() # Oldest first for ledger
+    
+    total = sum(p.amount_paid for p, u in results)
+    
+    # Generate HTML for Printing
+    rows = ""
+    for pay, student in results:
+        fee = db.session.get(FeeStructure, pay.fee_structure_id)
+        fee_name = fee.name if fee else "-"
+        rows += f"""
+        <tr style="border-bottom: 1px solid #ddd;">
+            <td style="padding: 8px;">{pay.payment_date.strftime('%Y-%m-%d')}</td>
+            <td style="padding: 8px;">{student.admission_number}</td>
+            <td style="padding: 8px;">{student.name}</td>
+            <td style="padding: 8px;">{fee_name}</td>
+            <td style="padding: 8px;">{pay.payment_method}</td>
+            <td style="padding: 8px; text-align: right;">₹{pay.amount_paid}</td>
+        </tr>
+        """
+
+    return f"""
+    <html>
+    <head>
+        <title>Fee Collection Report</title>
+        <style>
+            body {{ font-family: 'Segoe UI', sans-serif; padding: 40px; color: #333; }}
+            .header {{ text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }}
+            h1 {{ margin: 0; color: #1173d4; }}
+            table {{ width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }}
+            th {{ background: #f4f4f4; padding: 10px; text-align: left; border-bottom: 2px solid #aaa; }}
+            .total-row {{ font-size: 18px; font-weight: bold; background: #eee; }}
+            @media print {{ button {{ display: none; }} }}
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h1>CST INSTITUTE - Collection Report</h1>
+            <p>Report Period: {start_date if start_date else 'Beginning'} to {end_date if end_date else 'Today'}</p>
+        </div>
+        
+        <button onclick="window.print()" style="padding: 10px 20px; background: #333; color: #fff; border: none; cursor: pointer; margin-bottom: 20px;">Print Report</button>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Adm No</th>
+                    <th>Student Name</th>
+                    <th>Fee Details</th>
+                    <th>Mode</th>
+                    <th style="text-align: right;">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {rows}
+            </tbody>
+            <tfoot>
+                <tr class="total-row">
+                    <td colspan="5" style="text-align: right; padding: 15px;">TOTAL COLLECTION:</td>
+                    <td style="text-align: right; padding: 15px;">₹{total}</td>
+                </tr>
+            </tfoot>
+        </table>
+        
+        <div style="margin-top: 50px; text-align: right; font-size: 12px;">
+            <p>Generated by CST Admin Portal on {datetime.now().strftime('%d-%b-%Y %I:%M %p')}</p>
+        </div>
+    </body>
+    </html>
+    """
 # =========================================================
 # MIGRATION & STARTUP
 # =========================================================
