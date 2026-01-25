@@ -11,7 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet" />
 
-<script src="{{ url_for('static', filename='tailwind.js') }}"></script>
+<script src="{{ url_for('static', filename='style.js') }}"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -76,6 +76,27 @@
                     </div>
                 </div>
             </div>
+<div id="view-faculty" class="view-section hidden animate-fade">
+    <div class="bg-indigo-600 rounded-2xl p-6 text-white shadow-lg shadow-indigo-200 mb-6">
+        <h2 class="text-2xl font-bold mb-1">Ask Your Teacher</h2>
+        <p class="text-indigo-100 font-medium text-sm">Select a teacher to ask a doubt.</p>
+    </div>
+    <div id="teacher-list" class="grid grid-cols-2 gap-4">
+        <div class="col-span-2 text-center py-10 text-gray-400">Loading faculty...</div>
+    </div>
+</div>
+
+<div id="doubt-modal" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl animate-fade">
+        <h3 class="text-lg font-bold text-gray-800 mb-4">Ask Question</h3>
+        <p class="text-xs text-gray-500 mb-2">To: <span id="doubt-teacher-name" class="font-bold text-blue-600"></span></p>
+        <textarea id="doubt-input" rows="4" class="w-full border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50" placeholder="Type your question here..."></textarea>
+        <div class="flex gap-3 mt-4">
+            <button onclick="document.getElementById('doubt-modal').classList.add('hidden')" class="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl text-sm">Cancel</button>
+            <button onclick="sendDoubt()" class="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl text-sm shadow-lg shadow-blue-200">Send</button>
+        </div>
+    </div>
+</div>
 
             <button id="enable-notif-btn" class="hidden w-full bg-indigo-100 text-indigo-700 p-4 rounded-2xl mb-6 flex items-center justify-between shadow-sm border border-indigo-200" onclick="requestNotificationPermission()">
                 <div class="flex items-center gap-3">
@@ -226,6 +247,10 @@
             <span class="material-symbols-rounded text-[26px]">person</span>
             <span class="text-[10px] font-medium">Profile</span>
         </button>
+<button onclick="switchView('faculty')" class="nav-btn flex flex-col items-center justify-center w-full h-full space-y-1 text-gray-400 hover:text-gray-600" data-target="faculty">
+    <span class="material-symbols-rounded text-[26px]">school</span>
+    <span class="text-[10px] font-medium">Ask Teacher</span>
+</button>
     </nav>
 </div>
 
@@ -382,6 +407,65 @@ async function loadStudentAssignments() {
             container.innerHTML = '<p class="text-red-400 text-sm text-center">Failed to load.</p>';
         }
     }
+// --- LOAD TEACHERS ---
+    async function fetchTeachers() {
+        const container = document.getElementById('teacher-list');
+        try {
+            const res = await fetch(`${API_BASE_URL}/student/my_teachers`, { credentials: 'include' });
+            const teachers = await res.json();
+            
+            if(teachers.length === 0) {
+                container.innerHTML = '<div class="col-span-2 text-center py-10 text-gray-400">No teachers assigned yet.</div>';
+                return;
+            }
+
+            container.innerHTML = teachers.map(t => {
+                const photo = t.photo ? `${API_ORIGIN}${t.photo}` : `https://placehold.co/100x100/e2e8f0/64748b?text=${t.name.charAt(0)}`;
+                return `
+                <div onclick="openDoubtModal(${t.id}, '${t.name}')" class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center text-center hover:border-blue-300 transition-colors cursor-pointer group">
+                    <div class="w-16 h-16 rounded-full p-1 border-2 border-dashed border-gray-200 group-hover:border-blue-400 mb-3">
+                        <img src="${photo}" class="w-full h-full rounded-full object-cover">
+                    </div>
+                    <h4 class="font-bold text-gray-800 text-sm line-clamp-1">${t.name}</h4>
+                    <p class="text-[10px] text-gray-500 mt-1 line-clamp-1">${t.subjects.join(', ')}</p>
+                    <button class="mt-3 text-[10px] font-bold bg-blue-50 text-blue-600 px-3 py-1.5 rounded-full">Ask Question</button>
+                </div>`;
+            }).join('');
+        } catch(e) { console.error(e); }
+    }
+
+    // --- DOUBT LOGIC ---
+    let selectedTeacherId = null;
+
+    function openDoubtModal(tid, name) {
+        selectedTeacherId = tid;
+        document.getElementById('doubt-teacher-name').textContent = name;
+        document.getElementById('doubt-input').value = '';
+        document.getElementById('doubt-modal').classList.remove('hidden');
+    }
+
+    async function sendDoubt() {
+        const text = document.getElementById('doubt-input').value;
+        if(!text) return alert("Please type a question");
+        
+        try {
+            const res = await fetch(`${API_BASE_URL}/student/ask_doubt`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                credentials: 'include',
+                body: JSON.stringify({ teacher_id: selectedTeacherId, question: text })
+            });
+            alert("Question sent! The teacher will be notified.");
+            document.getElementById('doubt-modal').classList.add('hidden');
+        } catch(e) { alert("Error sending message"); }
+    }
+
+    // Update switchView to handle 'faculty'
+    const originalSwitchView = window.switchView;
+    window.switchView = function(viewId) {
+        originalSwitchView(viewId); // Call original
+        if(viewId === 'faculty') fetchTeachers();
+    };
     // --- UI UPDATERS ---
     function updateProfileUI(user) {
         if (!user) return;

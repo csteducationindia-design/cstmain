@@ -1623,7 +1623,8 @@ def bulk_upload_users():
                 if c_name:
                     course = Course.query.filter(Course.name.ilike(c_name)).first()
                     if course:
-                        student.courses.append(course)
+                        # FIX: Use 'courses_enrolled' instead of 'courses'
+                        student.courses_enrolled.append(course)
             
             db.session.add(student)
             added_count += 1
@@ -1635,7 +1636,46 @@ def bulk_upload_users():
         db.session.rollback()
         return jsonify({"msg": f"Error: {str(e)}"}), 500
 
+# --- NEW: STUDENT ASK TEACHER FEATURE ---
 
+@app.route('/api/student/my_teachers', methods=['GET'])
+@login_required
+def get_my_teachers():
+    # 1. Get courses the student is enrolled in
+    # 2. Extract unique teachers from those courses
+    teachers = {}
+    for course in current_user.courses_enrolled:
+        if course.teacher:
+            tid = course.teacher.id
+            if tid not in teachers:
+                teachers[tid] = {
+                    "id": tid,
+                    "name": course.teacher.name,
+                    "photo": course.teacher.profile_photo_url,
+                    "subjects": [course.name]
+                }
+            else:
+                teachers[tid]['subjects'].append(course.name)
+    
+    return jsonify(list(teachers.values()))
+
+@app.route('/api/student/ask_doubt', methods=['POST'])
+@login_required
+def ask_doubt():
+    d = request.json
+    teacher_id = d.get('teacher_id')
+    question = d.get('question')
+    
+    # 1. Notify the Teacher (Push Notification)
+    send_push_notification(
+        teacher_id, 
+        f"New Doubt from {current_user.name}", 
+        f"Question: {question}"
+    )
+    
+    # 2. (Optional) You could also save this to a database table 'StudentQuery' here
+    
+    return jsonify({"msg": "Question sent to teacher successfully!"})
 if __name__ == '__main__':
     initialize_database()
     app.run(debug=True, host='0.0.0.0', port=5000)
