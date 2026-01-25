@@ -128,6 +128,12 @@
                         <label class="block text-sm font-medium mb-1">Academic Batch (Session) *</label>
                         <select name="session_id" id="student-session-select" class="w-full border p-2 rounded-lg bg-slate-50" required></select>
                     </div>
+<div class="md:col-span-3">
+    <label class="block text-sm font-medium mb-1">Enrolled Courses (Subject) *</label>
+    <div id="course-checkboxes" class="grid grid-cols-2 md:grid-cols-4 gap-2 bg-slate-50 p-3 rounded-lg border max-h-32 overflow-y-auto">
+        <p class="text-xs text-gray-400">Loading courses...</p>
+    </div>
+</div>
                     <div>
                         <label class="block text-sm font-medium mb-1">Full Name *</label>
                         <input name="name" id="student-name" class="w-full border p-2 rounded-lg bg-slate-50" required>
@@ -700,6 +706,7 @@
         };
         fill('filterSession', 'All Batches');
         fill('student-session-select', '-- Select Batch * --');
+	renderCourseCheckboxes(); // <--- Add this
         fill('fee-session-select', '-- Select Session --');
 
         // Populate Table
@@ -949,6 +956,19 @@
         // Open the beautiful print view in new tab
         window.open(`/admin/print/collections?start_date=${start}&end_date=${end}`, '_blank');
     }
+// --- NEW FUNCTION TO SHOW COURSE CHECKBOXES ---
+function renderCourseCheckboxes() {
+    const container = document.getElementById('course-checkboxes');
+    if (!container) return;
+    
+    // global 'courses' variable is already loaded in loadGlobalData()
+    container.innerHTML = courses.map(c => `
+        <label class="flex items-center space-x-2 text-sm p-1 hover:bg-white rounded cursor-pointer">
+            <input type="checkbox" name="course_ids" value="${c.id}" class="rounded border-gray-300 text-primary focus:ring-primary">
+            <span>${c.name}</span>
+        </label>
+    `).join('');
+}
     // --- 2. NEW: HALL TICKET LOGIC ---
     function loadHallTicketList() {
         const term = document.getElementById('ht-search').value.toLowerCase();
@@ -1027,6 +1047,19 @@
             document.getElementById('student-pincode').value = u.pincode || '';
             document.getElementById('student-parent').value = u.parent_id || '';
         }
+// ... existing code (session, name, etc.) ...
+    
+    // --- NEW: Check the boxes for enrolled courses ---
+    // Uncheck all first
+    document.querySelectorAll('input[name="course_ids"]').forEach(el => el.checked = false);
+    
+    // Check the ones the student has
+    if (u.course_ids && Array.isArray(u.course_ids)) {
+        u.course_ids.forEach(cid => {
+            const chk = document.querySelector(`input[name="course_ids"][value="${cid}"]`);
+            if (chk) chk.checked = true;
+        });
+    }
         
         //showSection('#' + role + 's');
         window.scrollTo(0,0);
