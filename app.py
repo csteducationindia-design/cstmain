@@ -424,93 +424,6 @@ def serve_role_page(role):
 @app.route('/firebase-messaging-sw.js')
 def sw(): return send_from_directory(app.static_folder, 'firebase-messaging-sw.js')
 
-# --- REPLACEMENT FOR BULK UPLOAD FUNCTION ---
-@app.route('/api/bulk_upload', methods=['POST'])
-@login_required
-def bulk_upload_users():
-    if current_user.role != 'admin': return jsonify({"msg": "Denied"}), 403
-    
-    file = request.files.get('file')
-    if not file: return jsonify({"msg": "No file"}), 400
-
-    try:
-        import csv
-        from io import TextIOWrapper
-        
-        # Open CSV file
-        csv_file = TextIOWrapper(file, encoding='utf-8')
-        reader = csv.DictReader(csv_file)
-        
-        added_count = 0
-        
-        for row in reader:
-            # 1. SKIP IF STUDENT EMAIL EXISTS
-            student_email = row.get('Student_Email', '').strip()
-            if User.query.filter_by(email=student_email).first():
-                continue 
-
-            # 2. HANDLE PARENT (Auto-Create or Link)
-            parent_phone = row.get('Parent_Phone', '').strip()
-            parent_id = None
-            
-            if parent_phone:
-                # Check if parent exists
-                parent = User.query.filter_by(phone_number=parent_phone, role='parent').first()
-                if not parent:
-                    # Create New Parent automatically
-                    parent = User(
-                        name=row.get('Parent_FullName', 'Parent'),
-                        email=row.get('Parent_Email', f"{parent_phone}@cstparent.com"), # Dummy email if missing
-                        phone_number=parent_phone,
-                        password=bcrypt.generate_password_hash("123456").decode('utf-8'),
-                        role='parent'
-                    )
-                    db.session.add(parent)
-                    db.session.flush() # Generate ID immediately
-                parent_id = parent.id
-
-            # 3. HANDLE BATCH / SESSION
-            batch_name = row.get('Batch_Name', '').strip()
-            session_id = None
-            if batch_name:
-                sess = Session.query.filter(Session.name.ilike(batch_name)).first()
-                if sess: session_id = sess.id
-            
-            # 4. CREATE STUDENT LINKED TO PARENT & BATCH
-            student = User(
-                name=row.get('Student_FullName'),
-                email=student_email,
-                phone_number=row.get('Student_Phone', ''),
-                admission_number=row.get('Admission_No', ''),
-                password=bcrypt.generate_password_hash("123456").decode('utf-8'),
-                role='student',
-                parent_id=parent_id,    # Linked!
-                session_id=session_id,  # Linked!
-                gender=row.get('Gender', ''),
-                address_line1=row.get('Address', ''),
-                dob=row.get('DOB', '')  # Must be YYYY-MM-DD
-            )
-            
-            # 5. HANDLE COURSES (Auto-Enroll)
-            # Format in CSV: "C++ Programming, Core Java" (Comma separated)
-            course_names = row.get('Course_Names', '').split(',')
-            for c_name in course_names:
-                c_name = c_name.strip()
-                if c_name:
-                    course = Course.query.filter(Course.name.ilike(c_name)).first()
-                    if course:
-                        student.courses.append(course)
-            
-            db.session.add(student)
-            added_count += 1
-            
-        db.session.commit()
-        return jsonify({"msg": f"Success! Added {added_count} students and linked their parents."}), 200
-
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"msg": f"Error: {str(e)}"}), 500
-
 # --- NEW: TEACHER NOTIFICATION ROUTE ---
 @app.route('/api/teacher/notify', methods=['POST'])
 @login_required
@@ -1634,6 +1547,94 @@ def initialize_database():
         db.create_all()
         check_and_upgrade_db()
         init_firebase()
+
+# --- REPLACEMENT FOR BULK UPLOAD FUNCTION ---
+@app.route('/api/bulk_upload', methods=['POST'])
+@login_required
+def bulk_upload_users():
+    if current_user.role != 'admin': return jsonify({"msg": "Denied"}), 403
+    
+    file = request.files.get('file')
+    if not file: return jsonify({"msg": "No file"}), 400
+
+    try:
+        import csv
+        from io import TextIOWrapper
+        
+        # Open CSV file
+        csv_file = TextIOWrapper(file, encoding='utf-8')
+        reader = csv.DictReader(csv_file)
+        
+        added_count = 0
+        
+        for row in reader:
+            # 1. SKIP IF STUDENT EMAIL EXISTS
+            student_email = row.get('Student_Email', '').strip()
+            if User.query.filter_by(email=student_email).first():
+                continue 
+
+            # 2. HANDLE PARENT (Auto-Create or Link)
+            parent_phone = row.get('Parent_Phone', '').strip()
+            parent_id = None
+            
+            if parent_phone:
+                # Check if parent exists
+                parent = User.query.filter_by(phone_number=parent_phone, role='parent').first()
+                if not parent:
+                    # Create New Parent automatically
+                    parent = User(
+                        name=row.get('Parent_FullName', 'Parent'),
+                        email=row.get('Parent_Email', f"{parent_phone}@cstparent.com"), # Dummy email if missing
+                        phone_number=parent_phone,
+                        password=bcrypt.generate_password_hash("123456").decode('utf-8'),
+                        role='parent'
+                    )
+                    db.session.add(parent)
+                    db.session.flush() # Generate ID immediately
+                parent_id = parent.id
+
+            # 3. HANDLE BATCH / SESSION
+            batch_name = row.get('Batch_Name', '').strip()
+            session_id = None
+            if batch_name:
+                sess = AcademicSession.query.filter(AcademicSession.name.ilike(batch_name)).first()
+                if sess: session_id = sess.id
+            
+            # 4. CREATE STUDENT LINKED TO PARENT & BATCH
+            student = User(
+                name=row.get('Student_FullName'),
+                email=student_email,
+                phone_number=row.get('Student_Phone', ''),
+                admission_number=row.get('Admission_No', ''),
+                password=bcrypt.generate_password_hash("123456").decode('utf-8'),
+                role='student',
+                parent_id=parent_id,    # Linked!
+                session_id=session_id,  # Linked!
+                gender=row.get('Gender', ''),
+                address_line1=row.get('Address', ''),
+                dob=row.get('DOB', '')  # Must be YYYY-MM-DD
+            )
+            
+            # 5. HANDLE COURSES (Auto-Enroll)
+            # Format in CSV: "C++ Programming, Core Java" (Comma separated)
+            course_names = row.get('Course_Names', '').split(',')
+            for c_name in course_names:
+                c_name = c_name.strip()
+                if c_name:
+                    course = Course.query.filter(Course.name.ilike(c_name)).first()
+                    if course:
+                        student.courses.append(course)
+            
+            db.session.add(student)
+            added_count += 1
+            
+        db.session.commit()
+        return jsonify({"msg": f"Success! Added {added_count} students and linked their parents."}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"msg": f"Error: {str(e)}"}), 500
+
 
 if __name__ == '__main__':
     initialize_database()
