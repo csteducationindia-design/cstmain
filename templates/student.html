@@ -76,27 +76,6 @@
                     </div>
                 </div>
             </div>
-<div id="view-faculty" class="view-section hidden animate-fade">
-    <div class="bg-indigo-600 rounded-2xl p-6 text-white shadow-lg shadow-indigo-200 mb-6">
-        <h2 class="text-2xl font-bold mb-1">Ask Your Teacher</h2>
-        <p class="text-indigo-100 font-medium text-sm">Select a teacher to ask a doubt.</p>
-    </div>
-    <div id="teacher-list" class="grid grid-cols-2 gap-4">
-        <div class="col-span-2 text-center py-10 text-gray-400">Loading faculty...</div>
-    </div>
-</div>
-
-<div id="doubt-modal" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-    <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl animate-fade">
-        <h3 class="text-lg font-bold text-gray-800 mb-4">Ask Question</h3>
-        <p class="text-xs text-gray-500 mb-2">To: <span id="doubt-teacher-name" class="font-bold text-blue-600"></span></p>
-        <textarea id="doubt-input" rows="4" class="w-full border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50" placeholder="Type your question here..."></textarea>
-        <div class="flex gap-3 mt-4">
-            <button onclick="document.getElementById('doubt-modal').classList.add('hidden')" class="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl text-sm">Cancel</button>
-            <button onclick="sendDoubt()" class="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl text-sm shadow-lg shadow-blue-200">Send</button>
-        </div>
-    </div>
-</div>
 
             <button id="enable-notif-btn" class="hidden w-full bg-indigo-100 text-indigo-700 p-4 rounded-2xl mb-6 flex items-center justify-between shadow-sm border border-indigo-200" onclick="requestNotificationPermission()">
                 <div class="flex items-center gap-3">
@@ -116,14 +95,12 @@
                     </div>
                     <span class="font-bold text-gray-700 text-base">Notes</span>
                 </button>
-                
                 <button onclick="switchView('results')" class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 hover:bg-gray-50 transition-all group">
                     <div class="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center text-purple-500 group-hover:scale-110 transition-transform">
                         <span class="material-symbols-rounded">assignment_turned_in</span>
                     </div>
                     <span class="font-bold text-gray-700 text-base">Results</span>
                 </button>
-
                 <button onclick="window.open('/student/my_hallticket', '_blank')" class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 hover:bg-gray-50 transition-all group col-span-2">
                     <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
                         <span class="material-symbols-rounded">badge</span>
@@ -154,9 +131,28 @@
                     <p class="text-gray-400 text-sm text-center py-4">Loading assignments...</p>
                 </div>
             </div>
+        </div> 
+        <div id="view-faculty" class="view-section hidden animate-fade">
+            <div class="bg-indigo-600 rounded-2xl p-6 text-white shadow-lg shadow-indigo-200 mb-6">
+                <h2 class="text-2xl font-bold mb-1">Ask Your Teacher</h2>
+                <p class="text-indigo-100 font-medium text-sm">Select a teacher to ask a doubt.</p>
+            </div>
+            <div id="teacher-list" class="grid grid-cols-2 gap-4">
+                <div class="col-span-2 text-center py-10 text-gray-400">Loading faculty...</div>
+            </div>
         </div>
 
-
+        <div id="doubt-modal" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+            <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl animate-fade">
+                <h3 class="text-lg font-bold text-gray-800 mb-4">Ask Question</h3>
+                <p class="text-xs text-gray-500 mb-2">To: <span id="doubt-teacher-name" class="font-bold text-blue-600"></span></p>
+                <textarea id="doubt-input" rows="4" class="w-full border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50" placeholder="Type your question here..."></textarea>
+                <div class="flex gap-3 mt-4">
+                    <button onclick="document.getElementById('doubt-modal').classList.add('hidden')" class="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl text-sm">Cancel</button>
+                    <button onclick="sendDoubt()" class="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl text-sm shadow-lg shadow-blue-200">Send</button>
+                </div>
+            </div>
+        </div>
            
         <div id="view-academics" class="view-section hidden animate-fade">
             <div class="bg-blue-600 rounded-2xl p-6 text-white shadow-lg shadow-blue-200 mb-6">
