@@ -2,8 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Vertical ID Cards</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Bulk ID Cards (Vertical)</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     
     <style>
@@ -16,12 +15,12 @@
             justify-content: center;
         }
 
-        /* A4 Page Layout (3x3 Grid) */
+        /* A4 Page Layout (3x3 Grid = 9 Cards per page) */
         .a4-page {
             width: 210mm;
             min-height: 297mm;
             background: white;
-            padding: 10mm;
+            padding: 10mm; /* Printer safety margin */
             box-sizing: border-box;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             margin-bottom: 20px;
@@ -30,65 +29,178 @@
             grid-template-rows: repeat(3, 1fr);
             gap: 5mm; 
             page-break-after: always;
+            justify-items: center; /* Center cards in grid cells */
         }
 
-        /* ID Card Dimensions (CR80 Vertical) */
+        /* --- ID CARD DIMENSIONS (55mm x 86mm) --- */
         .id-card {
-            width: 54mm;   
-            height: 85.6mm; 
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
+            width: 55mm;   
+            height: 86mm; 
+            border: 1px solid #d1d5db; /* Light grey border for cutting guide */
+            border-radius: 4px;        /* Slightly rounded corners */
             background: white;
             overflow: hidden;
             position: relative;
             display: flex;
             flex-direction: column;
+            box-sizing: border-box;
         }
 
         /* Top Blue Banner */
         .top-banner {
-            height: 16px;
+            height: 14mm;
             background-color: #1173d4;
             width: 100%;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
-        }
-
-        .banner-text {
             color: white;
-            font-weight: 700;
-            font-size: 8px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
+            padding: 2px 0;
         }
 
-        /* Content Padding */
+        .institute-name {
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            line-height: 1;
+            margin-bottom: 1px;
+        }
+        
+        .institute-sub {
+            font-size: 5px;
+            font-weight: 400;
+            letter-spacing: 0.5px;
+            opacity: 0.9;
+        }
+
+        /* Card Content */
         .card-body {
             flex: 1;
-            padding: 4px 6px;
+            padding: 3mm;
             display: flex;
             flex-direction: column;
             align-items: center;
             text-align: center;
         }
 
+        /* Photo Box */
+        .photo-container {
+            width: 26mm;
+            height: 32mm;
+            border: 1px solid #1173d4;
+            background: #f3f4f6;
+            margin-bottom: 3mm;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border-radius: 2px;
+        }
+        .photo-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Student Details */
+        .student-name {
+            font-size: 11px;
+            font-weight: 800;
+            color: #111827;
+            text-transform: uppercase;
+            line-height: 1.1;
+            margin-bottom: 1px;
+            width: 100%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .course-name {
+            font-size: 8px;
+            color: #1173d4;
+            font-weight: 700;
+            margin-bottom: 3mm;
+            text-transform: uppercase;
+        }
+
+        /* Data Grid */
+        .info-grid {
+            width: 100%;
+            text-align: left;
+        }
+        
+        .info-row {
+            display: flex;
+            font-size: 7px;
+            margin-bottom: 1.5px;
+            color: #374151;
+            border-bottom: 0.5px dashed #e5e7eb;
+            padding-bottom: 1px;
+        }
+        
+        .info-label {
+            font-weight: 700;
+            width: 14mm;
+            color: #6b7280;
+            flex-shrink: 0;
+        }
+        
+        .info-val {
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Footer / Signature */
+        .card-footer {
+            margin-top: auto;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 2px;
+        }
+        
+        .sign-img {
+            height: 8mm;
+            object-fit: contain;
+            display: block;
+        }
+        
+        .sign-text {
+            font-size: 5px;
+            color: #9ca3af;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-top: 1px;
+        }
+
         /* Print Settings */
         @media print {
-            body { background: white; padding: 0; }
-            .a4-page { box-shadow: none; margin: 0; border: none; padding: 10mm; }
+            body { background: white; padding: 0; margin: 0; }
+            .a4-page { 
+                margin: 0; 
+                padding: 10mm;
+                box-shadow: none; 
+                width: 210mm;
+                height: 297mm;
+                page-break-after: always;
+            }
             .no-print { display: none !important; }
-            @page { size: A4; margin: 0; }
-            * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            /* Essential for background colors */
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
         }
     </style>
 </head>
 <body>
 
     <div class="no-print" style="position: fixed; top: 20px; right: 20px; z-index: 100;">
-        <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow-lg transition">
-            Print All Cards
+        <button onclick="window.print()" style="background: #2563eb; color: white; padding: 12px 24px; cursor: pointer; font-size: 16px; border: none; border-radius: 8px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            Print ID Cards
         </button>
     </div>
 
@@ -98,89 +210,43 @@
         <div class="id-card">
             
             <div class="top-banner">
-                <span class="banner-text">STUDENT</span>
+                <div class="institute-name">CST INSTITUTE</div>
+                <div class="institute-sub">EXCELLENCE IN EDUCATION</div>
             </div>
 
             <div class="card-body">
                 
-                <div class="flex flex-col items-center justify-center w-full border-b border-gray-100 pb-1 mb-1">
-                    <img src="{{ url_for('static', filename='logo.png') }}" 
-                         alt="Logo" 
-                         style="height: 18px; width: auto; display: block; margin: 0 auto;">
-                    
-                    <h2 style="font-size: 10px; font-weight: 800; color: #111827; line-height: 1; margin-top: 1px; margin-bottom: 0;">
-                        CST INSTITUTE
-                    </h2>
-                    
-                    <p style="font-size: 6px; color: #6b7280; line-height: 1; margin: 0;">
-                        Excellence in Education
-                    </p>
-                </div>
-
-                <div class="mb-1">
+                <div class="photo-container">
                     {% if student.profile_photo_url %}
-                        <img src="{{ student.profile_photo_url }}" 
-                             style="width: 55px; height: 65px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb; display: block;">
+                        <img src="{{ student.profile_photo_url }}" alt="Student Photo">
                     {% else %}
-                        <img src="https://placehold.co/55x65/e2e8f0/64748b?text=PHOTO" 
-                             style="width: 55px; height: 65px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb; display: block;">
+                        <span style="color:#999; font-size:8px; font-weight:bold;">PHOTO</span>
                     {% endif %}
                 </div>
 
-                <div class="w-full mb-1 flex-1 flex flex-col justify-start">
-                    <h3 style="font-size: 10px; font-weight: 800; color: #1e3a8a; text-transform: uppercase; line-height: 1.1; margin-top: 1px; margin-bottom: 3px;">
-                        {{ student.name }}
-                    </h3>
-                    
-                    <div style="font-size: 8px; line-height: 1.25; color: #374151; text-align: left; width: 100%; padding-left: 2px;">
-                        <div class="flex">
-                            <strong style="width: 38px; color: #111827; flex-shrink: 0;">ID:</strong> 
-                            <span>{{ "%04d" | format(student.id) }}</span>
-                        </div>
-                        <div class="flex">
-                            <strong style="width: 38px; color: #111827; flex-shrink: 0;">Course:</strong> 
-                            <span class="truncate">{{ student.courses_enrolled[0].name if student.courses_enrolled else 'General' }}</span>
-                        </div>
-                        <div class="flex">
-                            <strong style="width: 38px; color: #111827; flex-shrink: 0;">Phone:</strong> 
-                            <span>{{ student.phone_number }}</span>
-                        </div>
-                        <div class="flex">
-                            <strong style="width: 38px; color: #111827; flex-shrink: 0;">DOB:</strong> 
-                            <span>{{ student.dob }}</span>
-                        </div>
+                <div class="student-name">{{ student.name }}</div>
+                <div class="course-name">
+                    {{ student.courses_enrolled[0].name if student.courses_enrolled else 'STUDENT' }}
+                </div>
+
+                <div class="info-grid">
+                    <div class="info-row">
+                        <span class="info-label">ID NO:</span>
+                        <span class="info-val">{{ student.admission_number or '-' }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">DOB:</span>
+                        <span class="info-val">{{ student.dob or '-' }}</span>
+                    </div>
+                    <div class="info-row" style="border:none;">
+                        <span class="info-label">PHONE:</span>
+                        <span class="info-val">{{ student.phone_number or '-' }}</span>
                     </div>
                 </div>
 
-                <div class="mt-auto w-full flex items-end justify-between pt-1 border-t border-gray-100">
-                    
-                    <div class="flex flex-col items-center">
-                        {% if student.admission_number %}
-                            <img src="{{ url_for('static', filename='qr_codes/qr_' ~ student.admission_number ~ '.png') }}"
-                                 alt="QR" 
-                                 style="width: 38px; height: 38px; object-fit: contain; display: block;"
-                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                            
-                            <div style="width: 38px; height: 38px; background: #f9fafb; border: 1px dashed #ccc; display: none; align-items: center; justify-content: center;">
-                                <span style="font-size: 5px; color: #ccc;">No Img</span>
-                            </div>
-                        {% else %}
-                            <div style="width: 38px; height: 38px; background: #f9fafb; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center;">
-                                <span style="font-size: 5px; color: #ccc;">No ID</span>
-                            </div>
-                        {% endif %}
-                    </div>
-
-                    <div class="flex flex-col items-end justify-end">
-                        <img src="{{ url_for('static', filename='signature_director.png') }}" 
-                             alt="Sign" 
-                             style="height: 22px; width: auto; display: block; margin-bottom: 2px;">
-                        
-                        <p style="font-size: 6px; font-weight: 700; color: #6b7280; margin: 0; line-height: 1;">
-                            Authorized Signatory
-                        </p>
-                    </div>
-
+                <div class="card-footer">
+                    <img src="{{ url_for('static', filename='signature_director.png') }}" class="sign-img" alt="Signature">
+                    <div class="sign-text">Authorized Signatory</div>
                 </div>
 
             </div>
