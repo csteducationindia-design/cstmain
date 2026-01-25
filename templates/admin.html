@@ -184,7 +184,27 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">Profile Photo</label>
-                        <input type="file" name="profile_photo_file" class="w-full text-sm">
+                        <div class="md:col-span-3 border-t pt-4 mt-2">
+    <label class="block text-sm font-bold text-gray-700 mb-2">Student Photo (ID Card)</label>
+    
+    <div class="flex items-center gap-4">
+        <div class="w-16 h-16 rounded-full border-2 border-slate-200 overflow-hidden bg-slate-100">
+            <img id="photo-preview" src="https://placehold.co/100" class="w-full h-full object-cover">
+        </div>
+
+        <div class="flex-1">
+            <label class="cursor-pointer bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 font-bold py-2 px-4 rounded-lg flex items-center gap-2 justify-center w-full transition-colors">
+                <span class="material-symbols-outlined">photo_camera</span>
+                <span>Take Photo / Upload</span>
+                
+                <input type="file" name="profile_photo_file" id="photo-input" 
+                       accept="image/*" capture="user" class="hidden" 
+                       onchange="previewImage(this)">
+            </label>
+            <p class="text-xs text-gray-400 mt-1 text-center">Tap to open Camera (Mobile) or File Manager (PC)</p>
+        </div>
+    </div>
+</div>
                     </div>
                     
                     <button type="submit" class="bg-primary hover:bg-blue-700 text-white py-2 rounded-lg col-span-1 md:col-span-3 font-medium transition-colors">Save Student Data</button>
@@ -597,7 +617,17 @@
         const sid = document.getElementById('report-session-select').value;
         window.open(`/admin/report/print?session_id=${sid}`, '_blank');
     }
-    // --- FEE SUB-TAB SWITCHER ---
+// --- NEW: PHOTO PREVIEW FUNCTION ---
+    function previewImage(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('photo-preview').src = e.target.result;
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }    
+// --- FEE SUB-TAB SWITCHER ---
     function showFeeTab(tabName) {
         // 1. Hide all tab contents
         document.querySelectorAll('.fee-tab-content').forEach(el => el.classList.add('hidden'));
