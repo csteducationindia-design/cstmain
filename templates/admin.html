@@ -312,164 +312,123 @@
 
         <!-- ================= FEES & REPORTS ================= -->
 <div id="content-fees" class="content-section hidden">
+    <h2 class="text-3xl font-bold mb-6">Fees & Finance</h2>
 
-    <h2 class="text-3xl font-bold mb-6">Fees & Collection</h2>
-
-    <!-- ===== Collect Fee ===== -->
-    <div class="bg-blue-50 dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-blue-100 mb-8">
-        <h3 class="font-bold mb-4 text-primary text-lg flex items-center gap-2">
-            <span class="material-symbols-outlined">payments</span>
+    <div class="flex flex-wrap gap-2 mb-6 border-b border-slate-200 dark:border-slate-700 pb-2">
+        <button onclick="showFeeTab('collect')" id="tab-btn-collect" 
+            class="fee-tab-btn bg-primary text-white px-6 py-2 rounded-lg font-medium transition-colors">
             Collect Fee
-        </h3>
-
-        <form id="collect-fee-form" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <select id="pay-student" name="student_id" class="border p-2 rounded-lg" required>
-                <option value="">Select Student</option>
-            </select>
-
-            <select id="pay-structure" name="fee_structure_id" class="border p-2 rounded-lg" required>
-                <option value="">Select Fee Type</option>
-            </select>
-
-            <input name="amount" type="number" placeholder="Amount (₹)"
-                   class="border p-2 rounded-lg" required>
-
-            <select name="payment_method" class="border p-2 rounded-lg">
-                <option>Cash</option>
-                <option>Online</option>
-                <option>Cheque</option>
-            </select>
-
-            <button type="submit"
-                    class="bg-green-600 text-white font-bold py-2 rounded-lg col-span-1 md:col-span-4 hover:bg-green-700">
-                Receive Payment & Print Receipt
-            </button>
-        </form>
+        </button>
+        <button onclick="showFeeTab('ledger')" id="tab-btn-ledger" 
+            class="fee-tab-btn bg-slate-100 text-slate-600 hover:bg-slate-200 px-6 py-2 rounded-lg font-medium transition-colors">
+            Collection Report
+        </button>
+        <button onclick="showFeeTab('pending')" id="tab-btn-pending" 
+            class="fee-tab-btn bg-slate-100 text-slate-600 hover:bg-slate-200 px-6 py-2 rounded-lg font-medium transition-colors">
+            Pending Dues
+        </button>
+        <button onclick="showFeeTab('settings')" id="tab-btn-settings" 
+            class="fee-tab-btn bg-slate-100 text-slate-600 hover:bg-slate-200 px-6 py-2 rounded-lg font-medium transition-colors">
+            Fee Settings
+        </button>
     </div>
 
-    <!-- ===== Fee Structure + Pending Report ===== -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-        <!-- Fee Structure -->
-        <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100">
-            <h3 class="font-bold mb-4 text-gray-700">Fee Structures</h3>
-
-            <form id="fee-structure-form" class="space-y-4 mb-4">
-                <input type="hidden" id="fee-structure-id" name="id">
-
-                <input id="fee-name" name="name"
-                       placeholder="Fee Name"
-                       class="w-full border p-2 rounded-lg" required>
-
-                <div class="grid grid-cols-2 gap-2">
-                    <input id="fee-amount" name="total_amount" type="number"
-                           placeholder="Amount"
-                           class="w-full border p-2 rounded-lg" required>
-
-                    <input id="fee-date" name="due_date" type="date"
-                           class="w-full border p-2 rounded-lg" required>
+    <div id="fee-tab-collect" class="fee-tab-content">
+        <div class="bg-blue-50 dark:bg-slate-800 p-8 rounded-xl shadow-sm border border-blue-100 max-w-4xl">
+            <h3 class="font-bold mb-6 text-primary text-xl flex items-center gap-2">
+                <span class="material-symbols-outlined">payments</span> Receive Payment
+            </h3>
+            <form id="collect-fee-form" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-bold text-gray-500 mb-1">Select Student</label>
+                    <select id="pay-student" name="student_id" class="w-full border p-3 rounded-lg bg-white" required>
+                        <option value="">Search Student...</option>
+                    </select>
                 </div>
-
-                <select id="fee-session-select" name="academic_session_id"
-                        class="w-full border p-2 rounded-lg" required>
-                </select>
-
-                <button type="submit"
-                        class="w-full bg-slate-800 text-white py-2 rounded-lg">
-                    Save Structure
+                <div>
+                    <label class="block text-sm font-bold text-gray-500 mb-1">Select Fee Type</label>
+                    <select id="pay-structure" name="fee_structure_id" class="w-full border p-3 rounded-lg bg-white" required>
+                        <option value="">-- Select Fee --</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-500 mb-1">Amount (₹)</label>
+                    <input name="amount" type="number" placeholder="e.g. 5000" class="w-full border p-3 rounded-lg" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-500 mb-1">Payment Mode</label>
+                    <select name="payment_method" class="w-full border p-3 rounded-lg bg-white">
+                        <option>Cash</option><option>Online (UPI/Bank)</option><option>Cheque</option>
+                    </select>
+                </div>
+                <button type="submit" class="bg-green-600 text-white font-bold py-3 rounded-lg col-span-1 md:col-span-2 hover:bg-green-700 shadow-md transition-transform active:scale-95">
+                    Confirm Payment & Print Receipt
                 </button>
             </form>
-
-            <div class="overflow-y-auto max-h-48">
-                <table class="w-full text-sm text-left">
-                    <tbody id="fee-structure-table-body" class="divide-y"></tbody>
-                </table>
-            </div>
         </div>
+    </div>
 
-        <!-- Fee Pending Report -->
+    <div id="fee-tab-ledger" class="fee-tab-content hidden">
         <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100">
-            <h3 class="font-bold mb-4 text-primary text-lg">Fee Pending Report</h3>
-
-            <div class="flex gap-2 mb-4">
-                <select id="report-course-filter"
-                        class="border p-2 rounded-lg bg-slate-50 flex-1"
-                        onchange="loadFeeReport()">
-                    <option value="">All Courses</option>
-                </select>
-
-                <button onclick="loadFeeReport()"
-                        class="bg-gray-200 hover:bg-gray-300 px-4 rounded-lg">
-                    Refresh
+            <h3 class="font-bold mb-4 text-lg text-slate-700 dark:text-white flex items-center gap-2">
+                <span class="material-symbols-outlined text-green-600">date_range</span>
+                Fee Collection Report (Date-Wise)
+            </h3>
+            <div class="flex flex-wrap gap-4 items-end mb-6 bg-slate-50 p-4 rounded-lg">
+                <div>
+                    <label class="text-xs font-bold text-gray-500">From Date</label>
+                    <input type="date" id="report-start" class="border p-2 rounded-lg bg-white block">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-500">To Date</label>
+                    <input type="date" id="report-end" class="border p-2 rounded-lg bg-white block">
+                </div>
+                <button onclick="loadCollectionReport()" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700">Show Report</button>
+                <button onclick="printCollectionReport()" class="bg-slate-800 text-white px-6 py-2 rounded-lg font-medium hover:bg-slate-900 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-sm">print</span> Print
                 </button>
             </div>
+            <div class="bg-green-50 border border-green-200 p-4 rounded-lg mb-4 flex justify-between items-center">
+                <span class="text-green-800 font-medium">Total Collection:</span>
+                <span id="report-total-amount" class="text-2xl font-bold text-green-700">₹0</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm"><thead class="bg-slate-100 dark:bg-slate-800 border-b"><tr><th class="p-3">Date</th><th class="p-3">Student</th><th class="p-3">Fee Type</th><th class="p-3">Mode</th><th class="p-3 text-right">Amount</th></tr></thead><tbody id="collection-report-body" class="divide-y divide-slate-100"><tr><td colspan="5" class="p-4 text-center text-gray-500">Select dates...</td></tr></tbody></table>
+            </div>
+        </div>
+    </div>
 
+    <div id="fee-tab-pending" class="fee-tab-content hidden">
+        <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100">
+            <h3 class="font-bold mb-4 text-red-600 text-lg">Fee Pending Report</h3>
+            <div class="flex gap-2 mb-4">
+                <select id="report-course-filter" class="border p-2 rounded-lg bg-slate-50 flex-1" onchange="loadFeeReport()"><option value="">All Courses</option></select>
+                <button onclick="loadFeeReport()" class="bg-gray-200 hover:bg-gray-300 px-4 rounded-lg">Refresh</button>
+            </div>
             <div class="overflow-y-auto h-[500px] border rounded-lg">
-                <table class="w-full text-sm text-left">
-                    <thead class="bg-gray-50 sticky top-0">
-                        <tr>
-                            <th class="p-3">Student Name</th>
-                            <th class="p-3">Balance</th>
-                            <th class="p-3 text-right">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="fee-pending-report-body"
-                           class="divide-y divide-slate-100">
-                    </tbody>
-                </table>
+                <table class="w-full text-sm text-left"><thead class="bg-gray-50 sticky top-0"><tr><th class="p-3">Student Name</th><th class="p-3">Balance</th><th class="p-3 text-right">Action</th></tr></thead><tbody id="fee-pending-report-body" class="divide-y divide-slate-100"></tbody></table>
             </div>
-        </div>
-<div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100 mt-6">
-        <h3 class="font-bold mb-4 text-lg flex items-center gap-2 text-slate-700 dark:text-white">
-            <span class="material-symbols-outlined text-green-600">date_range</span>
-            Fee Collection Report (Date-Wise)
-        </h3>
-
-        <div class="flex flex-wrap gap-4 items-end mb-6">
-            <div>
-                <label class="text-xs font-bold text-gray-500">From Date</label>
-                <input type="date" id="report-start" class="border p-2 rounded-lg bg-slate-50 block">
-            </div>
-            <div>
-                <label class="text-xs font-bold text-gray-500">To Date</label>
-                <input type="date" id="report-end" class="border p-2 rounded-lg bg-slate-50 block">
-            </div>
-            <button onclick="loadCollectionReport()" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700">
-                Show Report
-            </button>
-            <button onclick="printCollectionReport()" class="bg-slate-800 text-white px-6 py-2 rounded-lg font-medium hover:bg-slate-900 flex items-center gap-2">
-                <span class="material-symbols-outlined text-sm">print</span> Print
-            </button>
-        </div>
-
-        <div class="bg-green-50 border border-green-200 p-4 rounded-lg mb-4 flex justify-between items-center">
-            <span class="text-green-800 font-medium">Total Collection for Selected Period:</span>
-            <span id="report-total-amount" class="text-2xl font-bold text-green-700">₹0</span>
-        </div>
-
-        <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm">
-                <thead class="bg-slate-100 dark:bg-slate-800 border-b">
-                    <tr>
-                        <th class="p-3">Date</th>
-                        <th class="p-3">Student</th>
-                        <th class="p-3">Fee Type</th>
-                        <th class="p-3">Mode</th>
-                        <th class="p-3 text-right">Amount</th>
-                    </tr>
-                </thead>
-                <tbody id="collection-report-body" class="divide-y divide-slate-100">
-                    <tr><td colspan="5" class="p-4 text-center text-gray-500">Select dates and click 'Show Report'</td></tr>
-                </tbody>
-            </table>
         </div>
     </div>
-    </div> ```
 
-**Don't forget:** You also need to add the JavaScript functions (`loadCollectionReport` and `printCollectionReport`) at the bottom of your file inside the `<script>` tag for the buttons to work!
-
+    <div id="fee-tab-settings" class="fee-tab-content hidden">
+        <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100 max-w-3xl">
+            <h3 class="font-bold mb-4 text-gray-700">Create / Edit Fee Structures</h3>
+            <form id="fee-structure-form" class="space-y-4 mb-6 border-b pb-6">
+                <input type="hidden" id="fee-structure-id" name="id">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input id="fee-name" name="name" placeholder="Fee Name (e.g. MS-CIT Full)" class="border p-2 rounded-lg" required>
+                    <input id="fee-amount" name="total_amount" type="number" placeholder="Amount (₹)" class="border p-2 rounded-lg" required>
+                    <input id="fee-date" name="due_date" type="date" class="border p-2 rounded-lg" required>
+                    <select id="fee-session-select" name="academic_session_id" class="border p-2 rounded-lg" required></select>
+                </div>
+                <button type="submit" class="bg-slate-800 text-white py-2 px-6 rounded-lg hover:bg-slate-700">Save Fee Structure</button>
+            </form>
+            <div class="overflow-y-auto max-h-64">
+                <table class="w-full text-sm text-left"><thead class="bg-slate-50"><tr><th class="p-2">Name</th><th class="p-2">Amount</th><th class="p-2 text-right">Action</th></tr></thead><tbody id="fee-structure-table-body" class="divide-y"></tbody></table>
+            </div>
+        </div>
     </div>
-
 </div>
 <!-- ================= END FEES ================= -->
 
@@ -632,7 +591,25 @@
         const sid = document.getElementById('report-session-select').value;
         window.open(`/admin/report/print?session_id=${sid}`, '_blank');
     }
-    
+    // --- FEE SUB-TAB SWITCHER ---
+    function showFeeTab(tabName) {
+        // 1. Hide all tab contents
+        document.querySelectorAll('.fee-tab-content').forEach(el => el.classList.add('hidden'));
+        
+        // 2. Reset all buttons to gray
+        document.querySelectorAll('.fee-tab-btn').forEach(btn => {
+            btn.classList.remove('bg-primary', 'text-white');
+            btn.classList.add('bg-slate-100', 'text-slate-600');
+        });
+
+        // 3. Show selected content
+        document.getElementById('fee-tab-' + tabName).classList.remove('hidden');
+
+        // 4. Highlight selected button
+        const activeBtn = document.getElementById('tab-btn-' + tabName);
+        activeBtn.classList.remove('bg-slate-100', 'text-slate-600');
+        activeBtn.classList.add('bg-primary', 'text-white');
+    }
     // IMPORTANT: Make sure to update loadSessions() to include the new dropdown ID:
     /* async function loadSessions() {
         // ... fetch code ...
