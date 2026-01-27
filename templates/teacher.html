@@ -89,63 +89,47 @@
             </div>
         </div>
 
-        <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto scrollbar-thin">
-            
-            <a href="#dashboard" class="nav-link group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-primary/5 dark:hover:bg-primary/10">
-                <span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">dashboard</span>
-                <span class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-primary dark:group-hover:text-primary-400">Dashboard</span>
-            </a>
-            <a href="#announcements" class="nav-link group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-primary/5 dark:hover:bg-primary/10">
-    <span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">campaign</span>
-    <span class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-primary">Announcements</span>
-</a>
-            <a href="#courses" class="nav-link group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-primary/5 dark:hover:bg-primary/10">
-                <span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">book</span>
-                <span class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-primary dark:group-hover:text-primary-400">My Courses</span>
+        <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+            <a href="#" onclick="switchSection('dashboard')" id="nav-dashboard" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-500/30 transition-all group">
+                <span class="material-symbols-outlined">dashboard</span>
+                <span class="font-medium">Dashboard</span>
             </a>
             
-            <div class="pt-4 pb-1 pl-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Academics</div>
-
-            <a href="#attendance" class="nav-link group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-primary/5 dark:hover:bg-primary/10">
-                <span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">fact_check</span>
-                <span class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-primary dark:group-hover:text-primary-400">Mark Attendance</span>
+            <a href="#" onclick="switchSection('students')" id="nav-students" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-white/10 hover:text-white transition-all group">
+                <span class="material-symbols-outlined group-hover:scale-110 transition-transform">school</span>
+                <span class="font-medium">My Students</span>
             </a>
 
-            <a href="#syllabus" class="nav-link group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-primary/5 dark:hover:bg-primary/10">
-                <span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">menu_book</span>
-                <span class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-primary dark:group-hover:text-primary-400">Syllabus Tracker</span>
+            <a href="#" onclick="switchSection('attendance')" id="nav-attendance" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-white/10 hover:text-white transition-all group">
+                <span class="material-symbols-outlined group-hover:scale-110 transition-transform">checklist_rtl</span>
+                <span class="font-medium">Attendance</span>
             </a>
 
-            <a href="#assignments" class="nav-link group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-primary/5 dark:hover:bg-primary/10">
-                <span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">assignment</span>
-                <span class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-primary dark:group-hover:text-primary-400">Assignments</span>
-            </a>
-            
-            <div class="pt-4 pb-1 pl-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Resources & Reports</div>
-
-            <a href="#notes" class="nav-link group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-primary/5 dark:hover:bg-primary/10">
-                <span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">upload_file</span>
-                <span class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-primary dark:group-hover:text-primary-400">Share Notes</span>
-            </a>
-            <a href="#doubts" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-white/10 hover:text-white transition-all group">
-    <span class="material-symbols-outlined group-hover:scale-110 transition-transform">help</span>
-    <span class="font-medium">Student Doubts</span>
-</a>
-<a href="#profile" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-white/10 hover:text-white transition-all group">
-    <span class="material-symbols-outlined group-hover:scale-110 transition-transform">account_circle</span>
-    <span class="font-medium">My Profile</span>
-</a>
-            <a href="#reports" class="nav-link group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-primary/5 dark:hover:bg-primary/10">
-                <span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">analytics</span>
-                <span class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-primary dark:group-hover:text-primary-400">Student Reports</span>
+            <a href="#" onclick="switchSection('reports')" id="nav-reports" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-white/10 hover:text-white transition-all group">
+                <span class="material-symbols-outlined group-hover:scale-110 transition-transform">analytics</span>
+                <span class="font-medium">Reports</span>
             </a>
 
-            <button id="install-app-btn" class="hidden w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-green-50 text-green-700 hover:bg-green-100 transition-colors mt-6 border border-green-200 shadow-sm">
-                <span class="material-symbols-outlined">download</span>
-                <span class="text-sm font-bold">Install App</span>
-            </button>
+            <a href="#" onclick="switchSection('announcements')" id="nav-announcements" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-white/10 hover:text-white transition-all group">
+                <span class="material-symbols-outlined group-hover:scale-110 transition-transform">campaign</span>
+                <span class="font-medium">Notices</span>
+            </a>
+
+            <a href="#" onclick="switchSection('notes')" id="nav-notes" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-white/10 hover:text-white transition-all group">
+                <span class="material-symbols-outlined group-hover:scale-110 transition-transform">description</span>
+                <span class="font-medium">Notes</span>
+            </a>
+
+            <a href="#" onclick="switchSection('doubts')" id="nav-doubts" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-white/10 hover:text-white transition-all group">
+                <span class="material-symbols-outlined group-hover:scale-110 transition-transform">help</span>
+                <span class="font-medium">Doubts</span>
+            </a>
+
+            <a href="#" onclick="switchSection('profile')" id="nav-profile" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-white/10 hover:text-white transition-all group">
+                <span class="material-symbols-outlined group-hover:scale-110 transition-transform">account_circle</span>
+                <span class="font-medium">Profile</span>
+            </a>
         </nav>
-
         <div class="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
             <button id="logout-btn" class="flex items-center justify-center gap-2 w-full bg-red-50 text-red-600 hover:bg-red-100 font-bold py-3 px-4 rounded-xl text-sm transition duration-150 border border-red-100">
                 <span class="material-symbols-outlined text-lg">logout</span>
@@ -154,464 +138,194 @@
         </div>
     </aside>
 
-    <main class="flex-1 overflow-y-auto bg-background-light dark:bg-background-dark p-6 md:p-8 lg:p-10 relative">
-        <div class="max-w-7xl mx-auto space-y-8 pb-20">
-            
-            <header class="flex justify-between items-end border-b border-slate-200 dark:border-slate-700 pb-6">
+<main class="flex-1 h-screen overflow-y-auto bg-background-light dark:bg-background-dark relative p-8">
+        
+        <div id="content-dashboard" class="content-section animate-fade">
+            <header class="flex justify-between items-center mb-8">
                 <div>
-                    <h1 class="text-3xl font-bold text-slate-900 dark:text-white tracking-tight" id="page-title">Dashboard</h1>
-                    <p class="text-slate-500 dark:text-slate-400 mt-2 text-sm font-medium" id="welcome-message">Welcome back, Teacher.</p>
+                    <h1 class="text-3xl font-bold text-slate-800 dark:text-white">Welcome, Teacher</h1>
+                    <p class="text-slate-500 mt-1">Here is your daily overview</p>
                 </div>
-                <div class="hidden md:flex flex-col items-end">
-                    <span class="px-4 py-1.5 bg-blue-100 text-blue-700 text-xs font-bold uppercase tracking-wider rounded-full dark:bg-blue-900 dark:text-blue-200 mb-2">
-                        Instructor Account
-                    </span>
-                    <p class="text-xs text-slate-400" id="current-date-display">...</p>
+                <div class="flex items-center gap-4">
+                    <span class="bg-blue-100 text-blue-700 px-4 py-2 rounded-lg font-bold text-sm" id="current-date">...</span>
                 </div>
             </header>
 
-            <div id="content-dashboard" class="content-section animate-fade-in">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm p-6 border border-slate-100 dark:border-slate-700 relative overflow-hidden group hover:shadow-md transition-shadow">
-                        <div class="absolute right-0 top-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
-                        <div class="flex items-center gap-4 relative z-10">
-                            <div class="p-4 bg-blue-100 text-blue-600 rounded-2xl dark:bg-blue-900/30 dark:text-blue-400 shadow-sm">
-                                <span class="material-symbols-outlined text-3xl">book</span>
-                            </div>
-                            <div>
-                                <p class="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">My Courses</p>
-                                <p class="text-3xl font-bold text-slate-900 dark:text-white mt-1" id="total-my-courses">0</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm p-6 border border-slate-100 dark:border-slate-700 relative overflow-hidden group hover:shadow-md transition-shadow">
-                        <div class="absolute right-0 top-0 w-24 h-24 bg-emerald-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
-                        <div class="flex items-center gap-4 relative z-10">
-                            <div class="p-4 bg-emerald-100 text-emerald-600 rounded-2xl dark:bg-emerald-900/30 dark:text-emerald-400 shadow-sm">
-                                <span class="material-symbols-outlined text-3xl">groups</span>
-                            </div>
-                            <div>
-                                <p class="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Total Students</p>
-                                <p class="text-3xl font-bold text-slate-900 dark:text-white mt-1" id="total-my-students">0</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm p-6 border border-slate-100 dark:border-slate-700 relative overflow-hidden group hover:shadow-md transition-shadow">
-                        <div class="absolute right-0 top-0 w-24 h-24 bg-purple-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
-                        <div class="flex items-center gap-4 relative z-10">
-                            <div class="p-4 bg-purple-100 text-purple-600 rounded-2xl dark:bg-purple-900/30 dark:text-purple-400 shadow-sm">
-                                <span class="material-symbols-outlined text-3xl">description</span>
-                            </div>
-                            <div>
-                                <p class="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Shared Notes</p>
-                                <p class="text-3xl font-bold text-slate-900 dark:text-white mt-1" id="total-shared-notes">0</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
-                    <div class="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
-                        <h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
-                            <span class="material-symbols-outlined text-primary">calendar_month</span>
-                            My Weekly Timetable
-                        </h3>
-                        <span class="text-xs text-slate-400 uppercase font-bold tracking-wider">Schedule</span>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                            <thead class="bg-slate-50 dark:bg-slate-800">
-                                <tr>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Day</th>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">10:00 AM - 12:00 PM</th>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">02:00 PM - 04:00 PM</th>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Lab Session</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white dark:bg-surface-dark divide-y divide-slate-200 dark:divide-slate-700 text-sm">
-                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition"><td class="px-6 py-4 font-bold text-slate-700 dark:text-slate-300">Monday</td><td class="px-6 py-4"><span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-bold">Java Programming</span></td><td class="px-6 py-4"><span class="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-bold">C++ Basics</span></td><td class="px-6 py-4 text-slate-400">-</td></tr>
-                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition"><td class="px-6 py-4 font-bold text-slate-700 dark:text-slate-300">Tuesday</td><td class="px-6 py-4"><span class="px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs font-bold">Python Advanced</span></td><td class="px-6 py-4"><span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-bold">Java Programming</span></td><td class="px-6 py-4 text-slate-400">-</td></tr>
-                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition"><td class="px-6 py-4 font-bold text-slate-700 dark:text-slate-300">Wednesday</td><td class="px-6 py-4"><span class="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-bold">C++ Basics</span></td><td class="px-6 py-4"><span class="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-bold">Tally Prime</span></td><td class="px-6 py-4 text-slate-400">-</td></tr>
-                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition"><td class="px-6 py-4 font-bold text-slate-700 dark:text-slate-300">Thursday</td><td class="px-6 py-4"><span class="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-bold">Tally Prime</span></td><td class="px-6 py-4"><span class="px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs font-bold">Python Advanced</span></td><td class="px-6 py-4 text-slate-400">-</td></tr>
-                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition"><td class="px-6 py-4 font-bold text-slate-700 dark:text-slate-300">Friday</td><td class="px-6 py-4 text-slate-400">Free</td><td class="px-6 py-4 text-slate-400">Free</td><td class="px-6 py-4"><span class="px-2 py-1 bg-slate-100 text-slate-700 rounded text-xs font-bold">Practical Lab</span></td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <div id="content-courses" class="content-section hidden animate-fade-in">
-                <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
-                    <div class="p-6 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
-                        <h2 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                            <span class="material-symbols-outlined text-primary">library_books</span>
-                            Assigned Subjects
-                        </h2>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                            <thead class="bg-slate-50 dark:bg-slate-800">
-                                <tr>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Course Name</th>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Subjects / Topics Included</th>
-                                    <th class="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="teacher-courses-body" class="divide-y divide-slate-200 dark:divide-slate-700 bg-white dark:bg-surface-dark">
-                                <tr><td colspan="3" class="px-6 py-12 text-center text-slate-500">Loading courses...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-<div id="content-attendance" class="content-section hidden animate-fade-in">
-                
-                <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-md p-8 border border-slate-100 dark:border-slate-700 mb-8 relative overflow-hidden">
-                    <div class="absolute top-0 left-0 w-1 h-full bg-primary"></div>
-                    <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-6">Step 1: Select Batch, Course & Date</h3>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div>
-                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">1. Select Batch (Session)</label>
-                            <select id="attendance-session-select" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary p-2.5 shadow-sm transition">
-                                <option value="">All Batches</option>
-                            </select>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
+                            <span class="material-symbols-outlined">group</span>
                         </div>
                         <div>
-                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">2. Select Course</label>
-                            <select id="attendance-course-select" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary p-2.5 shadow-sm transition">
-                                <option value="">-- Choose Course --</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">3. Select Date</label>
-                            <input type="date" id="attendance-date" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary p-2.5 shadow-sm transition">
-                        </div>
-                    </div>
-
-                    <div class="mt-6 text-sm text-blue-700 bg-blue-50 dark:bg-blue-900/30 p-4 rounded-xl border border-blue-100 dark:border-blue-800 flex gap-3 items-start">
-                        <span class="material-symbols-outlined text-blue-600">lightbulb</span>
-                        <div>
-                            <span class="font-bold block mb-1">Tip:</span> 
-                            Ensure you select the correct course to avoid mixing students from different batches.
+                            <p class="text-slate-500 text-sm font-medium">Total Students</p>
+                            <h3 class="text-2xl font-bold text-slate-800 dark:text-white" id="stat-total-students">--</h3>
                         </div>
                     </div>
                 </div>
-
-                <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm overflow-hidden border border-slate-100 dark:border-slate-700 mb-6">
-                    <div class="p-4 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center flex-wrap gap-4">
-                        <h3 class="font-bold text-slate-700 dark:text-slate-200 text-lg">Student List</h3>
-                        <div class="space-x-3">
-                            <button id="mark-present-btn" disabled class="px-5 py-2.5 bg-green-100 text-green-700 rounded-lg text-sm font-bold hover:bg-green-200 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm flex-inline items-center gap-2">
-                                <span class="material-symbols-outlined text-sm">check_circle</span> Mark Selected Present
-                            </button>
-                            <button id="mark-absent-btn" disabled class="px-5 py-2.5 bg-red-100 text-red-700 rounded-lg text-sm font-bold hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm flex-inline items-center gap-2">
-                                <span class="material-symbols-outlined text-sm">cancel</span> Mark Selected Absent
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                            <thead class="bg-slate-50 dark:bg-slate-800">
-                                <tr>
-                                    <th class="px-6 py-4 text-left w-16">
-                                        <input type="checkbox" id="select-all-students" class="rounded border-slate-300 text-primary focus:ring-primary w-5 h-5 cursor-pointer" disabled>
-                                    </th>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">ID</th>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Student Name</th>
-                                    <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Current Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="attendance-table-body" class="divide-y divide-slate-200 dark:divide-slate-700 bg-white dark:bg-surface-dark">
-                                <tr><td colspan="4" class="px-6 py-16 text-center text-slate-400">
-                                    <div class="flex flex-col items-center gap-2">
-                                        <span class="material-symbols-outlined text-4xl text-slate-300">fact_check</span>
-                                        <p>Please select a course above to load the student list.</p>
-                                    </div>
-                                </td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="flex justify-end pb-8">
-                    <button id="submit-attendance-btn" disabled class="bg-primary text-white font-bold py-3.5 px-10 rounded-xl shadow-lg shadow-blue-200 dark:shadow-none hover:bg-primary-hover transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transform active:scale-95">
-                        <span class="material-symbols-outlined">save</span>
-                        Submit Attendance Log
-                    </button>
-                </div>
-            </div>
-<div id="content-doubts" class="content-section hidden animate-fade">
-    <h1 class="text-3xl font-bold text-slate-800 dark:text-white mb-6">Student Doubts</h1>
-    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-        <div id="doubts-list" class="divide-y divide-slate-100 dark:divide-slate-700">
-            <div class="p-8 text-center text-slate-400">Loading doubts...</div>
-        </div>
-    </div>
-</div>
-
-<div id="content-profile" class="content-section hidden animate-fade">
-    <h1 class="text-3xl font-bold text-slate-800 dark:text-white mb-6">My Profile</h1>
-    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-8 max-w-lg">
-        <div class="flex flex-col items-center">
-            <div class="w-32 h-32 rounded-full border-4 border-slate-100 overflow-hidden mb-4 relative">
-                <img id="my-photo-preview" src="" class="w-full h-full object-cover">
-            </div>
-            
-            <h2 id="my-name-display" class="text-xl font-bold mb-1">Teacher Name</h2>
-            <p class="text-sm text-slate-500 mb-6">Upload a clear photo for students to see.</p>
-
-            <label class="w-full cursor-pointer bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all">
-                <span class="material-symbols-outlined">cloud_upload</span>
-                <span>Choose New Photo</span>
-                <input type="file" id="profile-upload-input" accept="image/*" class="hidden" onchange="uploadProfilePhoto(this)">
-            </label>
-        </div>
-    </div>
-</div>
-<div id="content-syllabus" class="content-section hidden animate-fade-in">
-                <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm p-8 border border-slate-100 dark:border-slate-700 max-w-4xl mx-auto">
-                    <div class="flex items-center gap-3 mb-6 pb-6 border-b border-slate-100 dark:border-slate-700">
-                        <div class="p-3 bg-indigo-50 text-indigo-600 rounded-xl"><span class="material-symbols-outlined">menu_book</span></div>
-                        <div>
-                            <h3 class="text-xl font-bold text-slate-900 dark:text-white">Daily Syllabus Log</h3>
-                            <p class="text-sm text-slate-500">Record what was taught in class today.</p>
-                        </div>
-                    </div>
-                    
-                    <form id="syllabus-form" class="space-y-6">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div>
-                                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">1. Select Batch</label>
-                                <select id="syllabus-session-select" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-sm p-3 focus:ring-primary">
-                                    <option value="">-- All Batches --</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">2. Select Course</label>
-                                <select id="syllabus-course-select" required class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-sm p-3 focus:ring-primary">
-                                    <option value="">-- Choose Course --</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">3. Date</label>
-                                <input type="date" id="syllabus-date" required class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-sm p-3 focus:ring-primary">
-                            </div>
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                            <span class="material-symbols-outlined">check_circle</span>
                         </div>
                         <div>
-                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Topics Covered Today</label>
-                            <textarea id="syllabus-topic" rows="4" required placeholder="e.g. Introduction to Loops, While Loop syntax..." class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-sm p-3 focus:ring-primary"></textarea>
+                            <p class="text-slate-500 text-sm font-medium">Present Today</p>
+                            <h3 class="text-2xl font-bold text-slate-800 dark:text-white" id="stat-present">--</h3>
                         </div>
-                        <div class="flex justify-end">
-                            <button type="submit" class="bg-indigo-600 text-white font-bold py-3 px-8 rounded-xl hover:bg-indigo-700 shadow-md transition flex items-center gap-2">
-                                <span class="material-symbols-outlined text-sm">save_as</span>
-                                Save Syllabus Log
-                            </button>
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center">
+                            <span class="material-symbols-outlined">class</span>
                         </div>
-                    </form>
+                        <div>
+                            <p class="text-slate-500 text-sm font-medium">My Courses</p>
+                            <h3 class="text-2xl font-bold text-slate-800 dark:text-white" id="stat-courses">--</h3>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            
-<div id="content-assignments" class="content-section hidden animate-fade-in">
-    <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm p-6 border border-slate-100 dark:border-slate-700 mb-8">
-        <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
-            <span class="material-symbols-outlined text-primary">add_task</span>
-            Create New Assignment
-        </h3>
-        <form id="create-assignment-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="md:col-span-2">
-                <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Assignment Title</label>
-                <input type="text" id="assign-title" required class="w-full rounded-xl border border-slate-300 p-3" placeholder="e.g. Write a C program for Matrix Multiplication">
-            </div>
-            <div>
-                <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Select Course</label>
-                <select id="assign-course-select" required class="w-full rounded-xl border border-slate-300 p-3 bg-white"></select>
-            </div>
-            <div>
-                <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Due Date</label>
-                <input type="date" id="assign-date" required class="w-full rounded-xl border border-slate-300 p-3">
-            </div>
-            <div class="md:col-span-2">
-                <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Description / Instructions</label>
-                <textarea id="assign-desc" rows="3" class="w-full rounded-xl border border-slate-300 p-3" placeholder="Detailed instructions..."></textarea>
-            </div>
-            <div class="md:col-span-2 text-right">
-                <button type="submit" class="bg-primary text-white font-bold py-3 px-8 rounded-xl hover:bg-primary-hover shadow-lg">
-                    Post Assignment
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <button onclick="switchSection('attendance')" class="p-4 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 hover:border-blue-500 hover:shadow-md transition-all text-left group">
+                    <span class="material-symbols-outlined text-blue-500 mb-2 group-hover:scale-110 transition-transform">checklist</span>
+                    <h4 class="font-bold text-slate-700 dark:text-white">Mark Attendance</h4>
+                </button>
+                <button onclick="switchSection('announcements')" class="p-4 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 hover:border-orange-500 hover:shadow-md transition-all text-left group">
+                    <span class="material-symbols-outlined text-orange-500 mb-2 group-hover:scale-110 transition-transform">campaign</span>
+                    <h4 class="font-bold text-slate-700 dark:text-white">Post Notice</h4>
+                </button>
+                <button onclick="switchSection('notes')" class="p-4 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 hover:border-emerald-500 hover:shadow-md transition-all text-left group">
+                    <span class="material-symbols-outlined text-emerald-500 mb-2 group-hover:scale-110 transition-transform">upload_file</span>
+                    <h4 class="font-bold text-slate-700 dark:text-white">Upload Notes</h4>
+                </button>
+                <button onclick="switchSection('doubts')" class="p-4 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 hover:border-purple-500 hover:shadow-md transition-all text-left group">
+                    <span class="material-symbols-outlined text-purple-500 mb-2 group-hover:scale-110 transition-transform">quiz</span>
+                    <h4 class="font-bold text-slate-700 dark:text-white">Check Doubts</h4>
                 </button>
             </div>
-        </form>
-    </div>
-</div>
+        </div> 
+        <div id="content-students" class="content-section hidden animate-fade">
+            <h1 class="text-3xl font-bold text-slate-800 dark:text-white mb-6">My Students</h1>
+            
+            <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-100 mb-6 flex gap-4">
+                <select id="filter-students-course" class="bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="">All Courses</option>
+                </select>
+                <select id="filter-students-session" class="bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="">All Batches</option>
+                </select>
+                <button onclick="loadStudents()" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700">Filter</button>
+            </div>
 
-<div id="content-announcements" class="content-section hidden animate-fade-in">
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div class="lg:col-span-1">
-            <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm p-6 border border-slate-100 dark:border-slate-700">
-                <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
-                    <span class="material-symbols-outlined text-primary">campaign</span>
-                    Post Announcement
-                </h3>
-                <form id="teacher-announcement-form" class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Category</label>
-                        <input list="category-suggestions" id="ann-category" required 
-                               class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 p-3 placeholder-slate-400" 
-                               placeholder="Select or type (e.g. Tally Class Start)...">
-                        
-                        <datalist id="category-suggestions">
-                            <option value="Class Start">
-                            <option value="Holiday">
-                            <option value="Assignment Test">
-                            <option value="Practical Test">
-                            <option value="Certificate Collection">
-                            <option value="Batch Time Update">
-                            <option value="Exam Notice">
-                        </datalist>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Title</label>
-                        <input type="text" id="ann-title" required class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 p-3">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Message Content</label>
-                        <textarea id="ann-content" rows="4" required class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 p-3"></textarea>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Target Audience</label>
-                        <select id="ann-target" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 p-3">
-                            <option value="students">Students Only</option>
-                            <option value="parents">Parents Only</option>
-                            <option value="all">Everyone</option>
-                        </select>
-                    </div>
-                    <button type="submit" class="w-full bg-primary text-white py-3 rounded-xl font-bold hover:bg-primary-hover shadow-lg transition">Broadcast Notification</button>
-                </form>
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <table class="w-full text-left border-collapse">
+                    <thead class="bg-slate-50 dark:bg-slate-700 text-slate-500 dark:text-slate-300 text-xs uppercase font-bold">
+                        <tr>
+                            <th class="p-4">Student</th>
+                            <th class="p-4">Admission No</th>
+                            <th class="p-4">Batch</th>
+                            <th class="p-4 text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="students-table-body" class="divide-y divide-slate-100 dark:divide-slate-700">
+                        <tr><td colspan="4" class="p-8 text-center text-slate-400">Loading students...</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
-        <div class="lg:col-span-2">
-            <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
-                <div class="p-6 border-b border-slate-100 dark:border-slate-700">
-                    <h3 class="font-bold">My Sent Notifications</h3>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                        <tbody id="announcement-history-body" class="divide-y divide-slate-200 dark:divide-slate-700">
-                            <tr><td class="p-6 text-center text-slate-500">Loading history...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-            <div id="content-notes" class="content-section hidden animate-fade-in">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div class="lg:col-span-1">
-                        <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm p-6 border border-slate-100 dark:border-slate-700 sticky top-4">
-                            <div class="flex items-center gap-2 mb-6">
-                                <span class="material-symbols-outlined text-primary">cloud_upload</span>
-                                <h3 class="text-lg font-bold text-slate-900 dark:text-white">Upload Material</h3>
-                            </div>
-                            
-                            <form id="upload-note-form" class="space-y-5">
-                                <div>
-                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Title</label>
-                                    <input type="text" name="title" required class="w-full rounded-lg border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-sm focus:ring-primary p-2.5" placeholder="e.g. Chapter 1 Notes">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Course</label>
-                                    <select id="note-course-select" name="course_id" required class="w-full rounded-lg border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-sm focus:ring-primary p-2.5"></select>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Description</label>
-                                    <textarea name="description" rows="3" class="w-full rounded-lg border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-sm focus:ring-primary p-2.5" placeholder="Short description..."></textarea>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">File Attachment</label>
-                                    <input type="file" id="note-file" name="file" required accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.jpg,.png" class="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 transition cursor-pointer">
-                                    <p class="text-xs text-slate-400 mt-2">Supported: PDF, DOC, PPT, IMG (Max 16MB)</p>
-                                </div>
-                                <button type="submit" id="upload-note-btn" class="w-full bg-primary text-white font-bold py-3 rounded-xl hover:bg-primary-hover transition shadow-md flex justify-center items-center gap-2">
-                                    <span class="material-symbols-outlined text-sm">publish</span>
-                                    Upload & Notify Students
-                                </button>
-                            </form>
-                            <div id="upload-progress" class="hidden mt-6">
-                                <div class="w-full bg-slate-200 rounded-full h-2"><div id="upload-bar" class="bg-green-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div></div>
-                                <p id="upload-status" class="text-xs text-center mt-2 text-slate-500 font-medium">Uploading...</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="lg:col-span-2">
-                        <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
-                            <div class="p-6 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
-                                <h3 class="font-bold text-slate-900 dark:text-white">My Uploaded Notes History</h3>
-                            </div>
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                                    <thead class="bg-slate-50 dark:bg-slate-800">
-                                        <tr>
-                                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Title</th>
-                                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Course</th>
-                                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Date</th>
-                                            <th class="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="teacher-notes-body" class="divide-y divide-slate-200 dark:divide-slate-700 bg-white dark:bg-surface-dark">
-                                        <tr><td colspan="4" class="px-6 py-12 text-center text-slate-500">No notes uploaded yet.</td></tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="content-reports" class="content-section hidden animate-fade-in">
-                <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm p-6 mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 border border-slate-100 dark:border-slate-700">
+        <div id="content-attendance" class="content-section hidden animate-fade">
+            <h1 class="text-3xl font-bold text-slate-800 dark:text-white mb-6">Mark Attendance</h1>
+            
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                     <div>
-                        <h2 class="text-xl font-bold text-slate-900 dark:text-white">Student Reports</h2>
-                        <p class="text-sm text-slate-500 mt-1">View comprehensive student data by course.</p>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Select Date</label>
+                        <input type="date" id="att-date" class="w-full border rounded-lg p-2.5 bg-slate-50">
                     </div>
-                    <div class="w-full md:w-72">
-                        <label for="report-course-select" class="block text-xs font-bold uppercase text-slate-400 mb-1">Filter by Course</label>
-                        <select id="report-course-select" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm p-2.5 focus:ring-primary">
-                            <option value="">Show All Students</option>
-                        </select>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Select Course</label>
+                        <select id="att-course" class="w-full border rounded-lg p-2.5 bg-slate-50" onchange="loadStudentsForAttendance()"></select>
                     </div>
-                </div>
-
-                <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm overflow-hidden border border-slate-100 dark:border-slate-700">
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                            <thead class="bg-slate-50 dark:bg-slate-800">
-                                <tr>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Photo</th>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Name</th>
-                                    <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Attendance</th>
-                                    <th class="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Quick Remarks & Message</th>
-                                </tr>
-                            </thead>
-                            <tbody id="teacher-reports-body" class="divide-y divide-slate-200 dark:divide-slate-700 bg-white dark:bg-surface-dark">
-                                <tr><td colspan="4" class="px-6 py-12 text-center text-slate-500">Loading reports data...</td></tr>
-                            </tbody>
-                        </table>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Select Batch</label>
+                        <select id="att-session" class="w-full border rounded-lg p-2.5 bg-slate-50" onchange="loadStudentsForAttendance()"></select>
                     </div>
+                    <button onclick="loadStudentsForAttendance()" class="bg-blue-600 text-white p-2.5 rounded-lg font-bold hover:bg-blue-700">Load List</button>
                 </div>
             </div>
 
+            <div id="attendance-list-container" class="hidden bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="p-4 bg-slate-50 border-b flex justify-between items-center">
+                    <h3 class="font-bold text-slate-700">Student List</h3>
+                    <button onclick="markAllPresent()" class="text-xs font-bold text-emerald-600 hover:bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-200">Mark All Present</button>
+                </div>
+                <div id="attendance-grid" class="divide-y divide-slate-100"></div>
+                <div class="p-4 bg-slate-50 border-t">
+                    <button onclick="submitAttendance()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700">Save Attendance</button>
+                </div>
+            </div>
         </div>
-    </main>
-</div>
 
+        <div id="content-reports" class="content-section hidden animate-fade">
+            <h1 class="text-3xl font-bold text-slate-800 dark:text-white mb-6">Reports</h1>
+            <div class="bg-white p-8 rounded-2xl text-center text-slate-400">
+                <p>Select a report type to view detailed analytics.</p>
+                </div>
+        </div>
+
+        <div id="content-announcements" class="content-section hidden animate-fade">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-3xl font-bold text-slate-800 dark:text-white">Announcements</h1>
+                <button onclick="document.getElementById('new-announcement-modal').classList.remove('hidden')" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2">
+                    <span class="material-symbols-outlined">add</span> New
+                </button>
+            </div>
+            <div id="announcements-list" class="space-y-4"></div>
+        </div>
+
+        <div id="content-notes" class="content-section hidden animate-fade">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-3xl font-bold text-slate-800 dark:text-white">Study Material</h1>
+                <button onclick="document.getElementById('upload-note-modal').classList.remove('hidden')" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2">
+                    <span class="material-symbols-outlined">cloud_upload</span> Upload
+                </button>
+            </div>
+            <div id="notes-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        </div>
+
+        <div id="content-doubts" class="content-section hidden animate-fade">
+            <h1 class="text-3xl font-bold text-slate-800 dark:text-white mb-6">Student Doubts</h1>
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <div id="doubts-list" class="divide-y divide-slate-100 dark:divide-slate-700">
+                    <div class="p-8 text-center text-slate-400">Loading doubts...</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="content-profile" class="content-section hidden animate-fade">
+            <h1 class="text-3xl font-bold text-slate-800 dark:text-white mb-6">My Profile</h1>
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-8 max-w-lg mx-auto">
+                <div class="flex flex-col items-center">
+                    <div class="w-32 h-32 rounded-full border-4 border-slate-100 overflow-hidden mb-4 relative bg-gray-200">
+                        <img id="my-photo-preview" src="" class="w-full h-full object-cover">
+                    </div>
+                    
+                    <h2 id="my-name-display" class="text-xl font-bold mb-1">Teacher Name</h2>
+                    <p class="text-sm text-slate-500 mb-6">Upload a clear photo for students to see.</p>
+
+                    <label class="cursor-pointer bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 font-bold py-3 px-6 rounded-xl flex items-center gap-2 transition-all">
+                        <span class="material-symbols-outlined">cloud_upload</span>
+                        <span>Choose New Photo</span>
+                        <input type="file" id="profile-upload-input" accept="image/*" class="hidden" onchange="uploadProfilePhoto(this)">
+                    </label>
+                </div>
+            </div>
+        </div>
+
+    </main>    
 <div id="notify-modal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
     <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <div class="fixed inset-0 bg-slate-900 bg-opacity-75 transition-opacity backdrop-blur-sm" id="modal-backdrop"></div>
@@ -715,77 +429,74 @@
         const sendNotifyBtn = document.getElementById('send-notify-btn');
         const cancelNotifyBtn = document.getElementById('cancel-notify-btn');
 
-        // --- NAVIGATION HANDLER ---
-        function showSection(hash) {
-            const targetId = hash.substring(1) || 'dashboard';
-            contentSections.forEach(section => section.classList.add('hidden'));
-            const targetSection = document.getElementById(`content-${targetId}`);
-            if(targetSection) {
-                targetSection.classList.remove('hidden');
-                
-                // Update Sidebar Active State
-                navLinks.forEach(link => {
-                    link.classList.remove('bg-primary/5', 'dark:bg-primary/10', 'text-primary');
-                    const span = link.querySelector('span.text-sm');
-                    if(span) span.classList.remove('text-primary');
-                });
-                
-                const activeLink = document.querySelector(`.nav-link[href="${hash}"]`) || document.querySelector(`.nav-link[href="#dashboard"]`);
-                if(activeLink) {
-                    activeLink.classList.add('bg-primary/5', 'dark:bg-primary/10', 'text-primary');
-                    activeLink.querySelector('span.text-sm')?.classList.add('text-primary');
-                }
+        
+// --- NAVIGATION HANDLER (Fixed) ---
+    window.switchSection = function(input) {
+        // 1. Clean the input (handle both 'dashboard' and '#dashboard')
+        const id = input.startsWith('#') ? input.substring(1) : input;
 
-                // Update Page Title
-                const titles = {
-                    'dashboard': 'Dashboard',
-                    'courses': 'My Courses',
-                    'attendance': 'Mark Attendance',
-                    'syllabus': 'Syllabus Tracker',
-                    'assignments': 'Assignments',
-                    'notes': 'Share Notes',
-                    'reports': 'Student Reports'
-                };
-                pageTitle.textContent = titles[targetId] || 'Dashboard';
-            }
+        // 2. Hide all sections
+        document.querySelectorAll('.content-section').forEach(el => el.classList.add('hidden'));
+        
+        // 3. Show target section
+        const target = document.getElementById('content-' + id);
+        if(target) {
+            target.classList.remove('hidden');
         }
 
-        async function loadContent() {
-            const hash = window.location.hash || '#dashboard';
-            showSection(hash);
-            
-            // Ensure core data is loaded first
-            if(allTeacherCourses.length === 0) await fetchTeacherCourses();
-            
-            // Populate dropdowns if we are on a relevant page
-            if(['#attendance', '#syllabus', '#assignments', '#notes', '#reports'].includes(hash)) {
-                populateDropdowns();
-            }
-            
-            // Load specific data based on view
-            switch (hash) {
-                case '#dashboard':
-                    fetchDashboardData();
-                    break;
-                case '#courses':
-                    renderCoursesTable();
-                    break;
-                case '#attendance':
-                    if(allTeacherStudents.length === 0) await fetchAllTeacherStudents();
-                    break;
-                case '#announcements':
-		    fetchTeacherAnnouncements(); // Custom function to load history
-		    break;
-		case '#notes':
-                    fetchTeacherNotes();
-                    break;
-                case '#reports':
-                    if(allTeacherStudents.length === 0) await fetchAllTeacherStudents(); 
-                    fetchTeacherAttendanceReport();
-                    break;
-            }
+        // 4. Update Sidebar Active State
+        document.querySelectorAll('.nav-link').forEach(el => {
+            el.classList.remove('bg-blue-600', 'text-white', 'shadow-lg');
+            el.classList.add('text-slate-400');
+        });
+        
+        const activeLink = document.getElementById('nav-' + id);
+        if(activeLink) {
+            activeLink.classList.remove('text-slate-400');
+            activeLink.classList.add('bg-blue-600', 'text-white', 'shadow-lg');
         }
 
+        // 5. Update Page Title
+        const titles = {
+            'dashboard': 'Dashboard',
+            'students': 'My Students',
+            'attendance': 'Mark Attendance',
+            'reports': 'Reports',
+            'announcements': 'Announcements',
+            'notes': 'Study Material',
+            'doubts': 'Student Doubts',
+            'profile': 'My Profile'
+        };
+        // Safety check if page-title element exists (optional)
+        const titleEl = document.getElementById('page-title');
+        if(titleEl) titleEl.textContent = titles[id] || 'Dashboard';
+
+        // 6. AUTO-LOAD DATA (CRITICAL)
+        if (id === 'students' && allTeacherStudents.length === 0) fetchAllTeacherStudents();
+        if (id === 'attendance') populateDropdowns(); 
+        if (id === 'announcements') fetchTeacherAnnouncements();
+        if (id === 'notes') fetchTeacherNotes();
+        if (id === 'doubts') loadDoubts();     
+        if (id === 'profile') loadMyProfile(); 
+        if (id === 'dashboard') fetchDashboardData();
+    }
+
+    // --- PAGE LOAD HANDLER ---
+    async function loadContent() {
+        const hash = window.location.hash || '#dashboard';
+        window.switchSection(hash); 
+    }
+
+    // --- PROFILE LOADER (You were missing this!) ---
+    async function loadMyProfile() {
+        try {
+            const res = await fetch(`${API_BASE_URL}/check_session`, { credentials: 'include' });
+            const data = await res.json();
+            if(data.user && data.user.profile_photo_url) {
+                document.getElementById('my-photo-preview').src = data.user.profile_photo_url;
+            }
+        } catch(e) { console.error("Profile load error", e); }
+    }    
         window.addEventListener('hashchange', loadContent);
 
         // --- AUTH & SESSION CHECK ---
@@ -1199,7 +910,7 @@ if(assignForm) {
         }
     });
 }
-// --- SYLLABUS SUBMIT LOGIC ---
+
 // --- SYLLABUS SUBMIT LOGIC (Fixed: Sends Batch ID) ---
 const syllabusForm = document.getElementById('syllabus-form');
 if(syllabusForm) {
@@ -1247,7 +958,7 @@ if(syllabusForm) {
     });
 }   
 
-        // --- ASSIGNMENTS MOCK LOGIC ---
+        
         // --- ASSIGNMENTS LOGIC (With Batch Filtering) ---
     const assignCourseSelect = document.getElementById('assignment-course-select');
     const assignSessionSelect = document.getElementById('assignment-session-select');
