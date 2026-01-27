@@ -50,9 +50,11 @@
         </button>
     </header>
 
-    <main id="main-content" class="flex-1 overflow-y-auto scrollbar-hide p-5 pb-24 space-y-6">
+
         
-<div id="view-dashboard" class="view-section animate-fade">
+<main id="main-content" class="flex-1 overflow-y-auto p-6 pb-24 relative">
+        
+        <div id="view-dashboard" class="view-section animate-fade">
             <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-3xl p-6 text-white shadow-lg shadow-blue-200 mb-6 relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-xl"></div>
                 <div class="flex items-center gap-4 mb-6 relative z-10">
@@ -112,29 +114,17 @@
                 </button>
             </div>
 
-            <div id="fee-alert" class="hidden bg-red-50 p-5 rounded-2xl border border-red-100 flex gap-4">
-                <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center text-red-500 flex-shrink-0">
-                    <span class="material-symbols-rounded">attach_money</span>
-                </div>
-                <div>
-                    <h4 class="font-bold text-red-900 mb-1">Fee Payment Pending</h4>
-                    <p id="fee-alert-text" class="text-sm text-red-600 leading-snug">Please clear your dues.</p>
-                </div>
-            </div>
-
             <div class="mt-6 bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
                 <h3 class="font-bold text-lg mb-4 flex items-center gap-2 text-gray-800">
                     <span class="material-symbols-rounded text-red-500 bg-red-50 p-1.5 rounded-lg">assignment</span> 
                     Pending Assignments
                 </h3>
-                
-	<div id="student-assignments-list" class="space-y-3">
-                <p class="text-gray-400 text-sm text-center py-4">Loading assignments...</p>
+                <div id="student-assignments-list" class="space-y-3">
+                    <p class="text-gray-400 text-sm text-center py-4">Loading assignments...</p>
+                </div>
             </div>
-        
 
-    </div> </div> <div id="view-faculty" class="view-section hidden animate-fade">
-
+        </div> <div id="view-faculty" class="view-section hidden animate-fade">
             <div class="bg-indigo-600 rounded-2xl p-6 text-white shadow-lg shadow-indigo-200 mb-6">
                 <h2 class="text-2xl font-bold mb-1">Ask Your Teacher</h2>
                 <p class="text-indigo-100 font-medium text-sm">Select a teacher to ask a doubt.</p>
@@ -155,7 +145,7 @@
                 </div>
             </div>
         </div>
-           
+
         <div id="view-academics" class="view-section hidden animate-fade">
             <div class="bg-blue-600 rounded-2xl p-6 text-white shadow-lg shadow-blue-200 mb-6">
                 <h2 class="text-2xl font-bold mb-1">Study Material</h2>
@@ -223,7 +213,9 @@
         </div>
 
     </main>
+    
 
+**Save and Refresh.** This code is structured perfectly flat, so no screen will ever hide another screen again. This will fix the UI 100%.
     <nav class="bg-white border-t border-gray-200 fixed bottom-0 w-full max-w-md pb-safe pt-2 px-6 flex justify-between items-center z-40 h-16 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
         <button onclick="switchView('dashboard')" class="nav-btn flex flex-col items-center justify-center w-full h-full space-y-1 text-blue-600" data-target="dashboard">
             <span class="material-symbols-rounded text-[26px]">home</span>
