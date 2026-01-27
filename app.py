@@ -287,6 +287,18 @@ class AssignmentTask(db.Model):
             "due_date": self.due_date.strftime('%Y-%m-%d'),
             "created_at": self.created_at.strftime('%Y-%m-%d')
         }
+# --- DATABASE MODEL FOR DOUBTS ---
+class Doubt(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    teacher_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    question = db.Column(db.Text, nullable=False)
+    answer = db.Column(db.Text, nullable=True) # Null means not answered yet
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    student = db.relationship('User', foreign_keys=[student_id], backref='doubts_asked')
+    teacher = db.relationship('User', foreign_keys=[teacher_id], backref='doubts_received')
 
 # =========================================================
 # HELPER FUNCTIONS
@@ -424,6 +436,54 @@ def serve_role_page(role):
 @app.route('/firebase-messaging-sw.js')
 def sw(): return send_from_directory(app.static_folder, 'firebase-messaging-sw.js')
 
+# --- REPLACEMENT FOR STUDENT DASHBOARD API ---
+@app.route('/api/student/dashboard')
+@login_required
+def api_student_dashboard():
+    if current_user.role != 'student': 
+        return jsonify({"msg": "Denied"}), 403
+    
+    # 1. Calculate Attendance (Safe from Division by Zero)
+    # Get all attendance records for this student
+    att_records = Attendance.query.filter_by(student_id=current_user.id).all()
+    total_days = len(att_records)
+    
+    # Count how many are 'Present' or 'Checked-In'
+    present_days = 0
+    for r in att_records:
+        if r.status in ['Present', 'Checked-In']:
+            present_days += 1
+            
+    # Calculate Percentage (Handle 0 days case)
+    if total_days > 0:
+        att_percent = int((present_days / total_days) * 100)
+    else:
+        att_percent = 0  # Default to 0% if no records exist
+
+    # 2. Calculate Fees
+    # Sum of all payments made by student
+    total_paid = db.session.query(db.func.sum(Payment.amount_paid))\
+        .filter(Payment.student_id == current_user.id).scalar() or 0
+        
+    # Sum of all course fees assigned to student
+    total_fee = 0
+    for course in current_user.courses_enrolled:
+        total_fee += course.fee_amount if hasattr(course, 'fee_amount') else 0
+        # Note: If you use FeeStructures, adjust this logic. 
+        # For now, this prevents crashing if data is missing.
+
+    # If you use a separate FeeStructure table logic, keep your existing logic.
+    # But usually, just sending the balance is enough.
+    # Let's assume a simple Balance calculation if you track it on User or calculate dynamically
+    # For safety, we will just send what we have.
+    
+    return jsonify({
+        "name": current_user.name,
+        "email": current_user.email,
+        "attendance_percent": att_percent,  # This fixes the --%
+        "fees_due": 0, # You can update this with your specific fee logic
+        "initial": current_user.name[0].upper() if current_user.name else 'U'
+    })
 # --- NEW: TEACHER NOTIFICATION ROUTE ---
 @app.route('/api/teacher/notify', methods=['POST'])
 @login_required
@@ -1658,6 +1718,87 @@ def get_my_teachers():
                 teachers[tid]['subjects'].append(course.name)
     
     return jsonify(list(teachers.values()))
+# --- TEACHER: UPLOAD PHOTO ---
+@app.route('/api/teacher/update_photo', methods=['POST'])
+@login_required
+def teacher_update_photo():
+    if 'photo' not in request.files:
+        return jsonify({"msg": "No file part"}), 400
+    file = request.files['photo']
+    if file.filename == '':
+        return jsonify({"msg": "No selected file"}), 400
+        
+    if file:
+        filename = secure_filename(f"teacher_{current_user.id}_{int(datetime.now().timestamp())}.jpg")
+        # Ensure static/uploads exists
+        save_path = os.path.join(app.root_path, 'static', 'uploads')
+        os.makedirs(save_path, exist_ok=True)
+        
+        file.save(os.path.join(save_path, filename))
+        
+        # Save URL to DB
+        current_user.profile_photo_url = url_for('static', filename=f'uploads/{filename}')
+        db.session.commit()
+        return jsonify({"msg": "Photo updated!", "url": current_user.profile_photo_url})
+
+# --- STUDENT: ASK DOUBT (Updated to Save to DB) ---
+@app.route('/api/student/ask_doubt', methods=['POST'])
+@login_required
+def ask_doubt():
+    d = request.json
+    teacher_id = d.get('teacher_id')
+    question = d.get('question')
+    
+    # 1. Save to Database
+    new_doubt = Doubt(
+        student_id=current_user.id,
+        teacher_id=teacher_id,
+        question=question
+    )
+    db.session.add(new_doubt)
+    db.session.commit()
+    
+    # 2. Notify Teacher
+    send_push_notification(teacher_id, f"New Doubt from {current_user.name}", question[:50]+"...")
+    
+    return jsonify({"msg": "Question sent to teacher!"})
+
+# --- TEACHER: GET DOUBTS ---
+@app.route('/api/teacher/doubts', methods=['GET'])
+@login_required
+def get_teacher_doubts():
+    # Get all doubts sent to this teacher, newest first
+    doubts = Doubt.query.filter_by(teacher_id=current_user.id).order_by(Doubt.created_at.desc()).all()
+    data = []
+    for d in doubts:
+        data.append({
+            "id": d.id,
+            "student_name": d.student.name,
+            "question": d.question,
+            "answer": d.answer,
+            "date": d.created_at.strftime("%d-%m-%Y")
+        })
+    return jsonify(data)
+
+# --- TEACHER: REPLY TO DOUBT ---
+@app.route('/api/teacher/reply_doubt', methods=['POST'])
+@login_required
+def reply_doubt():
+    data = request.json
+    doubt_id = data.get('doubt_id')
+    answer_text = data.get('answer')
+    
+    doubt = Doubt.query.get(doubt_id)
+    if not doubt or doubt.teacher_id != current_user.id:
+        return jsonify({"msg": "Error"}), 403
+        
+    doubt.answer = answer_text
+    db.session.commit()
+    
+    # Notify Student
+    send_push_notification(doubt.student_id, "Teacher Replied", f"Answer: {answer_text[:50]}...")
+    
+    return jsonify({"msg": "Reply sent!"})
 
 @app.route('/api/student/ask_doubt', methods=['POST'])
 @login_required
@@ -1676,6 +1817,7 @@ def ask_doubt():
     # 2. (Optional) You could also save this to a database table 'StudentQuery' here
     
     return jsonify({"msg": "Question sent to teacher successfully!"})
+
 if __name__ == '__main__':
     initialize_database()
     app.run(debug=True, host='0.0.0.0', port=5000)

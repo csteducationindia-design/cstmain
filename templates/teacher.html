@@ -10,7 +10,7 @@
     <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
     <link as="style" href="https://fonts.googleapis.com/css2?display=swap&family=Inter:wght@400;500;600;700;900" onload="this.rel='stylesheet'" rel="stylesheet"/>
     
-<script src="{{ url_for('static', filename='tailwind.js') }}"></script>
+<script src="{{ url_for('static', filename='style.js') }}"></script>
     <script>
         tailwind.config = {
             darkMode: "class",
@@ -127,7 +127,14 @@
                 <span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">upload_file</span>
                 <span class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-primary dark:group-hover:text-primary-400">Share Notes</span>
             </a>
-            
+            <a href="#doubts" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-white/10 hover:text-white transition-all group">
+    <span class="material-symbols-outlined group-hover:scale-110 transition-transform">help</span>
+    <span class="font-medium">Student Doubts</span>
+</a>
+<a href="#profile" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-white/10 hover:text-white transition-all group">
+    <span class="material-symbols-outlined group-hover:scale-110 transition-transform">account_circle</span>
+    <span class="font-medium">My Profile</span>
+</a>
             <a href="#reports" class="nav-link group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-primary/5 dark:hover:bg-primary/10">
                 <span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">analytics</span>
                 <span class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-primary dark:group-hover:text-primary-400">Student Reports</span>
@@ -338,7 +345,34 @@
                     </button>
                 </div>
             </div>
+<div id="content-doubts" class="content-section hidden animate-fade">
+    <h1 class="text-3xl font-bold text-slate-800 dark:text-white mb-6">Student Doubts</h1>
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div id="doubts-list" class="divide-y divide-slate-100 dark:divide-slate-700">
+            <div class="p-8 text-center text-slate-400">Loading doubts...</div>
+        </div>
+    </div>
+</div>
 
+<div id="content-profile" class="content-section hidden animate-fade">
+    <h1 class="text-3xl font-bold text-slate-800 dark:text-white mb-6">My Profile</h1>
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-8 max-w-lg">
+        <div class="flex flex-col items-center">
+            <div class="w-32 h-32 rounded-full border-4 border-slate-100 overflow-hidden mb-4 relative">
+                <img id="my-photo-preview" src="" class="w-full h-full object-cover">
+            </div>
+            
+            <h2 id="my-name-display" class="text-xl font-bold mb-1">Teacher Name</h2>
+            <p class="text-sm text-slate-500 mb-6">Upload a clear photo for students to see.</p>
+
+            <label class="w-full cursor-pointer bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all">
+                <span class="material-symbols-outlined">cloud_upload</span>
+                <span>Choose New Photo</span>
+                <input type="file" id="profile-upload-input" accept="image/*" class="hidden" onchange="uploadProfilePhoto(this)">
+            </label>
+        </div>
+    </div>
+</div>
 <div id="content-syllabus" class="content-section hidden animate-fade-in">
                 <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm p-8 border border-slate-100 dark:border-slate-700 max-w-4xl mx-auto">
                     <div class="flex items-center gap-3 mb-6 pb-6 border-b border-slate-100 dark:border-slate-700">
@@ -782,6 +816,92 @@
 
         } catch (error) { console.error("Init Failed:", error); }
     }
+// --- 1. LOAD DOUBTS ---
+    async function loadDoubts() {
+        const container = document.getElementById('doubts-list');
+        container.innerHTML = '<div class="p-8 text-center text-slate-400">Loading...</div>';
+        
+        try {
+            const res = await fetch(`${API_BASE_URL}/teacher/doubts`, { credentials: 'include' });
+            const doubts = await res.json();
+            
+            if (doubts.length === 0) {
+                container.innerHTML = '<div class="p-8 text-center text-slate-400">No questions from students yet.</div>';
+                return;
+            }
+            
+            container.innerHTML = doubts.map(d => `
+                <div class="p-6 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <h4 class="font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                            <span class="material-symbols-outlined text-blue-500 text-sm">person</span>
+                            ${d.student_name}
+                        </h4>
+                        <span class="text-xs text-slate-400">${d.date}</span>
+                    </div>
+                    <p class="text-slate-600 dark:text-slate-300 mb-4 bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border border-slate-100 dark:border-slate-700 italic">"${d.question}"</p>
+                    
+                    ${d.answer ? 
+                        `<div class="ml-4 pl-4 border-l-2 border-green-500">
+                            <p class="text-xs font-bold text-green-600 mb-1">You Replied:</p>
+                            <p class="text-sm text-slate-700 dark:text-slate-300">${d.answer}</p>
+                         </div>` 
+                        : 
+                        `<div class="flex gap-2 mt-3">
+                            <input type="text" id="reply-${d.id}" placeholder="Type your answer here..." class="flex-1 border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                            <button onclick="sendReply(${d.id})" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700">Reply</button>
+                         </div>`
+                    }
+                </div>
+            `).join('');
+            
+        } catch(e) { console.error(e); }
+    }
+
+    // --- 2. SEND REPLY ---
+    async function sendReply(doubtId) {
+        const input = document.getElementById(`reply-${doubtId}`);
+        const answer = input.value;
+        if(!answer) return alert("Please type an answer.");
+        
+        try {
+            await fetch(`${API_BASE_URL}/teacher/reply_doubt`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                credentials: 'include',
+                body: JSON.stringify({ doubt_id: doubtId, answer: answer })
+            });
+            alert("Reply sent!");
+            loadDoubts(); // Refresh list
+        } catch(e) { alert("Error sending reply"); }
+    }
+
+    // --- 3. UPLOAD PHOTO ---
+    async function uploadProfilePhoto(input) {
+        if (!input.files || !input.files[0]) return;
+        
+        const fd = new FormData();
+        fd.append('photo', input.files[0]);
+        
+        try {
+            const res = await fetch(`${API_BASE_URL}/teacher/update_photo`, {
+                method: 'POST',
+                credentials: 'include',
+                body: fd
+            });
+            const data = await res.json();
+            if(res.ok) {
+                alert("Profile Photo Updated!");
+                document.getElementById('my-photo-preview').src = data.url; // Update preview
+            } else {
+                alert("Upload failed");
+            }
+        } catch(e) { alert("Error uploading photo"); }
+    }
+
+    // UPDATE SWITCH VIEW TO LOAD DOUBTS
+    // Find your existing switchSection or showSection function and add:
+    // if (id === 'doubts') loadDoubts();
 
     // NEW FUNCTION TO FETCH SESSIONS
     async function fetchSessions() {
