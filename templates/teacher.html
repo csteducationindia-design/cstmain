@@ -6,11 +6,10 @@
     <title>Teacher Portal - CST Institute</title>
     
     <link rel="manifest" href="/static/manifest.json">
-
     <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
-    <link as="style" href="https://fonts.googleapis.com/css2?display=swap&family=Inter:wght@400;500;600;700;900" onload="this.rel='stylesheet'" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet"/>
     
-<script src="{{ url_for('static', filename='tailwind.js') }}"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             darkMode: "class",
@@ -24,789 +23,522 @@
                         "surface-light": "#ffffff",
                         "surface-dark": "#1e293b",
                     },
-                    fontFamily: {
-                        "display": ["Inter", "sans-serif"]
-                    },
+                    fontFamily: { "display": ["Inter", "sans-serif"] },
                 },
             },
         }
     </script>
     
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
-    
     <style>
-        /* Custom Scrollbar for Sidebar */
-        .scrollbar-thin::-webkit-scrollbar {
-            width: 6px;
-        }
-        .scrollbar-thin::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .scrollbar-thin::-webkit-scrollbar-thumb {
-            background-color: #cbd5e1;
-            border-radius: 20px;
-        }
-        .dark .scrollbar-thin::-webkit-scrollbar-thumb {
-            background-color: #475569;
-        }
-        
-        /* Animation Utilities */
-        .animate-fade-in {
-            animation: fadeIn 0.3s ease-in-out;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Table Responsive Helpers */
-        .table-container {
-            overflow-x: auto;
-            width: 100%;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            white-space: nowrap;
-        }
+        .scrollbar-thin::-webkit-scrollbar { width: 6px; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
+        .animate-fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="bg-background-light dark:bg-background-dark font-display text-slate-800 dark:text-slate-200 antialiased h-screen overflow-hidden flex">
 
     <aside class="w-64 bg-surface-light dark:bg-surface-dark border-r border-slate-200 dark:border-slate-800 flex flex-col shadow-xl z-20 transition-all duration-300">
-        
-        <div class="p-6 border-b border-slate-100 dark:border-slate-700">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-blue-500/30">
-                    T
-                </div>
-                <div>
-                    <h1 class="text-lg font-bold text-slate-900 dark:text-white leading-tight">Teacher Portal</h1>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">CST Institute</p>
-                </div>
+        <div class="p-6 border-b border-slate-100 dark:border-slate-700 flex items-center gap-3">
+            <div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg">T</div>
+            <div>
+                <h1 class="text-lg font-bold text-slate-900 dark:text-white leading-tight">Teacher Portal</h1>
+                <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">CST Institute</p>
             </div>
         </div>
-
-        <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-            <a href="#" onclick="switchSection('dashboard')" id="nav-dashboard" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-500/30 transition-all group">
-                <span class="material-symbols-outlined">dashboard</span>
-                <span class="font-medium">Dashboard</span>
+        <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto scrollbar-thin">
+            <a href="#" onclick="switchSection('dashboard')" id="nav-dashboard" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl bg-primary text-white shadow-lg transition-all group">
+                <span class="material-symbols-outlined">dashboard</span><span class="font-medium">Dashboard</span>
             </a>
-            
             <a href="#" onclick="switchSection('students')" id="nav-students" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-white/10 hover:text-white transition-all group">
-                <span class="material-symbols-outlined group-hover:scale-110 transition-transform">school</span>
-                <span class="font-medium">My Students</span>
+                <span class="material-symbols-outlined">school</span><span class="font-medium">My Students</span>
             </a>
-
             <a href="#" onclick="switchSection('attendance')" id="nav-attendance" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-white/10 hover:text-white transition-all group">
-                <span class="material-symbols-outlined group-hover:scale-110 transition-transform">checklist_rtl</span>
-                <span class="font-medium">Attendance</span>
+                <span class="material-symbols-outlined">checklist_rtl</span><span class="font-medium">Attendance</span>
             </a>
-
-            <a href="#" onclick="switchSection('reports')" id="nav-reports" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-white/10 hover:text-white transition-all group">
-                <span class="material-symbols-outlined group-hover:scale-110 transition-transform">analytics</span>
-                <span class="font-medium">Reports</span>
-            </a>
-
             <a href="#" onclick="switchSection('announcements')" id="nav-announcements" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-white/10 hover:text-white transition-all group">
-                <span class="material-symbols-outlined group-hover:scale-110 transition-transform">campaign</span>
-                <span class="font-medium">Notices</span>
+                <span class="material-symbols-outlined">campaign</span><span class="font-medium">Notices</span>
             </a>
-
             <a href="#" onclick="switchSection('notes')" id="nav-notes" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-white/10 hover:text-white transition-all group">
-                <span class="material-symbols-outlined group-hover:scale-110 transition-transform">description</span>
-                <span class="font-medium">Notes</span>
+                <span class="material-symbols-outlined">description</span><span class="font-medium">Notes</span>
             </a>
-
             <a href="#" onclick="switchSection('doubts')" id="nav-doubts" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-white/10 hover:text-white transition-all group">
-                <span class="material-symbols-outlined group-hover:scale-110 transition-transform">help</span>
-                <span class="font-medium">Doubts</span>
+                <span class="material-symbols-outlined">help</span><span class="font-medium">Doubts</span>
             </a>
-
             <a href="#" onclick="switchSection('profile')" id="nav-profile" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-white/10 hover:text-white transition-all group">
-                <span class="material-symbols-outlined group-hover:scale-110 transition-transform">account_circle</span>
-                <span class="font-medium">Profile</span>
+                <span class="material-symbols-outlined">account_circle</span><span class="font-medium">Profile</span>
             </a>
         </nav>
         <div class="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
-            <button id="logout-btn" class="flex items-center justify-center gap-2 w-full bg-red-50 text-red-600 hover:bg-red-100 font-bold py-3 px-4 rounded-xl text-sm transition duration-150 border border-red-100">
-                <span class="material-symbols-outlined text-lg">logout</span>
-                Logout
+            <button id="logout-btn" class="flex items-center justify-center gap-2 w-full bg-red-50 text-red-600 hover:bg-red-100 font-bold py-3 px-4 rounded-xl text-sm transition border border-red-100">
+                <span class="material-symbols-outlined text-lg">logout</span> Logout
             </button>
         </div>
     </aside>
 
-<main class="flex-1 h-screen overflow-y-auto bg-background-light dark:bg-background-dark relative p-8">
+    <main class="flex-1 h-screen overflow-y-auto bg-background-light dark:bg-background-dark relative p-8">
         
-        <div id="content-dashboard" class="content-section animate-fade">
+        <div id="content-dashboard" class="content-section animate-fade-in">
             <header class="flex justify-between items-center mb-8">
-                <div>
-                    <h1 class="text-3xl font-bold text-slate-800 dark:text-white">Welcome, Teacher</h1>
-                    <p class="text-slate-500 mt-1">Here is your daily overview</p>
-                </div>
-                <div class="flex items-center gap-4">
-                    <span class="bg-blue-100 text-blue-700 px-4 py-2 rounded-lg font-bold text-sm" id="current-date">...</span>
-                </div>
+                <div><h1 class="text-3xl font-bold text-slate-800 dark:text-white">Welcome, Teacher</h1><p class="text-slate-500 mt-1">Here is your daily overview</p></div>
+                <div><span class="bg-blue-100 text-blue-700 px-4 py-2 rounded-lg font-bold text-sm" id="current-date">...</span></div>
             </header>
-
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
-                    <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
-                            <span class="material-symbols-outlined">group</span>
-                        </div>
-                        <div>
-                            <p class="text-slate-500 text-sm font-medium">Total Students</p>
-                            <h3 class="text-2xl font-bold text-slate-800 dark:text-white" id="stat-total-students">--</h3>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
-                    <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                            <span class="material-symbols-outlined">check_circle</span>
-                        </div>
-                        <div>
-                            <p class="text-slate-500 text-sm font-medium">Present Today</p>
-                            <h3 class="text-2xl font-bold text-slate-800 dark:text-white" id="stat-present">--</h3>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
-                    <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center">
-                            <span class="material-symbols-outlined">class</span>
-                        </div>
-                        <div>
-                            <p class="text-slate-500 text-sm font-medium">My Courses</p>
-                            <h3 class="text-2xl font-bold text-slate-800 dark:text-white" id="stat-courses">--</h3>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                <button onclick="switchSection('attendance')" class="p-4 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 hover:border-blue-500 hover:shadow-md transition-all text-left group">
-                    <span class="material-symbols-outlined text-blue-500 mb-2 group-hover:scale-110 transition-transform">checklist</span>
-                    <h4 class="font-bold text-slate-700 dark:text-white">Mark Attendance</h4>
-                </button>
-                <button onclick="switchSection('announcements')" class="p-4 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 hover:border-orange-500 hover:shadow-md transition-all text-left group">
-                    <span class="material-symbols-outlined text-orange-500 mb-2 group-hover:scale-110 transition-transform">campaign</span>
-                    <h4 class="font-bold text-slate-700 dark:text-white">Post Notice</h4>
-                </button>
-                <button onclick="switchSection('notes')" class="p-4 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 hover:border-emerald-500 hover:shadow-md transition-all text-left group">
-                    <span class="material-symbols-outlined text-emerald-500 mb-2 group-hover:scale-110 transition-transform">upload_file</span>
-                    <h4 class="font-bold text-slate-700 dark:text-white">Upload Notes</h4>
-                </button>
-                <button onclick="switchSection('doubts')" class="p-4 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 hover:border-purple-500 hover:shadow-md transition-all text-left group">
-                    <span class="material-symbols-outlined text-purple-500 mb-2 group-hover:scale-110 transition-transform">quiz</span>
-                    <h4 class="font-bold text-slate-700 dark:text-white">Check Doubts</h4>
-                </button>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100"><p class="text-slate-500 text-sm font-medium">Total Students</p><h3 class="text-2xl font-bold text-slate-800" id="stat-total-students">--</h3></div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100"><p class="text-slate-500 text-sm font-medium">My Courses</p><h3 class="text-2xl font-bold text-slate-800" id="stat-total-courses">--</h3></div>
             </div>
         </div> 
-        <div id="content-students" class="content-section hidden animate-fade">
-            <h1 class="text-3xl font-bold text-slate-800 dark:text-white mb-6">My Students</h1>
-            
-            <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-100 mb-6 flex gap-4">
-                <select id="filter-students-course" class="bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                    <option value="">All Courses</option>
-                </select>
-                <select id="filter-students-session" class="bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                    <option value="">All Batches</option>
-                </select>
+
+        <div id="content-students" class="content-section hidden animate-fade-in">
+            <h1 class="text-3xl font-bold text-slate-800 mb-6">My Students</h1>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 mb-6 flex gap-4">
+                <select id="filter-students-course" class="bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-sm w-full"><option value="">All Courses</option></select>
+                <select id="filter-students-session" class="bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-sm w-full"><option value="">All Batches</option></select>
                 <button onclick="loadStudents()" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700">Filter</button>
             </div>
-
-            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                <table class="w-full text-left border-collapse">
-                    <thead class="bg-slate-50 dark:bg-slate-700 text-slate-500 dark:text-slate-300 text-xs uppercase font-bold">
-                        <tr>
-                            <th class="p-4">Student</th>
-                            <th class="p-4">Admission No</th>
-                            <th class="p-4">Batch</th>
-                            <th class="p-4 text-right">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="students-table-body" class="divide-y divide-slate-100 dark:divide-slate-700">
-                        <tr><td colspan="4" class="p-8 text-center text-slate-400">Loading students...</td></tr>
-                    </tbody>
-                </table>
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <table class="w-full text-left"><tbody id="students-table-body" class="divide-y divide-slate-100"></tbody></table>
             </div>
         </div>
 
-        <div id="content-attendance" class="content-section hidden animate-fade">
-            <h1 class="text-3xl font-bold text-slate-800 dark:text-white mb-6">Mark Attendance</h1>
-            
-            <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 mb-6">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 mb-1">Select Date</label>
-                        <input type="date" id="att-date" class="w-full border rounded-lg p-2.5 bg-slate-50">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 mb-1">Select Course</label>
-                        <select id="att-course" class="w-full border rounded-lg p-2.5 bg-slate-50" onchange="loadStudentsForAttendance()"></select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 mb-1">Select Batch</label>
-                        <select id="att-session" class="w-full border rounded-lg p-2.5 bg-slate-50" onchange="loadStudentsForAttendance()"></select>
-                    </div>
-                    <button onclick="loadStudentsForAttendance()" class="bg-blue-600 text-white p-2.5 rounded-lg font-bold hover:bg-blue-700">Load List</button>
-                </div>
+        <div id="content-attendance" class="content-section hidden animate-fade-in">
+            <h1 class="text-3xl font-bold text-slate-800 mb-6">Mark Attendance</h1>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-6 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                <div><label class="block text-xs font-bold text-slate-500 mb-1">Date</label><input type="date" id="att-date" class="w-full border rounded-lg p-2.5 bg-slate-50"></div>
+                <div><label class="block text-xs font-bold text-slate-500 mb-1">Course</label><select id="attendance-course-select" class="w-full border rounded-lg p-2.5 bg-slate-50" onchange="loadStudentsForAttendance()"></select></div>
+                <div><label class="block text-xs font-bold text-slate-500 mb-1">Batch</label><select id="attendance-session-select" class="w-full border rounded-lg p-2.5 bg-slate-50" onchange="loadStudentsForAttendance()"></select></div>
+                <button onclick="loadStudentsForAttendance()" class="bg-blue-600 text-white p-2.5 rounded-lg font-bold hover:bg-blue-700">Load List</button>
             </div>
-
-            <div id="attendance-list-container" class="hidden bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div id="attendance-list-container" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                 <div class="p-4 bg-slate-50 border-b flex justify-between items-center">
                     <h3 class="font-bold text-slate-700">Student List</h3>
                     <button onclick="markAllPresent()" class="text-xs font-bold text-emerald-600 hover:bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-200">Mark All Present</button>
                 </div>
                 <div id="attendance-grid" class="divide-y divide-slate-100"></div>
-                <div class="p-4 bg-slate-50 border-t">
-                    <button onclick="submitAttendance()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700">Save Attendance</button>
-                </div>
+                <div class="p-4 bg-slate-50 border-t"><button id="submit-attendance-btn" onclick="submitAttendance()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-blue-700" disabled>Save Attendance</button></div>
             </div>
         </div>
 
-        <div id="content-reports" class="content-section hidden animate-fade">
-            <h1 class="text-3xl font-bold text-slate-800 dark:text-white mb-6">Reports</h1>
-            <div class="bg-white p-8 rounded-2xl text-center text-slate-400">
-                <p>Select a report type to view detailed analytics.</p>
-                </div>
-        </div>
-
-        <div id="content-announcements" class="content-section hidden animate-fade">
+        <div id="content-announcements" class="content-section hidden animate-fade-in">
             <div class="flex justify-between items-center mb-6">
-                <h1 class="text-3xl font-bold text-slate-800 dark:text-white">Announcements</h1>
+                <h1 class="text-3xl font-bold text-slate-800">Announcements</h1>
                 <button onclick="document.getElementById('new-announcement-modal').classList.remove('hidden')" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2">
                     <span class="material-symbols-outlined">add</span> New
                 </button>
             </div>
-            <div id="announcements-list" class="space-y-4"></div>
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <table class="w-full text-left"><tbody id="announcement-history-body" class="divide-y divide-slate-100"></tbody></table>
+            </div>
         </div>
 
-        <div id="content-notes" class="content-section hidden animate-fade">
+        <div id="content-notes" class="content-section hidden animate-fade-in">
             <div class="flex justify-between items-center mb-6">
-                <h1 class="text-3xl font-bold text-slate-800 dark:text-white">Study Material</h1>
+                <h1 class="text-3xl font-bold text-slate-800">Study Material</h1>
                 <button onclick="document.getElementById('upload-note-modal').classList.remove('hidden')" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2">
                     <span class="material-symbols-outlined">cloud_upload</span> Upload
                 </button>
             </div>
-            <div id="notes-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-        </div>
-
-        <div id="content-doubts" class="content-section hidden animate-fade">
-            <h1 class="text-3xl font-bold text-slate-800 dark:text-white mb-6">Student Doubts</h1>
-            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-                <div id="doubts-list" class="divide-y divide-slate-100 dark:divide-slate-700">
-                    <div class="p-8 text-center text-slate-400">Loading doubts...</div>
-                </div>
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <table class="w-full text-left"><tbody id="teacher-notes-body" class="divide-y divide-slate-100"></tbody></table>
             </div>
         </div>
 
-        <div id="content-profile" class="content-section hidden animate-fade">
-            <h1 class="text-3xl font-bold text-slate-800 dark:text-white mb-6">My Profile</h1>
-            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-8 max-w-lg mx-auto">
-                <div class="flex flex-col items-center">
-                    <div class="w-32 h-32 rounded-full border-4 border-slate-100 overflow-hidden mb-4 relative bg-gray-200">
-                        <img id="my-photo-preview" src="" class="w-full h-full object-cover">
-                    </div>
-                    
-                    <h2 id="my-name-display" class="text-xl font-bold mb-1">Teacher Name</h2>
-                    <p class="text-sm text-slate-500 mb-6">Upload a clear photo for students to see.</p>
-
-                    <label class="cursor-pointer bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 font-bold py-3 px-6 rounded-xl flex items-center gap-2 transition-all">
-                        <span class="material-symbols-outlined">cloud_upload</span>
-                        <span>Choose New Photo</span>
-                        <input type="file" id="profile-upload-input" accept="image/*" class="hidden" onchange="uploadProfilePhoto(this)">
-                    </label>
-                </div>
+        <div id="content-doubts" class="content-section hidden animate-fade-in">
+            <h1 class="text-3xl font-bold text-slate-800 mb-6">Student Doubts</h1>
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div id="doubts-list" class="divide-y divide-slate-100"></div>
             </div>
         </div>
 
-    </main>    
-<div id="notify-modal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-slate-900 bg-opacity-75 transition-opacity backdrop-blur-sm" id="modal-backdrop"></div>
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-        <div class="inline-block align-bottom bg-white dark:bg-surface-dark rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-slate-200 dark:border-slate-700">
-            <div class="px-6 py-6">
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="p-2 bg-blue-50 text-blue-600 rounded-lg"><span class="material-symbols-outlined">send</span></div>
-                    <h3 class="text-xl font-bold text-slate-900 dark:text-white" id="notify-modal-title">Send Message</h3>
+        <div id="content-profile" class="content-section hidden animate-fade-in">
+            <h1 class="text-3xl font-bold text-slate-800 mb-6">My Profile</h1>
+            <div class="bg-white rounded-2xl shadow-sm p-8 max-w-lg mx-auto flex flex-col items-center">
+                <div class="w-32 h-32 rounded-full border-4 border-slate-100 overflow-hidden mb-4 bg-gray-200">
+                    <img id="my-photo-preview" src="" class="w-full h-full object-cover">
                 </div>
-                
-                <form class="space-y-4">
-                    <input type="hidden" id="notify-student-id">
-                    <div>
-                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Subject</label>
-                        <input type="text" id="notify-subject" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm focus:ring-primary p-3" placeholder="Important Update...">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Message Body</label>
-                        <textarea id="notify-body" rows="4" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm focus:ring-primary p-3" placeholder="Type your message here..."></textarea>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Communication Channel</label>
-                        <select id="notify-type" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm focus:ring-primary p-3">
-                            <option value="portal">📱 App Notification (Push)</option>
-                            <option value="sms">💬 SMS</option>
-                            <option value="whatsapp">💚 WhatsApp</option>
-                            <option value="email">📧 Email</option>
-                        </select>
-                    </div>
-                </form>
+                <h2 id="my-name-display" class="text-xl font-bold mb-1">Teacher Name</h2>
+                <label class="cursor-pointer bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 font-bold py-3 px-6 rounded-xl flex items-center gap-2 mt-4 transition-all">
+                    <span class="material-symbols-outlined">cloud_upload</span><span>Change Photo</span>
+                    <input type="file" id="profile-upload-input" accept="image/*" class="hidden" onchange="uploadProfilePhoto(this)">
+                </label>
             </div>
-            <div class="bg-slate-50 dark:bg-slate-800/50 px-6 py-4 flex flex-row-reverse gap-3 border-t border-slate-100 dark:border-slate-700">
-                <button type="button" id="send-notify-btn" class="w-full sm:w-auto px-6 py-2.5 bg-primary text-white rounded-xl font-bold hover:bg-primary-hover shadow-md transition transform active:scale-95 flex items-center justify-center gap-2">
-                    <span class="material-symbols-outlined text-sm">send</span> Send Message
-                </button>
-                <button type="button" id="cancel-notify-btn" class="w-full sm:w-auto px-6 py-2.5 bg-white border border-slate-300 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition transform active:scale-95">Cancel</button>
-            </div>
+        </div>
+
+    </main>
+
+    <div id="new-announcement-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md animate-fade-in">
+            <h3 class="text-xl font-bold mb-4 text-slate-800">New Announcement</h3>
+            <form id="teacher-announcement-form" class="space-y-4">
+                <input type="text" id="ann-title" placeholder="Title" class="w-full border rounded-lg p-3" required>
+                <textarea id="ann-content" placeholder="Message..." class="w-full border rounded-lg p-3" rows="3" required></textarea>
+                <select id="ann-category" class="w-full border rounded-lg p-3">
+                    <option>General</option><option>Holiday</option><option>Exam</option><option>Urgent</option>
+                </select>
+                <select id="ann-target" class="w-full border rounded-lg p-3">
+                    <option value="students">All Students</option>
+                </select>
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" onclick="document.getElementById('new-announcement-modal').classList.add('hidden')" class="px-4 py-2 text-gray-500 font-bold">Cancel</button>
+                    <button type="submit" class="px-6 py-2 bg-primary text-white rounded-lg font-bold shadow-lg">Post</button>
+                </div>
+            </form>
         </div>
     </div>
-</div>
 
+    <div id="upload-note-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md animate-fade-in">
+            <h3 class="text-xl font-bold mb-4 text-slate-800">Upload Material</h3>
+            <form id="upload-note-form" class="space-y-4">
+                <input type="text" name="title" placeholder="Title (e.g. Chapter 1)" class="w-full border rounded-lg p-3" required>
+                <select name="course_id" id="note-course-select" class="w-full border rounded-lg p-3" required>
+                    <option value="">Select Course</option>
+                </select>
+                <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center relative hover:bg-gray-50 cursor-pointer">
+                    <input type="file" name="file" class="absolute inset-0 opacity-0 cursor-pointer" required>
+                    <span class="material-symbols-outlined text-4xl text-gray-400">cloud_upload</span>
+                    <p class="text-xs text-gray-500 mt-2">Click to select file</p>
+                </div>
+                <div id="upload-progress" class="hidden w-full bg-gray-200 rounded-full h-1.5 mt-2">
+                    <div id="upload-bar" class="bg-green-500 h-1.5 rounded-full" style="width: 0%"></div>
+                </div>
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" onclick="document.getElementById('upload-note-modal').classList.add('hidden')" class="px-4 py-2 text-gray-500 font-bold">Cancel</button>
+                    <button type="submit" id="upload-note-btn" class="px-6 py-2 bg-primary text-white rounded-lg font-bold shadow-lg">Upload</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
+    <div id="notify-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md animate-fade-in">
+            <h3 class="text-xl font-bold mb-4 text-slate-800" id="notify-modal-title">Send Message</h3>
+            <form class="space-y-4">
+                <input type="hidden" id="notify-student-id">
+                <input type="text" id="notify-subject" placeholder="Subject" class="w-full border rounded-lg p-3" required>
+                <textarea id="notify-body" placeholder="Message..." class="w-full border rounded-lg p-3" rows="3" required></textarea>
+                <select id="notify-type" class="w-full border rounded-lg p-3">
+                    <option value="portal">App Notification</option>
+                    <option value="sms">SMS</option>
+                    <option value="whatsapp">WhatsApp</option>
+                    <option value="email">Email</option>
+                </select>
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" onclick="document.getElementById('notify-modal').classList.add('hidden')" class="px-4 py-2 text-gray-500 font-bold">Cancel</button>
+                    <button type="button" id="send-notify-btn" class="px-6 py-2 bg-primary text-white rounded-lg font-bold shadow-lg">Send</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
-<script>
-    // --- APP CONFIGURATION ---
-    const API_ORIGIN = window.location.origin;
-    const API_BASE_URL = API_ORIGIN + '/api';
-    
-    // --- CACHE VARIABLES ---
-    let allTeacherCourses = [];
-    let allTeacherStudents = []; 
-    let allSessions = [];
-    let currentAttendanceStatus = {};
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
 
-    // --- 1. INITIALIZATION ---
-    document.addEventListener('DOMContentLoaded', () => {
-        checkSessionAndInit();
-        setupGlobalListeners();
-        setupForms(); // <--- NEW: Sets up Announcements & Notes
-    });
+    <script>
+        const API_ORIGIN = window.location.origin;
+        const API_BASE_URL = API_ORIGIN + '/api';
+        let allTeacherCourses = [], allTeacherStudents = [], allSessions = [];
+        let currentAttendanceStatus = {};
 
-    // --- 2. NAVIGATION (Smooth) ---
-    window.switchSection = function(input) {
-        const id = input.startsWith('#') ? input.substring(1) : input;
-
-        // Hide all, Show Target
-        document.querySelectorAll('.content-section').forEach(el => el.classList.add('hidden'));
-        const target = document.getElementById('content-' + id);
-        if(target) target.classList.remove('hidden');
-
-        // Update Sidebar
-        document.querySelectorAll('.nav-link').forEach(el => {
-            el.classList.remove('bg-blue-600', 'text-white', 'shadow-lg');
-            el.classList.add('text-slate-400');
+        document.addEventListener('DOMContentLoaded', () => {
+            checkSessionAndInit();
+            setupGlobalListeners();
+            setupForms(); 
         });
-        const activeLink = document.getElementById('nav-' + id);
-        if(activeLink) {
-            activeLink.classList.remove('text-slate-400');
-            activeLink.classList.add('bg-blue-600', 'text-white', 'shadow-lg');
+
+        // --- NAVIGATION ---
+        window.switchSection = function(input) {
+            const id = input.startsWith('#') ? input.substring(1) : input;
+            document.querySelectorAll('.content-section').forEach(el => el.classList.add('hidden'));
+            document.getElementById('content-' + id)?.classList.remove('hidden');
+            
+            document.querySelectorAll('.nav-link').forEach(el => {
+                el.classList.remove('bg-primary', 'text-white', 'shadow-lg');
+                el.classList.add('text-slate-400');
+            });
+            document.getElementById('nav-' + id)?.classList.remove('text-slate-400');
+            document.getElementById('nav-' + id)?.classList.add('bg-primary', 'text-white', 'shadow-lg');
+
+            if (id === 'students') fetchAllTeacherStudents();
+            if (id === 'attendance') populateDropdowns();
+            if (id === 'announcements') fetchTeacherAnnouncements();
+            if (id === 'notes') fetchTeacherNotes();
+            if (id === 'doubts') loadDoubts();
+            if (id === 'profile') loadMyProfile();
+            if (id === 'dashboard') fetchDashboardData();
         }
 
-        // Auto-Load Data based on Tab
-        if (id === 'students') fetchAllTeacherStudents(); 
-        if (id === 'attendance') populateDropdowns(); 
-        if (id === 'announcements') fetchTeacherAnnouncements(); // <--- Now Works
-        if (id === 'notes') fetchTeacherNotes(); // <--- Now Works
-        if (id === 'doubts') loadDoubts();     
-        if (id === 'profile') loadMyProfile(); 
-        if (id === 'dashboard') fetchDashboardData();
-    }
-
-    // --- 3. CORE DATA LOADING ---
-    async function checkSessionAndInit() {
-        try {
-            const res = await fetch(`${API_BASE_URL}/check_session`, {credentials: 'include'});
-            const result = await res.json();
-            if (!res.ok || !result.logged_in || result.user.role !== 'teacher') {
-                window.location.href = API_ORIGIN + '/';
-                return;
-            }
-            
-            // Set Name
-            const welcomeMsg = document.querySelector('h1.text-3xl'); 
-            if(welcomeMsg) welcomeMsg.textContent = `Welcome, ${result.user.name}`;
-
-            // Load Initial Data
-            await Promise.all([fetchTeacherCourses(), fetchSessions()]);
-            populateDropdowns();
-            
-            // Load Current View
-            const hash = window.location.hash || '#dashboard';
-            window.switchSection(hash);
-            
-            // Init Firebase (Restored)
-            setTimeout(initFirebase, 2000);
-
-        } catch (error) { console.error("Init Failed:", error); }
-    }
-
-    // --- 4. FIREBASE CONFIGURATION (RESTORED) ---
-    function initFirebase() {
-        try {
-            const firebaseConfig = {
-                apiKey: "AIzaSyBkzEHM9fXRoCYSgEW-hk_lN7sL_nSLDfU",
-                authDomain: "cst-institute-app.firebaseapp.com",
-                projectId: "cst-institute-app",
-                storageBucket: "cst-institute-app.firebasestorage.app",
-                messagingSenderId: "485166460200",
-                appId: "1:485166460200:web:4eae20e2010ab92baeb41d"
-            };
-
-            if (typeof firebase !== 'undefined' && !firebase.apps.length) {
-                firebase.initializeApp(firebaseConfig);
-                const messaging = firebase.messaging();
-
-                // Service Worker Registration
-                if ('serviceWorker' in navigator) {
-                    navigator.serviceWorker.register('/firebase-messaging-sw.js').then((reg) => {
-                        console.log('Service Worker Registered');
-                        return messaging.getToken({ 
-                            vapidKey: 'BBOMxvKvbEs_t9ykKBa2zIewzCzD6FCbm9rxc8a9eWl2kjjH5vyTSH6TeQMksZ_OGl5jZyQpU2wBcf-KsZN1uko', 
-                            serviceWorkerRegistration: reg 
-                        });
-                    }).then((token) => {
-                        if (token) {
-                            fetch('/api/save_fcm_token', { 
-                                method: 'POST', 
-                                headers: {'Content-Type': 'application/json'}, 
-                                credentials: 'include', 
-                                body: JSON.stringify({token}) 
-                            });
-                        }
-                    }).catch(err => console.log("Firebase Token Error:", err));
+        // --- DATA LOADING ---
+        async function checkSessionAndInit() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/check_session`, {credentials: 'include'});
+                const result = await res.json();
+                if (!res.ok || !result.logged_in || result.user.role !== 'teacher') {
+                    window.location.href = API_ORIGIN + '/';
+                    return;
                 }
-
-                messaging.onMessage((payload) => {
-                    alert(`${payload.notification.title}: ${payload.notification.body}`);
-                });
-            }
-        } catch (e) { 
-            console.log('Firebase init error:', e); 
+                document.querySelector('h1.text-3xl').textContent = `Welcome, ${result.user.name}`;
+                await Promise.all([fetchTeacherCourses(), fetchSessions()]);
+                populateDropdowns();
+                window.switchSection(window.location.hash || '#dashboard');
+                setTimeout(initFirebase, 2000);
+            } catch (e) { console.error("Init Failed", e); }
         }
-    }
 
-    // --- 5. ANNOUNCEMENTS (Holiday / Batch) ---
-    function setupForms() {
-        // Announcement Form Listener
-        const annForm = document.getElementById('teacher-announcement-form');
-        if(annForm) {
-            annForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const btn = annForm.querySelector('button');
-                const originalText = btn.innerHTML;
-                btn.disabled = true;
-                btn.textContent = "Sending...";
+        async function fetchTeacherCourses() {
+            const res = await fetch(`${API_BASE_URL}/teacher/courses`, {credentials: 'include'});
+            allTeacherCourses = await res.json();
+            document.getElementById('stat-total-courses').textContent = allTeacherCourses.length;
+        }
 
-                const payload = {
-                    title: document.getElementById('ann-title').value,
-                    content: document.getElementById('ann-content').value,
-                    category: document.getElementById('ann-category').value, // 'Holiday', 'Exam', etc.
-                    target_group: document.getElementById('ann-target').value // 'all', 'batch_x', etc.
-                };
+        async function fetchSessions() {
+            const res = await fetch(`${API_BASE_URL}/teacher/sessions`, {credentials: 'include'});
+            allSessions = await res.json();
+        }
 
-                try {
-                    const res = await fetch(`${API_BASE_URL}/teacher/announcements`, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        credentials: 'include',
-                        body: JSON.stringify(payload)
-                    });
-                    if(res.ok) {
-                        alert("Announcement Sent Successfully!");
-                        annForm.reset();
-                        fetchTeacherAnnouncements();
-                    } else {
-                        alert("Failed to send announcement.");
-                    }
-                } catch(e) { alert("Network Error"); }
-                finally { btn.disabled = false; btn.textContent = originalText; }
+        async function fetchAllTeacherStudents() {
+            const res = await fetch(`${API_BASE_URL}/teacher/students`, {credentials: 'include'});
+            allTeacherStudents = await res.json();
+            document.getElementById('stat-total-students').textContent = allTeacherStudents.length;
+            window.loadStudents();
+        }
+
+        // --- STUDENTS & MESSAGING ---
+        window.loadStudents = function() {
+            const cid = document.getElementById('filter-students-course').value;
+            const sid = document.getElementById('filter-students-session').value;
+            const tbody = document.getElementById('students-table-body');
+            
+            const filtered = allTeacherStudents.filter(s => 
+                (!cid || (s.course_ids && s.course_ids.includes(parseInt(cid)))) &&
+                (!sid || s.session_id == sid)
+            );
+
+            if (filtered.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-gray-400">No students found.</td></tr>'; return; }
+            
+            tbody.innerHTML = filtered.map(s => `
+                <tr class="hover:bg-slate-50 border-b">
+                    <td class="px-6 py-4 flex items-center gap-3">
+                        <img src="${s.profile_photo_url ? API_ORIGIN + s.profile_photo_url : 'https://placehold.co/40'}" class="w-8 h-8 rounded-full object-cover">
+                        <span class="font-bold text-slate-800">${s.name}</span>
+                    </td>
+                    <td class="px-6 py-4 text-slate-500">${s.admission_number || '-'}</td>
+                    <td class="px-6 py-4 text-blue-600 font-bold text-xs uppercase">${s.session_name || 'Batch'}</td>
+                    <td class="px-6 py-4 text-right">
+                        <button onclick="openMessageModal(${s.id}, '${s.name.replace(/'/g, "\\'")}')" class="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded font-bold hover:bg-blue-200">Message</button>
+                    </td>
+                </tr>`).join('');
+        }
+
+        window.openMessageModal = function(id, name) {
+            document.getElementById('notify-student-id').value = id;
+            document.getElementById('notify-modal-title').textContent = `Message ${name}`;
+            document.getElementById('notify-modal').classList.remove('hidden');
+        };
+
+        // --- ATTENDANCE ---
+        window.loadStudentsForAttendance = async function() {
+            const cid = document.getElementById('attendance-course-select').value;
+            const sid = document.getElementById('attendance-session-select').value;
+            const grid = document.getElementById('attendance-grid');
+            
+            if(!cid) { grid.innerHTML = '<div class="p-8 text-center text-gray-400">Select Course.</div>'; return; }
+            grid.innerHTML = '<div class="p-8 text-center text-gray-400">Loading...</div>';
+            
+            let url = `${API_BASE_URL}/teacher/students?course_id=${cid}`;
+            if(sid) url += `&session_id=${sid}`;
+            
+            const res = await fetch(url, {credentials: 'include'});
+            const students = await res.json();
+            
+            currentAttendanceStatus = {};
+            if(students.length === 0) { grid.innerHTML = '<div class="p-8 text-center text-red-500">No students.</div>'; return; }
+
+            grid.innerHTML = students.map(s => {
+                currentAttendanceStatus[s.id] = 'Present';
+                return `
+                <div class="flex items-center justify-between p-4 hover:bg-slate-50 border-b border-slate-100">
+                    <div class="flex items-center gap-4">
+                        <input type="checkbox" class="student-checkbox w-5 h-5 cursor-pointer" data-id="${s.id}">
+                        <div><p class="font-bold text-slate-800">${s.name}</p><p class="text-xs text-slate-500">#${s.admission_number}</p></div>
+                    </div>
+                    <span id="status-${s.id}" class="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 border border-green-200">Present</span>
+                </div>`;
+            }).join('');
+            document.getElementById('submit-attendance-btn').disabled = false;
+        }
+
+        window.markAllPresent = function() {
+            document.querySelectorAll('.student-checkbox').forEach(cb => {
+                const id = cb.dataset.id;
+                currentAttendanceStatus[id] = 'Present';
+                const b = document.getElementById(`status-${id}`);
+                b.textContent = 'Present'; b.className = "px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 border border-green-200";
             });
         }
 
-        // Notes Upload Form Listener
-        const noteForm = document.getElementById('upload-note-form');
-        if(noteForm) {
-            noteForm.addEventListener('submit', async (e) => {
+        window.submitAttendance = async function() {
+            const date = document.getElementById('att-date').value;
+            if(!date) return alert("Select Date");
+            const btn = document.getElementById('submit-attendance-btn');
+            btn.textContent = "Saving..."; btn.disabled = true;
+            try {
+                await fetch(`${API_BASE_URL}/teacher/attendance`, {
+                    method: 'POST', headers: {'Content-Type':'application/json'}, credentials: 'include',
+                    body: JSON.stringify({date, attendance_data: Object.entries(currentAttendanceStatus).map(([sid,s])=>({student_id:sid, status:s}))})
+                });
+                alert("Saved!");
+            } catch(e) { alert("Error"); }
+            finally { btn.textContent = "Save Attendance"; btn.disabled = false; }
+        }
+
+        // --- FORMS & MODALS ---
+        function setupForms() {
+            // Announcement
+            document.getElementById('teacher-announcement-form')?.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const pl = {
+                    title: document.getElementById('ann-title').value,
+                    content: document.getElementById('ann-content').value,
+                    category: document.getElementById('ann-category').value,
+                    target_group: document.getElementById('ann-target').value
+                };
+                await fetch(`${API_BASE_URL}/teacher/announcements`, {method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify(pl)});
+                alert("Posted!"); e.target.reset(); document.getElementById('new-announcement-modal').classList.add('hidden'); fetchTeacherAnnouncements();
+            });
+
+            // Notes
+            document.getElementById('upload-note-form')?.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const btn = document.getElementById('upload-note-btn');
-                const progress = document.getElementById('upload-progress');
-                const bar = document.getElementById('upload-bar');
-                
+                document.getElementById('upload-progress').classList.remove('hidden');
                 btn.disabled = true;
-                progress.classList.remove('hidden');
-                bar.style.width = '0%';
-
-                const formData = new FormData(noteForm);
-
+                const fd = new FormData(e.target);
                 try {
                     const xhr = new XMLHttpRequest();
                     xhr.open('POST', `${API_BASE_URL}/teacher/notes`, true);
                     xhr.withCredentials = true;
-
-                    xhr.upload.onprogress = (evt) => {
-                        if (evt.lengthComputable) {
-                            const percent = (evt.loaded / evt.total) * 100;
-                            bar.style.width = percent + '%';
-                        }
-                    };
-
-                    xhr.onload = () => {
-                        if (xhr.status === 201) {
-                            alert("Notes Uploaded & Students Notified!");
-                            noteForm.reset();
-                            fetchTeacherNotes();
-                        } else {
-                            alert("Upload Failed.");
-                        }
-                        progress.classList.add('hidden');
-                        btn.disabled = false;
-                    };
-                    xhr.send(formData);
-                } catch(e) { 
-                    alert("Upload Error"); 
-                    btn.disabled = false; 
-                }
+                    xhr.upload.onprogress = (evt) => { if(evt.lengthComputable) document.getElementById('upload-bar').style.width = (evt.loaded/evt.total)*100 + '%'; };
+                    xhr.onload = () => { alert("Uploaded!"); e.target.reset(); document.getElementById('upload-note-modal').classList.add('hidden'); fetchTeacherNotes(); btn.disabled = false; document.getElementById('upload-progress').classList.add('hidden'); };
+                    xhr.send(fd);
+                } catch(err) { alert("Error"); btn.disabled = false; }
             });
-        }
-    }
 
-    async function fetchTeacherAnnouncements() {
-        const tbody = document.getElementById('announcement-history-body');
-        if(!tbody) return;
-        try {
-            const res = await fetch(`${API_BASE_URL}/teacher/announcements`, { credentials: 'include' });
-            const data = await res.json();
-            
-            if(data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3" class="p-6 text-center text-gray-400">No announcements sent.</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = data.map(ann => `
-                <tr class="hover:bg-slate-50 border-b">
-                    <td class="p-4">
-                        <span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded">${ann.category}</span>
-                        <span class="font-bold ml-2">${ann.title}</span>
-                        <p class="text-sm text-slate-500 mt-1">${ann.content}</p>
-                    </td>
-                    <td class="p-4 text-xs text-slate-400">${ann.created_at}</td>
-                    <td class="p-4 text-right">
-                        <button onclick="deleteAnnouncement(${ann.id})" class="text-red-500 hover:text-red-700">
-                            <span class="material-symbols-outlined">delete</span>
-                        </button>
-                    </td>
-                </tr>`).join('');
-        } catch (e) { console.error(e); }
-    }
-
-    async function fetchTeacherNotes() {
-        const tbody = document.getElementById('teacher-notes-body');
-        if(!tbody) return;
-        try {
-            const res = await fetch(`${API_BASE_URL}/teacher/notes`, { credentials: 'include' });
-            const notes = await res.json();
-            
-            if(notes.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-gray-400">No notes uploaded.</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = notes.map(n => `
-                <tr class="hover:bg-slate-50 border-b">
-                    <td class="px-6 py-4 font-bold text-slate-800">${n.title}</td>
-                    <td class="px-6 py-4 text-sm text-slate-500">${n.course_name}</td>
-                    <td class="px-6 py-4 text-sm text-slate-500">${n.created_at}</td>
-                    <td class="px-6 py-4 text-right flex justify-end gap-2">
-                         <a href="${API_ORIGIN}/uploads/${n.filename}" target="_blank" class="p-2 bg-blue-50 text-blue-600 rounded-lg"><span class="material-symbols-outlined text-sm">visibility</span></a>
-                         <button onclick="deleteNote(${n.id})" class="p-2 bg-red-50 text-red-600 rounded-lg"><span class="material-symbols-outlined text-sm">delete</span></button>
-                    </td>
-                </tr>`).join('');
-        } catch(e) { console.error(e); }
-    }
-
-    window.deleteAnnouncement = async (id) => {
-        if(!confirm("Delete?")) return;
-        await fetch(`${API_BASE_URL}/teacher/announcements?id=${id}`, { method: 'DELETE', credentials: 'include' });
-        fetchTeacherAnnouncements();
-    };
-
-    window.deleteNote = async (id) => {
-        if(!confirm("Delete?")) return;
-        await fetch(`${API_BASE_URL}/teacher/notes?id=${id}`, { method: 'DELETE', credentials: 'include' });
-        fetchTeacherNotes();
-    };
-
-    // --- 6. UTILS (Students, Attendance, etc.) ---
-    async function fetchTeacherCourses() {
-        const res = await fetch(`${API_BASE_URL}/teacher/courses`, { credentials: 'include' });
-        allTeacherCourses = await res.json();
-        const el = document.getElementById('total-my-courses');
-        if(el) el.textContent = allTeacherCourses.length;
-    }
-
-    async function fetchSessions() {
-        const res = await fetch(`${API_BASE_URL}/teacher/sessions`, { credentials: 'include' });
-        allSessions = await res.json();
-    }
-
-    async function fetchAllTeacherStudents() {
-        const res = await fetch(`${API_BASE_URL}/teacher/students`, { credentials: 'include' });
-        allTeacherStudents = await res.json();
-        const el = document.getElementById('total-my-students');
-        if(el) el.textContent = allTeacherStudents.length;
-        window.loadStudents(); 
-    }
-
-    window.loadStudents = function() {
-        const tbody = document.getElementById('students-table-body');
-        if(allTeacherStudents.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-slate-400">No students found.</td></tr>';
-            return;
-        }
-        tbody.innerHTML = allTeacherStudents.map(s => `
-            <tr class="hover:bg-slate-50 border-b">
-                <td class="px-6 py-4 flex items-center gap-3">
-                    <img src="${s.profile_photo_url ? API_ORIGIN + s.profile_photo_url : 'https://placehold.co/40'}" class="w-8 h-8 rounded-full object-cover">
-                    <span class="font-bold text-slate-800 dark:text-white">${s.name}</span>
-                </td>
-                <td class="px-6 py-4 text-slate-500">${s.admission_number || '-'}</td>
-                <td class="px-6 py-4 text-blue-600 font-bold text-xs uppercase">${s.session_name || 'Batch'}</td>
-                <td class="px-6 py-4 text-right"><button class="text-xs bg-slate-100 px-3 py-1 rounded">View</button></td>
-            </tr>`).join('');
-    }
-
-    window.loadStudentsForAttendance = async function() {
-        const cid = document.getElementById('attendance-course-select').value;
-        const grid = document.getElementById('attendance-grid') || document.getElementById('attendance-table-body');
-        if(!cid) return;
-        
-        grid.innerHTML = '<div class="p-8 text-center text-slate-400">Loading...</div>';
-        const res = await fetch(`${API_BASE_URL}/teacher/students?course_id=${cid}`, { credentials: 'include' });
-        const students = await res.json();
-        
-        currentAttendanceStatus = {};
-        grid.innerHTML = students.map(s => {
-            currentAttendanceStatus[s.id] = 'Present';
-            return `
-            <div class="flex items-center justify-between p-4 hover:bg-slate-50 border-b border-slate-100">
-                <div class="flex items-center gap-4">
-                    <input type="checkbox" class="student-checkbox w-5 h-5 cursor-pointer" data-id="${s.id}">
-                    <div><p class="font-bold text-slate-800">${s.name}</p><p class="text-xs text-slate-500">#${s.admission_number}</p></div>
-                </div>
-                <span id="status-${s.id}" class="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 border border-green-200">Present</span>
-            </div>`;
-        }).join('');
-        document.getElementById('submit-attendance-btn').disabled = false;
-    }
-
-    window.submitAttendance = async function() {
-        const date = document.getElementById('att-date').value;
-        const btn = document.getElementById('submit-attendance-btn');
-        btn.textContent = "Submitting...";
-        
-        try {
-            const res = await fetch(`${API_BASE_URL}/teacher/attendance`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                credentials: 'include',
-                body: JSON.stringify({
-                    date: date,
-                    attendance_data: Object.entries(currentAttendanceStatus).map(([sid, stat]) => ({ student_id: parseInt(sid), status: stat }))
-                })
-            });
-            const data = await res.json();
-            alert(data.message);
-        } catch(e) { alert("Error"); }
-        finally { btn.textContent = "Save Attendance"; }
-    }
-
-    // --- 7. DOUBTS & PROFILE ---
-    window.loadDoubts = async function() {
-        const container = document.getElementById('doubts-list');
-        const res = await fetch(`${API_BASE_URL}/teacher/doubts`, { credentials: 'include' });
-        const doubts = await res.json();
-        if (doubts.length === 0) { container.innerHTML = '<div class="p-8 text-center text-slate-400">No questions.</div>'; return; }
-        container.innerHTML = doubts.map(d => `
-            <div class="p-6 hover:bg-slate-50 border-b">
-                <h4 class="font-bold">${d.student_name}</h4>
-                <p class="italic text-gray-600 mb-2">"${d.question}"</p>
-                ${d.answer ? `<div class="text-green-600 font-bold ml-4">Replied: ${d.answer}</div>` : 
-                `<div class="flex gap-2"><input id="reply-${d.id}" class="border rounded p-1 flex-1"><button onclick="sendReply(${d.id})" class="bg-blue-600 text-white px-3 py-1 rounded">Reply</button></div>`}
-            </div>`).join('');
-    }
-
-    window.sendReply = async function(id) {
-        const ans = document.getElementById(`reply-${id}`).value;
-        await fetch(`${API_BASE_URL}/teacher/reply_doubt`, {
-            method: 'POST', headers: {'Content-Type': 'application/json'}, credentials: 'include',
-            body: JSON.stringify({ doubt_id: id, answer: ans })
-        });
-        alert("Replied!"); window.loadDoubts();
-    }
-
-    window.loadMyProfile = async function() {
-        try {
-            const res = await fetch(`${API_BASE_URL}/check_session`, { credentials: 'include' });
-            const data = await res.json();
-            if(data.user?.profile_photo_url) document.getElementById('my-photo-preview').src = API_ORIGIN + data.user.profile_photo_url;
-        } catch(e){}
-    }
-
-    window.uploadProfilePhoto = async function(input) {
-        if (!input.files[0]) return;
-        const fd = new FormData(); fd.append('photo', input.files[0]);
-        await fetch(`${API_BASE_URL}/teacher/update_photo`, { method: 'POST', credentials: 'include', body: fd });
-        alert("Updated!"); window.loadMyProfile();
-    }
-
-    // --- HELPER FUNCTIONS ---
-    function populateDropdowns() {
-        const cSel = document.querySelectorAll('[id$="course-select"], [id$="course"]');
-        cSel.forEach(s => { if(s) s.innerHTML = '<option value="">Select Course</option>' + allTeacherCourses.map(c => `<option value="${c.id}">${c.name}</option>`).join(''); });
-        
-        const sSel = document.querySelectorAll('[id$="session-select"], [id$="session"]');
-        sSel.forEach(s => { if(s) s.innerHTML = '<option value="">All Batches</option>' + allSessions.map(sess => `<option value="${sess.id}">${sess.name}</option>`).join(''); });
-    }
-
-    function setupGlobalListeners() {
-        document.getElementById('logout-btn')?.addEventListener('click', async () => {
-            await fetch(`${API_BASE_URL}/logout`, { method: 'POST', credentials: 'include' });
-            window.location.href = '/';
-        });
-        const d = document.getElementById('att-date'); if(d) d.valueAsDate = new Date();
-    }
-    
-    async function fetchDashboardData() { /* Update counts if needed */ }
-
-
-// --- LOGOUT LOGIC ---
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', async () => {
-                try {
-                    // We must include 'credentials' so the server knows which cookie to delete
-                    await fetch(`${API_BASE_URL}/logout`, { 
-                        method: 'POST',
-                        credentials: 'include' 
+            // Send Message Modal
+            document.getElementById('send-notify-btn')?.addEventListener('click', async () => {
+                const sid = document.getElementById('notify-student-id').value;
+                const sub = document.getElementById('notify-subject').value;
+                const body = document.getElementById('notify-body').value;
+                const type = document.getElementById('notify-type').value;
+                
+                if (type === 'whatsapp') {
+                    // Client-side WhatsApp
+                    const student = allTeacherStudents.find(s => s.id == sid);
+                    if(student && student.phone_number) {
+                        window.open(`https://wa.me/91${student.phone_number.replace(/\D/g,'')}?text=${encodeURIComponent(`*${sub}*\n${body}`)}`, '_blank');
+                    } else { alert("No phone number found"); }
+                } else {
+                    // Server-side
+                    await fetch(`${API_BASE_URL}/teacher/notify`, {
+                        method: 'POST', headers: {'Content-Type': 'application/json'}, credentials: 'include',
+                        body: JSON.stringify({ student_id: sid, subject: sub, body: body, type: type })
                     });
-                } catch (e) {
-                    console.error("Logout failed", e);
-                } finally {
-                    // Redirect to login page regardless of server response
-                    window.location.href = '/'; 
+                    alert("Sent!");
                 }
+                document.getElementById('notify-modal').classList.add('hidden');
             });
         }
-        // Initialize Page
-        checkSessionAndInit();
-    }); // This closes the document.addEventListener('DOMContentLoaded')
-</script>
+
+        async function fetchTeacherAnnouncements() {
+            const res = await fetch(`${API_BASE_URL}/teacher/announcements`, {credentials: 'include'});
+            const data = await res.json();
+            document.getElementById('announcement-history-body').innerHTML = data.map(a => `
+                <tr class="hover:bg-slate-50 border-b"><td class="p-4"><span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded">${a.category}</span><span class="font-bold ml-2">${a.title}</span><p class="text-sm text-slate-500 mt-1">${a.content}</p></td><td class="p-4 text-xs text-slate-400">${a.created_at}</td><td class="p-4 text-right"><button onclick="deleteAnnouncement(${a.id})" class="text-red-500"><span class="material-symbols-outlined">delete</span></button></td></tr>`).join('');
+        }
+
+        async function fetchTeacherNotes() {
+            const res = await fetch(`${API_BASE_URL}/teacher/notes`, {credentials: 'include'});
+            const data = await res.json();
+            document.getElementById('teacher-notes-body').innerHTML = data.map(n => `
+                <tr class="hover:bg-slate-50 border-b"><td class="px-6 py-4 font-bold text-slate-800">${n.title}</td><td class="px-6 py-4 text-sm text-slate-500">${n.course_name}</td><td class="px-6 py-4 text-right flex gap-2 justify-end"><a href="${API_ORIGIN}/uploads/${n.filename}" target="_blank" class="p-2 bg-blue-50 text-blue-600 rounded-lg"><span class="material-symbols-outlined text-sm">visibility</span></a><button onclick="deleteNote(${n.id})" class="p-2 bg-red-50 text-red-600 rounded-lg"><span class="material-symbols-outlined text-sm">delete</span></button></td></tr>`).join('');
+        }
+
+        window.deleteAnnouncement = async (id) => { if(confirm("Delete?")) { await fetch(`${API_BASE_URL}/teacher/announcements?id=${id}`, {method:'DELETE', credentials:'include'}); fetchTeacherAnnouncements(); } }
+        window.deleteNote = async (id) => { if(confirm("Delete?")) { await fetch(`${API_BASE_URL}/teacher/notes?id=${id}`, {method:'DELETE', credentials:'include'}); fetchTeacherNotes(); } }
+
+        // --- DOUBTS & PROFILE ---
+        async function loadDoubts() {
+            const res = await fetch(`${API_BASE_URL}/teacher/doubts`, {credentials: 'include'});
+            const data = await res.json();
+            const container = document.getElementById('doubts-list');
+            if(data.length === 0) { container.innerHTML = '<div class="p-8 text-center text-slate-400">No questions.</div>'; return; }
+            container.innerHTML = data.map(d => `
+                <div class="p-6 hover:bg-slate-50 border-b"><div class="flex justify-between mb-2"><h4 class="font-bold">${d.student_name}</h4><span class="text-xs text-gray-400">${d.date}</span></div><p class="italic text-gray-600 mb-2">"${d.question}"</p>${d.answer ? `<div class="text-green-600 font-bold ml-4 border-l-2 border-green-500 pl-2">Replied: ${d.answer}</div>` : `<div class="flex gap-2"><input id="reply-${d.id}" class="border rounded p-1 flex-1"><button onclick="sendReply(${d.id})" class="bg-blue-600 text-white px-3 py-1 rounded">Reply</button></div>`}</div>`).join('');
+        }
+
+        window.sendReply = async function(id) {
+            const ans = document.getElementById(`reply-${id}`).value;
+            await fetch(`${API_BASE_URL}/teacher/reply_doubt`, {method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify({doubt_id:id, answer:ans})});
+            alert("Replied!"); loadDoubts();
+        }
+
+        async function loadMyProfile() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/check_session`, {credentials: 'include'});
+                const data = await res.json();
+                if(data.user?.profile_photo_url) document.getElementById('my-photo-preview').src = API_ORIGIN + data.user.profile_photo_url;
+            } catch(e){}
+        }
+
+        window.uploadProfilePhoto = async function(input) {
+            if(!input.files[0]) return;
+            const fd = new FormData(); fd.append('photo', input.files[0]);
+            await fetch(`${API_BASE_URL}/teacher/update_photo`, {method:'POST', credentials:'include', body:fd});
+            alert("Updated!"); loadMyProfile();
+        }
+
+        // --- UTILS ---
+        function populateDropdowns() {
+            const cs = document.querySelectorAll('[id$="course-select"], [id$="course"]');
+            cs.forEach(s => s.innerHTML = '<option value="">Select Course</option>' + allTeacherCourses.map(c => `<option value="${c.id}">${c.name}</option>`).join(''));
+            const ss = document.querySelectorAll('[id$="session-select"], [id$="session"]');
+            ss.forEach(s => s.innerHTML = '<option value="">All Batches</option>' + allSessions.map(x => `<option value="${x.id}">${x.name}</option>`).join(''));
+        }
+
+        function setupGlobalListeners() {
+            document.getElementById('logout-btn')?.addEventListener('click', async () => {
+                await fetch(`${API_BASE_URL}/logout`, {method:'POST', credentials:'include'});
+                window.location.href = '/';
+            });
+            document.getElementById('att-date').valueAsDate = new Date();
+        }
+
+        async function fetchDashboardData() { /* updates if needed */ }
+
+        function initFirebase() {
+            try {
+                const firebaseConfig = {
+                    apiKey: "AIzaSyBkzEHM9fXRoCYSgEW-hk_lN7sL_nSLDfU",
+                    authDomain: "cst-institute-app.firebaseapp.com",
+                    projectId: "cst-institute-app",
+                    storageBucket: "cst-institute-app.firebasestorage.app",
+                    messagingSenderId: "485166460200",
+                    appId: "1:485166460200:web:4eae20e2010ab92baeb41d"
+                };
+                if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                    const messaging = firebase.messaging();
+                    if ('serviceWorker' in navigator) {
+                        navigator.serviceWorker.register('/firebase-messaging-sw.js')
+                        .then(reg => messaging.getToken({vapidKey:'BBOMxvKvbEs_t9ykKBa2zIewzCzD6FCbm9rxc8a9eWl2kjjH5vyTSH6TeQMksZ_OGl5jZyQpU2wBcf-KsZN1uko', serviceWorkerRegistration:reg}))
+                        .then(token => { if(token) fetch('/api/save_fcm_token', {method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify({token})}); })
+                        .catch(console.log);
+                    }
+                    messaging.onMessage(p => alert(`${p.notification.title}: ${p.notification.body}`));
+                }
+            } catch(e) { console.log(e); }
+        }
+    </script>
 </body>
 </html>
