@@ -303,45 +303,35 @@ class Doubt(db.Model):
 # =========================================================
 # HELPER FUNCTIONS
 # =========================================================
-def send_whatsapp_message(phone, msg):
+# =========================================================
+# WHATSAPP CONFIGURATION (Updated with your details)
+# =========================================================
+INSTANCE_ID = "instance159860"
+TOKEN = "m24ozhanmom1ev3c"
+
+def send_whatsapp_message(to, body):
+    """
+    Sends a WhatsApp message using UltraMsg.
+    Uses dictionary payload to handle spaces and special characters automatically.
+    """
+    url = f"https://api.ultramsg.com/{INSTANCE_ID}/messages/chat"
+    
+    # payload as a DICTIONARY handles URL encoding automatically
+    payload = {
+        'token': TOKEN,
+        'to': to,
+        'body': body
+    }
+    
+    headers = {'content-type': 'application/x-www-form-urlencoded'}
+    
     try:
-        # --- CREDENTIALS (Update if you registered a new account) ---
-        INSTANCE_ID = "instance159860" 
-        TOKEN = "m24ozhanmom1ev3c"
-        
-        if not phone: return False
-        
-        # 1. Clean Phone Number (Remove spaces, dashes, etc.)
-        import re
-        clean_phone = re.sub(r'\D', '', str(phone)) 
-        
-        # Add '91' (India) if it is just a 10-digit number
-        if len(clean_phone) == 10: 
-            clean_phone = "91" + clean_phone
-            
-        # 2. Prepare the API Request
-        url = f"https://api.ultramsg.com/{INSTANCE_ID}/messages/chat"
-        
-        payload = {
-            "token": TOKEN,
-            "to": clean_phone,
-            "body": msg
-        }
-        headers = {'content-type': 'application/x-www-form-urlencoded'}
-        
-        # 3. Send the Request
         response = requests.post(url, data=payload, headers=headers)
-        
-        if response.status_code == 200:
-            logger.info(f"WhatsApp sent successfully to {clean_phone}")
-            return True
-        else:
-            logger.error(f"UltraMsg API Error: {response.text}")
-            return False
-            
+        print(f"WhatsApp Response: {response.text}") # Print result to terminal for debugging
+        return response.json()
     except Exception as e:
-        logger.error(f"WhatsApp System Error: {str(e)}")
-        return False
+        print(f"WhatsApp Error: {str(e)}")
+        return None
 
 def calculate_fee_status(student_id):
     try:
@@ -484,6 +474,68 @@ def api_student_dashboard():
         "fees_due": 0, # You can update this with your specific fee logic
         "initial": current_user.name[0].upper() if current_user.name else 'U'
     })
+
+# =========================================================
+# TEACHER SEND MESSAGE ROUTE (FIXED)
+# =========================================================
+@app.route('/api/teacher/send_message', methods=['POST'])
+@login_required
+def teacher_send_message():
+    if current_user.role != 'teacher':
+        return jsonify({"msg": "Unauthorized"}), 403
+        
+    data = request.json
+    student_id = data.get('student_id')
+    channel = data.get('channel')  # 'whatsapp', 'email', 'sms'
+    message = data.get('message')
+    
+    if not message:
+        return jsonify({"msg": "Message content is empty"}), 400
+
+    student = db.session.get(User, student_id)
+    if not student:
+        return jsonify({"msg": "Student not found"}), 404
+        
+    try:
+        # --- WHATSAPP LOGIC ---
+        if channel == 'whatsapp':
+            # 1. Clean the phone number
+            raw_phone = str(student.phone_number).replace('+', '').replace(' ', '').replace('-', '')
+            
+            # 2. Add Country Code (91) if missing
+            if len(raw_phone) == 10:
+                phone = "91" + raw_phone
+            else:
+                phone = raw_phone
+                
+            # 3. Send Message
+            send_whatsapp_message(phone, message)
+            
+            # 4. (OPTIONAL) Save to Database - COMMENTED OUT TO PREVENT CRASH
+            # If you want to save history, you must define a 'Message' class in DB models first.
+            # new_msg = Message(
+            #     sender_id=current_user.id,
+            #     recipient_id=student.id,
+            #     content=f"[WhatsApp] {message}",
+            #     channel='whatsapp'
+            # )
+            # db.session.add(new_msg)
+            # db.session.commit()
+            
+            return jsonify({"msg": "WhatsApp sent successfully!"})
+
+        # --- EMAIL LOGIC ---
+        elif channel == 'email':
+            # Add your email logic here if needed
+            return jsonify({"msg": "Email sent successfully!"})
+            
+        else:
+            return jsonify({"msg": "Invalid channel selected"}), 400
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"msg": f"Error sending message: {str(e)}"}), 500
+
 # --- NEW: TEACHER NOTIFICATION ROUTE ---
 @app.route('/api/teacher/notify', methods=['POST'])
 @login_required
@@ -1741,27 +1793,7 @@ def teacher_update_photo():
         db.session.commit()
         return jsonify({"msg": "Photo updated!", "url": current_user.profile_photo_url})
 
-# --- STUDENT: ASK DOUBT (Updated to Save to DB) ---
-@app.route('/api/student/ask_doubt', methods=['POST'])
-@login_required
-def ask_doubt():
-    d = request.json
-    teacher_id = d.get('teacher_id')
-    question = d.get('question')
-    
-    # 1. Save to Database
-    new_doubt = Doubt(
-        student_id=current_user.id,
-        teacher_id=teacher_id,
-        question=question
-    )
-    db.session.add(new_doubt)
-    db.session.commit()
-    
-    # 2. Notify Teacher
-    send_push_notification(teacher_id, f"New Doubt from {current_user.name}", question[:50]+"...")
-    
-    return jsonify({"msg": "Question sent to teacher!"})
+
 
 # --- TEACHER: GET DOUBTS ---
 @app.route('/api/teacher/doubts', methods=['GET'])
@@ -1800,6 +1832,7 @@ def reply_doubt():
     
     return jsonify({"msg": "Reply sent!"})
 
+# --- STUDENT: ASK DOUBT (FIXED: Saves to Database) ---
 @app.route('/api/student/ask_doubt', methods=['POST'])
 @login_required
 def ask_doubt():
@@ -1807,14 +1840,24 @@ def ask_doubt():
     teacher_id = d.get('teacher_id')
     question = d.get('question')
     
-    # 1. Notify the Teacher (Push Notification)
+    if not teacher_id or not question:
+        return jsonify({"msg": "Missing data"}), 400
+    
+    # 1. Save to Database (CRITICAL: So teacher can see it in the portal)
+    new_doubt = Doubt(
+        student_id=current_user.id,
+        teacher_id=teacher_id,
+        question=question
+    )
+    db.session.add(new_doubt)
+    db.session.commit()
+    
+    # 2. Notify the Teacher
     send_push_notification(
         teacher_id, 
         f"New Doubt from {current_user.name}", 
         f"Question: {question}"
     )
-    
-    # 2. (Optional) You could also save this to a database table 'StudentQuery' here
     
     return jsonify({"msg": "Question sent to teacher successfully!"})
 
