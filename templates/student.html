@@ -34,6 +34,15 @@
             to { transform: translateY(0); opacity: 1; }
         }
         .toast-enter { animation: slideIn 0.3s ease-out forwards; }
+
+        /* FIX: Defined animate-fade to ensure screens are visible */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
     </style>
 </head>
 <body class="h-full bg-gray-50 text-gray-900 font-sans selection:bg-blue-100">
@@ -50,8 +59,6 @@
         </button>
     </header>
 
-
-        
 <main id="main-content" class="flex-1 overflow-y-auto p-6 pb-24 relative">
         
         <div id="view-dashboard" class="view-section animate-fade">
@@ -133,28 +140,28 @@
                     <p class="text-gray-400 text-sm text-center py-4">Loading assignments...</p>
                 </div>
             </div>
+        </div>
 
         <div id="view-faculty" class="view-section hidden animate-fade">
-    
-    <div class="bg-indigo-600 rounded-2xl p-6 text-white shadow-lg shadow-indigo-200 mb-6">
-        <h2 class="text-2xl font-bold mb-1">Ask Your Teacher</h2>
-        <p class="text-indigo-100 font-medium text-sm">Select a teacher to ask a doubt.</p>
-    </div>
-
-    <div id="teacher-list" class="grid grid-cols-2 gap-4 mb-8">
-        <div class="col-span-2 text-center py-10 text-gray-400">Loading faculty...</div>
-    </div>
-
-    <div class="mt-8">
-        <h3 class="font-bold text-gray-800 text-lg mb-4 flex items-center gap-2">
-            <span class="material-symbols-rounded text-indigo-500 bg-indigo-50 p-1.5 rounded-lg">history</span>
-            My Doubt History
-        </h3>
-        <div id="doubt-history-list" class="space-y-4">
-            <p class="text-gray-400 text-sm text-center py-4">Loading history...</p>
+            <div class="bg-indigo-600 rounded-2xl p-6 text-white shadow-lg shadow-indigo-200 mb-6">
+                <h2 class="text-2xl font-bold mb-1">Ask Your Teacher</h2>
+                <p class="text-indigo-100 font-medium text-sm">Select a teacher to ask a doubt.</p>
+            </div>
+        
+            <div id="teacher-list" class="grid grid-cols-2 gap-4 mb-8">
+                <div class="col-span-2 text-center py-10 text-gray-400">Loading faculty...</div>
+            </div>
+        
+            <div class="mt-8">
+                <h3 class="font-bold text-gray-800 text-lg mb-4 flex items-center gap-2">
+                    <span class="material-symbols-rounded text-indigo-500 bg-indigo-50 p-1.5 rounded-lg">history</span>
+                    My Doubt History
+                </h3>
+                <div id="doubt-history-list" class="space-y-4">
+                    <p class="text-gray-400 text-sm text-center py-4">Loading history...</p>
+                </div>
+            </div>
         </div>
-    </div>
-    </div>
 
         <div id="doubt-modal" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4 backdrop-blur-sm">
             <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl animate-fade">
@@ -234,35 +241,35 @@
             <p class="mt-auto text-xs text-gray-300 pt-8 pb-4">CST Institute App v2.1</p>
         </div>
 
-    </main>    
+</main>    
 
-**Save and Refresh.** This code is structured perfectly flat, so no screen will ever hide another screen again. This will fix the UI 100%.
-    <nav class="bg-white border-t border-gray-200 fixed bottom-0 w-full max-w-md pb-safe pt-2 px-6 flex justify-between items-center z-40 h-16 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-        <button onclick="switchView('dashboard')" class="nav-btn flex flex-col items-center justify-center w-full h-full space-y-1 text-blue-600" data-target="dashboard">
-            <span class="material-symbols-rounded text-[26px]">home</span>
-            <span class="text-[10px] font-medium">Home</span>
-        </button>
-        <button onclick="switchView('academics')" class="nav-btn flex flex-col items-center justify-center w-full h-full space-y-1 text-gray-400 hover:text-gray-600" data-target="academics">
-            <span class="material-symbols-rounded text-[26px]">menu_book</span>
-            <span class="text-[10px] font-medium">Learn</span>
-        </button>
-        <button onclick="switchView('results')" class="nav-btn flex flex-col items-center justify-center w-full h-full space-y-1 text-gray-400 hover:text-gray-600" data-target="results">
-            <span class="material-symbols-rounded text-[26px]">assignment</span>
-            <span class="text-[10px] font-medium">Results</span>
-        </button>
-        <button onclick="switchView('attendance')" class="nav-btn flex flex-col items-center justify-center w-full h-full space-y-1 text-gray-400 hover:text-gray-600" data-target="attendance">
-            <span class="material-symbols-rounded text-[26px]">calendar_month</span>
-            <span class="text-[10px] font-medium">Attend</span>
-        </button>
-        <button onclick="switchView('profile')" class="nav-btn flex flex-col items-center justify-center w-full h-full space-y-1 text-gray-400 hover:text-gray-600" data-target="profile">
-            <span class="material-symbols-rounded text-[26px]">person</span>
-            <span class="text-[10px] font-medium">Profile</span>
-        </button>
-<button onclick="switchView('faculty')" class="nav-btn flex flex-col items-center justify-center w-full h-full space-y-1 text-gray-400 hover:text-gray-600" data-target="faculty">
-    <span class="material-symbols-rounded text-[26px]">school</span>
-    <span class="text-[10px] font-medium">Ask Teacher</span>
-</button>
-    </nav>
+<nav class="bg-white border-t border-gray-200 fixed bottom-0 w-full max-w-md pb-safe pt-2 px-6 flex justify-between items-center z-40 h-16 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+    <button onclick="switchView('dashboard')" class="nav-btn flex flex-col items-center justify-center w-full h-full space-y-1 text-blue-600" data-target="dashboard">
+        <span class="material-symbols-rounded text-[26px]">home</span>
+        <span class="text-[10px] font-medium">Home</span>
+    </button>
+    <button onclick="switchView('academics')" class="nav-btn flex flex-col items-center justify-center w-full h-full space-y-1 text-gray-400 hover:text-gray-600" data-target="academics">
+        <span class="material-symbols-rounded text-[26px]">menu_book</span>
+        <span class="text-[10px] font-medium">Learn</span>
+    </button>
+    <button onclick="switchView('results')" class="nav-btn flex flex-col items-center justify-center w-full h-full space-y-1 text-gray-400 hover:text-gray-600" data-target="results">
+        <span class="material-symbols-rounded text-[26px]">assignment</span>
+        <span class="text-[10px] font-medium">Results</span>
+    </button>
+    <button onclick="switchView('attendance')" class="nav-btn flex flex-col items-center justify-center w-full h-full space-y-1 text-gray-400 hover:text-gray-600" data-target="attendance">
+        <span class="material-symbols-rounded text-[26px]">calendar_month</span>
+        <span class="text-[10px] font-medium">Attend</span>
+    </button>
+    <button onclick="switchView('profile')" class="nav-btn flex flex-col items-center justify-center w-full h-full space-y-1 text-gray-400 hover:text-gray-600" data-target="profile">
+        <span class="material-symbols-rounded text-[26px]">person</span>
+        <span class="text-[10px] font-medium">Profile</span>
+    </button>
+    <button onclick="switchView('faculty')" class="nav-btn flex flex-col items-center justify-center w-full h-full space-y-1 text-gray-400 hover:text-gray-600" data-target="faculty">
+        <span class="material-symbols-rounded text-[26px]">school</span>
+        <span class="text-[10px] font-medium">Ask Teacher</span>
+    </button>
+</nav>
+
 </div>
 
 <div id="loading-screen" class="fixed inset-0 bg-blue-600 z-50 flex flex-col items-center justify-center text-white transition-opacity duration-500">
