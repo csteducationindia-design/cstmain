@@ -1718,28 +1718,36 @@ def bulk_upload_users():
         import csv
         from io import TextIOWrapper
         
-        # 1. Handle BOM characters from Excel
+        # 1. Handle Excel BOM (Byte Order Mark)
         csv_file = TextIOWrapper(file, encoding='utf-8-sig')
         reader = csv.DictReader(csv_file)
         
         added_count = 0
+        skipped_count = 0
         
         for row in reader:
+            # Clean basic data
             student_email = row.get('Student_Email', '').strip()
             student_name = row.get('Student_FullName', '').strip()
+            adm_no = row.get('Admission_No', '').strip()
             
-            # Skip empty rows
-            if not student_email or not student_name: continue
+            # A. VALIDATION: Skip empty rows
+            if not student_email or not student_name: 
+                continue
 
-            # Skip existing students
-            if User.query.filter_by(email=student_email).first(): continue 
+            # B. DUPLICATE CHECK: Email OR Admission Number
+            if User.query.filter((User.email == student_email) | (User.admission_number == adm_no)).first():
+                print(f"Skipping {student_name}: Email or Admission No ({adm_no}) already exists.")
+                skipped_count += 1
+                continue 
 
-            # --- PARENT LOGIC ---
+            # C. PARENT HANDLING
             parent_phone = row.get('Parent_Phone', '').strip()
             parent_id = None
             if parent_phone:
                 parent = User.query.filter_by(phone_number=parent_phone, role='parent').first()
                 if not parent:
+                    # Create Parent if not found
                     parent = User(
                         name=row.get('Parent_FullName', 'Parent'),
                         email=row.get('Parent_Email', f"{parent_phone}@cstparent.com"),
@@ -1748,43 +1756,43 @@ def bulk_upload_users():
                         role='parent'
                     )
                     db.session.add(parent)
-                    db.session.flush()
+                    db.session.flush() # Get ID immediately
                 parent_id = parent.id
 
-            # --- BATCH LOGIC ---
+            # D. BATCH LINKING
             batch_name = row.get('Batch_Name', '').strip()
             session_id = None
             if batch_name:
                 sess = AcademicSession.query.filter(AcademicSession.name.ilike(batch_name)).first()
                 if sess: session_id = sess.id
             
-            # --- DATE FIX (DD-MM-YYYY -> YYYY-MM-DD) ---
+            # E. DATE FIX (Convert 20-01-2005 to 2005-01-20)
             raw_dob = row.get('DOB', '').strip()
             final_dob = raw_dob
             try:
-                # If date is like 20-01-2005, convert to 2005-01-20
-                if '-' in raw_dob and len(raw_dob.split('-')[0]) == 2:
+                if '-' in raw_dob:
                     parts = raw_dob.split('-')
-                    final_dob = f"{parts[2]}-{parts[1]}-{parts[0]}"
+                    if len(parts[0]) == 2: # detected DD-MM-YYYY
+                        final_dob = f"{parts[2]}-{parts[1]}-{parts[0]}"
             except:
-                pass # Keep original if format is unexpected
+                pass
 
-            # --- CREATE STUDENT ---
+            # F. CREATE STUDENT
             student = User(
                 name=student_name,
                 email=student_email,
                 phone_number=row.get('Student_Phone', ''),
-                admission_number=row.get('Admission_No', ''),
+                admission_number=adm_no,
                 password=bcrypt.generate_password_hash("123456").decode('utf-8'),
                 role='student',
                 parent_id=parent_id,
                 session_id=session_id,
                 gender=row.get('Gender', ''),
                 address_line1=row.get('Address', ''),
-                dob=final_dob 
+                dob=final_dob
             )
             
-            # --- COURSE ENROLLMENT ---
+            # G. COURSE ENROLLMENT
             course_names_str = row.get('Course_Names', '')
             if course_names_str:
                 for c_name in course_names_str.split(','):
@@ -1797,13 +1805,12 @@ def bulk_upload_users():
             added_count += 1
             
         db.session.commit()
-        return jsonify({"msg": f"Success! Added {added_count} students."}), 200
+        return jsonify({"msg": f"Success! Added: {added_count}, Skipped (Duplicates): {skipped_count}"}), 200
 
     except Exception as e:
         db.session.rollback()
         print(f"BULK UPLOAD ERROR: {str(e)}") 
-        return jsonify({"msg": f"Error: {str(e)}"}), 500
-
+        return jsonify({"msg": f"Server Error: {str(e)}"}), 500
 # --- NEW: STUDENT ASK TEACHER FEATURE ---
 
 @app.route('/api/student/my_teachers', methods=['GET'])
