@@ -1826,16 +1826,23 @@ def teacher_update_photo():
         return jsonify({"msg": "No selected file"}), 400
         
     if file:
-        filename = secure_filename(f"teacher_{current_user.id}_{int(datetime.now().timestamp())}.jpg")
-        # Ensure static/uploads exists
-        save_path = os.path.join(app.root_path, 'static', 'uploads')
-        os.makedirs(save_path, exist_ok=True)
+        # 1. Generate a safe, unique filename (UUID)
+        import uuid
+        ext = os.path.splitext(file.filename)[1]
+        filename = f"teacher_{current_user.id}_{uuid.uuid4().hex}{ext}"
         
+        # 2. Save to the main 'uploads' folder (Same as Admin uploads)
+        save_path = app.config['UPLOAD_FOLDER']
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+            
         file.save(os.path.join(save_path, filename))
         
-        # Save URL to DB
-        current_user.profile_photo_url = url_for('static', filename=f'uploads/{filename}')
+        # 3. Save the correct URL path to Database
+        # This matches your existing @app.route('/uploads/<filename>')
+        current_user.profile_photo_url = f"/uploads/{filename}"
         db.session.commit()
+        
         return jsonify({"msg": "Photo updated!", "url": current_user.profile_photo_url})
 
 
