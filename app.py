@@ -1718,15 +1718,26 @@ def bulk_upload_users():
         import csv
         from io import TextIOWrapper
         
-        # Open CSV file
-        csv_file = TextIOWrapper(file, encoding='utf-8')
+        # FIX 1: Use 'utf-8-sig' to handle Excel's hidden BOM character
+        csv_file = TextIOWrapper(file, encoding='utf-8-sig')
         reader = csv.DictReader(csv_file)
+        
+        # Debug: Print headers to server console to verify keys
+        # print("CSV Headers detected:", reader.fieldnames) 
         
         added_count = 0
         
         for row in reader:
-            # 1. SKIP IF STUDENT EMAIL EXISTS
+            # Clean data
             student_email = row.get('Student_Email', '').strip()
+            student_name = row.get('Student_FullName', '').strip()
+            
+            # FIX 2: Skip rows with missing essential data to prevent crashes
+            if not student_email or not student_name:
+                print(f"Skipping row: Missing Name or Email")
+                continue
+
+            # 1. SKIP IF STUDENT EMAIL EXISTS
             if User.query.filter_by(email=student_email).first():
                 continue 
 
@@ -1759,7 +1770,7 @@ def bulk_upload_users():
             
             # 4. CREATE STUDENT LINKED TO PARENT & BATCH
             student = User(
-                name=row.get('Student_FullName'),
+                name=student_name,
                 email=student_email,
                 phone_number=row.get('Student_Phone', ''),
                 admission_number=row.get('Admission_No', ''),
@@ -1774,14 +1785,16 @@ def bulk_upload_users():
             
             # 5. HANDLE COURSES (Auto-Enroll)
             # Format in CSV: "C++ Programming, Core Java" (Comma separated)
-            course_names = row.get('Course_Names', '').split(',')
-            for c_name in course_names:
-                c_name = c_name.strip()
-                if c_name:
-                    course = Course.query.filter(Course.name.ilike(c_name)).first()
-                    if course:
-                        # FIX: Use 'courses_enrolled' instead of 'courses'
-                        student.courses_enrolled.append(course)
+            course_names_str = row.get('Course_Names', '')
+            if course_names_str:
+                course_names = course_names_str.split(',')
+                for c_name in course_names:
+                    c_name = c_name.strip()
+                    if c_name:
+                        course = Course.query.filter(Course.name.ilike(c_name)).first()
+                        if course:
+                            # FIX: Use 'courses_enrolled' instead of 'courses'
+                            student.courses_enrolled.append(course)
             
             db.session.add(student)
             added_count += 1
@@ -1791,6 +1804,8 @@ def bulk_upload_users():
 
     except Exception as e:
         db.session.rollback()
+        # Print error to console so you can see it in VS Code terminal
+        print(f"BULK UPLOAD ERROR: {str(e)}") 
         return jsonify({"msg": f"Error: {str(e)}"}), 500
 
 # --- NEW: STUDENT ASK TEACHER FEATURE ---
