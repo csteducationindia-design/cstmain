@@ -134,15 +134,27 @@
                 </div>
             </div>
 
-        </div> <div id="view-faculty" class="view-section hidden animate-fade">
-            <div class="bg-indigo-600 rounded-2xl p-6 text-white shadow-lg shadow-indigo-200 mb-6">
-                <h2 class="text-2xl font-bold mb-1">Ask Your Teacher</h2>
-                <p class="text-indigo-100 font-medium text-sm">Select a teacher to ask a doubt.</p>
-            </div>
-            <div id="teacher-list" class="grid grid-cols-2 gap-4">
-                <div class="col-span-2 text-center py-10 text-gray-400">Loading faculty...</div>
-            </div>
+        <div id="view-faculty" class="view-section hidden animate-fade">
+    
+    <div class="bg-indigo-600 rounded-2xl p-6 text-white shadow-lg shadow-indigo-200 mb-6">
+        <h2 class="text-2xl font-bold mb-1">Ask Your Teacher</h2>
+        <p class="text-indigo-100 font-medium text-sm">Select a teacher to ask a doubt.</p>
+    </div>
+
+    <div id="teacher-list" class="grid grid-cols-2 gap-4 mb-8">
+        <div class="col-span-2 text-center py-10 text-gray-400">Loading faculty...</div>
+    </div>
+
+    <div class="mt-8">
+        <h3 class="font-bold text-gray-800 text-lg mb-4 flex items-center gap-2">
+            <span class="material-symbols-rounded text-indigo-500 bg-indigo-50 p-1.5 rounded-lg">history</span>
+            My Doubt History
+        </h3>
+        <div id="doubt-history-list" class="space-y-4">
+            <p class="text-gray-400 text-sm text-center py-4">Loading history...</p>
         </div>
+    </div>
+    </div>
 
         <div id="doubt-modal" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4 backdrop-blur-sm">
             <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl animate-fade">
@@ -459,12 +471,18 @@ async function loadStudentAssignments() {
         } catch(e) { alert("Error sending message"); }
     }
 
-    // Update switchView to handle 'faculty'
+   
+// Update switchView to handle 'faculty'
     const originalSwitchView = window.switchView;
     window.switchView = function(viewId) {
         originalSwitchView(viewId); // Call original
-        if(viewId === 'faculty') fetchTeachers();
-    };
+        
+        if(viewId === 'faculty') {
+            fetchTeachers();
+            fetchDoubtHistory(); // <--- ADD THIS LINE
+        }
+    };    
+
     // --- UI UPDATERS ---
     function updateProfileUI(user) {
         if (!user) return;
@@ -743,6 +761,49 @@ async function loadStudentAssignments() {
         } catch (e) { console.error(e); }
     }
 
+async function fetchDoubtHistory() {
+        const container = document.getElementById('doubt-history-list');
+        if(!container) return;
+        
+        try {
+            const res = await fetch(`${API_BASE_URL}/student/doubts`, { credentials: 'include' });
+            const doubts = await res.json();
+            
+            if (doubts.length === 0) {
+                container.innerHTML = '<div class="text-center py-8 text-gray-400 text-sm bg-white rounded-xl border border-gray-100">No doubts asked yet.</div>';
+                return;
+            }
+            
+            container.innerHTML = doubts.map(d => `
+                <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-[10px] font-bold uppercase tracking-wide text-gray-400">To: ${d.teacher_name} • ${d.date}</span>
+                        <span class="text-[10px] font-bold px-2 py-1 rounded-md ${d.answer ? 'bg-green-50 text-green-600' : 'bg-orange-50 text-orange-600'}">
+                            ${d.status}
+                        </span>
+                    </div>
+                    <p class="font-medium text-gray-800 text-sm mb-3">"${d.question}"</p>
+                    
+                    ${d.answer ? `
+                        <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-100">
+                            <p class="text-[10px] font-bold text-indigo-500 mb-1 flex items-center gap-1">
+                                <span class="material-symbols-rounded text-sm">school</span> Teacher's Reply:
+                            </p>
+                            <p class="text-sm text-gray-700 leading-relaxed">${d.answer}</p>
+                        </div>
+                    ` : `
+                        <p class="text-xs text-orange-400 italic flex items-center gap-1">
+                            <span class="material-symbols-rounded text-sm">hourglass_empty</span> Waiting for reply...
+                        </p>
+                    `}
+                </div>
+            `).join('');
+            
+        } catch(e) { 
+            console.error(e);
+            container.innerHTML = '<p class="text-red-400 text-sm text-center">Failed to load history.</p>'; 
+        }
+    }
     // --- PWA & LOGOUT ---
     function setupPWA() {
         try {

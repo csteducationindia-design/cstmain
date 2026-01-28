@@ -475,6 +475,23 @@ def api_student_dashboard():
         "initial": current_user.name[0].upper() if current_user.name else 'U'
     })
 
+@app.route('/api/student/doubts', methods=['GET'])
+@login_required
+def get_my_doubts():
+    # Fetch all doubts asked by the logged-in student, newest first
+    doubts = Doubt.query.filter_by(student_id=current_user.id).order_by(Doubt.created_at.desc()).all()
+    
+    data = []
+    for d in doubts:
+        data.append({
+            "id": d.id,
+            "teacher_name": d.teacher.name if d.teacher else "Unknown Teacher",
+            "question": d.question,
+            "answer": d.answer,
+            "date": d.created_at.strftime("%d-%b-%Y"),
+            "status": "Resolved" if d.answer else "Pending"
+        })
+    return jsonify(data)
 # =========================================================
 # TEACHER SEND MESSAGE ROUTE (FIXED)
 # =========================================================
