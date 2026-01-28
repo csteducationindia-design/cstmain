@@ -1848,7 +1848,9 @@ def reply_doubt():
     doubt_id = data.get('doubt_id')
     answer_text = data.get('answer')
     
-    doubt = Doubt.query.get(doubt_id)
+    # Corrected query method
+    doubt = db.session.get(Doubt, doubt_id)
+    
     if not doubt or doubt.teacher_id != current_user.id:
         return jsonify({"msg": "Error"}), 403
         

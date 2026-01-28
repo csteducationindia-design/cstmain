@@ -841,8 +841,11 @@
         } catch (error) { console.error("Init Failed:", error); }
     }
 // --- 1. LOAD DOUBTS ---
-    async function loadDoubts() {
+// --- 1. LOAD DOUBTS (Attached to Window) ---
+    window.loadDoubts = async function() {
         const container = document.getElementById('doubts-list');
+        if(!container) return;
+        
         container.innerHTML = '<div class="p-8 text-center text-slate-400">Loading...</div>';
         
         try {
@@ -855,7 +858,7 @@
             }
             
             container.innerHTML = doubts.map(d => `
-                <div class="p-6 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                <div class="p-6 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors border-b border-slate-100 dark:border-slate-700">
                     <div class="flex justify-between items-start mb-2">
                         <h4 class="font-bold text-slate-800 dark:text-white flex items-center gap-2">
                             <span class="material-symbols-outlined text-blue-500 text-sm">person</span>
@@ -873,33 +876,48 @@
                         : 
                         `<div class="flex gap-2 mt-3">
                             <input type="text" id="reply-${d.id}" placeholder="Type your answer here..." class="flex-1 border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                            <button onclick="sendReply(${d.id})" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700">Reply</button>
+                            <button onclick="window.sendReply(${d.id})" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700">Reply</button>
                          </div>`
                     }
                 </div>
             `).join('');
             
         } catch(e) { console.error(e); }
-    }
+    };
 
-    // --- 2. SEND REPLY ---
-    async function sendReply(doubtId) {
+    // --- 2. SEND REPLY (Attached to Window) ---
+    window.sendReply = async function(doubtId) {
         const input = document.getElementById(`reply-${doubtId}`);
         const answer = input.value;
         if(!answer) return alert("Please type an answer.");
         
+        const btn = input.nextElementSibling;
+        const originalText = btn.innerText;
+        btn.innerText = "Sending...";
+        btn.disabled = true;
+
         try {
-            await fetch(`${API_BASE_URL}/teacher/reply_doubt`, {
+            const res = await fetch(`${API_BASE_URL}/teacher/reply_doubt`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 credentials: 'include',
                 body: JSON.stringify({ doubt_id: doubtId, answer: answer })
             });
-            alert("Reply sent!");
-            loadDoubts(); // Refresh list
-        } catch(e) { alert("Error sending reply"); }
-    }
-
+            
+            if(res.ok) {
+                alert("Reply sent successfully!");
+                loadDoubts(); // Refresh list
+            } else {
+                alert("Failed to send reply.");
+            }
+        } catch(e) { 
+            alert("Error sending reply"); 
+            console.error(e);
+        } finally {
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }
+    };   
     // --- 3. UPLOAD PHOTO ---
     async function uploadProfilePhoto(input) {
         if (!input.files || !input.files[0]) return;
