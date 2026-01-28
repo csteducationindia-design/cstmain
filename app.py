@@ -1708,6 +1708,8 @@ def initialize_database():
 # --- REPLACEMENT FOR BULK UPLOAD FUNCTION ---
 # Locate the 'bulk_upload_users' function in app.py and replace it with this:
 
+# --- REPLACE YOUR EXISTING bulk_upload_users FUNCTION WITH THIS ---
+
 @app.route('/api/bulk_upload', methods=['POST'])
 @login_required
 def bulk_upload_users():
@@ -1720,7 +1722,7 @@ def bulk_upload_users():
         import csv
         from io import TextIOWrapper
         
-        # 1. Handle special characters (BOM) from Excel files
+        # 1. Handle Excel BOM signature (utf-8-sig)
         csv_file = TextIOWrapper(file, encoding='utf-8-sig')
         reader = csv.DictReader(csv_file)
         
@@ -1728,42 +1730,38 @@ def bulk_upload_users():
         skipped_count = 0
         
         for row in reader:
-            # Get Basic Data
+            # Extract Data
             student_email = row.get('Student_Email', '').strip()
             student_name = row.get('Student_FullName', '').strip()
             adm_no = row.get('Admission_No', '').strip()
             
-            # --- CRITICAL FIXES START ---
-            
-            # 2. Skip Empty Rows
+            # CHECK 1: Skip rows with missing name/email
             if not student_email or not student_name: 
                 continue
 
-            # 3. PREVENT CRASH: Check if Email OR Admission Number already exists
+            # CHECK 2: PREVENT CRASH - Check if Email OR Admission No exists
             existing_user = User.query.filter(
                 (User.email == student_email) | 
                 (User.admission_number == adm_no)
             ).first()
             
             if existing_user:
-                print(f"Skipping {student_name}: User already exists.")
+                print(f"Skipping {student_name}: Duplicate Email or Admission No ({adm_no})")
                 skipped_count += 1
                 continue 
 
-            # 4. DATE FIX: Convert DD-MM-YYYY (20-01-2005) -> YYYY-MM-DD (2005-01-20)
+            # CHECK 3: Date Format Fix (20-01-2005 -> 2005-01-20)
             raw_dob = row.get('DOB', '').strip()
             final_dob = raw_dob
             try:
                 if '-' in raw_dob:
                     parts = raw_dob.split('-')
-                    if len(parts[0]) == 2: # Detects DD at start
+                    if len(parts[0]) == 2: # detected DD-MM-YYYY
                         final_dob = f"{parts[2]}-{parts[1]}-{parts[0]}"
             except:
-                pass # If format is wrong, save as is
-            
-            # --- CRITICAL FIXES END ---
+                pass
 
-            # 5. Handle Parent (Create or Link)
+            # Logic: Handle Parent (Create or Link)
             parent_phone = row.get('Parent_Phone', '').strip()
             parent_id = None
             if parent_phone:
@@ -1780,14 +1778,14 @@ def bulk_upload_users():
                     db.session.flush()
                 parent_id = parent.id
 
-            # 6. Handle Batch/Session
+            # Logic: Handle Batch
             batch_name = row.get('Batch_Name', '').strip()
             session_id = None
             if batch_name:
                 sess = AcademicSession.query.filter(AcademicSession.name.ilike(batch_name)).first()
                 if sess: session_id = sess.id
             
-            # 7. Create Student
+            # Create Student
             student = User(
                 name=student_name,
                 email=student_email,
@@ -1802,7 +1800,7 @@ def bulk_upload_users():
                 dob=final_dob
             )
             
-            # 8. Enroll in Courses
+            # Enroll Courses
             course_names_str = row.get('Course_Names', '')
             if course_names_str:
                 for c_name in course_names_str.split(','):
@@ -1821,6 +1819,8 @@ def bulk_upload_users():
         db.session.rollback()
         print(f"BULK UPLOAD ERROR: {str(e)}") 
         return jsonify({"msg": f"Server Error: {str(e)}"}), 500
+
+
 # --- NEW: STUDENT ASK TEACHER FEATURE ---
 
 @app.route('/api/student/my_teachers', methods=['GET'])
