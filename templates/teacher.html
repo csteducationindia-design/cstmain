@@ -760,15 +760,12 @@
             const hash = window.location.hash || '#dashboard';
             showSection(hash);
             
-            // Ensure core data is loaded first
             if(allTeacherCourses.length === 0) await fetchTeacherCourses();
             
-            // Populate dropdowns if we are on a relevant page
             if(['#attendance', '#syllabus', '#assignments', '#notes', '#reports'].includes(hash)) {
                 populateDropdowns();
             }
             
-            // Load specific data based on view
             switch (hash) {
                 case '#dashboard':
                     fetchDashboardData();
@@ -780,18 +777,23 @@
                     if(allTeacherStudents.length === 0) await fetchAllTeacherStudents();
                     break;
                 case '#announcements':
-		    fetchTeacherAnnouncements(); // Custom function to load history
-		    break;
-		case '#notes':
+                    fetchTeacherAnnouncements(); 
+                    break;
+                case '#notes':
                     fetchTeacherNotes();
                     break;
                 case '#reports':
                     if(allTeacherStudents.length === 0) await fetchAllTeacherStudents(); 
                     fetchTeacherAttendanceReport();
                     break;
+                
+                // --- ADD THIS BLOCK HERE ---
+                case '#doubts':
+                    loadDoubts(); 
+                    break;
+                // ---------------------------
             }
         }
-
         window.addEventListener('hashchange', loadContent);
 
         // --- AUTH & SESSION CHECK ---
@@ -807,13 +809,29 @@
                 return;
             }
             
-            // WELCOME MESSAGE
+            // --- 1. WELCOME MESSAGE ---
             document.getElementById('welcome-message').textContent = `Welcome back, ${result.user.name}.`;
             
-            // LOAD DATA (Now fetching Sessions too)
+            // --- 2. UPDATE PROFILE SECTION (NEW CODE) ---
+            const profileName = document.getElementById('my-name-display');
+            const profilePhoto = document.getElementById('my-photo-preview');
+            
+            if(profileName) profileName.textContent = result.user.name;
+            
+            if(profilePhoto) {
+                if(result.user.profile_photo_url) {
+                    // Use uploaded photo
+                    profilePhoto.src = result.user.profile_photo_url; 
+                } else {
+                    // Use Placeholder if no photo exists
+                    profilePhoto.src = `https://ui-avatars.com/api/?name=${result.user.name}&background=random&size=128`;
+                }
+            }
+
+            // --- 3. LOAD DATA ---
             await Promise.all([
                 fetchTeacherCourses(),
-                fetchSessions() // <--- NEW FUNCTION CALL
+                fetchSessions() 
             ]);
             
             populateDropdowns();
