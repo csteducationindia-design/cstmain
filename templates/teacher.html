@@ -919,11 +919,17 @@
         }
     };   
     // --- 3. UPLOAD PHOTO ---
-    async function uploadProfilePhoto(input) {
+// --- 3. UPLOAD PHOTO (Attached to Window) ---
+    window.uploadProfilePhoto = async function(input) {
         if (!input.files || !input.files[0]) return;
         
         const fd = new FormData();
         fd.append('photo', input.files[0]);
+        
+        // Show loading state
+        const parentLabel = input.parentElement;
+        const originalText = parentLabel.innerHTML;
+        parentLabel.innerHTML = '<span class="material-symbols-outlined animate-spin">refresh</span> Uploading...';
         
         try {
             const res = await fetch(`${API_BASE_URL}/teacher/update_photo`, {
@@ -932,15 +938,38 @@
                 body: fd
             });
             const data = await res.json();
+            
             if(res.ok) {
-                alert("Profile Photo Updated!");
-                document.getElementById('my-photo-preview').src = data.url; // Update preview
-            } else {
-                alert("Upload failed");
-            }
-        } catch(e) { alert("Error uploading photo"); }
-    }
+                // Force reload image with timestamp to bypass browser cache
+                const timestamp = new Date().getTime();
+                const newUrl = `${data.url}?t=${timestamp}`;
+                
+                const preview = document.getElementById('my-photo-preview');
+                if(preview) preview.src = newUrl;
+                
+                // Also update the small avatar in sidebar if exists
+                const sideAvatar = document.querySelector('.w-10.h-10.bg-primary');
+                if(sideAvatar) sideAvatar.innerHTML = `<img src="${newUrl}" class="w-full h-full rounded-xl object-cover">`;
 
+                alert("Profile Photo Updated Successfully!");
+            } else {
+                alert("Upload failed: " + (data.msg || "Unknown error"));
+            }
+        } catch(e) { 
+            console.error(e);
+            alert("Error uploading photo. Please check your connection."); 
+        } finally {
+            // Restore button
+            if(parentLabel.innerHTML.includes('Uploading')) {
+                 // Re-render label content if needed, or simply reload the page content
+                 parentLabel.innerHTML = `
+                    <span class="material-symbols-outlined">cloud_upload</span>
+                    <span>Choose New Photo</span>
+                    <input type="file" id="profile-upload-input" accept="image/*" class="hidden" onchange="window.uploadProfilePhoto(this)">
+                 `;
+            }
+        }
+    };    
     // UPDATE SWITCH VIEW TO LOAD DOUBTS
     // Find your existing switchSection or showSection function and add:
     // if (id === 'doubts') loadDoubts();
