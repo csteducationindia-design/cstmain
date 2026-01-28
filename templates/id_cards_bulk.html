@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Bulk ID Cards (Vertical)</title>
+    <title>Bulk ID Cards (Vertical 55x86mm)</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     
     <style>
@@ -20,7 +20,7 @@
             width: 210mm;
             min-height: 297mm;
             background: white;
-            padding: 10mm; /* Printer safety margin */
+            padding: 10mm;
             box-sizing: border-box;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             margin-bottom: 20px;
@@ -29,15 +29,15 @@
             grid-template-rows: repeat(3, 1fr);
             gap: 5mm; 
             page-break-after: always;
-            justify-items: center; /* Center cards in grid cells */
+            justify-items: center;
         }
 
-        /* --- ID CARD DIMENSIONS (55mm x 86mm) --- */
+        /* --- ID CARD (55mm x 86mm) --- */
         .id-card {
             width: 55mm;   
             height: 86mm; 
-            border: 1px solid #d1d5db; /* Light grey border for cutting guide */
-            border-radius: 4px;        /* Slightly rounded corners */
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
             background: white;
             overflow: hidden;
             position: relative;
@@ -46,59 +46,62 @@
             box-sizing: border-box;
         }
 
-        /* Top Blue Banner */
-        .top-banner {
-            height: 14mm;
+        /* Header (Blue Bar) */
+        .header-bar {
             background-color: #1173d4;
-            width: 100%;
+            color: white;
+            height: 7mm;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            flex-shrink: 0;
-            color: white;
-            padding: 2px 0;
-        }
-
-        .institute-name {
-            font-size: 10px;
+            font-size: 9px;
             font-weight: 800;
+            letter-spacing: 1px;
             text-transform: uppercase;
-            line-height: 1;
-            margin-bottom: 1px;
-        }
-        
-        .institute-sub {
-            font-size: 5px;
-            font-weight: 400;
-            letter-spacing: 0.5px;
-            opacity: 0.9;
+            flex-shrink: 0;
         }
 
-        /* Card Content */
+        /* Content Area */
         .card-body {
             flex: 1;
-            padding: 3mm;
+            padding: 2mm 3mm;
             display: flex;
             flex-direction: column;
             align-items: center;
             text-align: center;
         }
 
-        /* Photo Box */
-        .photo-container {
-            width: 26mm;
-            height: 32mm;
-            border: 1px solid #1173d4;
-            background: #f3f4f6;
-            margin-bottom: 3mm;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            border-radius: 2px;
+        /* Logo Area */
+        .institute-logo {
+            width: 8mm;
+            height: 8mm;
+            object-fit: contain;
+            margin-bottom: 1px;
         }
-        .photo-container img {
+        .institute-name {
+            font-size: 10px;
+            font-weight: 800;
+            color: #000;
+            text-transform: uppercase;
+            line-height: 1;
+        }
+        .institute-sub {
+            font-size: 5px;
+            color: #666;
+            margin-bottom: 2mm;
+        }
+
+        /* Student Photo */
+        .photo-box {
+            width: 22mm;
+            height: 26mm;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            margin-bottom: 2mm;
+            overflow: hidden;
+            background: #f9fafb;
+        }
+        .photo-box img {
             width: 100%;
             height: 100%;
             object-fit: cover;
@@ -106,92 +109,69 @@
 
         /* Student Details */
         .student-name {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 800;
-            color: #111827;
+            color: #1173d4; /* Blue color from sample */
             text-transform: uppercase;
+            margin-bottom: 2mm;
             line-height: 1.1;
-            margin-bottom: 1px;
             width: 100%;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
 
-        .course-name {
-            font-size: 8px;
-            color: #1173d4;
-            font-weight: 700;
-            margin-bottom: 3mm;
-            text-transform: uppercase;
-        }
-
-        /* Data Grid */
-        .info-grid {
+        .details-table {
             width: 100%;
-            text-align: left;
-        }
-        
-        .info-row {
-            display: flex;
             font-size: 7px;
-            margin-bottom: 1.5px;
-            color: #374151;
-            border-bottom: 0.5px dashed #e5e7eb;
-            padding-bottom: 1px;
+            color: #000;
+            text-align: left;
+            margin-bottom: 2mm;
+            line-height: 1.3;
         }
-        
-        .info-label {
+        .details-table td {
+            padding: 0 1px;
+            vertical-align: top;
+        }
+        .label {
             font-weight: 700;
-            width: 14mm;
-            color: #6b7280;
-            flex-shrink: 0;
+            width: 12mm;
+            color: #333;
         }
-        
-        .info-val {
+        .val {
             font-weight: 600;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
 
-        /* Footer / Signature */
-        .card-footer {
-            margin-top: auto;
+        /* QR Code */
+        .qr-container {
+            width: 14mm;
+            height: 14mm;
+            margin-bottom: 1mm;
+        }
+        .qr-img {
             width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        /* Footer */
+        .signature-area {
+            margin-top: auto;
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding-top: 2px;
         }
-        
         .sign-img {
-            height: 8mm;
+            height: 6mm;
             object-fit: contain;
-            display: block;
         }
-        
         .sign-text {
             font-size: 5px;
-            color: #9ca3af;
+            color: #666;
             font-weight: 600;
-            text-transform: uppercase;
-            margin-top: 1px;
         }
 
-        /* Print Settings */
         @media print {
             body { background: white; padding: 0; margin: 0; }
-            .a4-page { 
-                margin: 0; 
-                padding: 10mm;
-                box-shadow: none; 
-                width: 210mm;
-                height: 297mm;
-                page-break-after: always;
-            }
             .no-print { display: none !important; }
-            /* Essential for background colors */
+            .a4-page { margin: 0; padding: 10mm; box-shadow: none; page-break-after: always; }
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
         }
     </style>
@@ -199,7 +179,7 @@
 <body>
 
     <div class="no-print" style="position: fixed; top: 20px; right: 20px; z-index: 100;">
-        <button onclick="window.print()" style="background: #2563eb; color: white; padding: 12px 24px; cursor: pointer; font-size: 16px; border: none; border-radius: 8px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <button onclick="window.print()" style="background: #2563eb; color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
             Print ID Cards
         </button>
     </div>
@@ -209,43 +189,47 @@
         {% for student in batch %}
         <div class="id-card">
             
-            <div class="top-banner">
-                <div class="institute-name">CST INSTITUTE</div>
-                <div class="institute-sub">EXCELLENCE IN EDUCATION</div>
-            </div>
+            <div class="header-bar">STUDENT</div>
 
             <div class="card-body">
-                
-                <div class="photo-container">
+                <div class="institute-name">CST INSTITUTE</div>
+                <div class="institute-sub">Excellence in Education</div>
+
+                <div class="photo-box">
                     {% if student.profile_photo_url %}
-                        <img src="{{ student.profile_photo_url }}" alt="Student Photo">
+                        <img src="{{ student.profile_photo_url }}" alt="Photo">
                     {% else %}
-                        <span style="color:#999; font-size:8px; font-weight:bold;">PHOTO</span>
+                        <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#ccc; font-size:8px;">NO PHOTO</div>
                     {% endif %}
                 </div>
 
                 <div class="student-name">{{ student.name }}</div>
-                <div class="course-name">
-                    {{ student.courses_enrolled[0].name if student.courses_enrolled else 'STUDENT' }}
+
+                <table class="details-table">
+                    <tr>
+                        <td class="label">ID:</td>
+                        <td class="val">{{ student.admission_number or '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Course:</td>
+                        <td class="val">{{ student.courses_enrolled[0].name if student.courses_enrolled else '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Phone:</td>
+                        <td class="val">{{ student.phone_number or '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">DOB:</td>
+                        <td class="val">{{ student.dob or '-' }}</td>
+                    </tr>
+                </table>
+
+                <div class="qr-container">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data={{ student.admission_number }}" class="qr-img" alt="QR">
                 </div>
 
-                <div class="info-grid">
-                    <div class="info-row">
-                        <span class="info-label">ID NO:</span>
-                        <span class="info-val">{{ student.admission_number or '-' }}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">DOB:</span>
-                        <span class="info-val">{{ student.dob or '-' }}</span>
-                    </div>
-                    <div class="info-row" style="border:none;">
-                        <span class="info-label">PHONE:</span>
-                        <span class="info-val">{{ student.phone_number or '-' }}</span>
-                    </div>
-                </div>
-
-                <div class="card-footer">
-                    <img src="{{ url_for('static', filename='signature_director.png') }}" class="sign-img" alt="Signature">
+                <div class="signature-area">
+                    <img src="{{ url_for('static', filename='signature_director.png') }}" class="sign-img" alt="Sign">
                     <div class="sign-text">Authorized Signatory</div>
                 </div>
 
