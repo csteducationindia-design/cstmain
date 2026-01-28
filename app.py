@@ -1706,6 +1706,8 @@ def initialize_database():
         init_firebase()
 
 # --- REPLACEMENT FOR BULK UPLOAD FUNCTION ---
+# Locate the 'bulk_upload_users' function in app.py and replace it with this:
+
 @app.route('/api/bulk_upload', methods=['POST'])
 @login_required
 def bulk_upload_users():
@@ -1718,7 +1720,7 @@ def bulk_upload_users():
         import csv
         from io import TextIOWrapper
         
-        # 1. Handle Excel BOM (Byte Order Mark)
+        # 1. Handle special characters (BOM) from Excel files
         csv_file = TextIOWrapper(file, encoding='utf-8-sig')
         reader = csv.DictReader(csv_file)
         
@@ -1726,28 +1728,47 @@ def bulk_upload_users():
         skipped_count = 0
         
         for row in reader:
-            # Clean basic data
+            # Get Basic Data
             student_email = row.get('Student_Email', '').strip()
             student_name = row.get('Student_FullName', '').strip()
             adm_no = row.get('Admission_No', '').strip()
             
-            # A. VALIDATION: Skip empty rows
+            # --- CRITICAL FIXES START ---
+            
+            # 2. Skip Empty Rows
             if not student_email or not student_name: 
                 continue
 
-            # B. DUPLICATE CHECK: Email OR Admission Number
-            if User.query.filter((User.email == student_email) | (User.admission_number == adm_no)).first():
-                print(f"Skipping {student_name}: Email or Admission No ({adm_no}) already exists.")
+            # 3. PREVENT CRASH: Check if Email OR Admission Number already exists
+            existing_user = User.query.filter(
+                (User.email == student_email) | 
+                (User.admission_number == adm_no)
+            ).first()
+            
+            if existing_user:
+                print(f"Skipping {student_name}: User already exists.")
                 skipped_count += 1
                 continue 
 
-            # C. PARENT HANDLING
+            # 4. DATE FIX: Convert DD-MM-YYYY (20-01-2005) -> YYYY-MM-DD (2005-01-20)
+            raw_dob = row.get('DOB', '').strip()
+            final_dob = raw_dob
+            try:
+                if '-' in raw_dob:
+                    parts = raw_dob.split('-')
+                    if len(parts[0]) == 2: # Detects DD at start
+                        final_dob = f"{parts[2]}-{parts[1]}-{parts[0]}"
+            except:
+                pass # If format is wrong, save as is
+            
+            # --- CRITICAL FIXES END ---
+
+            # 5. Handle Parent (Create or Link)
             parent_phone = row.get('Parent_Phone', '').strip()
             parent_id = None
             if parent_phone:
                 parent = User.query.filter_by(phone_number=parent_phone, role='parent').first()
                 if not parent:
-                    # Create Parent if not found
                     parent = User(
                         name=row.get('Parent_FullName', 'Parent'),
                         email=row.get('Parent_Email', f"{parent_phone}@cstparent.com"),
@@ -1756,28 +1777,17 @@ def bulk_upload_users():
                         role='parent'
                     )
                     db.session.add(parent)
-                    db.session.flush() # Get ID immediately
+                    db.session.flush()
                 parent_id = parent.id
 
-            # D. BATCH LINKING
+            # 6. Handle Batch/Session
             batch_name = row.get('Batch_Name', '').strip()
             session_id = None
             if batch_name:
                 sess = AcademicSession.query.filter(AcademicSession.name.ilike(batch_name)).first()
                 if sess: session_id = sess.id
             
-            # E. DATE FIX (Convert 20-01-2005 to 2005-01-20)
-            raw_dob = row.get('DOB', '').strip()
-            final_dob = raw_dob
-            try:
-                if '-' in raw_dob:
-                    parts = raw_dob.split('-')
-                    if len(parts[0]) == 2: # detected DD-MM-YYYY
-                        final_dob = f"{parts[2]}-{parts[1]}-{parts[0]}"
-            except:
-                pass
-
-            # F. CREATE STUDENT
+            # 7. Create Student
             student = User(
                 name=student_name,
                 email=student_email,
@@ -1792,7 +1802,7 @@ def bulk_upload_users():
                 dob=final_dob
             )
             
-            # G. COURSE ENROLLMENT
+            # 8. Enroll in Courses
             course_names_str = row.get('Course_Names', '')
             if course_names_str:
                 for c_name in course_names_str.split(','):
@@ -1805,7 +1815,7 @@ def bulk_upload_users():
             added_count += 1
             
         db.session.commit()
-        return jsonify({"msg": f"Success! Added: {added_count}, Skipped (Duplicates): {skipped_count}"}), 200
+        return jsonify({"msg": f"Upload Complete! Added: {added_count}, Skipped (Duplicates): {skipped_count}"}), 200
 
     except Exception as e:
         db.session.rollback()
