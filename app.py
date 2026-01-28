@@ -1718,57 +1718,58 @@ def bulk_upload_users():
         import csv
         from io import TextIOWrapper
         
-        # FIX 1: Use 'utf-8-sig' to handle Excel's hidden BOM character
+        # 1. Handle BOM characters from Excel
         csv_file = TextIOWrapper(file, encoding='utf-8-sig')
         reader = csv.DictReader(csv_file)
-        
-        # Debug: Print headers to server console to verify keys
-        # print("CSV Headers detected:", reader.fieldnames) 
         
         added_count = 0
         
         for row in reader:
-            # Clean data
             student_email = row.get('Student_Email', '').strip()
             student_name = row.get('Student_FullName', '').strip()
             
-            # FIX 2: Skip rows with missing essential data to prevent crashes
-            if not student_email or not student_name:
-                print(f"Skipping row: Missing Name or Email")
-                continue
+            # Skip empty rows
+            if not student_email or not student_name: continue
 
-            # 1. SKIP IF STUDENT EMAIL EXISTS
-            if User.query.filter_by(email=student_email).first():
-                continue 
+            # Skip existing students
+            if User.query.filter_by(email=student_email).first(): continue 
 
-            # 2. HANDLE PARENT (Auto-Create or Link)
+            # --- PARENT LOGIC ---
             parent_phone = row.get('Parent_Phone', '').strip()
             parent_id = None
-            
             if parent_phone:
-                # Check if parent exists
                 parent = User.query.filter_by(phone_number=parent_phone, role='parent').first()
                 if not parent:
-                    # Create New Parent automatically
                     parent = User(
                         name=row.get('Parent_FullName', 'Parent'),
-                        email=row.get('Parent_Email', f"{parent_phone}@cstparent.com"), # Dummy email if missing
+                        email=row.get('Parent_Email', f"{parent_phone}@cstparent.com"),
                         phone_number=parent_phone,
                         password=bcrypt.generate_password_hash("123456").decode('utf-8'),
                         role='parent'
                     )
                     db.session.add(parent)
-                    db.session.flush() # Generate ID immediately
+                    db.session.flush()
                 parent_id = parent.id
 
-            # 3. HANDLE BATCH / SESSION
+            # --- BATCH LOGIC ---
             batch_name = row.get('Batch_Name', '').strip()
             session_id = None
             if batch_name:
                 sess = AcademicSession.query.filter(AcademicSession.name.ilike(batch_name)).first()
                 if sess: session_id = sess.id
             
-            # 4. CREATE STUDENT LINKED TO PARENT & BATCH
+            # --- DATE FIX (DD-MM-YYYY -> YYYY-MM-DD) ---
+            raw_dob = row.get('DOB', '').strip()
+            final_dob = raw_dob
+            try:
+                # If date is like 20-01-2005, convert to 2005-01-20
+                if '-' in raw_dob and len(raw_dob.split('-')[0]) == 2:
+                    parts = raw_dob.split('-')
+                    final_dob = f"{parts[2]}-{parts[1]}-{parts[0]}"
+            except:
+                pass # Keep original if format is unexpected
+
+            # --- CREATE STUDENT ---
             student = User(
                 name=student_name,
                 email=student_email,
@@ -1776,35 +1777,30 @@ def bulk_upload_users():
                 admission_number=row.get('Admission_No', ''),
                 password=bcrypt.generate_password_hash("123456").decode('utf-8'),
                 role='student',
-                parent_id=parent_id,    # Linked!
-                session_id=session_id,  # Linked!
+                parent_id=parent_id,
+                session_id=session_id,
                 gender=row.get('Gender', ''),
                 address_line1=row.get('Address', ''),
-                dob=row.get('DOB', '')  # Must be YYYY-MM-DD
+                dob=final_dob 
             )
             
-            # 5. HANDLE COURSES (Auto-Enroll)
-            # Format in CSV: "C++ Programming, Core Java" (Comma separated)
+            # --- COURSE ENROLLMENT ---
             course_names_str = row.get('Course_Names', '')
             if course_names_str:
-                course_names = course_names_str.split(',')
-                for c_name in course_names:
+                for c_name in course_names_str.split(','):
                     c_name = c_name.strip()
                     if c_name:
                         course = Course.query.filter(Course.name.ilike(c_name)).first()
-                        if course:
-                            # FIX: Use 'courses_enrolled' instead of 'courses'
-                            student.courses_enrolled.append(course)
+                        if course: student.courses_enrolled.append(course)
             
             db.session.add(student)
             added_count += 1
             
         db.session.commit()
-        return jsonify({"msg": f"Success! Added {added_count} students and linked their parents."}), 200
+        return jsonify({"msg": f"Success! Added {added_count} students."}), 200
 
     except Exception as e:
         db.session.rollback()
-        # Print error to console so you can see it in VS Code terminal
         print(f"BULK UPLOAD ERROR: {str(e)}") 
         return jsonify({"msg": f"Error: {str(e)}"}), 500
 
