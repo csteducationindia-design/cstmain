@@ -507,6 +507,22 @@ def get_my_doubts():
             "status": "Resolved" if d.answer else "Pending"
         })
     return jsonify(data)
+
+# --- ADD THIS TO app.py ---
+
+@app.route('/api/parent/child_info', methods=['GET'])
+@login_required
+def get_parent_child_info():
+    if current_user.role != 'parent': 
+        return jsonify({"msg": "Denied"}), 403
+        
+    # Fetch the linked child
+    child = User.query.filter_by(parent_id=current_user.id).first()
+    
+    if not child: 
+        return jsonify(None) # No child linked yet
+        
+    return jsonify(child.to_dict())
 # =========================================================
 # TEACHER SEND MESSAGE ROUTE (FIXED)
 # =========================================================
