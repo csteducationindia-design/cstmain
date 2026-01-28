@@ -385,11 +385,26 @@ def serve_login_page():
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.json
-    u = User.query.filter_by(email=data.get('email')).first()
-    if u and bcrypt.check_password_hash(u.password, data.get('password')):
+    # Frontend sends the input in the 'email' field
+    login_input = data.get('email', '').strip() 
+    password = data.get('password')
+
+    if not login_input:
+        return jsonify({"message": "Please enter User ID or Email"}), 400
+
+    # Search User by Email OR Admission Number OR Phone
+    # This works even if Admission Number is just "101"
+    u = User.query.filter(
+        (User.email == login_input) | 
+        (User.admission_number == login_input) | 
+        (User.phone_number == login_input)
+    ).first()
+
+    if u and bcrypt.check_password_hash(u.password, password):
         login_user(u, remember=True)
         return jsonify({"message": "OK", "user": u.to_dict()})
-    return jsonify({"message": "Invalid credentials"}), 401
+    
+    return jsonify({"message": "Invalid User ID or Password"}), 401
 
 @app.route('/api/logout', methods=['POST'])
 @login_required
@@ -1705,8 +1720,6 @@ def initialize_database():
         check_and_upgrade_db()
         init_firebase()
 
-# --- REPLACEMENT FOR BULK UPLOAD FUNCTION ---
-# Locate the 'bulk_upload_users' function in app.py and replace it with this:
 
 # --- REPLACE YOUR EXISTING bulk_upload_users FUNCTION WITH THIS ---
 
@@ -1722,7 +1735,6 @@ def bulk_upload_users():
         import csv
         from io import TextIOWrapper
         
-        # 1. Handle Excel BOM signature (utf-8-sig)
         csv_file = TextIOWrapper(file, encoding='utf-8-sig')
         reader = csv.DictReader(csv_file)
         
@@ -1730,46 +1742,58 @@ def bulk_upload_users():
         skipped_count = 0
         
         for row in reader:
-            # Extract Data
-            student_email = row.get('Student_Email', '').strip()
+            # 1. Get Essential Data
             student_name = row.get('Student_FullName', '').strip()
-            adm_no = row.get('Admission_No', '').strip()
+            raw_adm_no = row.get('Admission_No', '').strip()
             
-            # CHECK 1: Skip rows with missing name/email
-            if not student_email or not student_name: 
+            # --- NUMERIC FIX: Remove .0 if Excel adds it (e.g. 101.0 -> 101) ---
+            if raw_adm_no.endswith('.0'):
+                adm_no = raw_adm_no[:-2]
+            else:
+                adm_no = raw_adm_no
+            
+            # REQUIRE ADMISSION NO
+            if not adm_no or not student_name: 
                 continue
 
-            # CHECK 2: PREVENT CRASH - Check if Email OR Admission No exists
+            # 2. HANDLE EMAIL (Optional)
+            student_email = row.get('Student_Email', '').strip()
+            if not student_email:
+                # Auto-generate dummy email: 101@school.com
+                student_email = f"{adm_no}@school.com"
+
+            # 3. DUPLICATE CHECK
             existing_user = User.query.filter(
-                (User.email == student_email) | 
-                (User.admission_number == adm_no)
+                (User.admission_number == adm_no) | 
+                (User.email == student_email)
             ).first()
             
             if existing_user:
-                print(f"Skipping {student_name}: Duplicate Email or Admission No ({adm_no})")
+                print(f"Skipping {student_name}: ID {adm_no} exists.")
                 skipped_count += 1
                 continue 
 
-            # CHECK 3: Date Format Fix (20-01-2005 -> 2005-01-20)
+            # 4. DATE FIX
             raw_dob = row.get('DOB', '').strip()
             final_dob = raw_dob
             try:
-                if '-' in raw_dob:
+                if '-' in raw_dob and len(raw_dob.split('-')[0]) == 2:
                     parts = raw_dob.split('-')
-                    if len(parts[0]) == 2: # detected DD-MM-YYYY
-                        final_dob = f"{parts[2]}-{parts[1]}-{parts[0]}"
-            except:
-                pass
+                    final_dob = f"{parts[2]}-{parts[1]}-{parts[0]}"
+            except: pass
 
-            # Logic: Handle Parent (Create or Link)
+            # 5. PARENT LOGIC
             parent_phone = row.get('Parent_Phone', '').strip()
             parent_id = None
             if parent_phone:
+                # Clean parent phone too just in case
+                if parent_phone.endswith('.0'): parent_phone = parent_phone[:-2]
+                
                 parent = User.query.filter_by(phone_number=parent_phone, role='parent').first()
                 if not parent:
                     parent = User(
                         name=row.get('Parent_FullName', 'Parent'),
-                        email=row.get('Parent_Email', f"{parent_phone}@cstparent.com"),
+                        email=f"{parent_phone}@cstparent.com", 
                         phone_number=parent_phone,
                         password=bcrypt.generate_password_hash("123456").decode('utf-8'),
                         role='parent'
@@ -1778,14 +1802,14 @@ def bulk_upload_users():
                     db.session.flush()
                 parent_id = parent.id
 
-            # Logic: Handle Batch
+            # 6. BATCH LOGIC
             batch_name = row.get('Batch_Name', '').strip()
             session_id = None
             if batch_name:
                 sess = AcademicSession.query.filter(AcademicSession.name.ilike(batch_name)).first()
                 if sess: session_id = sess.id
             
-            # Create Student
+            # 7. CREATE STUDENT
             student = User(
                 name=student_name,
                 email=student_email,
@@ -1800,7 +1824,7 @@ def bulk_upload_users():
                 dob=final_dob
             )
             
-            # Enroll Courses
+            # 8. COURSES
             course_names_str = row.get('Course_Names', '')
             if course_names_str:
                 for c_name in course_names_str.split(','):
@@ -1813,11 +1837,11 @@ def bulk_upload_users():
             added_count += 1
             
         db.session.commit()
-        return jsonify({"msg": f"Upload Complete! Added: {added_count}, Skipped (Duplicates): {skipped_count}"}), 200
+        return jsonify({"msg": f"Done! Added: {added_count}, Skipped: {skipped_count}"}), 200
 
     except Exception as e:
         db.session.rollback()
-        print(f"BULK UPLOAD ERROR: {str(e)}") 
+        print(f"UPLOAD ERROR: {str(e)}") 
         return jsonify({"msg": f"Server Error: {str(e)}"}), 500
 
 
