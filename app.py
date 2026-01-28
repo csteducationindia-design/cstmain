@@ -1151,6 +1151,7 @@ def teacher_students():
                     "admission_number": s.admission_number,
                     "profile_photo_url": s.profile_photo_url, 
                     "session_name": s.to_dict().get('session_name', 'N/A'),
+		    "phone_number": s.phone_number,  # <--- ADD THIS LINE
                     "course_ids": [course.id for course in s.courses_enrolled] # <-- THIS LINE WAS MISSING
                 })
                 seen.add(s.id)
