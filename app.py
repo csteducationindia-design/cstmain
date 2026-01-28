@@ -545,32 +545,59 @@ def teacher_notify_student():
     subject = d.get('subject', 'Notification')
     body = d.get('body')
     channel = d.get('type', 'portal') 
+    include_parent = d.get('include_parent', False)  # <--- NEW: Capture this flag
 
     student = db.session.get(User, student_id)
     if not student:
         return jsonify({"message": "Student not found"}), 404
 
     try:
+        # --- 1. APP PUSH NOTIFICATION ---
         if channel == 'portal' or channel == 'push':
             send_push_notification(student.id, subject, body)
-            if student.parent_id:
+            if include_parent and student.parent_id:
                 send_push_notification(student.parent_id, f"Parent Alert: {subject}", f"Regarding {student.name}: {body}")
             return jsonify({"message": "Push notification sent successfully!"})
 
+        # --- 2. SMS ---
         elif channel == 'sms':
             if student.phone_number:
                 send_actual_sms(student.phone_number, f"{subject}: {body}")
-            if student.parent_id:
+            
+            if include_parent and student.parent_id:
                 parent = db.session.get(User, student.parent_id)
                 if parent and parent.phone_number:
                     send_actual_sms(parent.phone_number, f"CST Alert: {body}")
             return jsonify({"message": "SMS sent successfully!"})
 
+        # --- 3. WHATSAPP (Server-Side Automation) ---
+        elif channel == 'whatsapp':
+            msg_sent_count = 0
+            
+            # Send to Student
+            if student.phone_number:
+                # Ensure number has country code (e.g., 91)
+                s_phone = student.phone_number if len(student.phone_number) > 10 else f"91{student.phone_number}"
+                send_whatsapp_message(s_phone, f"*{subject}*\n{body}")
+                msg_sent_count += 1
+            
+            # Send to Parent
+            if include_parent and student.parent_id:
+                parent = db.session.get(User, student.parent_id)
+                if parent and parent.phone_number:
+                    p_phone = parent.phone_number if len(parent.phone_number) > 10 else f"91{parent.phone_number}"
+                    send_whatsapp_message(p_phone, f"*{subject}*\nRe: {student.name}\n{body}")
+                    msg_sent_count += 1
+            
+            if msg_sent_count == 0:
+                return jsonify({"message": "No phone numbers found for student or parent."}), 400
+                
+            return jsonify({"message": f"WhatsApp sent to {msg_sent_count} recipients!"})
+
         return jsonify({"message": "Invalid channel selected."}), 400
 
     except Exception as e:
         return jsonify({"message": f"Server Error: {str(e)}"}), 500
-
 # =========================================================
 # NEW FEATURES: FEES & HALL TICKETS
 # =========================================================
