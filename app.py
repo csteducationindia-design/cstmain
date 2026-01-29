@@ -1488,6 +1488,10 @@ def my_hallticket():
 # COMPREHENSIVE REPORTS (EXCEL & PDF)
 # =========================================================
 
+# =========================================================
+# COMPREHENSIVE REPORTS (EXCEL & PDF) - UPDATED
+# =========================================================
+
 @app.route('/api/reports/download')
 @login_required
 def download_excel_report():
@@ -1503,20 +1507,44 @@ def download_excel_report():
     data = []
     
     for s in students:
-        # Calculate Fee
+        # 1. Calculate Fee Status
         fee = calculate_fee_status(s.id)
         
-        # Calculate Attendance
+        # 2. Calculate Attendance
         total_days = Attendance.query.filter_by(student_id=s.id).count()
         present_days = Attendance.query.filter_by(student_id=s.id, status='Present').count()
         att_pct = f"{round((present_days/total_days)*100, 1)}%" if total_days > 0 else "0%"
         
+        # 3. Fetch Linked Parent Details
+        parent_name = "N/A"
+        parent_phone = "N/A"
+        parent_email = "N/A"
+        
+        if s.parent_id:
+            parent = db.session.get(User, s.parent_id)
+            if parent:
+                parent_name = parent.name
+                parent_phone = parent.phone_number
+                parent_email = parent.email
+
+        # 4. Construct Full Address
+        address = f"{s.address_line1 or ''} {s.city or ''} {s.state or ''} {s.pincode or ''}".strip()
+
+        # 5. Build Comprehensive Data Row
         data.append({
             "Admission No": s.admission_number,
-            "Name": s.name,
+            "Student Name": s.name,
             "Batch": s.to_dict().get('session_name', 'N/A'),
-            "Phone": s.phone_number,
-            "Father Name": s.father_name,
+            "Gender": s.gender or '-',
+            "DOB": s.dob or '-',
+            "Student Phone": s.phone_number,
+            "Student Email": s.email,
+            "Father Name": s.father_name or '-',
+            "Mother Name": s.mother_name or '-',
+            "Address": address or '-',
+            "Linked Parent Name": parent_name,
+            "Linked Parent Phone": parent_phone,
+            "Linked Parent Email": parent_email,
             "Total Fee": fee['total_due'],
             "Paid Fee": fee['total_paid'],
             "Balance Fee": fee['balance'],
@@ -1526,6 +1554,8 @@ def download_excel_report():
     # Generate CSV (Compatible with Excel)
     df = pd.DataFrame(data)
     output = BytesIO()
+    # BOM for Excel compatibility with special chars (₹)
+    output.write(b'\xef\xbb\xbf') 
     df.to_csv(output, index=False)
     output.seek(0)
     
@@ -1533,7 +1563,7 @@ def download_excel_report():
         output, 
         mimetype="text/csv", 
         as_attachment=True, 
-        download_name=f"Student_Report_{date.today()}.csv"
+        download_name=f"Comprehensive_Student_Report_{date.today()}.csv"
     )
 
 @app.route('/admin/report/print')
