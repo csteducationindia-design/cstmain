@@ -1397,7 +1397,7 @@ def save_attendance():
     selected_date = datetime.strptime(d['date'], '%Y-%m-%d').date()
     
     # 2. Get current time to make it look realistic
-    current_time = datetime.utcnow().time()
+    current_time = (datetime.utcnow() + timedelta(hours=5, minutes=30)).time()
     
     # 3. Combine Date + Current Time
     # If teacher submits at 5:30 PM, this saves "2026-01-20 17:30:00"
