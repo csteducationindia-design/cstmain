@@ -1327,6 +1327,7 @@ def teacher_notes():
 
 
 # 4. DAILY TOPIC / SYLLABUS UPDATE (Batch-Aware)
+# 4. DAILY TOPIC / SYLLABUS UPDATE (Batch-Aware)
 @app.route('/api/teacher/daily_topic', methods=['POST'])
 @login_required
 def daily_topic():
@@ -1334,6 +1335,7 @@ def daily_topic():
     course_id = d.get('course_id')
     session_id = d.get('session_id') # Get Batch ID
     topic = d.get('topic')
+    selected_date = d.get('date') # Get the date picked by teacher
     
     course = db.session.get(Course, course_id)
     if not course: return jsonify({"msg": "Error: Course not found"}), 404
@@ -1344,40 +1346,38 @@ def daily_topic():
         session = db.session.get(AcademicSession, session_id)
         if session: title += f" ({session.name})"
 
-    # 2. Save Announcement to DB
+    # 2. Format Content to include the Date
+    # We prepend the date so it's visible in the history
+    final_content = f"Date: {selected_date}\nTopic: {topic}"
+
+    # 3. Save Announcement to DB
     db.session.add(Announcement(
         title=title, 
-        content=topic, 
+        content=final_content, 
         category="Syllabus", 
         target_group="students", 
         teacher_id=current_user.id
     ))
     db.session.commit()
     
-    # 3. Filter Students (Batch-Wise)
-    # Start with all students in the course
+    # 4. Filter Students (Batch-Wise)
     students_to_notify = course.students
-    
-    # If a specific batch was selected, filter the list
     if session_id:
         students_to_notify = [s for s in course.students if s.session_id == int(session_id)]
     
-    # 4. Send Notifications
+    # 5. Send Notifications
     count = 0
     for s in students_to_notify:
-        # Notify Student App
-        send_push_notification(s.id, title, f"Covered today: {topic}")
+        send_push_notification(s.id, title, f"Covered on {selected_date}: {topic}")
         count += 1
         
-        # Notify Parent (WhatsApp/SMS)
         if s.parent_id:
             parent = db.session.get(User, s.parent_id)
             if parent and parent.phone_number:
-                # Placeholder for WhatsApp API
-                msg = f"CST Update: Today in {course.name}, we covered '{topic}'. Batch: {title}"
+                msg = f"CST Update: On {selected_date} in {course.name}, we covered '{topic}'."
                 send_whatsapp_message(parent.phone_number, msg)
                 
-    return jsonify({"msg": f"Saved & Sent to {count} students in this batch."})
+    return jsonify({"msg": f"Saved & Sent to {count} students."})
 
 # 6. GET TEACHER COURSES
 @app.route('/api/teacher/courses', methods=['GET'])

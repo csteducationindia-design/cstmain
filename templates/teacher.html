@@ -413,6 +413,24 @@
                             </button>
                         </div>
                     </form>
+<div class="mt-10 pt-8 border-t border-slate-200 dark:border-slate-700">
+                        <h4 class="text-lg font-bold text-slate-900 dark:text-white mb-4">Syllabus History</h4>
+                        <div class="bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                                <thead class="bg-slate-100 dark:bg-slate-900">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Batch / Course</th>
+                                        <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Topic Log</th>
+                                        <th class="px-6 py-3 text-right text-xs font-bold text-slate-500 uppercase">Entry Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="syllabus-history-body" class="divide-y divide-slate-200 dark:divide-slate-700 text-sm">
+                                    <tr><td colspan="3" class="p-6 text-center text-slate-500">Loading history...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div> </div>
                 </div>
             </div>
 
@@ -786,7 +804,10 @@
                     if(allTeacherStudents.length === 0) await fetchAllTeacherStudents(); 
                     fetchTeacherAttendanceReport();
                     break;
-                
+                // --- ADDED THIS FOR SYLLABUS ---
+                case '#syllabus':
+                    fetchSyllabusHistory(); 
+                    break;
                 // --- ADD THIS BLOCK HERE ---
                 case '#doubts':
                     loadDoubts(); 
@@ -1063,7 +1084,42 @@
             `).join('') : '<tr><td colspan="3" class="px-6 py-12 text-center text-slate-500">No courses assigned to you.</td></tr>';
         }
 
-        // --- ATTENDANCE LOGIC (Course-Wise Filter) ---
+// --- SYLLABUS HISTORY LOADER ---
+    async function fetchSyllabusHistory() {
+        const tbody = document.getElementById('syllabus-history-body');
+        if(!tbody) return;
+        
+        try {
+            // Reuse the announcements API (since we store syllabus as a type of announcement)
+            const res = await fetch(`${API_BASE_URL}/teacher/announcements`, { credentials: 'include' });
+            const data = await res.json();
+            
+            // Filter only "Syllabus" category
+            const logs = data.filter(item => item.category === 'Syllabus');
+            
+            if (logs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="p-6 text-center text-slate-500">No syllabus logs recorded yet.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = logs.map(log => `
+                <tr class="hover:bg-white dark:hover:bg-slate-800 transition">
+                    <td class="px-6 py-4 font-bold text-slate-700 dark:text-slate-300">
+                        ${log.title.replace('Syllabus: ', '')}
+                    </td>
+                    <td class="px-6 py-4 text-slate-600 dark:text-slate-400 whitespace-pre-wrap">${log.content}</td>
+                    <td class="px-6 py-4 text-right text-xs text-slate-400">
+                        ${log.created_at}
+                    </td>
+                </tr>
+            `).join('');
+            
+        } catch (e) {
+            console.error(e);
+            tbody.innerHTML = '<tr><td colspan="3" class="p-6 text-center text-red-500">Failed to load history.</td></tr>';
+        }
+    }        
+// --- ATTENDANCE LOGIC (Course-Wise Filter) ---
         
 // ============================================================
         // FIXED ATTENDANCE LOGIC (Batch + Course Filtering)
@@ -1308,6 +1364,7 @@ if(syllabusForm) {
             const result = await res.json();
             alert(result.msg); // Show Backend Response
             syllabusForm.reset();
+	    fetchSyllabusHistory();
         } catch(e) {
             console.error(e);
             alert("Error saving syllabus.");
