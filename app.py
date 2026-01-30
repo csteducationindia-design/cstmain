@@ -20,7 +20,6 @@ import logging
 import pandas as pd
 from io import BytesIO
 import threading
-from PIL import Image  # pip install Pillow
 import os
 
 # =========================================================
