@@ -825,7 +825,8 @@ def print_hallticket(student_id):
         exam=exam
     )
 
-# --- BULK HALL TICKET GENERATION ---
+
+# --- BULK HALL TICKET GENERATION (UPDATED: Auto-Saves to DB) ---
 @app.route('/admin/halltickets/bulk')
 @login_required
 def print_bulk_halltickets():
@@ -837,6 +838,37 @@ def print_bulk_halltickets():
     exam_time = request.args.get('exam_time')
     
     if not session_id: return "Error: Batch (Session) is required"
+
+    # =======================================================
+    # ✅ FIX: AUTO-SAVE EXAM DATA TO DATABASE
+    # This ensures the Student Portal can see the date/time
+    # =======================================================
+    if exam_date and exam_time:
+        try:
+            # Check if an exam already exists for this session
+            existing_exam = Exam.query.filter_by(session_id=int(session_id)).order_by(Exam.id.desc()).first()
+            
+            if existing_exam:
+                # Update existing record
+                existing_exam.exam_date = datetime.strptime(exam_date, '%Y-%m-%d').date()
+                existing_exam.exam_time = exam_time
+            else:
+                # Create new record
+                new_exam = Exam(
+                    session_id=int(session_id),
+                    exam_date=datetime.strptime(exam_date, '%Y-%m-%d').date(),
+                    exam_time=exam_time,
+                    instructions="Generated via Admin Bulk Print"
+                )
+                db.session.add(new_exam)
+            
+            db.session.commit()
+            print("✅ Exam Schedule Auto-Saved Successfully!")
+            
+        except Exception as e:
+            print(f"⚠️ Error auto-saving exam: {e}")
+            db.session.rollback()
+    # =======================================================
 
     # 2. Fetch Session & Students
     session = db.session.get(AcademicSession, int(session_id))
@@ -852,8 +884,8 @@ def print_bulk_halltickets():
         'halltickets_bulk.html',
         students=students,
         session=session,
-        exam_date=exam_date, # Passed from the modal
-        exam_time=exam_time  # Passed from the modal
+        exam_date=exam_date, 
+        exam_time=exam_time  
     )
 
 @app.route('/api/users/<int:id>', methods=['DELETE'])
