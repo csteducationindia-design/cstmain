@@ -489,6 +489,24 @@ def api_student_dashboard():
         "fees_due": 0, # You can update this with your specific fee logic
         "initial": current_user.name[0].upper() if current_user.name else 'U'
     })
+# --- ADD THIS NEW ROUTE TO app.py ---
+
+@app.route('/api/payments/<int:id>', methods=['DELETE'])
+@login_required
+def delete_payment(id):
+    # Security: Only Admin can delete payments
+    if current_user.role != 'admin': 
+        return jsonify({"msg": "Denied"}), 403
+    
+    # Find the payment record
+    payment = db.session.get(Payment, id)
+    
+    if payment:
+        db.session.delete(payment)
+        db.session.commit()
+        return jsonify({"msg": "Transaction Deleted Successfully"})
+    
+    return jsonify({"msg": "Payment Not Found"}), 404
 
 @app.route('/api/student/doubts', methods=['GET'])
 @login_required

@@ -414,6 +414,29 @@
                     <span class="material-symbols-outlined text-sm">print</span> Print
                 </button>
             </div>
+<div class="bg-green-50 border border-green-200 p-4 rounded-lg mb-4 flex justify-between items-center">
+    <span class="text-green-800 font-medium">Total Collection:</span>
+    <span id="report-total-amount" class="text-2xl font-bold text-green-700">₹0</span>
+</div>
+
+<div class="overflow-x-auto">
+    <table class="w-full text-left text-sm">
+        <thead class="bg-slate-100 dark:bg-slate-800 border-b">
+            <tr>
+                <th class="p-3">Date</th>
+                <th class="p-3">Student</th>
+                <th class="p-3">Fee Type</th>
+                <th class="p-3">Mode</th>
+                <th class="p-3 text-right">Amount</th>
+                
+                <th class="p-3 text-right">Action</th> 
+            </tr>
+        </thead>
+        <tbody id="collection-report-body" class="divide-y divide-slate-100">
+            <tr><td colspan="6" class="p-4 text-center text-gray-500">Select dates...</td></tr>
+        </tbody>
+    </table>
+</div>
             <div class="bg-green-50 border border-green-200 p-4 rounded-lg mb-4 flex justify-between items-center">
                 <span class="text-green-800 font-medium">Total Collection:</span>
                 <span id="report-total-amount" class="text-2xl font-bold text-green-700">₹0</span>
@@ -872,6 +895,25 @@
             </tr>
         `).join('');
     }
+// --- NEW FUNCTION TO DELETE PAYMENT ---
+    window.deleteTransaction = async (id) => {
+        if(!confirm("⚠️ Are you sure you want to DELETE this payment entry?\nThis action cannot be undone.")) return;
+        
+        try {
+            const res = await fetch(`${API_BASE_URL}/payments/${id}`, { method: 'DELETE' });
+            const data = await res.json();
+            
+            if(res.ok) {
+                alert(data.msg);
+                loadCollectionReport(); // Refresh the table automatically
+                loadFeeReport();        // Update pending dues list
+            } else {
+                alert("Error: " + data.msg);
+            }
+        } catch(e) {
+            alert("Failed to delete transaction. Server error.");
+        }
+    };
 
     async function loadAnnouncements() {
         const res = await fetch(API_BASE_URL + '/announcements');
@@ -961,22 +1003,29 @@
             return;
         }
 
+        // REPLACE the existing tbody.innerHTML logic inside loadCollectionReport() with this:
+
         tbody.innerHTML = data.transactions.map(t => `
-            <tr class="hover:bg-slate-50">
+            <tr class="hover:bg-slate-50 border-b last:border-0 transition-colors">
                 <td class="p-3">
-                    <div class="font-medium">${t.date}</div>
+                    <div class="font-medium text-slate-800">${t.date}</div>
                     <div class="text-xs text-gray-500">${t.time}</div>
                 </td>
                 <td class="p-3">
                     <div class="font-bold text-blue-600">${t.student_name}</div>
                     <div class="text-xs text-gray-500">Adm: ${t.adm_no || '-'}</div>
                 </td>
-                <td class="p-3">${t.fee_name}</td>
-                <td class="p-3"><span class="px-2 py-1 bg-gray-100 rounded text-xs">${t.mode}</span></td>
+                <td class="p-3 text-sm text-slate-600">${t.fee_name}</td>
+                <td class="p-3"><span class="px-2 py-1 bg-gray-100 rounded text-xs font-bold text-slate-500">${t.mode}</span></td>
                 <td class="p-3 text-right font-bold text-slate-700">₹${t.amount}</td>
+                
+                <td class="p-3 text-right">
+                    <button onclick="deleteTransaction(${t.id})" class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Delete Entry">
+                        <span class="material-symbols-outlined text-lg">delete</span>
+                    </button>
+                </td>
             </tr>
         `).join('');
-    }
 
     function printCollectionReport() {
         const start = document.getElementById('report-start').value;
