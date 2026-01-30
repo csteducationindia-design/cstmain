@@ -20,6 +20,8 @@ import logging
 import pandas as pd
 from io import BytesIO
 import threading
+from PIL import Image  # pip install Pillow
+import os
 
 # =========================================================
 # CONFIGURATION & SETUP
@@ -372,6 +374,43 @@ def calculate_fee_status(student_id):
         print(f"Fee Calculation Error: {e}")
         return {"balance": 0, "due_date": "N/A"}
 
+
+
+# =========================================================
+#  IMAGE OPTIMIZER FUNCTION (Saves Space)
+# =========================================================
+def optimize_and_save_image(file_storage, save_folder, user_id):
+    """
+    1. Resizes image to max 400x400 pixels (perfect for profile pics).
+    2. Compresses quality to 80%.
+    3. Converts to JPG (efficient).
+    4. Resulting size: Usually 20KB - 50KB.
+    """
+    try:
+        # 1. Create a unique filename
+        filename = f"user_{user_id}_{int(datetime.utcnow().timestamp())}.jpg"
+        filepath = os.path.join(save_folder, filename)
+
+        # 2. Open the image
+        img = Image.open(file_storage)
+
+        # 3. Convert to RGB (Fixes issues with PNG transparency)
+        if img.mode in ("RGBA", "P"):
+            img = img.convert("RGB")
+
+        # 4. Resize (Maintain Aspect Ratio)
+        # Using 400x400 is better than 100x100 for quality, but still tiny in file size.
+        img.thumbnail((400, 400)) 
+
+        # 5. Save with Compression
+        # optimize=True and quality=75 drastically reduces size
+        img.save(filepath, "JPEG", optimize=True, quality=75)
+
+        return f"/uploads/{filename}"
+
+    except Exception as e:
+        print(f"Image Optimization Failed: {e}")
+        return None
 # =========================================================
 # ROUTES
 # =========================================================
@@ -789,11 +828,13 @@ def api_users():
 
     if 'profile_photo_file' in request.files:
         file = request.files['profile_photo_file']
-        if file and allowed_file(file.filename, ALLOWED_IMAGE_EXTENSIONS):
-            fn = secure_filename(file.filename)
-            uid = f"{uuid.uuid4()}{os.path.splitext(fn)[1]}"
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], uid))
-            u.profile_photo_url = f"/uploads/{uid}"
+        if file and file.filename != '':
+            # Optimize image before saving
+            # Pass a temp ID if creating new user, or actual ID if updating
+            target_id = u.id if u.id else 0 
+            url = optimize_and_save_image(file, app.config['UPLOAD_FOLDER'], target_id)
+            if url:
+                u.profile_photo_url = url
 
     if u.role == 'student':
         c_ids = request.form.getlist('course_ids')
@@ -1974,27 +2015,17 @@ def teacher_update_photo():
         return jsonify({"msg": "No selected file"}), 400
         
     if file:
-        # 1. Generate a safe, unique filename (UUID)
-        import uuid
-        ext = os.path.splitext(file.filename)[1]
-        filename = f"teacher_{current_user.id}_{uuid.uuid4().hex}{ext}"
+        # USE THE OPTIMIZER
+        url = optimize_and_save_image(file, app.config['UPLOAD_FOLDER'], current_user.id)
         
-        # 2. Save to the main 'uploads' folder (Same as Admin uploads)
-        save_path = app.config['UPLOAD_FOLDER']
-        if not os.path.exists(save_path):
-            os.makedirs(save_path)
+        if url:
+            current_user.profile_photo_url = url
+            db.session.commit()
+            return jsonify({"msg": "Photo updated!", "url": url})
+        else:
+            return jsonify({"msg": "Error processing image"}), 500
             
-        file.save(os.path.join(save_path, filename))
-        
-        # 3. Save the correct URL path to Database
-        # This matches your existing @app.route('/uploads/<filename>')
-        current_user.profile_photo_url = f"/uploads/{filename}"
-        db.session.commit()
-        
-        return jsonify({"msg": "Photo updated!", "url": current_user.profile_photo_url})
-
-
-
+    return jsonify({"msg": "Upload failed"}), 500
 # --- TEACHER: GET DOUBTS ---
 @app.route('/api/teacher/doubts', methods=['GET'])
 @login_required
