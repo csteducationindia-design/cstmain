@@ -826,7 +826,7 @@ def print_hallticket(student_id):
     )
 
 
-# --- BULK HALL TICKET GENERATION (UPDATED: Auto-Saves to DB) ---
+# --- BULK HALL TICKET GENERATION (UPDATED) ---
 @app.route('/admin/halltickets/bulk')
 @login_required
 def print_bulk_halltickets():
@@ -840,8 +840,8 @@ def print_bulk_halltickets():
     if not session_id: return "Error: Batch (Session) is required"
 
     # =======================================================
-    # ✅ FIX: AUTO-SAVE EXAM DATA TO DATABASE
-    # This ensures the Student Portal can see the date/time
+    # ✅ FIX: SAVE EXAM DATA TO DATABASE
+    # This ensures the Student Portal can see the date/time later
     # =======================================================
     if exam_date and exam_time:
         try:
@@ -858,7 +858,7 @@ def print_bulk_halltickets():
                     session_id=int(session_id),
                     exam_date=datetime.strptime(exam_date, '%Y-%m-%d').date(),
                     exam_time=exam_time,
-                    instructions="Generated via Admin Bulk Print"
+                    instructions="Please report 15 minutes before the exam time."
                 )
                 db.session.add(new_exam)
             
