@@ -198,21 +198,56 @@
         </div>
 
         <div id="content-parents" class="content-section hidden">
-            <h2 class="text-3xl font-bold mb-6">Manage Parents</h2>
-            <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm mb-6 border border-slate-100">
-                <form id="parent-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input type="hidden" id="parent-id" name="id"><input type="hidden" name="role" value="parent">
-                    <input name="name" id="parent-name" placeholder="Parent Name" class="border p-2 rounded-lg bg-slate-50" required>
-                    <input name="email" id="parent-email" placeholder="Email Address" class="border p-2 rounded-lg bg-slate-50" required>
-                    <input name="phone_number" id="parent-phone" placeholder="Phone Number" class="border p-2 rounded-lg bg-slate-50">
-                    <input name="password" type="password" placeholder="Password" class="border p-2 rounded-lg bg-slate-50">
-                    <button type="submit" class="bg-primary text-white py-2 rounded-lg col-span-2 hover:bg-blue-700 transition-colors">Save Parent</button>
-                </form>
+    <h2 class="text-3xl font-bold mb-6">Manage Parents</h2>
+    
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm mb-6 border border-slate-100">
+        <h3 class="text-lg font-bold mb-4 text-primary">Add / Edit Parent</h3>
+        <p class="text-xs text-gray-500 mb-4">Note: The Mobile Number will be used as the <b>Login ID</b>.</p>
+        
+        <form id="parent-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input type="hidden" id="parent-id" name="id">
+            <input type="hidden" name="role" value="parent">
+            
+            <div>
+                <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Mobile Number (Login ID) *</label>
+                <input name="phone_number" id="parent-phone" placeholder="e.g. 9876543210" class="w-full border p-2 rounded-lg bg-slate-50" required>
             </div>
-            <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm overflow-hidden">
-                <table class="w-full text-left"><thead class="bg-slate-100 dark:bg-slate-800 border-b"><tr><th class="p-3">Name</th><th class="p-3">Email</th><th class="p-3">Phone</th><th class="p-3 text-right">Action</th></tr></thead><tbody id="parent-table-body" class="divide-y divide-slate-100"></tbody></table>
+
+            <div>
+                <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Parent Name *</label>
+                <input name="name" id="parent-name" placeholder="Full Name" class="w-full border p-2 rounded-lg bg-slate-50" required>
             </div>
-        </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-500 mb-1">Email (Optional)</label>
+                <input name="email" id="parent-email" placeholder="Auto-generated if empty" class="w-full border p-2 rounded-lg bg-slate-50">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-500 mb-1">Password</label>
+                <input name="password" type="password" placeholder="Set Password" class="w-full border p-2 rounded-lg bg-slate-50">
+            </div>
+
+            <button type="submit" class="bg-primary text-white font-bold py-2 rounded-lg col-span-1 md:col-span-2 hover:bg-blue-700 transition-colors">
+                Save Parent
+            </button>
+        </form>
+    </div>
+
+    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm overflow-hidden">
+        <table class="w-full text-left">
+            <thead class="bg-slate-100 dark:bg-slate-800 border-b">
+                <tr>
+                    <th class="p-3">Name</th>
+                    <th class="p-3">Mobile (Login ID)</th>
+                    <th class="p-3">Email (System)</th>
+                    <th class="p-3 text-right">Action</th>
+                </tr>
+            </thead>
+            <tbody id="parent-table-body" class="divide-y divide-slate-100"></tbody>
+        </table>
+    </div>
+</div>
 
         <div id="content-courses" class="content-section hidden">
             <h2 class="text-3xl font-bold mb-6">Manage Courses</h2>
@@ -561,10 +596,24 @@
     }
 
     async function loadParents() {
-        if(!users.length) await loadGlobalData();
-        document.getElementById('parent-table-body').innerHTML = users.filter(u => u.role === 'parent').map(u => `
-            <tr class="border-b hover:bg-slate-50"><td class="p-3 font-medium">${u.name}</td><td class="p-3 text-gray-500">${u.email}</td><td class="p-3 text-gray-500">${u.phone_number || '-'}</td><td class="p-3 text-right"><button onclick="editUser(${u.id}, 'parent')" class="text-blue-600 mr-2"><span class="material-symbols-outlined">edit</span></button><button onclick="del('/api/users/${u.id}')" class="text-red-600"><span class="material-symbols-outlined">delete</span></button></td></tr>`).join('');
-    }
+    if(!users.length) await loadGlobalData();
+    
+    document.getElementById('parent-table-body').innerHTML = users.filter(u => u.role === 'parent').map(u => `
+        <tr class="border-b hover:bg-slate-50">
+            <td class="p-3 font-medium">${u.name}</td>
+            <td class="p-3 font-bold text-blue-600">${u.phone_number || '-'}</td>
+            <td class="p-3 text-sm text-gray-400">${u.email}</td>
+            <td class="p-3 text-right">
+                <button onclick="editUser(${u.id}, 'parent')" class="text-blue-600 mr-2 hover:text-blue-800">
+                    <span class="material-symbols-outlined text-lg">edit</span>
+                </button>
+                <button onclick="del('/api/users/${u.id}')" class="text-red-600 hover:text-red-800">
+                    <span class="material-symbols-outlined text-lg">delete</span>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
 
     async function loadCourses() {
         const res = await fetch(API_BASE_URL + '/courses');

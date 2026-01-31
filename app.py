@@ -667,42 +667,81 @@ def save_exam():
     db.session.commit()
     return jsonify({"msg": "Exam saved"})
 
+# --- IN app.py, REPLACE THE 'api_users' ROUTE WITH THIS IMPROVED VERSION ---
+
 @app.route('/api/users', methods=['GET', 'POST', 'PUT'])
 @login_required
 def api_users():
     if current_user.role != 'admin': return jsonify({"msg": "Denied"}), 403
     
+    # --- GET USERS ---
     if request.method == 'GET':
         search = request.args.get('search', '').lower()
         session_id = request.args.get('session_id')
         
         q = User.query
-        
         if session_id and session_id != 'null' and str(session_id).isdigit():
              q = q.filter_by(session_id=int(session_id))
              
         if search: 
-            q = q.filter(or_(User.name.ilike(f'%{search}%'), User.email.ilike(f'%{search}%')))
+            q = q.filter(or_(User.name.ilike(f'%{search}%'), User.email.ilike(f'%{search}%'), User.phone_number.ilike(f'%{search}%')))
             
         return jsonify([u.to_dict() for u in q.all()])
 
+    # --- CREATE / UPDATE USER ---
     d = request.form
+    
+    # 1. AUTO-GENERATE EMAIL FOR PARENTS IF MISSING
+    email = d.get('email', '').strip()
+    phone = d.get('phone_number', '').strip()
+    role = d.get('role', 'student')
+
+    if role == 'parent' and not email and phone:
+        # Auto-generate email so Admin doesn't have to type it
+        email = f"{phone}@cst.com"
+    
+    if not email:
+        return jsonify({"msg": "Email or Phone is required"}), 400
+
+    # 2. CREATE NEW USER
     if request.method == 'POST' and not d.get('id'):
-        if User.query.filter_by(email=d['email']).first(): return jsonify({"msg": "Email exists"}), 400
-        u = User(name=d['name'], email=d['email'], password=bcrypt.generate_password_hash(d['password']).decode('utf-8'), role=d.get('role', 'student'))
+        if User.query.filter_by(email=email).first(): 
+            return jsonify({"msg": "User with this Email/Phone already exists"}), 400
+            
+        u = User(
+            name=d['name'], 
+            email=email, 
+            password=bcrypt.generate_password_hash(d['password']).decode('utf-8'), 
+            role=role
+        )
         db.session.add(u)
+    
+    # 3. UPDATE EXISTING USER
     else: 
         u_id = d.get('id')
         if not u_id: return jsonify({"msg": "Missing ID for update"}), 400
         u = db.session.get(User, int(u_id))
         if not u: return jsonify({"msg": "Not found"}), 404
-        if d.get('password'): u.password = bcrypt.generate_password_hash(d['password']).decode('utf-8')
+        
+        # Only update password if provided
+        if d.get('password'): 
+            u.password = bcrypt.generate_password_hash(d['password']).decode('utf-8')
+        
+        # Update email if changed (and valid)
+        if email: u.email = email
 
-    u.name = d['name']; u.email = d['email']; u.phone_number = d.get('phone_number')
+    # 4. UPDATE COMMON FIELDS
+    u.name = d['name']
+    u.phone_number = phone
     u.admission_number = d.get('admission_number')
-    u.dob = d.get('dob'); u.gender = d.get('gender')
-    u.father_name = d.get('father_name'); u.mother_name = d.get('mother_name')
-    u.address_line1 = d.get('address_line1'); u.city = d.get('city'); u.state = d.get('state'); u.pincode = d.get('pincode')
+    u.dob = d.get('dob')
+    u.gender = d.get('gender')
+    u.father_name = d.get('father_name')
+    u.mother_name = d.get('mother_name')
+    u.address_line1 = d.get('address_line1')
+    u.city = d.get('city')
+    u.state = d.get('state')
+    u.pincode = d.get('pincode')
     
     if d.get('session_id') and str(d.get('session_id')).isdigit():
         u.session_id = int(d.get('session_id'))
@@ -710,6 +749,7 @@ def api_users():
     if d.get('parent_id') and str(d.get('parent_id')).isdigit():
         u.parent_id = int(d.get('parent_id'))
 
+    # Handle Photo Upload
     if 'profile_photo_file' in request.files:
         file = request.files['profile_photo_file']
         if file and allowed_file(file.filename, ALLOWED_IMAGE_EXTENSIONS):
@@ -718,6 +758,7 @@ def api_users():
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], uid))
             u.profile_photo_url = f"/uploads/{uid}"
 
+    # Handle Course Enrollment
     if u.role == 'student':
         c_ids = request.form.getlist('course_ids')
         if c_ids:
