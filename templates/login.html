@@ -16,47 +16,52 @@
             min-height: 100vh;
         }
         
-        /* Modern Card Shadow */
+        /* Glass/Modern Card Effect */
         .login-card {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(12px);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.8);
-            box-shadow: 0 20px 40px -10px rgba(37, 99, 235, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(37, 99, 235, 0.15);
         }
 
         /* Input Animation */
-        .input-group:focus-within label {
-            color: #2563EB;
-        }
         .input-group:focus-within input {
             border-color: #2563EB;
             box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+        
+        .input-icon {
+            transition: color 0.3s ease;
+        }
+        .input-group:focus-within .input-icon {
+            color: #2563EB;
         }
     </style>
 </head>
 <body class="flex flex-col items-center justify-center p-6">
 
-    <div class="w-full max-w-md">
+    <div class="w-full max-w-md animate-fade-in">
         
-        <div class="text-center mb-10">
-            <div class="inline-flex items-center justify-center w-20 h-20 bg-white rounded-2xl shadow-lg shadow-blue-500/10 mb-4 text-blue-600">
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-20 h-20 bg-white rounded-2xl shadow-xl shadow-blue-500/10 mb-4 text-blue-600 transform hover:scale-105 transition-transform duration-300">
                  <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
                     <path d="M6 12v5c3 3 9 3 12 0v-5"/>
                  </svg>
             </div>
             <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">CST Institute</h1>
-            <p class="text-slate-500 font-medium">Student Portal</p>
+            <p class="text-slate-500 font-medium mt-1">Student Portal Login</p>
         </div>
 
         <div class="login-card rounded-3xl p-8 relative overflow-hidden">
-            
-            <form id="login-form" class="space-y-6">
+            <div class="absolute -top-10 -right-10 w-32 h-32 bg-blue-500 rounded-full blur-3xl opacity-10 pointer-events-none"></div>
+
+            <form id="login-form" class="space-y-6 relative z-10">
                 
                 <div class="input-group">
-                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Mobile No. / Student ID</label>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Mobile No. / Admission ID</label>
                     <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 input-icon">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                             </svg>
@@ -65,7 +70,7 @@
                             id="email" 
                             type="text" 
                             placeholder="e.g. 9876543210" 
-                            class="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-xl outline-none transition-all duration-300 font-semibold text-slate-800 placeholder-slate-400"
+                            class="w-full pl-12 pr-4 py-4 bg-slate-50/50 border border-slate-200 rounded-xl outline-none transition-all duration-300 font-semibold text-slate-800 placeholder-slate-400"
                             required
                         >
                     </div>
@@ -74,7 +79,7 @@
                 <div class="input-group">
                     <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Password</label>
                     <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 input-icon">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                             </svg>
@@ -83,13 +88,13 @@
                             id="password" 
                             type="password" 
                             placeholder="••••••••" 
-                            class="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-xl outline-none transition-all duration-300 font-semibold text-slate-800 placeholder-slate-400"
+                            class="w-full pl-12 pr-4 py-4 bg-slate-50/50 border border-slate-200 rounded-xl outline-none transition-all duration-300 font-semibold text-slate-800 placeholder-slate-400"
                             required
                         >
                     </div>
                 </div>
 
-                <button type="submit" class="group w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg py-4 rounded-xl shadow-lg shadow-blue-500/30 transition-all duration-200 transform active:scale-[0.98] flex items-center justify-center gap-3">
+                <button type="submit" class="group w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-lg py-4 rounded-xl shadow-lg shadow-blue-500/30 transition-all duration-200 transform active:scale-[0.98] flex items-center justify-center gap-3">
                     <span>Sign In</span>
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
@@ -99,7 +104,7 @@
             </form>
         </div>
 
-        <p class="text-center text-slate-400 text-sm mt-8 font-medium">
+        <p class="text-center text-slate-400 text-sm mt-8 font-medium opacity-80">
             &copy; 2025 CST Institute
         </p>
     </div>
@@ -111,7 +116,7 @@
             const btn = e.target.querySelector('button');
             const originalContent = btn.innerHTML;
             
-            // Show Loading Spinner (SVG)
+            // Loading State (Spinner Icon)
             btn.innerHTML = `<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Logging in...`;
             btn.disabled = true;
 
@@ -128,8 +133,9 @@
                 const data = await res.json();
 
                 if (res.ok) {
-                    btn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-                    btn.classList.add('bg-green-500');
+                    // Success State (Checkmark Icon)
+                    btn.classList.remove('from-blue-600', 'to-indigo-600');
+                    btn.classList.add('bg-green-500', 'from-green-500', 'to-emerald-500');
                     btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg> Success!`;
                     
                     setTimeout(() => {
@@ -137,6 +143,7 @@
                         else if (data.user.role === 'teacher') window.location.href = '/teacher';
                         else if (data.user.role === 'student') window.location.href = '/student';
                         else if (data.user.role === 'parent') window.location.href = '/parent';
+                        else alert('Unknown Role');
                     }, 500);
                 } else {
                     alert(data.message || 'Login failed');
@@ -145,7 +152,7 @@
                 }
             } catch (error) {
                 console.error(error);
-                alert('Server Error');
+                alert('Server Error. Please try again.');
                 btn.innerHTML = originalContent;
                 btn.disabled = false;
             }
