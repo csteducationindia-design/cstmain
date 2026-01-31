@@ -896,20 +896,71 @@ def manage_fees():
 @app.route('/api/announcements', methods=['GET', 'POST', 'DELETE'])
 @login_required
 def admin_announcements():
-    if current_user.role not in ['admin', 'teacher']: return jsonify({"msg": "Denied"}), 403
+    # Only Admin or Teacher can access
+    if current_user.role not in ['admin', 'teacher']: 
+        return jsonify({"msg": "Denied"}), 403
     
+    # --- 1. POST NEW ANNOUNCEMENT (WITH ALERTS) ---
     if request.method == 'POST':
         d = request.json
-        a = Announcement(title=d['title'], content=d['content'], category=d.get('category', 'General'), target_group=d['target_group'])
+        title = d.get('title')
+        content = d.get('content')
+        target_group = d.get('target_group', 'all')
+        category = d.get('category', 'General')
+
+        # Save to DB
+        a = Announcement(
+            title=title, 
+            content=content, 
+            category=category, 
+            target_group=target_group,
+            teacher_id=current_user.id
+        )
         db.session.add(a)
         db.session.commit()
-        return jsonify(a.to_dict()), 201
 
+        # --- SEND NOTIFICATIONS ---
+        # 1. Determine Recipients
+        query = User.query
+        if target_group == 'students':
+            query = query.filter_by(role='student')
+        elif target_group == 'teachers':
+            query = query.filter_by(role='teacher')
+        elif target_group == 'parents':
+            query = query.filter_by(role='parent')
+        else:
+            # 'all' means everyone except maybe admins
+            query = query.filter(User.role.in_(['student', 'teacher', 'parent']))
+            
+        recipients = query.all()
+        
+        # 2. Send Alerts
+        count = 0
+        for user in recipients:
+            # Send App Push Notification
+            if user.fcm_token:
+                send_push_notification(user.id, f"New Announcement: {title}", content[:100])
+            
+            # Optional: Send WhatsApp if critical (e.g., Holiday)
+            # if category == 'Holiday' and user.phone_number:
+            #     send_whatsapp_message(user.phone_number, f"*New Announcement*\n\n*{title}*\n{content}")
+            
+            count += 1
+        
+        return jsonify({
+            "msg": f"Published & Sent to {count} users", 
+            "data": a.to_dict()
+        }), 201
+
+    # --- 2. DELETE ANNOUNCEMENT ---
     if request.method == 'DELETE':
         a = db.session.get(Announcement, int(request.args.get('id')))
-        if a: db.session.delete(a); db.session.commit()
+        if a: 
+            db.session.delete(a)
+            db.session.commit()
         return jsonify({"msg": "Deleted"})
 
+    # --- 3. GET ANNOUNCEMENTS ---
     return jsonify([a.to_dict() for a in Announcement.query.order_by(Announcement.created_at.desc()).all()])
 
 @app.route('/api/parents', methods=['GET'])
