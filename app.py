@@ -1709,6 +1709,8 @@ def initialize_database():
         init_firebase()
 
 
+# --- REPLACE THE ENTIRE 'bulk_upload_users' FUNCTION IN app.py WITH THIS ---
+
 @app.route('/api/bulk_upload', methods=['POST'])
 @login_required
 def bulk_upload_users():
@@ -1731,6 +1733,7 @@ def bulk_upload_users():
             student_name = row.get('Student_FullName', '').strip()
             raw_adm_no = row.get('Admission_No', '').strip()
             
+            # Handle float conversion (e.g. 101.0 -> 101)
             if raw_adm_no.endswith('.0'):
                 adm_no = raw_adm_no[:-2]
             else:
@@ -1739,10 +1742,16 @@ def bulk_upload_users():
             if not adm_no or not student_name: 
                 continue
 
+            # --- 1. DETERMINE EMAIL (LOGIN ID) ---
             student_email = row.get('Student_Email', '').strip()
             if not student_email:
                 student_email = f"{adm_no}@school.com"
 
+            # --- 2. SET PASSWORD IDENTICAL TO EMAIL ---
+            # This is the fix you requested: Password = Email
+            s_pwd = student_email 
+
+            # Check if student exists
             existing_user = User.query.filter(
                 (User.admission_number == adm_no) | 
                 (User.email == student_email)
@@ -1753,6 +1762,7 @@ def bulk_upload_users():
                 skipped_count += 1
                 continue 
 
+            # Fix DOB format
             raw_dob = row.get('DOB', '').strip()
             final_dob = raw_dob
             try:
@@ -1761,24 +1771,31 @@ def bulk_upload_users():
                     final_dob = f"{parts[2]}-{parts[1]}-{parts[0]}"
             except: pass
 
+            # --- PARENT HANDLING ---
             parent_phone = row.get('Parent_Phone', '').strip()
+            if parent_phone and parent_phone.endswith('.0'): 
+                parent_phone = parent_phone[:-2]
+
             parent_id = None
             if parent_phone:
-                if parent_phone.endswith('.0'): parent_phone = parent_phone[:-2]
-                
                 parent = User.query.filter_by(phone_number=parent_phone, role='parent').first()
                 if not parent:
+                    # Parent Password = Mobile Number (Easy for parents)
+                    p_pwd = parent_phone.strip()
+                    if not p_pwd: p_pwd = "123456"
+
                     parent = User(
                         name=row.get('Parent_FullName', 'Parent'),
-                        email=f"{parent_phone}@cstparent.com", 
+                        email=f"{parent_phone}@cstparent.com", # Hidden system email
                         phone_number=parent_phone,
-                        password=bcrypt.generate_password_hash("123456").decode('utf-8'),
+                        password=bcrypt.generate_password_hash(p_pwd).decode('utf-8'),
                         role='parent'
                     )
                     db.session.add(parent)
-                    db.session.flush()
+                    db.session.flush() # Generate ID immediately
                 parent_id = parent.id
 
+            # --- STUDENT CREATION ---
             batch_name = row.get('Batch_Name', '').strip()
             session_id = None
             if batch_name:
@@ -1790,7 +1807,7 @@ def bulk_upload_users():
                 email=student_email,
                 phone_number=row.get('Student_Phone', ''),
                 admission_number=adm_no,
-                password=bcrypt.generate_password_hash("123456").decode('utf-8'),
+                password=bcrypt.generate_password_hash(s_pwd).decode('utf-8'), # ✅ Password matches Email
                 role='student',
                 parent_id=parent_id,
                 session_id=session_id,
@@ -1799,6 +1816,7 @@ def bulk_upload_users():
                 dob=final_dob
             )
             
+            # Link Courses
             course_names_str = row.get('Course_Names', '')
             if course_names_str:
                 for c_name in course_names_str.split(','):

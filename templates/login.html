@@ -1,87 +1,104 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full bg-white">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign In - CST Institute</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Login - CST Institute</title>
+    
     <script src="{{ url_for('static', filename='tailwind.js') }}"></script>
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .brand-bg {
-            background-image: url('https://images.unsplash.com/photo-1617791160144-777530571917?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
-            background-size: cover;
-            background-position: center;
+        body { 
+            font-family: 'Outfit', sans-serif; 
+            /* Soft educational background pattern */
+            background-color: #EEF2FF;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%236366f1' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+        
+        /* Glassmorphism Card Effect */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        /* Smooth Input Focus Animation */
+        .input-field:focus-within {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.15); 
         }
     </style>
 </head>
-<body class="h-full">
-    <div class="min-h-full flex">
-        <div class="hidden lg:block relative w-0 flex-1 brand-bg">
-            <div class="absolute inset-0 bg-gradient-to-t from-blue-900/80 to-transparent flex flex-col justify-end p-16">
-                <h2 class="text-white text-4xl font-bold">Welcome to CST Institute</h2>
-                <p class="text-blue-100 mt-4 text-lg max-w-md">Empowering futures through world-class education and innovation.</p>
+<body class="min-h-screen flex flex-col items-center justify-center p-6 sm:p-10">
+
+    <div class="w-full max-w-md">
+        
+        <div class="text-center mb-8 animate-fade-in-down">
+            <div class="inline-flex items-center justify-center w-24 h-24 rounded-3xl bg-white shadow-xl shadow-blue-500/20 mb-5 p-5 text-blue-600 transform hover:scale-105 transition-transform duration-300">
+                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-full h-full">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.499 5.24 50.552 50.552 0 00-2.658.813m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5" />
+                </svg>
             </div>
+            
+            <h1 class="text-4xl font-extrabold text-slate-800 tracking-tight">CST Institute</h1>
+            <p class="text-slate-500 mt-2 font-medium text-lg">Your Future Starts Here</p>
         </div>
 
-        <div class="flex-1 flex flex-col justify-center py-12 px-4 sm:px-6 lg:flex-none lg:px-20 xl:px-24 bg-white">
-            <div class="mx-auto w-full max-w-sm lg:w-96">
-                <div>
-                    <h2 class="mt-6 text-3xl font-extrabold text-gray-900">Sign in to your account</h2>
-                    <p class="mt-2 text-sm text-gray-600">
-                        Please enter your credentials to continue.
-                    </p>
-                </div>
+        <div class="glass-card rounded-3xl shadow-2xl p-8 sm:p-10 relative overflow-hidden">
+            <div class="absolute -top-10 -right-10 w-32 h-32 bg-blue-500 rounded-full blur-3xl opacity-10"></div>
 
-                <div class="mt-8">
-                    <div class="mt-6">
-                        <form id="login-form" class="space-y-6">
-                            <div>
-                                <label for="email" class="block text-sm font-medium text-gray-700"> User ID </label>
-                                <div class="mt-1 relative rounded-md shadow-sm">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
-                                        </svg>
-                                    </div>
-                                    <input id="email" name="email" type="text" required class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 sm:text-sm transition-all" placeholder="Email, Mobile, or Admission No">
-                                </div>
-                            </div>
-
-                            <div class="space-y-1">
-                                <label for="password" class="block text-sm font-medium text-gray-700"> Password </label>
-                                <div class="mt-1 relative rounded-md shadow-sm">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                            <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
-                                        </svg>
-                                    </div>
-                                    <input id="password" name="password" type="password" required class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 sm:text-sm transition-all" placeholder="••••••••">
-                                </div>
-                            </div>
-
-                            <div>
-                                <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all transform active:scale-[0.98]">
-                                    Sign in
-                                </button>
-                            </div>
-                        </form>
+            <h2 class="text-xl font-bold text-slate-700 mb-6 text-center">Student Login</h2>
+            
+            <form id="login-form" class="space-y-5">
+                
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Login ID</label>
+                    <div class="relative input-field transition-all duration-300">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-blue-500">
+                            <span class="material-symbols-outlined">person</span>
+                        </div>
+                        <input 
+                            id="email" 
+                            type="text" 
+                            placeholder="Mobile / Username" 
+                            required
+                            class="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-semibold text-slate-700 placeholder-slate-400"
+                        >
                     </div>
                 </div>
-                <div class="mt-10">
-                    <div class="relative">
-                        <div class="absolute inset-0 flex items-center" aria-hidden="true">
-                            <div class="w-full border-t border-gray-200"></div>
+
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Password</label>
+                    <div class="relative input-field transition-all duration-300">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-blue-500">
+                            <span class="material-symbols-outlined">lock</span>
                         </div>
-                        <div class="relative flex justify-center text-sm">
-                            <span class="px-2 bg-white text-gray-500"> CST Institute Portal </span>
-                        </div>
+                        <input 
+                            id="password" 
+                            type="password" 
+                            placeholder="••••••••" 
+                            required
+                            class="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-semibold text-slate-700 placeholder-slate-400"
+                        >
                     </div>
                 </div>
-            </div>
+
+                <button type="submit" 
+                    class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-lg py-4 rounded-2xl shadow-xl shadow-blue-500/20 transform transition-all active:scale-[0.98] mt-4 flex justify-center items-center gap-2 group">
+                    <span>Sign In</span>
+                    <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                </button>
+
+            </form>
         </div>
+
+        <p class="text-center text-slate-400 text-sm mt-10 font-medium opacity-80">
+            &copy; 2025 CST Institute. <br class="sm:hidden"> All rights reserved.
+        </p>
     </div>
 
     <script>
@@ -89,9 +106,12 @@
             e.preventDefault();
             
             const btn = e.target.querySelector('button');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Signing in...';
+            const originalContent = btn.innerHTML;
+            
+            // Loading State
+            btn.innerHTML = '<span class="material-symbols-outlined animate-spin">progress_activity</span> Signing in...';
             btn.disabled = true;
+            btn.classList.add('opacity-75', 'cursor-not-allowed');
 
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
@@ -106,22 +126,32 @@
                 const data = await res.json();
 
                 if (res.ok) {
-                    // Redirect based on role
-                    if (data.user.role === 'admin') window.location.href = '/admin';
-                    else if (data.user.role === 'teacher') window.location.href = '/teacher';
-                    else if (data.user.role === 'student') window.location.href = '/student';
-                    else if (data.user.role === 'parent') window.location.href = '/parent';
-                    else alert('Unknown Role');
+                    // Success Animation before redirect
+                    btn.innerHTML = '<span class="material-symbols-outlined">check_circle</span> Success!';
+                    btn.classList.remove('from-blue-600', 'to-indigo-600');
+                    btn.classList.add('from-green-500', 'to-emerald-600');
+                    
+                    setTimeout(() => {
+                        if (data.user.role === 'admin') window.location.href = '/admin';
+                        else if (data.user.role === 'teacher') window.location.href = '/teacher';
+                        else if (data.user.role === 'student') window.location.href = '/student';
+                        else if (data.user.role === 'parent') window.location.href = '/parent';
+                        else alert('Unknown Role');
+                    }, 500);
                 } else {
                     alert(data.message || 'Login failed');
-                    btn.innerHTML = originalText;
-                    btn.disabled = false;
+                    resetBtn();
                 }
             } catch (error) {
                 console.error(error);
                 alert('Server Error. Please try again.');
-                btn.innerHTML = originalText;
+                resetBtn();
+            }
+
+            function resetBtn() {
+                btn.innerHTML = originalContent;
                 btn.disabled = false;
+                btn.classList.remove('opacity-75', 'cursor-not-allowed');
             }
         });
     </script>
