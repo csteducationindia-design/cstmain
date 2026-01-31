@@ -20,6 +20,7 @@ import logging
 import pandas as pd
 from io import BytesIO
 import threading
+# REMOVED: from PIL import Image (This was causing the crash)
 
 # =========================================================
 # CONFIGURATION & SETUP
@@ -304,30 +305,17 @@ class Doubt(db.Model):
 # HELPER FUNCTIONS
 # =========================================================
 # =========================================================
-# WHATSAPP CONFIGURATION (Updated with your details)
+# WHATSAPP CONFIGURATION
 # =========================================================
 INSTANCE_ID = "instance159860"
 TOKEN = "m24ozhanmom1ev3c"
 
 def send_whatsapp_message(to, body):
-    """
-    Sends a WhatsApp message using UltraMsg.
-    Uses dictionary payload to handle spaces and special characters automatically.
-    """
     url = f"https://api.ultramsg.com/{INSTANCE_ID}/messages/chat"
-    
-    # payload as a DICTIONARY handles URL encoding automatically
-    payload = {
-        'token': TOKEN,
-        'to': to,
-        'body': body
-    }
-    
+    payload = {'token': TOKEN, 'to': to, 'body': body}
     headers = {'content-type': 'application/x-www-form-urlencoded'}
-    
     try:
         response = requests.post(url, data=payload, headers=headers)
-        print(f"WhatsApp Response: {response.text}") # Print result to terminal for debugging
         return response.json()
     except Exception as e:
         print(f"WhatsApp Error: {str(e)}")
@@ -385,15 +373,12 @@ def serve_login_page():
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.json
-    # Frontend sends the input in the 'email' field
     login_input = data.get('email', '').strip() 
     password = data.get('password')
 
     if not login_input:
         return jsonify({"message": "Please enter User ID or Email"}), 400
 
-    # Search User by Email OR Admission Number OR Phone
-    # This works even if Admission Number is just "101"
     u = User.query.filter(
         (User.email == login_input) | 
         (User.admission_number == login_input) | 
@@ -412,8 +397,6 @@ def logout():
     logout_user()
     return jsonify({"message": "OK"})
 
-
-
 @app.route('/api/check_session')
 def check_session():
     if current_user.is_authenticated: return jsonify({"logged_in": True, "user": current_user.to_dict()})
@@ -431,7 +414,6 @@ def save_fcm_token():
 @app.route('/<role>')
 @login_required
 def serve_role_page(role):
-    # Security: Ensure role matches
     if role != current_user.role:
         return redirect(f"/{current_user.role}")
     if role in ['admin', 'teacher', 'student', 'parent']:
@@ -448,57 +430,41 @@ def api_student_dashboard():
     if current_user.role != 'student': 
         return jsonify({"msg": "Denied"}), 403
     
-    # 1. Calculate Attendance (Safe from Division by Zero)
-    # Get all attendance records for this student
     att_records = Attendance.query.filter_by(student_id=current_user.id).all()
     total_days = len(att_records)
     
-    # Count how many are 'Present' or 'Checked-In'
     present_days = 0
     for r in att_records:
         if r.status in ['Present', 'Checked-In']:
             present_days += 1
             
-    # Calculate Percentage (Handle 0 days case)
     if total_days > 0:
         att_percent = int((present_days / total_days) * 100)
     else:
-        att_percent = 0  # Default to 0% if no records exist
+        att_percent = 0
 
-    # 2. Calculate Fees
-    # Sum of all payments made by student
     total_paid = db.session.query(db.func.sum(Payment.amount_paid))\
         .filter(Payment.student_id == current_user.id).scalar() or 0
         
-    # Sum of all course fees assigned to student
     total_fee = 0
     for course in current_user.courses_enrolled:
         total_fee += course.fee_amount if hasattr(course, 'fee_amount') else 0
-        # Note: If you use FeeStructures, adjust this logic. 
-        # For now, this prevents crashing if data is missing.
-
-    # If you use a separate FeeStructure table logic, keep your existing logic.
-    # But usually, just sending the balance is enough.
-    # Let's assume a simple Balance calculation if you track it on User or calculate dynamically
-    # For safety, we will just send what we have.
     
     return jsonify({
         "name": current_user.name,
         "email": current_user.email,
-        "attendance_percent": att_percent,  # This fixes the --%
-        "fees_due": 0, # You can update this with your specific fee logic
+        "attendance_percent": att_percent, 
+        "fees_due": 0, 
         "initial": current_user.name[0].upper() if current_user.name else 'U'
     })
-# --- ADD THIS NEW ROUTE TO app.py ---
 
+# --- ADD THIS NEW ROUTE TO app.py ---
 @app.route('/api/payments/<int:id>', methods=['DELETE'])
 @login_required
 def delete_payment(id):
-    # Security: Only Admin can delete payments
     if current_user.role != 'admin': 
         return jsonify({"msg": "Denied"}), 403
     
-    # Find the payment record
     payment = db.session.get(Payment, id)
     
     if payment:
@@ -507,10 +473,10 @@ def delete_payment(id):
         return jsonify({"msg": "Transaction Deleted Successfully"})
     
     return jsonify({"msg": "Payment Not Found"}), 404
+
 @app.route('/api/student/doubts', methods=['GET'])
 @login_required
 def get_my_doubts():
-    # Fetch all doubts asked by the logged-in student, newest first
     doubts = Doubt.query.filter_by(student_id=current_user.id).order_by(Doubt.created_at.desc()).all()
     
     data = []
@@ -525,24 +491,19 @@ def get_my_doubts():
         })
     return jsonify(data)
 
-# --- ADD THIS TO app.py ---
-
 @app.route('/api/parent/child_info', methods=['GET'])
 @login_required
 def get_parent_child_info():
     if current_user.role != 'parent': 
         return jsonify({"msg": "Denied"}), 403
         
-    # Fetch the linked child
     child = User.query.filter_by(parent_id=current_user.id).first()
     
     if not child: 
-        return jsonify(None) # No child linked yet
+        return jsonify(None) 
         
     return jsonify(child.to_dict())
-# =========================================================
-# TEACHER SEND MESSAGE ROUTE (FIXED)
-# =========================================================
+
 @app.route('/api/teacher/send_message', methods=['POST'])
 @login_required
 def teacher_send_message():
@@ -551,7 +512,7 @@ def teacher_send_message():
         
     data = request.json
     student_id = data.get('student_id')
-    channel = data.get('channel')  # 'whatsapp', 'email', 'sms'
+    channel = data.get('channel') 
     message = data.get('message')
     
     if not message:
@@ -562,36 +523,16 @@ def teacher_send_message():
         return jsonify({"msg": "Student not found"}), 404
         
     try:
-        # --- WHATSAPP LOGIC ---
         if channel == 'whatsapp':
-            # 1. Clean the phone number
             raw_phone = str(student.phone_number).replace('+', '').replace(' ', '').replace('-', '')
-            
-            # 2. Add Country Code (91) if missing
             if len(raw_phone) == 10:
                 phone = "91" + raw_phone
             else:
                 phone = raw_phone
-                
-            # 3. Send Message
             send_whatsapp_message(phone, message)
-            
-            # 4. (OPTIONAL) Save to Database - COMMENTED OUT TO PREVENT CRASH
-            # If you want to save history, you must define a 'Message' class in DB models first.
-            # new_msg = Message(
-            #     sender_id=current_user.id,
-            #     recipient_id=student.id,
-            #     content=f"[WhatsApp] {message}",
-            #     channel='whatsapp'
-            # )
-            # db.session.add(new_msg)
-            # db.session.commit()
-            
             return jsonify({"msg": "WhatsApp sent successfully!"})
 
-        # --- EMAIL LOGIC ---
         elif channel == 'email':
-            # Add your email logic here if needed
             return jsonify({"msg": "Email sent successfully!"})
             
         else:
@@ -601,7 +542,6 @@ def teacher_send_message():
         db.session.rollback()
         return jsonify({"msg": f"Error sending message: {str(e)}"}), 500
 
-# --- NEW: TEACHER NOTIFICATION ROUTE ---
 @app.route('/api/teacher/notify', methods=['POST'])
 @login_required
 def teacher_notify_student():
@@ -610,21 +550,19 @@ def teacher_notify_student():
     subject = d.get('subject', 'Notification')
     body = d.get('body')
     channel = d.get('type', 'portal') 
-    include_parent = d.get('include_parent', False)  # <--- NEW: Capture this flag
+    include_parent = d.get('include_parent', False)
 
     student = db.session.get(User, student_id)
     if not student:
         return jsonify({"message": "Student not found"}), 404
 
     try:
-        # --- 1. APP PUSH NOTIFICATION ---
         if channel == 'portal' or channel == 'push':
             send_push_notification(student.id, subject, body)
             if include_parent and student.parent_id:
                 send_push_notification(student.parent_id, f"Parent Alert: {subject}", f"Regarding {student.name}: {body}")
             return jsonify({"message": "Push notification sent successfully!"})
 
-        # --- 2. SMS ---
         elif channel == 'sms':
             if student.phone_number:
                 send_actual_sms(student.phone_number, f"{subject}: {body}")
@@ -635,18 +573,13 @@ def teacher_notify_student():
                     send_actual_sms(parent.phone_number, f"CST Alert: {body}")
             return jsonify({"message": "SMS sent successfully!"})
 
-        # --- 3. WHATSAPP (Server-Side Automation) ---
         elif channel == 'whatsapp':
             msg_sent_count = 0
-            
-            # Send to Student
             if student.phone_number:
-                # Ensure number has country code (e.g., 91)
                 s_phone = student.phone_number if len(student.phone_number) > 10 else f"91{student.phone_number}"
                 send_whatsapp_message(s_phone, f"*{subject}*\n{body}")
                 msg_sent_count += 1
             
-            # Send to Parent
             if include_parent and student.parent_id:
                 parent = db.session.get(User, student.parent_id)
                 if parent and parent.phone_number:
@@ -663,18 +596,13 @@ def teacher_notify_student():
 
     except Exception as e:
         return jsonify({"message": f"Server Error: {str(e)}"}), 500
-# =========================================================
-# NEW FEATURES: FEES & HALL TICKETS
-# =========================================================
 
-# 1. COLLECT FEE ROUTE
 @app.route('/api/fees/collect', methods=['POST'])
 @login_required
 def collect_fee():
     if current_user.role != 'admin': return jsonify({"msg": "Denied"}), 403
     d = request.json
     try:
-        # Create Payment Record
         pay = Payment(
             student_id=int(d['student_id']),
             fee_structure_id=int(d['fee_structure_id']),
@@ -687,7 +615,6 @@ def collect_fee():
     except Exception as e:
         return jsonify({"msg": str(e)}), 500
 
-# 2. PRINT RECEIPT (HTML View)
 @app.route('/admin/receipt/<int:id>')
 def print_receipt(id):
     pay = db.session.get(Payment, id)
@@ -696,7 +623,6 @@ def print_receipt(id):
     student = db.session.get(User, pay.student_id)
     fee = db.session.get(FeeStructure, pay.fee_structure_id)
     
-    # Receipt Template
     return f"""
     <html>
     <head><title>Receipt #{pay.id}</title></head>
@@ -741,7 +667,6 @@ def save_exam():
     db.session.commit()
     return jsonify({"msg": "Exam saved"})
 
-# --- ADMIN ROUTES ---
 @app.route('/api/users', methods=['GET', 'POST', 'PUT'])
 @login_required
 def api_users():
@@ -762,12 +687,11 @@ def api_users():
         return jsonify([u.to_dict() for u in q.all()])
 
     d = request.form
-    # Check if ID exists for Update vs Insert
     if request.method == 'POST' and not d.get('id'):
         if User.query.filter_by(email=d['email']).first(): return jsonify({"msg": "Email exists"}), 400
         u = User(name=d['name'], email=d['email'], password=bcrypt.generate_password_hash(d['password']).decode('utf-8'), role=d.get('role', 'student'))
         db.session.add(u)
-    else: # Update existing (POST with ID or PUT)
+    else: 
         u_id = d.get('id')
         if not u_id: return jsonify({"msg": "Missing ID for update"}), 400
         u = db.session.get(User, int(u_id))
@@ -805,34 +729,28 @@ def api_users():
 @app.route('/admin/hallticket/<int:student_id>')
 @login_required
 def print_hallticket(student_id):
-    # 1. Security Check
     if current_user.role != 'admin':
         return "Denied", 403
 
-    # 2. Get Student
     student = db.session.get(User, student_id)
     if not student:
         return "Student not found", 404
 
-    # 3. Get Session Name
     session_name = "Not Assigned"
     if student.session_id:
         sess = db.session.get(AcademicSession, student.session_id)
         if sess:
             session_name = sess.name
 
-    # 4. Get Exam Details
     exam = None
     if student.session_id:
         exam = Exam.query.filter_by(
             session_id=student.session_id
         ).order_by(Exam.id.desc()).first()
 
-    # 5. Format Data
     courses = ", ".join([c.name for c in student.courses_enrolled]) or "N/A"
     photo = student.profile_photo_url if student.profile_photo_url else "https://placehold.co/150"
 
-    # 6. Render Template
     return render_template(
         "hallticket.html",
         student=student,
@@ -842,35 +760,25 @@ def print_hallticket(student_id):
         exam=exam
     )
 
-
-# --- BULK HALL TICKET GENERATION (UPDATED) ---
 @app.route('/admin/halltickets/bulk')
 @login_required
 def print_bulk_halltickets():
     if current_user.role != 'admin': return "Denied", 403
     
-    # 1. Get Input Data from URL parameters
     session_id = request.args.get('session_id')
     exam_date = request.args.get('exam_date')
     exam_time = request.args.get('exam_time')
     
     if not session_id: return "Error: Batch (Session) is required"
 
-    # =======================================================
-    # ✅ FIX: SAVE EXAM DATA TO DATABASE
-    # This ensures the Student Portal can see the date/time later
-    # =======================================================
     if exam_date and exam_time:
         try:
-            # Check if an exam already exists for this session
             existing_exam = Exam.query.filter_by(session_id=int(session_id)).order_by(Exam.id.desc()).first()
             
             if existing_exam:
-                # Update existing record
                 existing_exam.exam_date = datetime.strptime(exam_date, '%Y-%m-%d').date()
                 existing_exam.exam_time = exam_time
             else:
-                # Create new record
                 new_exam = Exam(
                     session_id=int(session_id),
                     exam_date=datetime.strptime(exam_date, '%Y-%m-%d').date(),
@@ -885,18 +793,14 @@ def print_bulk_halltickets():
         except Exception as e:
             print(f"⚠️ Error auto-saving exam: {e}")
             db.session.rollback()
-    # =======================================================
 
-    # 2. Fetch Session & Students
     session = db.session.get(AcademicSession, int(session_id))
     if not session: return "Session not found"
 
-    # Fetch only students in this batch
     students = User.query.filter_by(session_id=int(session_id), role='student').all()
     
     if not students: return "No students found in this batch."
 
-    # 3. Render the Bulk Template
     return render_template(
         'halltickets_bulk.html',
         students=students,
@@ -1077,7 +981,6 @@ def send_sms_alert():
         print(f"SMS CRASH: {str(e)}")
         return jsonify({"message": f"Server Error: {str(e)}"}), 500
 
-# 1. TEACHER: Create Assignment
 @app.route('/api/teacher/assignments/create', methods=['POST'])
 @login_required
 def create_assignment():
@@ -1092,26 +995,18 @@ def create_assignment():
     db.session.add(task)
     db.session.commit()
     
-    # Notify Students
     course = db.session.get(Course, task.course_id)
     for s in course.students:
         send_push_notification(s.id, "New Assignment", f"Task: {task.title} in {course.name}")
         
     return jsonify({"msg": "Assignment Created & Students Notified"})
 
-# 2. STUDENT: Get My Assignments
 @app.route('/api/student/assignments', methods=['GET'])
 @login_required
 def get_my_assignments():
-    # Find courses the student is enrolled in
     enrolled_courses = [c.id for c in current_user.courses_enrolled]
-    
-    # Fetch assignments for those courses
     tasks = AssignmentTask.query.filter(AssignmentTask.course_id.in_(enrolled_courses)).order_by(AssignmentTask.due_date.desc()).all()
-    
     return jsonify([t.to_dict() for t in tasks])
-
-# --- SPECIAL ADMIN ROUTES (ID Card) ---
 
 @app.route('/admin/id_card/<int:id>')
 @login_required
@@ -1119,7 +1014,6 @@ def generate_single_id_card(id):
     if current_user.role != 'admin': return "Denied", 403
     student = db.session.get(User, id)
     if not student: return "Student not found", 404
-    # Render the proper HTML template
     return render_template('id_card.html', student=student)
 
 @app.route('/admin/id_cards/bulk')
@@ -1127,7 +1021,6 @@ def generate_single_id_card(id):
 def generate_bulk_id_cards():
     if current_user.role != 'admin': return "Denied", 403
     students = User.query.filter_by(role='student').all()
-    # Render the proper HTML template
     return render_template('id_cards_bulk.html', students=students)
 
 @app.route('/uploads/<filename>')
@@ -1138,20 +1031,11 @@ def serve_receipt(id):
     p = db.session.get(Payment, id)
     return f"<h1>Receipt #{p.id}</h1><p>Amount: {p.amount_paid}</p><button onclick='window.print()'>Print</button>" if p else "Not Found"
 
-# =========================================================
-# TEACHER SPECIFIC ROUTES
-# =========================================================
-
-# --- FIX: Add this route so Teachers can see Batches ---
 @app.route('/api/teacher/sessions', methods=['GET'])
 @login_required
 def teacher_sessions():
-    # Allow logged-in teachers to fetch all academic sessions
     sessions = AcademicSession.query.all()
     return jsonify([s.to_dict() for s in sessions])
-# =========================================================
-# STUDENT & PARENT ROUTES (ADD THIS SECTION)
-# =========================================================
 
 @app.route('/api/my/profile', methods=['GET'])
 @login_required
@@ -1169,14 +1053,13 @@ def my_attendance():
         
     atts = Attendance.query.filter_by(student_id=uid).order_by(Attendance.check_in_time.desc()).limit(50).all()
     
-    # FIX: Added 'time' field so it shows up in the app
     return jsonify([{
         "date": a.check_in_time.strftime('%Y-%m-%d'),
         "time": a.check_in_time.strftime('%I:%M %p'),
         "status": a.status
     } for a in atts])
 
-@app.route('/api/student/balance', methods=['GET']) # Fixed route name to match student.html
+@app.route('/api/student/balance', methods=['GET']) 
 @login_required
 def my_balance():
     uid = current_user.id
@@ -1186,23 +1069,21 @@ def my_balance():
         uid = child.id
     return jsonify(calculate_fee_status(uid))
 
-@app.route('/api/student/notes', methods=['GET']) # Fixed route name to match student.html
+@app.route('/api/student/notes', methods=['GET'])
 @login_required
 def my_notes():
-    # Fetch notes for courses the student is enrolled in
     notes = SharedNote.query.join(student_course_association, (SharedNote.course_id == student_course_association.c.course_id)).filter(student_course_association.c.student_id == current_user.id).order_by(SharedNote.created_at.desc()).all()
     return jsonify([n.to_dict() for n in notes])
 
-@app.route('/api/student/grades', methods=['GET']) # Stub for grades
+@app.route('/api/student/grades', methods=['GET'])
 @login_required
 def my_grades():
-    return jsonify([]) # Return empty list if no grade system yet
+    return jsonify([])
 
 @app.route('/api/my/fees', methods=['GET'])
 @login_required
 def my_fees():
     uid = current_user.id
-    # If Parent, fetch Child's data
     if current_user.role == 'parent':
         child = User.query.filter_by(parent_id=current_user.id).first()
         if not child: return jsonify({"balance": 0})
@@ -1212,15 +1093,9 @@ def my_fees():
 @app.route('/api/my/announcements', methods=['GET'])
 @login_required
 def my_announcements():
-    # Fetch announcements targeted at 'all', 'students', or 'parents'
     target = 'parents' if current_user.role == 'parent' else 'students'
     anns = Announcement.query.filter(Announcement.target_group.in_(['all', target])).order_by(Announcement.created_at.desc()).all()
     return jsonify([a.to_dict() for a in anns])
-
-# 2. GET STUDENTS (With Debugging & robust filtering)
-# --- 1. ROBUST STUDENT FETCHING (Fixes "No Data" issue) ---
-# FIX: Robust Filtering for Students
-# FIX: Added 'course_ids' so frontend filtering works
 
 @app.route('/api/teacher/students', methods=['GET'])
 @login_required
@@ -1228,7 +1103,6 @@ def teacher_students():
     sid = request.args.get('session_id')
     cid = request.args.get('course_id')
     
-    # Filter cleanup
     if sid in ['null', 'undefined', '', 'None']: sid = None
     if cid in ['null', 'undefined', '', 'None']: cid = None
 
@@ -1248,13 +1122,12 @@ def teacher_students():
                     "admission_number": s.admission_number,
                     "profile_photo_url": s.profile_photo_url, 
                     "session_name": s.to_dict().get('session_name', 'N/A'),
-		    "phone_number": s.phone_number,  # <--- ADD THIS LINE
-                    "course_ids": [course.id for course in s.courses_enrolled] # <-- THIS LINE WAS MISSING
+                    "phone_number": s.phone_number,
+                    "course_ids": [course.id for course in s.courses_enrolled]
                 })
                 seen.add(s.id)
     return jsonify(students_list)
 
-# --- 2. ROBUST REPORTS (Fixes Empty Reports) ---
 @app.route('/api/teacher/reports/attendance', methods=['GET'])
 @login_required
 def teacher_reports():
@@ -1262,7 +1135,6 @@ def teacher_reports():
     sid = request.args.get('session_id')
     cid = request.args.get('course_id')
     
-    # FIX: Sanitize inputs
     if sid in ['null', 'undefined', '', 'None']: sid = None
     if cid in ['null', 'undefined', '', 'None']: cid = None
     
@@ -1279,11 +1151,9 @@ def teacher_reports():
                 continue
                 
             if s.id not in seen:
-                # Analytics
                 total = Attendance.query.filter_by(student_id=s.id).count()
                 present = Attendance.query.filter_by(student_id=s.id, status='Present').count()
                 
-                # Today's Status
                 att = Attendance.query.filter(Attendance.student_id==s.id, db.func.date(Attendance.check_in_time)==dt).first()
                 
                 report.append({
@@ -1298,7 +1168,7 @@ def teacher_reports():
                 seen.add(s.id)
                 
     return jsonify(report)
-# 2. ANNOUNCEMENTS (GET & POST)
+
 @app.route('/api/teacher/announcements', methods=['GET', 'POST'])
 @login_required
 def teacher_announcements():
@@ -1306,7 +1176,6 @@ def teacher_announcements():
     
     if request.method == 'POST':
         d = request.json
-        # Save Announcement
         a = Announcement(
             title=d['title'], 
             content=d['content'], 
@@ -1317,27 +1186,22 @@ def teacher_announcements():
         db.session.add(a)
         db.session.commit()
         
-        # NOTIFICATION LOGIC
         courses = Course.query.filter_by(teacher_id=current_user.id).all()
         notified_ids = set()
         
         for c in courses:
             for s in c.students:
                 if s.id not in notified_ids:
-                    # Send Push
                     send_push_notification(s.id, f"Class Update: {d['title']}", d['content'])
                     notified_ids.add(s.id)
         
         return jsonify(a.to_dict()), 201
 
-    # GET
     anns = Announcement.query.filter(
         (Announcement.teacher_id == current_user.id) | (Announcement.target_group == 'teachers')
     ).order_by(Announcement.created_at.desc()).all()
     return jsonify([a.to_dict() for a in anns])
 
-
-# 3. NOTES (Sharing Material)
 @app.route('/api/teacher/notes', methods=['GET', 'POST', 'DELETE'])
 @login_required
 def teacher_notes():
@@ -1363,43 +1227,34 @@ def teacher_notes():
         db.session.add(note)
         db.session.commit()
         
-        # Notify Students
         course = db.session.get(Course, int(request.form['course_id']))
         for s in course.students:
             send_push_notification(s.id, "New Study Material", f"{current_user.name} posted: {request.form['title']}")
             
         return jsonify({"msg": "Uploaded Successfully"}), 201
 
-    # GET
     notes = SharedNote.query.filter_by(teacher_id=current_user.id).order_by(SharedNote.created_at.desc()).all()
     return jsonify([n.to_dict() for n in notes])
 
-
-# 4. DAILY TOPIC / SYLLABUS UPDATE (Batch-Aware)
-# 4. DAILY TOPIC / SYLLABUS UPDATE (Batch-Aware)
 @app.route('/api/teacher/daily_topic', methods=['POST'])
 @login_required
 def daily_topic():
     d = request.json
     course_id = d.get('course_id')
-    session_id = d.get('session_id') # Get Batch ID
+    session_id = d.get('session_id') 
     topic = d.get('topic')
-    selected_date = d.get('date') # Get the date picked by teacher
+    selected_date = d.get('date') 
     
     course = db.session.get(Course, course_id)
     if not course: return jsonify({"msg": "Error: Course not found"}), 404
     
-    # 1. Format Topic Title
     title = f"Syllabus: {course.name}"
     if session_id:
         session = db.session.get(AcademicSession, session_id)
         if session: title += f" ({session.name})"
 
-    # 2. Format Content to include the Date
-    # We prepend the date so it's visible in the history
     final_content = f"Date: {selected_date}\nTopic: {topic}"
 
-    # 3. Save Announcement to DB
     db.session.add(Announcement(
         title=title, 
         content=final_content, 
@@ -1409,12 +1264,10 @@ def daily_topic():
     ))
     db.session.commit()
     
-    # 4. Filter Students (Batch-Wise)
     students_to_notify = course.students
     if session_id:
         students_to_notify = [s for s in course.students if s.session_id == int(session_id)]
     
-    # 5. Send Notifications
     count = 0
     for s in students_to_notify:
         send_push_notification(s.id, title, f"Covered on {selected_date}: {topic}")
@@ -1428,35 +1281,24 @@ def daily_topic():
                 
     return jsonify({"msg": f"Saved & Sent to {count} students."})
 
-# 6. GET TEACHER COURSES
 @app.route('/api/teacher/courses', methods=['GET'])
 @login_required
 def teacher_courses():
-    # Fetch courses assigned to the logged-in teacher
     courses = Course.query.filter_by(teacher_id=current_user.id).all()
     return jsonify([c.to_dict() for c in courses])
 
-# FIX: Sends notifications for PRESENT and ABSENT, and fixes "undefined" alert
 @app.route('/api/teacher/attendance', methods=['POST'])
 @login_required
 def save_attendance():
     d = request.json
-    
-    # 1. Parse the selected date (This defaults to 00:00:00)
     selected_date = datetime.strptime(d['date'], '%Y-%m-%d').date()
-    
-    # 2. Get current time to make it look realistic
     current_time = (datetime.utcnow() + timedelta(hours=5, minutes=30)).time()
-    
-    # 3. Combine Date + Current Time
-    # If teacher submits at 5:30 PM, this saves "2026-01-20 17:30:00"
     final_dt = datetime.combine(selected_date, current_time)
     
     for r in d['attendance_data']:
         sid = int(r['student_id'])
         stat = r['status']
         
-        # Check if record exists for this DATE
         exist = Attendance.query.filter(
             Attendance.student_id == sid, 
             db.func.date(Attendance.check_in_time) == selected_date
@@ -1464,27 +1306,19 @@ def save_attendance():
         
         if exist: 
             exist.status = stat
-            # Optional: Update time to now if they change status? 
-            # exist.check_in_time = final_dt 
         else: 
-            # FIX: Use 'final_dt' instead of just 'dt'
             db.session.add(Attendance(student_id=sid, check_in_time=final_dt, status=stat))
         
-        # NOTIFICATION LOGIC
-        # Send App Notification to Student
         student = db.session.get(User, sid)
         if student:
             title = "Attendance Update"
             body = f"You have been marked {stat.upper()} today ({d['date']})."
             send_push_notification(sid, title, body)
 
-            # Notify Parent
             if student.parent_id:
-                # App Push to Parent
                 p_body = f"Your child {student.name} is marked {stat} today."
                 send_push_notification(student.parent_id, "Attendance Alert", p_body)
                 
-                # Send SMS ONLY if Absent
                 if stat == 'Absent':
                     parent = db.session.get(User, student.parent_id)
                     if parent and parent.phone_number:
@@ -1494,37 +1328,30 @@ def save_attendance():
     db.session.commit()
     return jsonify({"message": "Attendance Saved & Notifications Sent!"})
 
-# --- STUDENT/PARENT ROUTES ---
 @app.route('/api/student/fees', methods=['GET'])
 @login_required
 def s_fees(): return jsonify(calculate_fee_status(current_user.id))
 
-# --- STUDENT: DOWNLOAD HALL TICKET ---
 @app.route('/student/my_hallticket')
 @login_required
 def my_hallticket():
     if current_user.role != 'student': return "Denied", 403
     
     student = current_user
-    
-    # 1. Get Session Name
     session_name = "Not Assigned"
     if student.session_id:
         sess = db.session.get(AcademicSession, student.session_id)
         if sess: session_name = sess.name
 
-    # 2. Get Exam Details (Latest Exam for this session)
     exam = None
     if student.session_id:
         exam = Exam.query.filter_by(
             session_id=student.session_id
         ).order_by(Exam.id.desc()).first()
 
-    # 3. Format Data
     courses = ", ".join([c.name for c in student.courses_enrolled]) or "N/A"
     photo = student.profile_photo_url if student.profile_photo_url else "https://placehold.co/150"
 
-    # 4. Reuse the existing Hall Ticket Template
     return render_template(
         "hallticket.html",
         student=student,
@@ -1533,13 +1360,6 @@ def my_hallticket():
         photo=photo,
         exam=exam
     )
-# =========================================================
-# COMPREHENSIVE REPORTS (EXCEL & PDF)
-# =========================================================
-
-# =========================================================
-# COMPREHENSIVE REPORTS (EXCEL & PDF) - UPDATED
-# =========================================================
 
 @app.route('/api/reports/download')
 @login_required
@@ -1556,15 +1376,11 @@ def download_excel_report():
     data = []
     
     for s in students:
-        # 1. Calculate Fee Status
         fee = calculate_fee_status(s.id)
-        
-        # 2. Calculate Attendance
         total_days = Attendance.query.filter_by(student_id=s.id).count()
         present_days = Attendance.query.filter_by(student_id=s.id, status='Present').count()
         att_pct = f"{round((present_days/total_days)*100, 1)}%" if total_days > 0 else "0%"
         
-        # 3. Fetch Linked Parent Details
         parent_name = "N/A"
         parent_phone = "N/A"
         parent_email = "N/A"
@@ -1576,10 +1392,8 @@ def download_excel_report():
                 parent_phone = parent.phone_number
                 parent_email = parent.email
 
-        # 4. Construct Full Address
         address = f"{s.address_line1 or ''} {s.city or ''} {s.state or ''} {s.pincode or ''}".strip()
 
-        # 5. Build Comprehensive Data Row
         data.append({
             "Admission No": s.admission_number,
             "Student Name": s.name,
@@ -1600,10 +1414,8 @@ def download_excel_report():
             "Attendance %": att_pct
         })
     
-    # Generate CSV (Compatible with Excel)
     df = pd.DataFrame(data)
     output = BytesIO()
-    # BOM for Excel compatibility with special chars (₹)
     output.write(b'\xef\xbb\xbf') 
     df.to_csv(output, index=False)
     output.seek(0)
@@ -1634,7 +1446,6 @@ def print_comprehensive_report():
     
     for s in students:
         fee = calculate_fee_status(s.id)
-        # Get raw counts for the report
         present = Attendance.query.filter_by(student_id=s.id, status='Present').count()
         total = Attendance.query.filter_by(student_id=s.id).count()
         
@@ -1648,7 +1459,6 @@ def print_comprehensive_report():
         })
         
     return render_template('report_print.html', students=report_data, session_name=session_name, report_date=date.today())
-# --- NEW FEE REPORT FEATURES ---
 
 @app.route('/api/reports/collections', methods=['GET'])
 @login_required
@@ -1658,16 +1468,13 @@ def api_collection_report():
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
 
-    # Query Payments joined with Student Data
     query = db.session.query(Payment, User).join(User, Payment.student_id == User.id)
 
-    # Apply Date Filters
     if start_date:
         query = query.filter(db.func.date(Payment.payment_date) >= start_date)
     if end_date:
         query = query.filter(db.func.date(Payment.payment_date) <= end_date)
 
-    # Get Results sorted by newest first
     results = query.order_by(Payment.payment_date.desc()).all()
 
     data = []
@@ -1675,7 +1482,6 @@ def api_collection_report():
 
     for pay, student in results:
         total_collected += pay.amount_paid
-        # Get fee name
         fee_struct = db.session.get(FeeStructure, pay.fee_structure_id)
         fee_name = fee_struct.name if fee_struct else "Unknown Fee"
         
@@ -1701,16 +1507,14 @@ def print_collection_report():
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
     
-    # Re-run query for the print view
     query = db.session.query(Payment, User).join(User, Payment.student_id == User.id)
     if start_date: query = query.filter(db.func.date(Payment.payment_date) >= start_date)
     if end_date: query = query.filter(db.func.date(Payment.payment_date) <= end_date)
     
-    results = query.order_by(Payment.payment_date.asc()).all() # Oldest first for ledger
+    results = query.order_by(Payment.payment_date.asc()).all()
     
     total = sum(p.amount_paid for p, u in results)
     
-    # Generate HTML for Printing
     rows = ""
     for pay, student in results:
         fee = db.session.get(FeeStructure, pay.fee_structure_id)
@@ -1776,9 +1580,6 @@ def print_collection_report():
     </body>
     </html>
     """
-# =========================================================
-# MIGRATION & STARTUP
-# =========================================================
 
 def check_and_upgrade_db():
     try:
@@ -1816,8 +1617,6 @@ def initialize_database():
         init_firebase()
 
 
-# --- REPLACE YOUR EXISTING bulk_upload_users FUNCTION WITH THIS ---
-
 @app.route('/api/bulk_upload', methods=['POST'])
 @login_required
 def bulk_upload_users():
@@ -1837,27 +1636,21 @@ def bulk_upload_users():
         skipped_count = 0
         
         for row in reader:
-            # 1. Get Essential Data
             student_name = row.get('Student_FullName', '').strip()
             raw_adm_no = row.get('Admission_No', '').strip()
             
-            # --- NUMERIC FIX: Remove .0 if Excel adds it (e.g. 101.0 -> 101) ---
             if raw_adm_no.endswith('.0'):
                 adm_no = raw_adm_no[:-2]
             else:
                 adm_no = raw_adm_no
             
-            # REQUIRE ADMISSION NO
             if not adm_no or not student_name: 
                 continue
 
-            # 2. HANDLE EMAIL (Optional)
             student_email = row.get('Student_Email', '').strip()
             if not student_email:
-                # Auto-generate dummy email: 101@school.com
                 student_email = f"{adm_no}@school.com"
 
-            # 3. DUPLICATE CHECK
             existing_user = User.query.filter(
                 (User.admission_number == adm_no) | 
                 (User.email == student_email)
@@ -1868,7 +1661,6 @@ def bulk_upload_users():
                 skipped_count += 1
                 continue 
 
-            # 4. DATE FIX
             raw_dob = row.get('DOB', '').strip()
             final_dob = raw_dob
             try:
@@ -1877,11 +1669,9 @@ def bulk_upload_users():
                     final_dob = f"{parts[2]}-{parts[1]}-{parts[0]}"
             except: pass
 
-            # 5. PARENT LOGIC
             parent_phone = row.get('Parent_Phone', '').strip()
             parent_id = None
             if parent_phone:
-                # Clean parent phone too just in case
                 if parent_phone.endswith('.0'): parent_phone = parent_phone[:-2]
                 
                 parent = User.query.filter_by(phone_number=parent_phone, role='parent').first()
@@ -1897,14 +1687,12 @@ def bulk_upload_users():
                     db.session.flush()
                 parent_id = parent.id
 
-            # 6. BATCH LOGIC
             batch_name = row.get('Batch_Name', '').strip()
             session_id = None
             if batch_name:
                 sess = AcademicSession.query.filter(AcademicSession.name.ilike(batch_name)).first()
                 if sess: session_id = sess.id
             
-            # 7. CREATE STUDENT
             student = User(
                 name=student_name,
                 email=student_email,
@@ -1919,7 +1707,6 @@ def bulk_upload_users():
                 dob=final_dob
             )
             
-            # 8. COURSES
             course_names_str = row.get('Course_Names', '')
             if course_names_str:
                 for c_name in course_names_str.split(','):
@@ -1939,14 +1726,9 @@ def bulk_upload_users():
         print(f"UPLOAD ERROR: {str(e)}") 
         return jsonify({"msg": f"Server Error: {str(e)}"}), 500
 
-
-# --- NEW: STUDENT ASK TEACHER FEATURE ---
-
 @app.route('/api/student/my_teachers', methods=['GET'])
 @login_required
 def get_my_teachers():
-    # 1. Get courses the student is enrolled in
-    # 2. Extract unique teachers from those courses
     teachers = {}
     for course in current_user.courses_enrolled:
         if course.teacher:
@@ -1962,7 +1744,7 @@ def get_my_teachers():
                 teachers[tid]['subjects'].append(course.name)
     
     return jsonify(list(teachers.values()))
-# --- TEACHER: UPLOAD PHOTO ---
+
 @app.route('/api/teacher/update_photo', methods=['POST'])
 @login_required
 def teacher_update_photo():
@@ -1973,32 +1755,24 @@ def teacher_update_photo():
         return jsonify({"msg": "No selected file"}), 400
         
     if file:
-        # 1. Generate a safe, unique filename (UUID)
         import uuid
         ext = os.path.splitext(file.filename)[1]
         filename = f"teacher_{current_user.id}_{uuid.uuid4().hex}{ext}"
         
-        # 2. Save to the main 'uploads' folder (Same as Admin uploads)
         save_path = app.config['UPLOAD_FOLDER']
         if not os.path.exists(save_path):
             os.makedirs(save_path)
             
         file.save(os.path.join(save_path, filename))
         
-        # 3. Save the correct URL path to Database
-        # This matches your existing @app.route('/uploads/<filename>')
         current_user.profile_photo_url = f"/uploads/{filename}"
         db.session.commit()
         
         return jsonify({"msg": "Photo updated!", "url": current_user.profile_photo_url})
 
-
-
-# --- TEACHER: GET DOUBTS ---
 @app.route('/api/teacher/doubts', methods=['GET'])
 @login_required
 def get_teacher_doubts():
-    # Get all doubts sent to this teacher, newest first
     doubts = Doubt.query.filter_by(teacher_id=current_user.id).order_by(Doubt.created_at.desc()).all()
     data = []
     for d in doubts:
@@ -2011,7 +1785,6 @@ def get_teacher_doubts():
         })
     return jsonify(data)
 
-# --- TEACHER: REPLY TO DOUBT ---
 @app.route('/api/teacher/reply_doubt', methods=['POST'])
 @login_required
 def reply_doubt():
@@ -2019,7 +1792,6 @@ def reply_doubt():
     doubt_id = data.get('doubt_id')
     answer_text = data.get('answer')
     
-    # Corrected query method
     doubt = db.session.get(Doubt, doubt_id)
     
     if not doubt or doubt.teacher_id != current_user.id:
@@ -2028,12 +1800,10 @@ def reply_doubt():
     doubt.answer = answer_text
     db.session.commit()
     
-    # Notify Student
     send_push_notification(doubt.student_id, "Teacher Replied", f"Answer: {answer_text[:50]}...")
     
     return jsonify({"msg": "Reply sent!"})
 
-# --- STUDENT: ASK DOUBT (FIXED: Saves to Database) ---
 @app.route('/api/student/ask_doubt', methods=['POST'])
 @login_required
 def ask_doubt():
@@ -2044,7 +1814,6 @@ def ask_doubt():
     if not teacher_id or not question:
         return jsonify({"msg": "Missing data"}), 400
     
-    # 1. Save to Database (CRITICAL: So teacher can see it in the portal)
     new_doubt = Doubt(
         student_id=current_user.id,
         teacher_id=teacher_id,
@@ -2053,7 +1822,6 @@ def ask_doubt():
     db.session.add(new_doubt)
     db.session.commit()
     
-    # 2. Notify the Teacher
     send_push_notification(
         teacher_id, 
         f"New Doubt from {current_user.name}", 

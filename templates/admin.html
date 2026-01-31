@@ -269,8 +269,8 @@
                 <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100">
                     <h3 class="font-bold mb-4 text-lg text-slate-700 dark:text-white flex items-center gap-2"><span class="material-symbols-outlined text-green-600">date_range</span> Fee Collection Report</h3>
                     <div class="flex flex-wrap gap-4 items-end mb-6 bg-slate-50 p-4 rounded-lg">
-                        <div><label class="text-xs font-bold text-gray-500">From</label><input type="date" id="report-start" class="border p-2 rounded-lg bg-white block"></div>
-                        <div><label class="text-xs font-bold text-gray-500">To</label><input type="date" id="report-end" class="border p-2 rounded-lg bg-white block"></div>
+                        <div><label class="text-xs font-bold text-gray-500">From Date</label><input type="date" id="report-start" class="border p-2 rounded-lg bg-white block"></div>
+                        <div><label class="text-xs font-bold text-gray-500">To Date</label><input type="date" id="report-end" class="border p-2 rounded-lg bg-white block"></div>
                         <button onclick="loadCollectionReport()" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700">Show Report</button>
                         <button onclick="printCollectionReport()" class="bg-slate-800 text-white px-6 py-2 rounded-lg font-medium hover:bg-slate-900 flex items-center gap-2"><span class="material-symbols-outlined text-sm">print</span> Print</button>
                     </div>
@@ -436,25 +436,36 @@
 
     // --- DATA LOADERS ---
     async function loadGlobalData() {
-        const [u, s, c] = await Promise.all([
-            fetch(API_BASE_URL + '/users').then(r=>r.json()),
-            fetch(API_BASE_URL + '/sessions').then(r=>r.json()),
-            fetch(API_BASE_URL + '/courses').then(r=>r.json())
-        ]);
-        users = u; sessions = s; courses = c;
+        try {
+            const [u, s, c] = await Promise.all([
+                fetch(API_BASE_URL + '/users').then(r=>r.json()),
+                fetch(API_BASE_URL + '/sessions').then(r=>r.json()),
+                fetch(API_BASE_URL + '/courses').then(r=>r.json())
+            ]);
+            users = u; sessions = s; courses = c;
+        } catch (error) {
+            console.error("Critical: Failed to load global data. Server might be down.", error);
+            // Optionally redirect to login or show an alert if vital data fails
+        }
     }
 
     async function fetchDashboard() {
-        await loadGlobalData();
-        document.getElementById('total-teachers').textContent = users.filter(u=>u.role==='teacher').length;
-        document.getElementById('total-students').textContent = users.filter(u=>u.role==='student').length;
-        document.getElementById('total-parents').textContent = users.filter(u=>u.role==='parent').length;
-        document.getElementById('total-courses').textContent = courses.length;
+        await loadGlobalData(); // Ensure data is loaded
+        if (users) {
+            document.getElementById('total-teachers').textContent = users.filter(u=>u.role==='teacher').length;
+            document.getElementById('total-students').textContent = users.filter(u=>u.role==='student').length;
+            document.getElementById('total-parents').textContent = users.filter(u=>u.role==='parent').length;
+        }
+        if (courses) {
+            document.getElementById('total-courses').textContent = courses.length;
+        }
         
-        const res = await fetch(API_BASE_URL + '/announcements');
-        const anns = await res.json();
-        document.getElementById('dash-announcements-body').innerHTML = anns.slice(0,5).map(a => `
-            <tr class="border-b last:border-0 hover:bg-slate-50"><td class="p-3 font-medium">${a.title}</td><td class="p-3 text-sm text-gray-500">${a.created_at}</td><td class="p-3 text-sm"><span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">${a.target_group}</span></td></tr>`).join('');
+        try {
+            const res = await fetch(API_BASE_URL + '/announcements');
+            const anns = await res.json();
+            document.getElementById('dash-announcements-body').innerHTML = anns.slice(0,5).map(a => `
+                <tr class="border-b last:border-0 hover:bg-slate-50"><td class="p-3 font-medium">${a.title}</td><td class="p-3 text-sm text-gray-500">${a.created_at}</td><td class="p-3 text-sm"><span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">${a.target_group}</span></td></tr>`).join('');
+        } catch (e) { console.warn("Announcements failed to load"); }
     }
 
     async function loadSessions() {
@@ -688,7 +699,14 @@
     document.getElementById('logout-btn').addEventListener('click', async () => { await fetch(API_BASE_URL + '/logout', {method:'POST'}); window.location.href = '/'; });
 
     // Initialize
-    document.addEventListener('DOMContentLoaded', () => { loadGlobalData().then(() => showSection(window.location.hash)); });
+    document.addEventListener('DOMContentLoaded', async () => { 
+        try {
+            await loadGlobalData();
+        } catch(e) {
+            console.error("Server connection failed", e);
+        }
+        showSection(window.location.hash); 
+    });
 </script>
 </body>
 </html>
