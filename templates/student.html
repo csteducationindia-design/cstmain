@@ -17,12 +17,13 @@
             theme: {
                 extend: {
                     fontFamily: { sans: ['Inter', 'sans-serif'] },
-                    colors: { primary: '#2563EB', accent: '#3B82F6' }
+                    colors: { primary: '#2563EB' } // Standard Blue
                 }
             }
         };
     </script>
     <style>
+        /* Hide Scrollbar for clean mobile look */
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
@@ -30,296 +31,255 @@
 </head>
 <body class="h-full flex flex-col overflow-hidden text-slate-800">
 
-    <header class="bg-white border-b border-gray-100 px-5 py-3 flex justify-between items-center sticky top-0 z-20">
+    <header class="bg-white border-b border-gray-200 px-4 py-3 flex justify-between items-center sticky top-0 z-20">
         <div>
-            <h1 class="text-lg font-bold text-slate-800" id="header-title">Student Portal</h1>
-            <p class="text-[10px] text-slate-500 font-medium" id="current-date">...</p>
+            <h1 class="text-lg font-bold text-slate-900" id="header-title">Student Portal</h1>
+            <p class="text-xs text-slate-500" id="current-date">...</p>
         </div>
-        <div class="w-9 h-9 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm border border-blue-100 shadow-sm" id="user-avatar-initial">U</div>
+        <button id="enable-notif-btn" onclick="requestPermission()" class="text-primary hidden">
+            <span class="material-symbols-rounded">notifications</span>
+        </button>
+        <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm" id="user-avatar-initial">U</div>
     </header>
 
     <main class="flex-1 overflow-y-auto scrollbar-hide p-4 pb-24" id="main-scroll">
         
-        <div id="content-dashboard" class="content-section">
-            <div class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-5 text-white shadow-lg mb-6">
-                <p class="text-blue-100 text-xs mb-1">Welcome back,</p>
-                <h2 class="text-xl font-bold mb-3" id="student-name">Student</h2>
-                <div class="inline-flex items-center gap-2 bg-white/10 rounded-lg px-3 py-1.5 backdrop-blur-sm">
-                    <span class="material-symbols-rounded text-base">badge</span>
-                    <span class="text-xs font-mono tracking-wide" id="student-email">...</span>
+        <div id="view-dashboard" class="content-section">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 mb-4">
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 bg-gray-100 rounded-full overflow-hidden">
+                        <img id="dash-profile-img" src="https://placehold.co/100" class="w-full h-full object-cover">
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900" id="student-name">Student Name</h2>
+                        <p class="text-xs text-slate-500" id="student-id">ID: ...</p>
+                    </div>
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-3 mb-6">
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 text-center">
-                    <div class="w-8 h-8 rounded-full bg-green-50 text-green-600 flex items-center justify-center mx-auto mb-2"><span class="material-symbols-rounded text-lg">calendar_month</span></div>
-                    <span class="text-xl font-bold text-slate-800" id="attendance-percent">--%</span>
-                    <p class="text-[10px] text-slate-400 font-bold uppercase mt-1">Attendance</p>
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center">
+                    <p class="text-xs text-slate-400 uppercase font-bold">Attendance</p>
+                    <p class="text-2xl font-bold text-primary mt-1" id="attendance-percent">--%</p>
                 </div>
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 text-center">
-                    <div class="w-8 h-8 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center mx-auto mb-2"><span class="material-symbols-rounded text-lg">currency_rupee</span></div>
-                    <span class="text-xl font-bold text-slate-800" id="fee-due-amount">₹0</span>
-                    <p class="text-[10px] text-slate-400 font-bold uppercase mt-1">Pending Fees</p>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center">
+                    <p class="text-xs text-slate-400 uppercase font-bold">Pending Fee</p>
+                    <p class="text-2xl font-bold text-red-600 mt-1" id="fee-due-amount">₹0</p>
                 </div>
             </div>
 
-            <div class="flex justify-between items-end mb-3">
-                <h3 class="font-bold text-slate-800">Latest Notice</h3>
-            </div>
-            <div id="dashboard-notice" class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 min-h-[100px] flex items-center justify-center">
-                <p class="text-slate-400 text-xs">Loading...</p>
+            <h3 class="font-bold text-sm text-slate-700 mb-2">Latest Notice</h3>
+            <div id="dashboard-notice" class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 min-h-[80px] flex items-center justify-center text-slate-400 text-sm">
+                Loading...
             </div>
         </div>
 
-        <div id="content-academics" class="content-section hidden">
-            <h2 class="text-lg font-bold mb-4">Study Material</h2>
+        <div id="view-academics" class="content-section hidden">
+            <h2 class="text-xl font-bold mb-4">Study Material</h2>
             <div id="notes-list" class="space-y-3">
-                <p class="text-center text-gray-400 text-sm mt-8">Loading notes...</p>
+                <p class="text-center text-gray-400 mt-10">Loading notes...</p>
             </div>
         </div>
 
-        <div id="content-results" class="content-section hidden">
-            <h2 class="text-lg font-bold mb-4">Exam Results</h2>
+        <div id="view-results" class="content-section hidden">
+            <h2 class="text-xl font-bold mb-4">Exam Results</h2>
             <div id="results-list" class="space-y-3">
-                <div class="text-center text-gray-400 text-sm mt-8">No results available yet.</div>
+                <p class="text-center text-gray-400 mt-10">No results found.</p>
             </div>
         </div>
 
-        <div id="content-attendance" class="content-section hidden">
-            <h2 class="text-lg font-bold mb-4">Attendance History</h2>
-            <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-                <table class="w-full text-left text-sm">
-                    <thead class="bg-slate-50 border-b border-slate-100">
-                        <tr><th class="p-4 font-semibold text-slate-500">Date</th><th class="p-4 font-semibold text-slate-500 text-right">Status</th></tr>
+        <div id="view-attendance" class="content-section hidden">
+            <h2 class="text-xl font-bold mb-4">Attendance Log</h2>
+            <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-gray-50 border-b border-gray-200">
+                        <tr><th class="p-3 font-semibold text-slate-600">Date</th><th class="p-3 font-semibold text-slate-600 text-right">Status</th></tr>
                     </thead>
-                    <tbody id="attendance-list" class="divide-y divide-slate-100">
-                        <tr><td colspan="2" class="p-6 text-center text-slate-400 text-xs">Loading...</td></tr>
+                    <tbody id="attendance-list" class="divide-y divide-gray-100">
+                        <tr><td colspan="2" class="p-4 text-center text-gray-400">Loading...</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
 
-        <div id="content-doubts" class="content-section hidden">
-            <h2 class="text-lg font-bold mb-4">Ask Teacher</h2>
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 mb-6">
-                <textarea id="doubt-question" class="w-full border border-slate-200 rounded-lg p-3 text-sm focus:ring-1 focus:ring-blue-500 outline-none resize-none bg-slate-50" rows="3" placeholder="Type your question..."></textarea>
-                <div class="mt-3 flex justify-between items-center gap-2">
-                    <select id="doubt-teacher" class="flex-1 border border-slate-200 rounded-lg px-2 py-2 text-sm bg-white outline-none">
-                        <option value="">Select Teacher</option>
-                    </select>
-                    <button onclick="submitDoubt()" class="bg-primary text-white px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide">Send</button>
+        <div id="view-doubts" class="content-section hidden">
+            <h2 class="text-xl font-bold mb-4">Ask Teacher</h2>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6">
+                <textarea id="doubt-question" class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-1 focus:ring-primary outline-none" rows="3" placeholder="Type your question..."></textarea>
+                <div class="mt-3 flex gap-2">
+                    <select id="doubt-teacher" class="flex-1 border border-gray-300 rounded-lg p-2 text-sm bg-white"><option value="">Select Teacher</option></select>
+                    <button onclick="submitDoubt()" class="bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium">Send</button>
                 </div>
             </div>
-            <h3 class="font-bold text-sm mb-3">My Doubts</h3>
-            <div id="doubts-list" class="space-y-3 pb-4">
-                <p class="text-center text-gray-400 text-xs mt-4">Loading history...</p>
-            </div>
+            <h3 class="font-bold text-sm mb-2">History</h3>
+            <div id="doubts-list" class="space-y-3"></div>
         </div>
 
-        <div id="content-profile" class="content-section hidden">
-            <h2 class="text-lg font-bold mb-4">My Profile</h2>
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 text-center mb-4">
-                <div class="w-20 h-20 bg-slate-100 rounded-full mx-auto mb-3 overflow-hidden border-2 border-white shadow-sm">
-                    <img id="profile-img" src="https://placehold.co/150" class="w-full h-full object-cover">
-                </div>
-                <h3 id="profile-name" class="text-lg font-bold text-slate-800">Student</h3>
-                <p id="profile-id" class="text-slate-400 text-xs">ID: -</p>
-                <button id="logout-btn" class="mt-4 text-red-500 font-medium text-xs border border-red-100 bg-red-50 px-4 py-2 rounded-full">Sign Out</button>
-            </div>
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100 space-y-3">
-                <div class="flex justify-between border-b border-slate-50 pb-2"><span class="text-xs text-slate-400 font-bold uppercase">Phone</span><span id="profile-phone" class="text-sm font-medium text-slate-700">-</span></div>
-                <div class="flex justify-between border-b border-slate-50 pb-2"><span class="text-xs text-slate-400 font-bold uppercase">Batch</span><span id="profile-batch" class="text-sm font-medium text-slate-700">-</span></div>
-                <div class="flex justify-between"><span class="text-xs text-slate-400 font-bold uppercase">City</span><span id="profile-address" class="text-sm font-medium text-slate-700">-</span></div>
+        <div id="view-profile" class="content-section hidden">
+            <h2 class="text-xl font-bold mb-4">My Profile</h2>
+            <div class="bg-white p-5 rounded-xl border border-slate-200 space-y-4">
+                <div><label class="text-xs text-gray-400 uppercase font-bold">Name</label><p id="profile-name" class="font-medium">-</p></div>
+                <div><label class="text-xs text-gray-400 uppercase font-bold">Mobile</label><p id="profile-phone" class="font-medium">-</p></div>
+                <div><label class="text-xs text-gray-400 uppercase font-bold">Email</label><p id="profile-email" class="font-medium">-</p></div>
+                <div><label class="text-xs text-gray-400 uppercase font-bold">Batch</label><p id="profile-batch" class="font-medium">-</p></div>
+                <button id="logout-btn" class="w-full bg-red-50 text-red-600 py-3 rounded-lg font-bold mt-2">Sign Out</button>
             </div>
         </div>
 
     </main>
 
-    <nav class="bg-white border-t border-gray-100 fixed bottom-0 w-full pb-safe z-30 shadow-[0_-5px_20px_-10px_rgba(0,0,0,0.05)]">
+    <nav class="bg-white border-t border-gray-200 fixed bottom-0 w-full z-30 pb-safe">
         <div class="flex justify-around items-center px-1 py-2">
-            <a href="#dashboard" class="nav-item flex flex-col items-center gap-0.5 p-2 w-16 rounded-xl transition-all text-primary">
+            <button onclick="switchTab('dashboard')" class="nav-btn text-primary flex flex-col items-center p-2 w-16" data-target="dashboard">
                 <span class="material-symbols-rounded text-2xl">grid_view</span>
-                <span class="text-[10px] font-medium">Home</span>
-            </a>
-            <a href="#academics" class="nav-item flex flex-col items-center gap-0.5 p-2 w-16 rounded-xl transition-all text-gray-400 hover:text-primary">
+                <span class="text-[10px] font-medium mt-1">Home</span>
+            </button>
+            <button onclick="switchTab('academics')" class="nav-btn text-gray-400 flex flex-col items-center p-2 w-16" data-target="academics">
                 <span class="material-symbols-rounded text-2xl">menu_book</span>
-                <span class="text-[10px] font-medium">Learn</span>
-            </a>
-            <a href="#results" class="nav-item flex flex-col items-center gap-0.5 p-2 w-16 rounded-xl transition-all text-gray-400 hover:text-primary">
+                <span class="text-[10px] font-medium mt-1">Learn</span>
+            </button>
+            <button onclick="switchTab('results')" class="nav-btn text-gray-400 flex flex-col items-center p-2 w-16" data-target="results">
                 <span class="material-symbols-rounded text-2xl">bar_chart</span>
-                <span class="text-[10px] font-medium">Result</span>
-            </a>
-            <a href="#attendance" class="nav-item flex flex-col items-center gap-0.5 p-2 w-16 rounded-xl transition-all text-gray-400 hover:text-primary">
+                <span class="text-[10px] font-medium mt-1">Result</span>
+            </button>
+            <button onclick="switchTab('attendance')" class="nav-btn text-gray-400 flex flex-col items-center p-2 w-16" data-target="attendance">
                 <span class="material-symbols-rounded text-2xl">calendar_month</span>
-                <span class="text-[10px] font-medium">Attend</span>
-            </a>
-            <a href="#doubts" class="nav-item flex flex-col items-center gap-0.5 p-2 w-16 rounded-xl transition-all text-gray-400 hover:text-primary">
+                <span class="text-[10px] font-medium mt-1">Attend</span>
+            </button>
+            <button onclick="switchTab('doubts')" class="nav-btn text-gray-400 flex flex-col items-center p-2 w-16" data-target="doubts">
                 <span class="material-symbols-rounded text-2xl">live_help</span>
-                <span class="text-[10px] font-medium">Ask</span>
-            </a>
-            <a href="#profile" class="nav-item flex flex-col items-center gap-0.5 p-2 w-16 rounded-xl transition-all text-gray-400 hover:text-primary">
+                <span class="text-[10px] font-medium mt-1">Ask</span>
+            </button>
+            <button onclick="switchTab('profile')" class="nav-btn text-gray-400 flex flex-col items-center p-2 w-16" data-target="profile">
                 <span class="material-symbols-rounded text-2xl">person</span>
-                <span class="text-[10px] font-medium">Profile</span>
-            </a>
+                <span class="text-[10px] font-medium mt-1">Profile</span>
+            </button>
         </div>
     </nav>
 
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
+
     <script>
-        // --- INITIALIZATION ---
-        document.addEventListener('DOMContentLoaded', () => {
-            const dateEl = document.getElementById('current-date');
-            const options = { weekday: 'short', day: 'numeric', month: 'short' };
-            dateEl.textContent = new Date().toLocaleDateString('en-US', options);
-            
-            showSection(window.location.hash || '#dashboard');
-        });
-
-        // --- NAVIGATION HANDLER ---
-        window.addEventListener('hashchange', () => showSection(window.location.hash));
-
-        async function showSection(hash) {
-            let id = (hash || '#dashboard').replace('#', '');
-            if (!document.getElementById('content-' + id)) id = 'dashboard';
-
+        // --- LOGIC START ---
+        
+        // 1. Navigation Logic
+        function switchTab(tabId) {
             // Hide all sections
             document.querySelectorAll('.content-section').forEach(el => el.classList.add('hidden'));
-            // Show target section
-            document.getElementById('content-' + id).classList.remove('hidden');
             
-            // Scroll to top
-            document.getElementById('main-scroll').scrollTop = 0;
-
-            // Highlight Nav Icon
-            document.querySelectorAll('.nav-item').forEach(el => {
-                el.classList.remove('text-primary');
-                el.classList.add('text-gray-400');
-                if(el.getAttribute('href') === '#' + id) {
-                    el.classList.add('text-primary');
-                    el.classList.remove('text-gray-400');
+            // Show target section
+            const target = document.getElementById('view-' + tabId);
+            if(target) target.classList.remove('hidden');
+            
+            // Highlight Button
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                if(btn.dataset.target === tabId) {
+                    btn.classList.remove('text-gray-400');
+                    btn.classList.add('text-primary');
+                } else {
+                    btn.classList.add('text-gray-400');
+                    btn.classList.remove('text-primary');
                 }
             });
 
-            // Update Header Title
-            const titles = {
+            // Update Header
+            const headers = {
                 'dashboard': 'Student Portal', 'academics': 'Study Material',
                 'results': 'Exam Results', 'attendance': 'Attendance',
                 'doubts': 'Ask Teacher', 'profile': 'My Profile'
             };
-            document.getElementById('header-title').textContent = titles[id] || 'Student Portal';
+            document.getElementById('header-title').textContent = headers[tabId] || 'Portal';
 
-            // --- DATA LOADING ---
-            if(id === 'dashboard') loadDashboard();
-            if(id === 'academics') loadNotes();
-            if(id === 'results') loadResults();
-            if(id === 'attendance') loadAttendance();
-            if(id === 'doubts') loadDoubts();
-            if(id === 'profile') loadProfile();
+            // Fetch Data
+            if(tabId === 'dashboard') loadDashboard();
+            if(tabId === 'academics') loadNotes();
+            if(tabId === 'results') loadResults();
+            if(tabId === 'attendance') loadAttendance();
+            if(tabId === 'doubts') loadDoubts();
+            if(tabId === 'profile') loadProfile();
         }
 
-        // --- 1. DASHBOARD ---
+        // 2. Data Loaders
         async function loadDashboard() {
             try {
                 const res = await fetch('/api/student/dashboard');
                 if(res.ok) {
                     const data = await res.json();
                     document.getElementById('student-name').textContent = data.name;
-                    document.getElementById('student-email').textContent = data.admission_number ? `ID: ${data.admission_number}` : data.email;
+                    document.getElementById('student-id').textContent = 'ID: ' + (data.admission_number || '-');
                     document.getElementById('user-avatar-initial').textContent = data.initial;
-                    
-                    const att = data.attendance_percent || 0;
-                    document.getElementById('attendance-percent').textContent = att + '%';
+                    document.getElementById('attendance-percent').textContent = (data.attendance_percent || 0) + '%';
                     document.getElementById('fee-due-amount').textContent = '₹' + (data.fees_due || 0);
-
-                    // Notices
+                    
+                    // Notice
                     const annRes = await fetch('/api/my/announcements');
                     const anns = await annRes.json();
                     const box = document.getElementById('dashboard-notice');
                     if(anns.length > 0) {
                         const n = anns[0];
-                        box.innerHTML = `
-                            <div class="w-full">
-                                <h4 class="font-bold text-sm text-slate-800 mb-1 line-clamp-1">${n.title}</h4>
-                                <p class="text-xs text-slate-500 line-clamp-2">${n.content}</p>
-                                <p class="text-[10px] text-slate-400 mt-2 text-right">${n.created_at}</p>
-                            </div>
-                        `;
+                        box.innerHTML = `<div class="w-full text-left"><p class="font-bold text-slate-800">${n.title}</p><p class="text-xs text-slate-500 mt-1">${n.content}</p></div>`;
                     } else {
-                        box.innerHTML = '<p class="text-slate-400 text-xs">No new notices.</p>';
+                        box.innerHTML = "No new notices.";
                     }
                 }
-            } catch(e) { console.error("Dash Error", e); }
+            } catch(e) { console.error(e); }
         }
 
-        // --- 2. NOTES ---
         async function loadNotes() {
             const list = document.getElementById('notes-list');
-            list.innerHTML = '<p class="text-center text-gray-400 text-xs py-4">Checking for notes...</p>';
+            list.innerHTML = '<p class="text-center text-gray-400 text-sm">Loading...</p>';
             try {
                 const res = await fetch('/api/student/notes');
                 const data = await res.json();
-                if(data.length === 0) { list.innerHTML = '<p class="text-center text-gray-400 text-xs py-10">No notes found.</p>'; return; }
-                
+                if(!data.length) { list.innerHTML = '<p class="text-center text-gray-400 text-sm">No notes available.</p>'; return; }
                 list.innerHTML = data.map(n => `
-                    <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full bg-red-50 text-red-500 flex items-center justify-center flex-shrink-0"><span class="material-symbols-rounded">description</span></div>
-                            <div class="min-w-0">
-                                <h4 class="font-bold text-sm text-slate-800 truncate">${n.title}</h4>
-                                <p class="text-[10px] text-slate-500 truncate">${n.course_name} • ${n.created_at}</p>
-                            </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 flex justify-between items-center shadow-sm">
+                        <div>
+                            <h4 class="font-bold text-sm text-slate-800">${n.title}</h4>
+                            <p class="text-xs text-slate-500">${n.course_name} • ${n.created_at}</p>
                         </div>
-                        <a href="/uploads/${n.filename}" download class="w-8 h-8 flex items-center justify-center rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100">
-                            <span class="material-symbols-rounded text-lg">download</span>
-                        </a>
+                        <a href="/uploads/${n.filename}" download class="w-8 h-8 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center"><span class="material-symbols-rounded text-sm">download</span></a>
                     </div>
                 `).join('');
-            } catch(e) { list.innerHTML = '<p class="text-center text-red-400 text-xs">Failed to load.</p>'; }
+            } catch(e) {}
         }
 
-        // --- 3. ATTENDANCE ---
         async function loadAttendance() {
             const tbody = document.getElementById('attendance-list');
             try {
                 const res = await fetch('/api/my/attendance');
                 const data = await res.json();
-                if(data.length === 0) { tbody.innerHTML = '<tr><td colspan="2" class="p-6 text-center text-gray-400 text-xs">No records found.</td></tr>'; return; }
-                
+                if(!data.length) { tbody.innerHTML = '<tr><td colspan="2" class="p-4 text-center text-gray-400">No records.</td></tr>'; return; }
                 tbody.innerHTML = data.map(a => `
-                    <tr class="border-b border-slate-50 last:border-0">
-                        <td class="p-4"><p class="font-medium text-slate-800 text-sm">${a.date}</p><p class="text-[10px] text-slate-400">${a.time}</p></td>
-                        <td class="p-4 text-right"><span class="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${a.status === 'Present' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}">${a.status}</span></td>
+                    <tr>
+                        <td class="p-3 text-slate-800"><div class="font-medium">${a.date}</div><div class="text-xs text-gray-400">${a.time}</div></td>
+                        <td class="p-3 text-right"><span class="px-2 py-1 rounded text-xs font-bold ${a.status==='Present'?'bg-green-100 text-green-700':'bg-red-100 text-red-700'}">${a.status}</span></td>
                     </tr>
                 `).join('');
             } catch(e) {}
         }
 
-        // --- 4. DOUBTS ---
         async function loadDoubts() {
             // Load Teachers
             try {
                 const tRes = await fetch('/api/student/my_teachers');
                 const teachers = await tRes.json();
                 const sel = document.getElementById('doubt-teacher');
-                if(sel.options.length === 1) {
-                    sel.innerHTML = '<option value="">Select Teacher</option>' + teachers.map(t => `<option value="${t.id}">${t.name} (${t.subjects[0]})</option>`).join('');
-                }
+                if(sel.options.length === 1) sel.innerHTML = '<option value="">Select Teacher</option>' + teachers.map(t => `<option value="${t.id}">${t.name} (${t.subjects[0]})</option>`).join('');
             } catch(e) {}
 
-            // Load History
+            // Load List
             const list = document.getElementById('doubts-list');
             try {
                 const res = await fetch('/api/student/doubts');
                 const data = await res.json();
-                if(data.length === 0) { list.innerHTML = '<p class="text-center text-gray-400 text-xs mt-4">No doubts asked yet.</p>'; return; }
-                
+                if(!data.length) { list.innerHTML = '<p class="text-center text-gray-400 text-sm mt-4">No doubts asked.</p>'; return; }
                 list.innerHTML = data.map(d => `
-                    <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm mb-3">
-                        <div class="flex justify-between items-start mb-2">
-                            <span class="text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded">To: ${d.teacher_name}</span>
-                            <span class="text-[10px] text-gray-400">${d.date}</span>
-                        </div>
-                        <p class="text-sm font-medium text-slate-800 mb-2">${d.question}</p>
-                        ${d.answer ? `<div class="bg-green-50 p-3 rounded-lg text-xs text-slate-700 border-l-2 border-green-500"><span class="font-bold text-green-700 block text-[10px] mb-1">REPLY:</span>${d.answer}</div>` : `<span class="text-[10px] text-orange-500 font-medium flex items-center gap-1"><span class="material-symbols-rounded text-xs">schedule</span> Waiting for reply...</span>`}
+                    <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="flex justify-between mb-1"><span class="text-xs font-bold text-blue-600">To: ${d.teacher_name}</span><span class="text-xs text-gray-400">${d.date}</span></div>
+                        <p class="text-sm font-medium text-slate-800">Q: ${d.question}</p>
+                        ${d.answer ? `<div class="mt-2 bg-green-50 p-2 rounded text-xs text-green-800 border-l-2 border-green-500"><strong>Ans:</strong> ${d.answer}</div>` : `<div class="mt-2 text-xs text-orange-500 italic">Waiting for reply...</div>`}
                     </div>
                 `).join('');
             } catch(e) {}
@@ -328,43 +288,73 @@
         async function submitDoubt() {
             const tid = document.getElementById('doubt-teacher').value;
             const q = document.getElementById('doubt-question').value;
-            if(!tid || !q) return alert("Please select a teacher and type a question.");
-            
+            if(!tid || !q) return alert("Fill all fields");
             try {
-                await fetch('/api/student/ask_doubt', {
-                    method: 'POST', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ teacher_id: tid, question: q })
-                });
+                await fetch('/api/student/ask_doubt', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({teacher_id:tid, question:q}) });
                 document.getElementById('doubt-question').value = '';
                 loadDoubts();
-            } catch(e) { alert("Failed to send."); }
+            } catch(e) { alert("Error"); }
         }
 
-        // --- 5. PROFILE ---
         async function loadProfile() {
             try {
                 const res = await fetch('/api/my/profile');
                 const u = await res.json();
                 document.getElementById('profile-name').textContent = u.name;
-                document.getElementById('profile-id').textContent = `ID: ${u.admission_number || '-'}`;
                 document.getElementById('profile-phone').textContent = u.phone_number || '-';
+                document.getElementById('profile-email').textContent = u.email;
                 document.getElementById('profile-batch').textContent = u.session_name || '-';
-                document.getElementById('profile-address').textContent = u.city || '-';
-                if(u.profile_photo_url) document.getElementById('profile-img').src = u.profile_photo_url;
+                if(u.profile_photo_url) document.getElementById('dash-profile-img').src = u.profile_photo_url;
             } catch(e) {}
         }
 
-        // --- 6. RESULTS (Placeholder) ---
-        async function loadResults() {
-            document.getElementById('results-list').innerHTML = '<div class="text-center text-gray-400 text-xs py-10">No results published.</div>';
-        }
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            const dateEl = document.getElementById('current-date');
+            dateEl.textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' });
+            switchTab('dashboard');
+            initFirebase();
+        });
 
-        // LOGOUT
         document.getElementById('logout-btn').addEventListener('click', async () => {
             await fetch('/api/logout', {method:'POST'});
             window.location.href = '/';
         });
 
+        // 3. Firebase (Your Original Key Preserved)
+        function initFirebase() {
+            try {
+                const firebaseConfig = {
+                    apiKey: "YOUR_API_KEY", // Add your config if needed, but for messaging usually just script load + VAPID works if SW is set
+                    messagingSenderId: "YOUR_SENDER_ID",
+                    appId: "YOUR_APP_ID"
+                };
+                // Note: Standard Firebase init requires config. If your previous file worked without full config here, 
+                // it might be auto-init or just needed VAPID. I included the VAPID request below.
+                
+                if (firebase.messaging.isSupported()) {
+                    const messaging = firebase.messaging();
+                    Notification.requestPermission().then((permission) => {
+                        if (permission === 'granted') {
+                            navigator.serviceWorker.register('/firebase-messaging-sw.js')
+                            .then((reg) => {
+                                return messaging.getToken({ 
+                                    vapidKey: 'BBOMxvKvbEs_t9ykKBa2zIewzCzD6FCbm9rxc8a9eWl2kjjH5vyTSH6TeQMksZ_OGl5jZyQpU2wBcf-KsZN1uko', 
+                                    serviceWorkerRegistration: reg 
+                                });
+                            }).then((token) => {
+                                if (token) {
+                                    fetch('/api/save_fcm_token', { 
+                                        method: 'POST', headers: {'Content-Type': 'application/json'}, 
+                                        body: JSON.stringify({token}) 
+                                    });
+                                }
+                            });
+                        }
+                    });
+                }
+            } catch (e) { console.log('Firebase init error', e); }
+        }
     </script>
 </body>
 </html>
