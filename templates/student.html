@@ -308,46 +308,87 @@
         setupPWA();
     });
 
-    // --- NAVIGATION LOGIC ---
-    window.switchView = function(viewId) {
-        const titles = {
-            'dashboard': 'Student Portal',
-            'academics': 'Academics',
-            'results': 'Exam Results',
-            'attendance': 'Attendance',
-            'profile': 'My Profile',
-            'notifications': 'Notifications'
-        };
-        if(headerTitle) headerTitle.textContent = titles[viewId] || 'Student Portal';
 
-        viewSections.forEach(el => el.classList.add('hidden'));
-        const target = document.getElementById(`view-${viewId}`);
-        if(target) target.classList.remove('hidden');
-
-        navButtons.forEach(btn => {
-            const icon = btn.querySelector('.material-symbols-rounded');
-            
-            if (btn.dataset.target === viewId) {
-                btn.classList.remove('text-gray-400');
-                btn.classList.add('text-blue-600');
-                if(icon) icon.style.fontVariationSettings = "'FILL' 1, 'wght' 600";
-            } else {
-                btn.classList.add('text-gray-400');
-                btn.classList.remove('text-blue-600');
-                if(icon) icon.style.fontVariationSettings = "'FILL' 0, 'wght' 400";
-            }
+// --- NAVIGATION & DASHBOARD LOADER ---
+    async function showSection(hash) {
+        // 1. Hide all sections
+        document.querySelectorAll('.content-section').forEach(el => el.classList.add('hidden'));
+        document.querySelectorAll('.nav-link').forEach(el => {
+            el.classList.remove('bg-blue-50', 'text-blue-600');
+            el.classList.add('text-gray-600', 'hover:bg-gray-50');
         });
 
-        const mainContent = document.getElementById('main-content');
-        if(mainContent) mainContent.scrollTop = 0;
+        // 2. Determine which section to show
+        let id = (hash || '#dashboard').replace('#', '');
+        if (!document.getElementById('content-' + id)) id = 'dashboard';
 
-        // Trigger data loads
-        if (viewId === 'academics') fetchNotes();
-        if (viewId === 'results') fetchGrades();
-        if (viewId === 'attendance') fetchAttendance();
-        if (viewId === 'notifications') fetchAnnouncements();
-    };
+        // 3. Show the section
+        document.getElementById('content-' + id).classList.remove('hidden');
+        
+        // 4. Highlight the sidebar link
+        const link = document.querySelector(`a[href="#${id}"]`);
+        if (link) {
+            link.classList.remove('text-gray-600', 'hover:bg-gray-50');
+            link.classList.add('bg-blue-50', 'text-blue-600');
+        }
 
+        // --- 5. LOAD DASHBOARD DATA (If on dashboard) ---
+        if(id === 'dashboard') {
+            try {
+                const res = await fetch('/api/student/dashboard');
+                
+                if (res.ok) {
+                    const data = await res.json();
+
+                    // Update Name
+                    const nameEl = document.getElementById('student-name');
+                    if(nameEl) nameEl.textContent = data.name || 'Student';
+                    
+                    // Update Email/ID
+                    const emailEl = document.getElementById('student-email');
+                    if(emailEl) {
+                        const subText = data.admission_number ? `ID: ${data.admission_number}` : (data.email || '');
+                        emailEl.textContent = subText;
+                    }
+                    
+                    // Update Avatar Initial
+                    const avatarEl = document.getElementById('user-avatar-initial');
+                    if(avatarEl) avatarEl.textContent = data.initial || 'U';
+
+                    // Update Attendance (Fixing the --% issue)
+                    const attVal = (data.attendance_percent !== undefined && data.attendance_percent !== null) ? data.attendance_percent : 0;
+                    const attEl = document.getElementById('attendance-percent');
+                    if(attEl) {
+                        attEl.textContent = attVal + '%';
+                        // Optional color coding
+                        attEl.classList.remove('text-red-600', 'text-green-600');
+                        if(attVal < 75) attEl.classList.add('text-red-600');
+                        else attEl.classList.add('text-green-600');
+                    }
+
+                    // Update Fees (Fixing potential crash)
+                    const feeEl = document.getElementById('fee-due-amount');
+                    if(feeEl) feeEl.textContent = '₹' + (data.fees_due || 0);
+
+                } else {
+                    console.error("Dashboard fetch failed");
+                    // Fallback to avoid broken UI
+                    if(document.getElementById('attendance-percent')) document.getElementById('attendance-percent').textContent = "0%";
+                    if(document.getElementById('fee-due-amount')) document.getElementById('fee-due-amount').textContent = "₹0";
+                }
+            } catch (error) {
+                console.error("Dashboard Error:", error);
+                if(document.getElementById('attendance-percent')) document.getElementById('attendance-percent').textContent = "0%";
+                if(document.getElementById('fee-due-amount')) document.getElementById('fee-due-amount').textContent = "₹0";
+            }
+        }
+        
+        // Load other sections if needed
+        if(id === 'assignments') loadAssignments();
+        if(id === 'fees') loadFees();
+        if(id === 'doubts') loadDoubts();
+        // Add other loaders here as needed
+    }    
     // --- AUTHENTICATION ---
     async function checkSession() {
         try {

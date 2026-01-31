@@ -423,13 +423,16 @@ def serve_role_page(role):
 @app.route('/firebase-messaging-sw.js')
 def sw(): return send_from_directory(app.static_folder, 'firebase-messaging-sw.js')
 
-# --- REPLACEMENT FOR STUDENT DASHBOARD API ---
+# --- IN app.py, REPLACE 'api_student_dashboard' WITH THIS FIXED VERSION ---
+
 @app.route('/api/student/dashboard')
 @login_required
 def api_student_dashboard():
+    # 1. Security Check
     if current_user.role != 'student': 
         return jsonify({"msg": "Denied"}), 403
     
+    # 2. Calculate Attendance
     att_records = Attendance.query.filter_by(student_id=current_user.id).all()
     total_days = len(att_records)
     
@@ -438,26 +441,29 @@ def api_student_dashboard():
         if r.status in ['Present', 'Checked-In']:
             present_days += 1
             
+    # Default to 0% if no records exist
     if total_days > 0:
         att_percent = int((present_days / total_days) * 100)
     else:
-        att_percent = 0
+        att_percent = 0 
 
-    total_paid = db.session.query(db.func.sum(Payment.amount_paid))\
-        .filter(Payment.student_id == current_user.id).scalar() or 0
-        
-    total_fee = 0
-    for course in current_user.courses_enrolled:
-        total_fee += course.fee_amount if hasattr(course, 'fee_amount') else 0
+    # 3. Calculate Fees (Using the Helper Function to avoid crashes)
+    try:
+        fee_data = calculate_fee_status(current_user.id)
+        fees_due = fee_data.get('balance', 0)
+    except Exception as e:
+        print(f"Fee Calc Error: {e}")
+        fees_due = 0
     
+    # 4. Return Data
     return jsonify({
         "name": current_user.name,
         "email": current_user.email,
+        "admission_number": current_user.admission_number,
         "attendance_percent": att_percent, 
-        "fees_due": 0, 
+        "fees_due": fees_due, 
         "initial": current_user.name[0].upper() if current_user.name else 'U'
     })
-
 # --- ADD THIS NEW ROUTE TO app.py ---
 @app.route('/api/payments/<int:id>', methods=['DELETE'])
 @login_required
