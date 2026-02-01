@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@48,400,1,0" rel="stylesheet" />
     
-    <script src="{{ url_for('static', filename='tailwind.js') }}"></script>
+     <script src="{{ url_for('static', filename='tailwind.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> 
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
@@ -28,10 +28,6 @@
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
-        
-        /* Mobile Tab Animation */
-        .nav-active { color: #2563EB; transform: translateY(-2px); }
-        .nav-active span { font-weight: 700; font-variation-settings: 'FILL' 1; }
     </style>
 </head>
 <body class="h-full flex flex-col text-slate-800 overflow-hidden">
@@ -41,9 +37,10 @@
             <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Parent Portal</h1>
             <p class="text-sm text-slate-500 font-medium" id="current-date">Today</p>
         </div>
-        <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-lg shadow-sm">
-            P
-        </div>
+        <button id="notif-btn" onclick="requestNotificationPermission()" class="w-10 h-10 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center relative">
+            <span class="material-symbols-rounded">notifications</span>
+            <span id="notif-dot" class="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full hidden"></span>
+        </button>
     </header>
 
     <main class="flex-1 overflow-y-auto hide-scroll p-5 pb-32" id="main-scroll">
@@ -75,15 +72,12 @@
                             <span class="material-symbols-rounded text-2xl">warning</span>
                         </div>
                     </div>
-                    
                     <p class="text-sm text-red-600/80 mb-5 font-medium">Please clear the dues to avoid late fees.</p>
-                    
                     <button onclick="initiatePayment()" id="pay-btn" class="w-full bg-slate-900 text-white font-bold text-lg py-4 rounded-xl shadow-lg shadow-slate-900/20 active:scale-95 transition-transform flex items-center justify-center gap-2">
                         <span>Pay Now Securely</span>
                         <span class="material-symbols-rounded">arrow_forward</span>
                     </button>
                 </div>
-                <div class="absolute -bottom-10 -right-10 w-40 h-40 bg-red-100 rounded-full opacity-50"></div>
             </div>
 
             <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex items-center justify-between">
@@ -102,9 +96,7 @@
                     <h3 class="font-bold text-slate-800 text-lg">Performance</h3>
                     <button onclick="switchTab('analytics')" class="text-blue-600 text-sm font-bold">See All</button>
                 </div>
-                <div class="h-40">
-                    <canvas id="miniPerformanceChart"></canvas>
-                </div>
+                <div class="h-40"><canvas id="miniPerformanceChart"></canvas></div>
             </div>
 
             <div>
@@ -117,27 +109,13 @@
 
         <div id="view-analytics" class="content-section hidden p-2">
             <h2 class="text-2xl font-bold mb-6">Exam Analysis</h2>
-            <div class="bg-white p-4 rounded-2xl shadow-lg border border-slate-100 h-80 mb-6">
-                <canvas id="mainPerformanceChart"></canvas>
-            </div>
-            <div class="bg-blue-50 p-5 rounded-2xl border border-blue-100">
-                <h3 class="font-bold text-blue-800 mb-2">Teacher's Note</h3>
-                <p class="text-sm text-blue-700 leading-relaxed">Your child is doing well in practicals but needs improvement in theory subjects.</p>
-            </div>
+            <div class="bg-white p-4 rounded-2xl shadow-lg border border-slate-100 h-80 mb-6"><canvas id="mainPerformanceChart"></canvas></div>
         </div>
 
         <div id="view-attendance" class="content-section hidden">
             <h2 class="text-2xl font-bold mb-6">Attendance Log</h2>
             <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                <table class="w-full text-left">
-                    <thead class="bg-slate-50 border-b border-slate-100">
-                        <tr>
-                            <th class="p-5 font-bold text-slate-500 text-sm">Date</th>
-                            <th class="p-5 font-bold text-slate-500 text-sm text-right">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="attendance-list" class="divide-y divide-slate-100"></tbody>
-                </table>
+                <table class="w-full text-left"><thead class="bg-slate-50 border-b border-slate-100"><tr><th class="p-5 font-bold text-slate-500 text-sm">Date</th><th class="p-5 font-bold text-slate-500 text-sm text-right">Status</th></tr></thead><tbody id="attendance-list" class="divide-y divide-slate-100"></tbody></table>
             </div>
         </div>
 
@@ -147,10 +125,7 @@
                 <div><label class="text-xs text-slate-400 uppercase font-bold">Parent Name</label><p id="parent-name" class="text-lg font-medium text-slate-900">-</p></div>
                 <div><label class="text-xs text-slate-400 uppercase font-bold">Mobile Number</label><p id="parent-phone" class="text-lg font-medium text-slate-900">-</p></div>
                 <div><label class="text-xs text-slate-400 uppercase font-bold">Email ID</label><p id="parent-email" class="text-lg font-medium text-slate-900">-</p></div>
-                
-                <button id="logout-btn" class="w-full bg-red-50 text-red-600 font-bold py-4 rounded-xl mt-4 border border-red-100">
-                    Sign Out
-                </button>
+                <button id="logout-btn" class="w-full bg-red-50 text-red-600 font-bold py-4 rounded-xl mt-4 border border-red-100">Sign Out</button>
             </div>
         </div>
 
@@ -177,39 +152,28 @@
         </div>
     </nav>
 
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
+
     <script>
         const API_BASE_URL = '/api';
         let childId = null;
 
-        // --- NAVIGATION LOGIC ---
+        // --- NAVIGATION ---
         function switchTab(tabId) {
-            // Hide all views
             document.querySelectorAll('.content-section').forEach(el => el.classList.add('hidden'));
-            // Show active view
             document.getElementById('view-' + tabId).classList.remove('hidden');
             
-            // Reset Icons
-            document.querySelectorAll('.nav-btn span').forEach(el => {
-                el.classList.remove('text-blue-600');
-                el.classList.add('text-slate-400');
-            });
-
-            // Highlight Active Icon
+            document.querySelectorAll('.nav-btn span').forEach(el => { el.classList.remove('text-blue-600'); el.classList.add('text-slate-400'); });
             const activeBtn = document.querySelector(`.nav-btn[data-target="${tabId}"]`);
-            if(activeBtn) {
-                activeBtn.querySelectorAll('span').forEach(el => {
-                    el.classList.remove('text-slate-400');
-                    el.classList.add('text-blue-600');
-                });
-            }
+            if(activeBtn) { activeBtn.querySelectorAll('span').forEach(el => { el.classList.remove('text-slate-400'); el.classList.add('text-blue-600'); }); }
 
             if(tabId === 'dashboard') loadDashboard();
-            if(tabId === 'analytics') renderChart(); 
             if(tabId === 'attendance') loadAttendance();
             if(tabId === 'profile') loadProfile();
         }
 
-        // --- DATA LOADERS ---
+        // --- DATA ---
         async function loadDashboard() {
             try {
                 const res = await fetch(API_BASE_URL + '/parent/child_info');
@@ -219,75 +183,38 @@
                     childId = child.id;
                     document.getElementById('child-name').textContent = child.name;
                     document.getElementById('child-batch').textContent = child.session_name || 'Batch N/A';
-                    
-                    if(child.profile_photo_url) {
-                        document.getElementById('child-img').src = child.profile_photo_url;
-                    }
+                    if(child.profile_photo_url) document.getElementById('child-img').src = child.profile_photo_url;
 
-                    // Fetch Fees & Attendance via Student API (simulated)
                     const statsRes = await fetch(API_BASE_URL + '/student/fees');
                     if (statsRes.ok) {
                         const feeData = await statsRes.json();
                         const due = feeData.balance || 0;
                         document.getElementById('child-fee').textContent = '₹' + due;
-                        
-                        // LOGIC: Only show Fee Card if > 0
-                        if (due > 0) {
-                            document.getElementById('fee-card').classList.remove('hidden');
-                        } else {
-                            document.getElementById('fee-card').classList.add('hidden');
-                        }
+                        if (due > 0) document.getElementById('fee-card').classList.remove('hidden');
+                        else document.getElementById('fee-card').classList.add('hidden');
                     }
-                    renderChart(); 
+                    renderChart();
                 }
                 loadAnnouncements();
             } catch(e) { console.error(e); }
         }
 
-        // --- CHART JS ---
-        let chartInstance = null;
         function renderChart() {
-            // Using dummy data for now (replace with API later)
-            const examData = [
-                { exam: 'Test 1', pct: 65 }, { exam: 'Mid', pct: 78 }, 
-                { exam: 'Test 2', pct: 72 }, { exam: 'Final', pct: 88 }
-            ];
-            
+            const examData = [{ exam: 'Test 1', pct: 65 }, { exam: 'Mid', pct: 78 }, { exam: 'Test 2', pct: 72 }, { exam: 'Final', pct: 88 }];
             const labels = examData.map(e => e.exam);
             const data = examData.map(e => e.pct);
-
             const config = {
                 type: 'line',
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Marks %',
-                        data: data,
-                        borderColor: '#2563EB',
-                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                        borderWidth: 3,
-                        pointRadius: 6,
-                        pointBackgroundColor: '#fff',
-                        pointBorderColor: '#2563EB',
-                        fill: true,
-                        tension: 0.4
+                        label: 'Marks %', data: data, borderColor: '#2563EB', backgroundColor: 'rgba(37, 99, 235, 0.1)', borderWidth: 3, pointRadius: 6, pointBackgroundColor: '#fff', pointBorderColor: '#2563EB', fill: true, tension: 0.4
                     }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { grid: { display: false } },
-                        y: { display: false, min: 0, max: 100 }
-                    }
-                }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { display: false, min: 0, max: 100 } } }
             };
-
-            // Mini Chart
-            new Chart(document.getElementById('miniPerformanceChart'), config);
-            // Main Chart
-            new Chart(document.getElementById('mainPerformanceChart'), config);
+            if(document.getElementById('miniPerformanceChart')) new Chart(document.getElementById('miniPerformanceChart'), config);
+            if(document.getElementById('mainPerformanceChart')) new Chart(document.getElementById('mainPerformanceChart'), config);
         }
 
         async function loadAnnouncements() {
@@ -295,26 +222,14 @@
             try {
                 const res = await fetch(API_BASE_URL + '/my/announcements');
                 const data = await res.json();
-                
-                if(data.length === 0) {
-                    container.innerHTML = '<p class="text-center text-slate-400 py-4 text-sm">No new notices.</p>';
-                    return;
-                }
-
+                if(data.length === 0) { container.innerHTML = '<p class="text-center text-slate-400 py-4 text-sm">No updates.</p>'; return; }
                 container.innerHTML = data.map(n => `
                     <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 mb-3">
                         <div class="flex items-start gap-3">
-                            <div class="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center flex-shrink-0">
-                                <span class="material-symbols-rounded">campaign</span>
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-slate-900 text-sm mb-1">${n.title}</h4>
-                                <p class="text-xs text-slate-500 mb-2">${n.created_at}</p>
-                                <p class="text-sm text-slate-600 leading-relaxed">${n.content}</p>
-                            </div>
+                            <div class="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center flex-shrink-0"><span class="material-symbols-rounded">campaign</span></div>
+                            <div><h4 class="font-bold text-slate-900 text-sm mb-1">${n.title}</h4><p class="text-xs text-slate-500 mb-2">${n.created_at}</p><p class="text-sm text-slate-600 leading-relaxed">${n.content}</p></div>
                         </div>
-                    </div>
-                `).join('');
+                    </div>`).join('');
             } catch(e) {}
         }
 
@@ -323,29 +238,15 @@
             try {
                 const res = await fetch(API_BASE_URL + '/my/attendance');
                 const data = await res.json();
-                
-                if(!data.length) { tbody.innerHTML = '<tr><td colspan="2" class="p-6 text-center text-slate-400">No records found.</td></tr>'; return; }
-                
+                if(!data.length) { tbody.innerHTML = '<tr><td colspan="2" class="p-6 text-center text-slate-400">No records.</td></tr>'; return; }
                 let presentCount = 0;
                 tbody.innerHTML = data.map(a => {
                     if(a.status === 'Present') presentCount++;
-                    return `
-                    <tr class="border-b border-slate-50 last:border-0">
-                        <td class="p-5">
-                            <p class="font-bold text-slate-800 text-base">${a.date}</p>
-                            <p class="text-xs text-slate-400 font-medium">${a.time}</p>
-                        </td>
-                        <td class="p-5 text-right">
-                            <span class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider ${a.status==='Present'?'bg-green-100 text-green-700':'bg-red-100 text-red-700'}">${a.status}</span>
-                        </td>
-                    </tr>`;
+                    return `<tr class="border-b border-slate-50 last:border-0"><td class="p-5"><p class="font-bold text-slate-800 text-base">${a.date}</p><p class="text-xs text-slate-400 font-medium">${a.time}</p></td><td class="p-5 text-right"><span class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider ${a.status==='Present'?'bg-green-100 text-green-700':'bg-red-100 text-red-700'}">${a.status}</span></td></tr>`;
                 }).join('');
-
-                // Update Circle Stat
                 const pct = data.length > 0 ? Math.round((presentCount / data.length) * 100) : 0;
                 document.getElementById('child-attendance').textContent = pct + '%';
                 document.getElementById('att-circle').style.background = `conic-gradient(#22c55e 0% ${pct}%, #f1f5f9 ${pct}% 100%)`;
-
             } catch(e) {}
         }
 
@@ -359,55 +260,57 @@
             } catch(e) {}
         }
 
-        // --- PAYMENT LOGIC ---
         async function initiatePayment() {
-            const btn = document.getElementById('pay-btn');
-            btn.innerHTML = 'Processing...'; btn.disabled = true;
-
+            const btn = document.getElementById('pay-btn'); btn.innerHTML = 'Processing...'; btn.disabled = true;
             try {
                 const res = await fetch(API_BASE_URL + '/payment/create_order', { method: 'POST' });
                 const data = await res.json();
-
                 if (!res.ok) { alert(data.msg); btn.innerHTML = 'Pay Now'; btn.disabled = false; return; }
-
                 var options = {
                     "key": data.key_id, "amount": data.amount, "currency": "INR",
                     "name": "CST Institute", "description": "Fee Payment",
                     "image": "https://placehold.co/100?text=CST", "order_id": data.order_id,
                     "handler": async function (response){
-                        const verifyRes = await fetch(API_BASE_URL + '/payment/verify', {
-                            method: 'POST', headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                razorpay_payment_id: response.razorpay_payment_id,
-                                razorpay_order_id: response.razorpay_order_id,
-                                razorpay_signature: response.razorpay_signature,
-                                amount: data.amount 
-                            })
-                        });
-                        if(verifyRes.ok) { alert("✅ Payment Successful!"); loadDashboard(); } 
-                        else { alert("Failed."); }
-                    },
-                    "theme": { "color": "#0F172A" }
+                        const verifyRes = await fetch(API_BASE_URL + '/payment/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ razorpay_payment_id: response.razorpay_payment_id, razorpay_order_id: response.razorpay_order_id, razorpay_signature: response.razorpay_signature, amount: data.amount }) });
+                        if(verifyRes.ok) { alert("✅ Payment Successful!"); loadDashboard(); } else { alert("Failed."); }
+                    }, "theme": { "color": "#0F172A" }
                 };
                 new Razorpay(options).open();
-            } catch (e) { alert("Server Error"); } 
-            finally { 
-                btn.innerHTML = `<span>Pay Now Securely</span><span class="material-symbols-rounded">arrow_forward</span>`; 
-                btn.disabled = false; 
-            }
+            } catch (e) { alert("Server Error"); } finally { btn.innerHTML = `<span>Pay Now Securely</span><span class="material-symbols-rounded">arrow_forward</span>`; btn.disabled = false; }
         }
 
-        // INITIALIZE
+        // --- FIREBASE NOTIFICATIONS (Background Enabled) ---
+        function requestNotificationPermission() {
+            if (!firebase.messaging.isSupported()) return alert("Notifications not supported on this browser.");
+            const messaging = firebase.messaging();
+            Notification.requestPermission().then((permission) => {
+                if (permission === 'granted') {
+                    // REGISTER SERVICE WORKER
+                    navigator.serviceWorker.register('/firebase-messaging-sw.js').then((registration) => {
+                        return messaging.getToken({ 
+                            vapidKey: 'BBOMxvKvbEs_t9ykKBa2zIewzCzD6FCbm9rxc8a9eWl2kjjH5vyTSH6TeQMksZ_OGl5jZyQpU2wBcf-KsZN1uko', 
+                            serviceWorkerRegistration: registration 
+                        });
+                    }).then((token) => {
+                        if(token) {
+                            fetch('/api/save_fcm_token', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({token}) });
+                            alert("Notifications Enabled!");
+                            document.getElementById('notif-dot').classList.add('hidden');
+                        }
+                    }).catch(err => console.log('Firebase error', err));
+                } else { alert("Permission Denied"); }
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             const dateEl = document.getElementById('current-date');
             dateEl.textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' });
             switchTab('dashboard');
         });
 
-        document.getElementById('logout-btn').addEventListener('click', async () => {
-            await fetch(`${API_BASE_URL}/logout`, { method: 'POST' });
-            window.location.href = '/';
-        });
+        document.getElementById('logout-btn').addEventListener('click', async () => { await fetch(`${API_BASE_URL}/logout`, { method: 'POST' }); window.location.href = '/'; });
     </script>
 </body>
-</html>
+</html>   
+     
+     
