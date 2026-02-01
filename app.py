@@ -20,6 +20,7 @@ import logging
 import pandas as pd
 from io import BytesIO
 import threading
+import razorpay # NEW
 # REMOVED: from PIL import Image (This was causing the crash)
 
 # =========================================================
@@ -46,6 +47,13 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(data_dir, 'i
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
+# --- RAZORPAY CONFIGURATION ---
+# Replace these with your actual keys from https://dashboard.razorpay.com/app/keys
+RAZORPAY_KEY_ID = "rzp_test_YOUR_KEY_HERE" 
+RAZORPAY_KEY_SECRET = "YOUR_SECRET_HERE"
+
+client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+
 # Upload Configuration
 UPLOAD_FOLDER = os.path.join(basedir, 'uploads')
 if not os.path.exists(UPLOAD_FOLDER):
@@ -64,6 +72,7 @@ def load_user(user_id):
         return db.session.get(User, int(user_id))
     except:
         return None
+
 
 # =========================================================
 # FIREBASE & NOTIFICATION LOGIC
@@ -1945,6 +1954,86 @@ def ask_doubt():
     )
     
     return jsonify({"msg": "Question sent to teacher successfully!"})
+# --- PAYMENT ROUTES ---
+
+@app.route('/api/payment/create_order', methods=['POST'])
+@login_required
+def create_payment_order():
+    if current_user.role not in ['parent', 'student']: 
+        return jsonify({"msg": "Denied"}), 403
+
+    # 1. Calculate Amount to Pay
+    # Logic: Get the child ID (if parent) or self ID (if student)
+    student_id = current_user.id
+    if current_user.role == 'parent':
+        child = User.query.filter_by(parent_id=current_user.id).first()
+        if not child: return jsonify({"msg": "No child linked"}), 404
+        student_id = child.id
+
+    fee_data = calculate_fee_status(student_id)
+    amount_due_inr = fee_data['balance'] 
+    
+    if amount_due_inr <= 0:
+        return jsonify({"msg": "No pending dues!"}), 400
+
+    # 2. Create Razorpay Order (Amount must be in Paise: 1 INR = 100 Paise)
+    amount_paise = int(amount_due_inr * 100)
+    
+    try:
+        data = { "amount": amount_paise, "currency": "INR", "receipt": f"order_rcptid_{student_id}" }
+        order = client.order.create(data=data)
+        
+        return jsonify({
+            "order_id": order['id'],
+            "amount": amount_paise,
+            "key_id": RAZORPAY_KEY_ID,
+            "student_name": current_user.name,
+            "student_email": current_user.email,
+            "contact": current_user.phone_number
+        })
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+
+@app.route('/api/payment/verify', methods=['POST'])
+@login_required
+def verify_payment():
+    d = request.json
+    
+    try:
+        # 1. Verify Signature
+        params_dict = {
+            'razorpay_order_id': d['razorpay_order_id'],
+            'razorpay_payment_id': d['razorpay_payment_id'],
+            'razorpay_signature': d['razorpay_signature']
+        }
+        client.utility.verify_payment_signature(params_dict)
+        
+        # 2. Signature Valid - Save Payment to Database
+        student_id = current_user.id
+        if current_user.role == 'parent':
+            child = User.query.filter_by(parent_id=current_user.id).first()
+            if child: student_id = child.id
+
+        # Find a fee structure to attach this payment to (usually the general one or first pending one)
+        # For simplicity, we attach it to the first Fee Structure found for the session
+        fee_struct = FeeStructure.query.first() # You might want to make this more specific logic
+        fee_struct_id = fee_struct.id if fee_struct else 1
+
+        new_payment = Payment(
+            student_id=student_id,
+            fee_structure_id=fee_struct_id, # Linking to a generic fee type for now
+            amount_paid=float(d['amount']) / 100, # Convert back to Rupees
+            payment_method='Online (Razorpay)'
+        )
+        db.session.add(new_payment)
+        db.session.commit()
+        
+        return jsonify({"msg": "Payment Successful & Recorded!"})
+
+    except razorpay.errors.SignatureVerificationError:
+        return jsonify({"msg": "Payment Verification Failed"}), 400
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
 
 if __name__ == '__main__':
     initialize_database()

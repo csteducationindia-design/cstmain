@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet" />
     <script src="{{ url_for('static', filename='tailwind.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> 
+	<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     
     <script>
         tailwind.config = {
@@ -61,7 +62,15 @@
                     <p class="text-2xl font-bold text-red-600 mt-1" id="child-fee">₹0</p>
                 </div>
             </div>
-
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center relative">
+    <p class="text-xs text-slate-400 uppercase font-bold tracking-wider">Fees Due</p>
+    <p class="text-2xl font-bold text-red-600 mt-1" id="child-fee">₹0</p>
+    
+    <button onclick="initiatePayment()" id="pay-btn" class="mt-3 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2 px-4 rounded-lg w-full flex items-center justify-center gap-2 hidden">
+        <span>Pay Now</span>
+        <span class="material-symbols-rounded text-sm">payment</span>
+    </button>
+</div>
             <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6">
                 <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
                     <span class="material-symbols-rounded text-blue-600">monitoring</span> Performance Trend
@@ -212,7 +221,91 @@
             if(tabId === 'profile') loadProfile();
         }
 
-        // --- DATA LOADERS ---
+// --- RAZORPAY PAYMENT LOGIC ---
+async function initiatePayment() {
+    const btn = document.getElementById('pay-btn');
+    btn.innerHTML = 'Processing...';
+    btn.disabled = true;
+
+    try {
+        // 1. Create Order on Backend
+        const res = await fetch(API_BASE_URL + '/payment/create_order', { method: 'POST' });
+        const data = await res.json();
+
+        if (!res.ok) {
+            alert("Error: " + data.msg);
+            btn.innerHTML = 'Pay Now'; btn.disabled = false;
+            return;
+        }
+
+        // 2. Open Razorpay Checkout
+        var options = {
+            "key": data.key_id, 
+            "amount": data.amount, 
+            "currency": "INR",
+            "name": "CST Institute",
+            "description": "Fee Payment",
+            "image": "https://placehold.co/100?text=CST", // Your Logo URL
+            "order_id": data.order_id, 
+            "handler": async function (response){
+                // 3. Payment Success - Verify on Backend
+                const verifyRes = await fetch(API_BASE_URL + '/payment/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        razorpay_payment_id: response.razorpay_payment_id,
+                        razorpay_order_id: response.razorpay_order_id,
+                        razorpay_signature: response.razorpay_signature,
+                        amount: data.amount // Pass amount to record it
+                    })
+                });
+                
+                const verifyData = await verifyRes.json();
+                if(verifyRes.ok) {
+                    alert("✅ Payment Successful!");
+                    loadDashboard(); // Refresh balance
+                } else {
+                    alert("⚠️ Verification Failed: " + verifyData.msg);
+                }
+            },
+            "prefill": {
+                "name": data.student_name,
+                "email": data.student_email,
+                "contact": data.contact
+            },
+            "theme": { "color": "#4F46E5" }
+        };
+        
+        var rzp1 = new Razorpay(options);
+        rzp1.open();
+        
+        rzp1.on('payment.failed', function (response){
+            alert("Payment Failed: " + response.error.description);
+        });
+
+    } catch (e) {
+        console.error(e);
+        alert("Server Error");
+    } finally {
+        btn.innerHTML = `<span>Pay Now</span><span class="material-symbols-rounded text-sm">payment</span>`;
+        btn.disabled = false;
+    }
+}
+
+// UPDATE DASHBOARD LOADER TO SHOW BUTTON
+// Find your existing 'loadDashboard' function and modify the fee part:
+/*
+    // ... inside loadDashboard ...
+    document.getElementById('child-fee').textContent = '₹' + (data.fees_due || 0);
+    
+    // Show button only if dues exist
+    if (data.fees_due > 0) {
+        document.getElementById('pay-btn').classList.remove('hidden');
+    } else {
+        document.getElementById('pay-btn').classList.add('hidden');
+    }
+*/        
+// --- DATA LOADERS ---
         async function loadDashboard() {
             try {
                 // 1. Get Child Info
