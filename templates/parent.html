@@ -8,6 +8,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet" />
     <script src="{{ url_for('static', filename='tailwind.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> 
+    
     <script>
         tailwind.config = {
             theme: {
@@ -22,353 +24,302 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
-        .animate-fade { animation: fadeIn 0.4s ease-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body class="h-full bg-gray-50 text-slate-800 font-sans selection:bg-blue-100">
+<body class="h-full flex flex-col overflow-hidden text-slate-800">
 
-<div id="loading-screen" class="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center transition-opacity duration-500">
-    <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-    <p class="text-slate-500 font-medium animate-pulse">Loading Parent Portal...</p>
-</div>
-
-<div id="app-container" class="max-w-md mx-auto min-h-screen bg-gray-50 relative shadow-2xl flex flex-col hidden">
-    
-    <header class="bg-slate-900 text-white p-6 pb-12 rounded-b-[2.5rem] shadow-xl relative z-10">
-        <div class="flex justify-between items-start mb-6">
-            <div>
-                <p class="text-slate-400 text-xs uppercase tracking-widest font-bold mb-1">Parent Portal</p>
-                <h1 class="text-2xl font-bold">Welcome, <span id="parent-name">Parent</span></h1>
-            </div>
-            <button id="logout-btn" class="bg-white/10 p-2 rounded-full hover:bg-white/20 transition-colors">
-                <span class="material-symbols-rounded text-white">logout</span>
-            </button>
+    <header class="bg-white border-b border-gray-200 px-5 py-4 flex justify-between items-center sticky top-0 z-20">
+        <div>
+            <h1 class="text-lg font-bold text-slate-900">Parent Portal</h1>
+            <p class="text-xs text-slate-500" id="current-date">...</p>
         </div>
-
-        <div class="bg-white text-slate-900 p-4 rounded-2xl shadow-lg flex items-center gap-4 border border-slate-100">
-            <div class="w-16 h-16 rounded-full bg-slate-100 border-2 border-white shadow-sm overflow-hidden flex-shrink-0">
-                <img id="child-photo" src="" class="w-full h-full object-cover hidden">
-                <div id="child-initial" class="w-full h-full flex items-center justify-center text-xl font-bold text-slate-400">?</div>
-            </div>
-            <div class="flex-1 min-w-0">
-                <p class="text-xs text-slate-500 font-bold uppercase mb-0.5">Student Profile</p>
-                <h2 id="child-name" class="text-lg font-bold truncate">Loading Child...</h2>
-                <p id="child-batch" class="text-xs text-blue-600 font-medium bg-blue-50 inline-block px-2 py-0.5 rounded-md mt-1">...</p>
-            </div>
-        </div>
+        <div class="w-9 h-9 rounded-full bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold text-sm border border-indigo-100" id="parent-avatar">P</div>
     </header>
 
-    <main class="flex-1 overflow-y-auto p-6 -mt-4 pb-24 space-y-6 relative z-0">
-
-        <div id="view-dashboard" class="view-section animate-fade">
-            <div class="grid grid-cols-2 gap-4 mb-6">
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 text-center">
-                    <div class="w-10 h-10 bg-green-50 text-green-600 rounded-full flex items-center justify-center mx-auto mb-2">
-                        <span class="material-symbols-rounded">check_circle</span>
+    <main class="flex-1 overflow-y-auto no-scrollbar p-4 pb-24" id="main-scroll">
+        
+        <div id="view-dashboard" class="content-section">
+            <div class="bg-gradient-to-r from-slate-800 to-slate-900 rounded-2xl p-5 text-white shadow-xl mb-6 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-10 -mt-10"></div>
+                <p class="text-slate-300 text-xs mb-1">Student Profile</p>
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm text-xl">🎓</div>
+                    <div>
+                        <h2 class="text-xl font-bold" id="child-name">Loading...</h2>
+                        <p class="text-xs text-slate-300 font-mono" id="child-batch">...</p>
                     </div>
-                    <div id="dash-attendance" class="text-2xl font-bold text-slate-800">--%</div>
-                    <p class="text-xs text-slate-400 font-bold uppercase">Attendance</p>
-                </div>
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 text-center">
-                    <div class="w-10 h-10 bg-orange-50 text-orange-600 rounded-full flex items-center justify-center mx-auto mb-2">
-                        <span class="material-symbols-rounded">account_balance_wallet</span>
-                    </div>
-                    <div id="dash-balance" class="text-2xl font-bold text-slate-800">₹--</div>
-                    <p class="text-xs text-slate-400 font-bold uppercase">Fee Due</p>
                 </div>
             </div>
 
-            <div id="fee-alert-box" class="hidden bg-red-50 border border-red-100 p-4 rounded-2xl mb-6 flex items-start gap-3">
-                <span class="material-symbols-rounded text-red-500 mt-1">error</span>
-                <div>
-                    <h4 class="font-bold text-red-900 text-sm">Payment Overdue</h4>
-                    <p class="text-xs text-red-700 mt-0.5">Please clear the pending balance of <span id="alert-amount" class="font-bold"></span> to avoid inconvenience.</p>
+            <div class="grid grid-cols-2 gap-3 mb-6">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center">
+                    <p class="text-xs text-slate-400 uppercase font-bold tracking-wider">Attendance</p>
+                    <p class="text-2xl font-bold text-green-600 mt-1" id="child-attendance">--%</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center">
+                    <p class="text-xs text-slate-400 uppercase font-bold tracking-wider">Fees Due</p>
+                    <p class="text-2xl font-bold text-red-600 mt-1" id="child-fee">₹0</p>
                 </div>
             </div>
 
-            <h3 class="font-bold text-slate-800 mb-3">Quick Actions</h3>
-            <div class="grid grid-cols-2 gap-3">
-                <button onclick="switchView('attendance')" class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center gap-3 hover:bg-slate-50 transition-colors">
-                    <span class="material-symbols-rounded text-blue-600">calendar_month</span>
-                    <span class="text-sm font-bold text-slate-600">View Attendance</span>
-                </button>
-                <button onclick="switchView('fees')" class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center gap-3 hover:bg-slate-50 transition-colors">
-                    <span class="material-symbols-rounded text-green-600">payments</span>
-                    <span class="text-sm font-bold text-slate-600">Fee Details</span>
-                </button>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6">
+                <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <span class="material-symbols-rounded text-blue-600">monitoring</span> Performance Trend
+                </h3>
+                <div class="h-48">
+                    <canvas id="miniPerformanceChart"></canvas>
+                </div>
+            </div>
+
+            <h3 class="font-bold text-slate-800 mb-3">Announcements</h3>
+            <div id="announcements-list" class="space-y-3">
+                <p class="text-center text-slate-400 text-xs py-4">Checking for updates...</p>
             </div>
         </div>
 
-        <div id="view-attendance" class="view-section hidden animate-fade">
-            <h3 class="font-bold text-xl text-slate-800 mb-4 flex items-center gap-2">
-                <span class="material-symbols-rounded text-blue-600">history</span> 
-                Recent Attendance
-            </h3>
-            <div id="attendance-list" class="space-y-3">
-                <p class="text-center text-slate-400 text-sm py-8">Loading records...</p>
+        <div id="view-analytics" class="content-section hidden">
+            <h2 class="text-xl font-bold mb-4">Detailed Analytics</h2>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-4">
+                <canvas id="mainPerformanceChart"></canvas>
+            </div>
+            <div id="exam-details-list" class="space-y-3">
+                </div>
+        </div>
+
+        <div id="view-attendance" class="content-section hidden">
+            <h2 class="text-xl font-bold mb-4">Attendance Log</h2>
+            <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-gray-50 border-b border-gray-200">
+                        <tr><th class="p-3 font-semibold text-slate-600">Date</th><th class="p-3 font-semibold text-slate-600 text-right">Status</th></tr>
+                    </thead>
+                    <tbody id="attendance-list" class="divide-y divide-gray-100"></tbody>
+                </table>
             </div>
         </div>
 
-        <div id="view-fees" class="view-section hidden animate-fade">
-            <h3 class="font-bold text-xl text-slate-800 mb-4 flex items-center gap-2">
-                <span class="material-symbols-rounded text-green-600">receipt_long</span> 
-                Fee Status
-            </h3>
-            
-            <div class="bg-slate-900 text-white p-6 rounded-2xl shadow-lg mb-6 relative overflow-hidden">
-                <div class="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-10 -mt-10 blur-2xl"></div>
-                <p class="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Total Pending</p>
-                <h2 id="fee-total-due" class="text-4xl font-bold">₹0</h2>
-                <p id="fee-due-date" class="text-sm text-slate-400 mt-2 flex items-center gap-1">
-                    <span class="material-symbols-rounded text-base">event</span> Due Date: --
-                </p>
+        <div id="view-profile" class="content-section hidden">
+            <h2 class="text-xl font-bold mb-4">Parent Profile</h2>
+            <div class="bg-white p-5 rounded-xl border border-slate-200 space-y-4">
+                <div><label class="text-xs text-gray-400 uppercase font-bold">Name</label><p id="parent-name" class="font-medium">-</p></div>
+                <div><label class="text-xs text-gray-400 uppercase font-bold">Phone</label><p id="parent-phone" class="font-medium">-</p></div>
+                <div><label class="text-xs text-gray-400 uppercase font-bold">Email</label><p id="parent-email" class="font-medium">-</p></div>
+                <button id="logout-btn" class="w-full bg-red-50 text-red-600 py-3 rounded-lg font-bold mt-2">Sign Out</button>
             </div>
-
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-                <h4 class="font-bold text-slate-800 mb-4">Payment Summary</h4>
-                <div class="space-y-3">
-                    <div class="flex justify-between text-sm">
-                        <span class="text-slate-500">Total Course Fee</span>
-                        <span id="summ-total" class="font-bold">₹0</span>
-                    </div>
-                    <div class="flex justify-between text-sm">
-                        <span class="text-slate-500">Amount Paid</span>
-                        <span id="summ-paid" class="font-bold text-green-600">- ₹0</span>
-                    </div>
-                    <div class="h-px bg-slate-100 my-2"></div>
-                    <div class="flex justify-between text-base">
-                        <span class="font-bold text-slate-800">Balance to Pay</span>
-                        <span id="summ-bal" class="font-bold text-red-600">₹0</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="view-notices" class="view-section hidden animate-fade">
-            <h3 class="font-bold text-xl text-slate-800 mb-4">Announcements</h3>
-            <div id="notices-list" class="space-y-4">
-                </div>
         </div>
 
     </main>
 
-    <nav class="bg-white border-t border-slate-200 fixed bottom-0 w-full max-w-md pb-safe pt-2 px-6 flex justify-between items-center z-40 h-16 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-        <button onclick="switchView('dashboard')" class="nav-btn flex flex-col items-center justify-center w-full h-full space-y-1 text-blue-600" data-target="dashboard">
-            <span class="material-symbols-rounded text-[26px]">home</span>
-            <span class="text-[10px] font-medium">Home</span>
-        </button>
-        <button onclick="switchView('attendance')" class="nav-btn flex flex-col items-center justify-center w-full h-full space-y-1 text-slate-400" data-target="attendance">
-            <span class="material-symbols-rounded text-[26px]">calendar_month</span>
-            <span class="text-[10px] font-medium">Attend</span>
-        </button>
-        <button onclick="switchView('fees')" class="nav-btn flex flex-col items-center justify-center w-full h-full space-y-1 text-slate-400" data-target="fees">
-            <span class="material-symbols-rounded text-[26px]">account_balance</span>
-            <span class="text-[10px] font-medium">Fees</span>
-        </button>
-        <button onclick="switchView('notices')" class="nav-btn flex flex-col items-center justify-center w-full h-full space-y-1 text-slate-400" data-target="notices">
-            <span class="material-symbols-rounded text-[26px]">campaign</span>
-            <span class="text-[10px] font-medium">Notices</span>
-        </button>
+    <nav class="bg-white border-t border-gray-200 fixed bottom-0 w-full z-30 pb-safe">
+        <div class="flex justify-around items-center px-2 py-2">
+            <button onclick="switchTab('dashboard')" class="nav-btn text-indigo-600 flex flex-col items-center p-2 w-16" data-target="dashboard">
+                <span class="material-symbols-rounded text-2xl">grid_view</span>
+                <span class="text-[10px] font-medium mt-1">Home</span>
+            </button>
+            <button onclick="switchTab('analytics')" class="nav-btn text-gray-400 flex flex-col items-center p-2 w-16" data-target="analytics">
+                <span class="material-symbols-rounded text-2xl">insights</span> <span class="text-[10px] font-medium mt-1">Graph</span>
+            </button>
+            <button onclick="switchTab('attendance')" class="nav-btn text-gray-400 flex flex-col items-center p-2 w-16" data-target="attendance">
+                <span class="material-symbols-rounded text-2xl">calendar_month</span>
+                <span class="text-[10px] font-medium mt-1">Attend</span>
+            </button>
+            <button onclick="switchTab('profile')" class="nav-btn text-gray-400 flex flex-col items-center p-2 w-16" data-target="profile">
+                <span class="material-symbols-rounded text-2xl">person</span>
+                <span class="text-[10px] font-medium mt-1">Profile</span>
+            </button>
+        </div>
     </nav>
 
-</div>
+    <script>
+        const API_BASE_URL = '/api';
+        let childId = null;
 
-<script>
-    const API_BASE_URL = window.location.origin + '/api';
+        // --- CHART CONFIGURATION ---
+        let chartInstance = null;
 
-    // --- NAVIGATION ---
-    window.switchView = function(viewId) {
-        // 1. Hide all sections
-        document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
-        
-        // 2. Show target section
-        const target = document.getElementById(`view-${viewId}`);
-        if(target) target.classList.remove('hidden');
-
-        // 3. Update Nav Icons
-        document.querySelectorAll('.nav-btn').forEach(btn => {
-            const icon = btn.querySelector('.material-symbols-rounded');
-            if (btn.dataset.target === viewId) {
-                btn.classList.remove('text-slate-400');
-                btn.classList.add('text-blue-600');
-                icon.style.fontVariationSettings = "'FILL' 1";
-            } else {
-                btn.classList.add('text-slate-400');
-                btn.classList.remove('text-blue-600');
-                icon.style.fontVariationSettings = "'FILL' 0";
+        function renderChart(examData) {
+            const ctx = document.getElementById('miniPerformanceChart').getContext('2d');
+            const mainCtx = document.getElementById('mainPerformanceChart').getContext('2d');
+            
+            // Sample Data if none exists (for demo)
+            if (!examData || examData.length === 0) {
+                examData = [
+                    { exam: 'Unit Test 1', percentage: 65 },
+                    { exam: 'Mid Term', percentage: 72 },
+                    { exam: 'Unit Test 2', percentage: 68 },
+                    { exam: 'Prelims', percentage: 85 }
+                ];
             }
+
+            const labels = examData.map(e => e.exam);
+            const scores = examData.map(e => e.percentage);
+
+            const config = {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Performance (%)',
+                        data: scores,
+                        borderColor: '#4F46E5', // Indigo color
+                        backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                        tension: 0.4, // Smooth curves
+                        fill: true,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#4F46E5',
+                        pointBorderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, max: 100, grid: { color: '#f3f4f6' } },
+                        x: { grid: { display: false } }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            };
+
+            // Render Mini Chart
+            new Chart(ctx, config);
+            
+            // Render Main Chart (Detailed)
+            new Chart(mainCtx, config);
+        }
+
+        // --- NAVIGATION ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.content-section').forEach(el => el.classList.add('hidden'));
+            document.getElementById('view-' + tabId).classList.remove('hidden');
+            
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                if(btn.dataset.target === tabId) {
+                    btn.classList.remove('text-gray-400');
+                    btn.classList.add('text-indigo-600');
+                } else {
+                    btn.classList.add('text-gray-400');
+                    btn.classList.remove('text-indigo-600');
+                }
+            });
+
+            if(tabId === 'dashboard') loadDashboard();
+            if(tabId === 'analytics') loadAnalytics(); // Fetch chart data
+            if(tabId === 'attendance') loadAttendance();
+            if(tabId === 'profile') loadProfile();
+        }
+
+        // --- DATA LOADERS ---
+        async function loadDashboard() {
+            try {
+                // 1. Get Child Info
+                const res = await fetch(API_BASE_URL + '/parent/child_info');
+                const child = await res.json();
+                
+                if (child) {
+                    childId = child.id;
+                    document.getElementById('child-name').textContent = child.name;
+                    document.getElementById('child-batch').textContent = child.session_name || 'Batch N/A';
+                    
+                    // 2. Get Child Stats
+                    const statsRes = await fetch(API_BASE_URL + '/student/dashboard'); // Reusing student API
+                    // Note: In a real app, you'd fetch /api/parent/child_stats?child_id=...
+                    // For now, we simulate or fetch simple data
+                    
+                    // Simulate fetching grades for the chart
+                    renderChart(); 
+                }
+
+                // 3. Get Announcements
+                loadAnnouncements();
+
+            } catch(e) { console.error(e); }
+        }
+
+        async function loadAnalytics() {
+            // Here you would fetch real exam results from API
+            // For now, it uses the simulated data in renderChart()
+            // Future API: /api/student/results?student_id=${childId}
+        }
+
+        async function loadAnnouncements() {
+            const container = document.getElementById('announcements-list');
+            try {
+                const res = await fetch(API_BASE_URL + '/my/announcements');
+                const data = await res.json();
+                
+                if(data.length === 0) {
+                    container.innerHTML = '<div class="text-center text-slate-400 text-sm py-10">No updates.</div>';
+                    return;
+                }
+
+                container.innerHTML = data.map(n => `
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="flex items-start gap-3">
+                            <div class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
+                                <span class="material-symbols-rounded text-sm">campaign</span>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-slate-800 text-sm mb-1">${n.title}</h4>
+                                <p class="text-xs text-slate-500 mb-2">${n.created_at}</p>
+                                <p class="text-sm text-slate-600">${n.content}</p>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch(e) { console.error(e); }
+        }
+
+        async function loadAttendance() {
+            // Reusing student attendance API logic but for the specific child
+            const tbody = document.getElementById('attendance-list');
+            try {
+                const res = await fetch(API_BASE_URL + '/my/attendance'); // This API uses session, so it gets the logged-in parent's child data automatically if handled in backend
+                const data = await res.json();
+                
+                if(!data.length) { tbody.innerHTML = '<tr><td colspan="2" class="p-4 text-center text-gray-400">No records.</td></tr>'; return; }
+                
+                tbody.innerHTML = data.map(a => `
+                    <tr>
+                        <td class="p-3 text-slate-800"><div class="font-medium">${a.date}</div><div class="text-xs text-gray-400">${a.time}</div></td>
+                        <td class="p-3 text-right"><span class="px-2 py-1 rounded text-xs font-bold ${a.status==='Present'?'bg-green-100 text-green-700':'bg-red-100 text-red-700'}">${a.status}</span></td>
+                    </tr>
+                `).join('');
+                
+                // Update Dashboard Stat
+                const total = data.length;
+                const present = data.filter(d => d.status === 'Present').length;
+                const pct = total > 0 ? Math.round((present/total)*100) : 0;
+                document.getElementById('child-attendance').textContent = pct + '%';
+
+            } catch(e) {}
+        }
+
+        async function loadProfile() {
+            try {
+                const res = await fetch(API_BASE_URL + '/my/profile');
+                const u = await res.json();
+                document.getElementById('parent-name').textContent = u.name;
+                document.getElementById('parent-email').textContent = u.email;
+                document.getElementById('parent-phone').textContent = u.phone_number || '-';
+            } catch(e) {}
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            const dateEl = document.getElementById('current-date');
+            dateEl.textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' });
+            switchTab('dashboard');
         });
 
-        // 4. Load Data if needed
-        if(viewId === 'attendance') fetchAttendance();
-        if(viewId === 'fees') fetchFees();
-        if(viewId === 'notices') fetchNotices();
-    };
-
-    // --- INIT ---
-    document.addEventListener('DOMContentLoaded', async () => {
-        try {
-            // 1. Check Session (Get Parent Info)
-            const sessionRes = await fetch(`${API_BASE_URL}/check_session`, { credentials: 'include' });
-            const sessionData = await sessionRes.json();
-            
-            if (!sessionRes.ok || !sessionData.logged_in || sessionData.user.role !== 'parent') {
-                window.location.href = '/';
-                return;
-            }
-            
-            document.getElementById('parent-name').textContent = sessionData.user.name.split(' ')[0];
-
-            // 2. Get Child Info (NEW API CALL)
-            const childRes = await fetch(`${API_BASE_URL}/parent/child_info`, { credentials: 'include' });
-            if(childRes.ok) {
-                const child = await childRes.json();
-                if(child) {
-                    document.getElementById('child-name').textContent = child.name;
-                    document.getElementById('child-batch').textContent = child.session_name || 'No Batch';
-                    
-                    if(child.profile_photo_url) {
-                        const img = document.getElementById('child-photo');
-                        img.src = child.profile_photo_url;
-                        img.classList.remove('hidden');
-                        document.getElementById('child-initial').classList.add('hidden');
-                    } else {
-                        document.getElementById('child-initial').textContent = child.name.charAt(0);
-                    }
-                } else {
-                    document.getElementById('child-name').textContent = "No Student Linked";
-                }
-            }
-
-            // 3. Load Dashboard Data
-            await Promise.all([fetchAttendanceSummary(), fetchFees()]);
-            
-            // 4. Show App
-            document.getElementById('loading-screen').classList.add('hidden');
-            document.getElementById('app-container').classList.remove('hidden');
-
-        } catch (e) {
-            console.error("Init Error", e);
-            alert("Failed to load portal. Please reload.");
-        }
-    });
-
-    // --- DATA FETCHERS ---
-    
-    async function fetchAttendanceSummary() {
-        try {
-            const res = await fetch(`${API_BASE_URL}/my/attendance`, { credentials: 'include' });
-            const data = await res.json();
-            
-            if (Array.isArray(data)) {
-                const total = data.length;
-                const present = data.filter(r => r.status === 'Present' || r.status === 'Checked-In').length;
-                const percent = total > 0 ? Math.round((present / total) * 100) : 0;
-                document.getElementById('dash-attendance').textContent = `${percent}%`;
-            }
-        } catch(e) { console.error(e); }
-    }
-
-    async function fetchAttendance() {
-        const container = document.getElementById('attendance-list');
-        container.innerHTML = '<p class="text-center text-slate-400 text-sm py-8">Loading...</p>';
-        
-        try {
-            const res = await fetch(`${API_BASE_URL}/my/attendance`, { credentials: 'include' });
-            const data = await res.json();
-            
-            if (!data || data.length === 0) {
-                container.innerHTML = '<div class="bg-white p-6 rounded-xl border border-slate-100 text-center text-slate-400 text-sm">No attendance records found.</div>';
-                return;
-            }
-
-            container.innerHTML = data.map(r => {
-                const isPresent = r.status === 'Present' || r.status === 'Checked-In';
-                return `
-                <div class="bg-white p-4 rounded-xl border border-slate-100 flex items-center justify-between">
-                    <div class="flex items-center gap-4">
-                        <div class="bg-slate-50 w-12 h-12 rounded-lg flex flex-col items-center justify-center border border-slate-200">
-                            <span class="text-[10px] font-bold text-slate-400 uppercase">${new Date(r.date).toLocaleDateString('en-US', {month:'short'})}</span>
-                            <span class="text-lg font-bold text-slate-800 leading-none">${new Date(r.date).getDate()}</span>
-                        </div>
-                        <div>
-                            <p class="font-bold text-slate-800 text-sm">${r.time}</p>
-                            <p class="text-xs text-slate-500">Daily Status</p>
-                        </div>
-                    </div>
-                    <span class="px-3 py-1 rounded-full text-xs font-bold ${isPresent ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}">
-                        ${r.status}
-                    </span>
-                </div>`;
-            }).join('');
-            
-        } catch(e) { container.innerHTML = '<p class="text-red-500 text-center text-sm">Failed to load attendance.</p>'; }
-    }
-
-    async function fetchFees() {
-        try {
-            const res = await fetch(`${API_BASE_URL}/my/fees`, { credentials: 'include' });
-            const data = await res.json();
-            
-            // Update Dashboard Widget
-            document.getElementById('dash-balance').textContent = `₹${data.balance}`;
-            
-            // Update Fees View
-            document.getElementById('fee-total-due').textContent = `₹${data.balance}`;
-            document.getElementById('fee-due-date').innerHTML = `<span class="material-symbols-rounded text-base">event</span> Due Date: ${data.due_date}`;
-            
-            document.getElementById('summ-total').textContent = `₹${data.total_due}`;
-            document.getElementById('summ-paid').textContent = `- ₹${data.total_paid}`;
-            document.getElementById('summ-bal').textContent = `₹${data.balance}`;
-            
-            // Show Alert if balance > 0
-            if(data.balance > 0) {
-                document.getElementById('fee-alert-box').classList.remove('hidden');
-                document.getElementById('alert-amount').textContent = `₹${data.balance}`;
-            } else {
-                document.getElementById('fee-alert-box').classList.add('hidden');
-            }
-            
-        } catch(e) { console.error(e); }
-    }
-
-    async function fetchNotices() {
-        const container = document.getElementById('notices-list');
-        container.innerHTML = '<p class="text-center text-slate-400 text-sm py-8">Loading...</p>';
-        
-        try {
-            const res = await fetch(`${API_BASE_URL}/my/announcements`, { credentials: 'include' });
-            const data = await res.json();
-            
-            if(data.length === 0) {
-                container.innerHTML = '<div class="text-center text-slate-400 text-sm py-10">No announcements for parents.</div>';
-                return;
-            }
-
-            container.innerHTML = data.map(n => `
-                <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-                    <div class="flex items-start gap-3">
-                        <div class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
-                            <span class="material-symbols-rounded text-sm">campaign</span>
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-slate-800 text-sm mb-1">${n.title}</h4>
-                            <p class="text-xs text-slate-500 mb-3">${n.created_at}</p>
-                            <p class="text-sm text-slate-600 leading-relaxed">${n.content}</p>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-
-        } catch(e) { console.error(e); }
-    }
-
-    // Logout
-    document.getElementById('logout-btn').addEventListener('click', async () => {
-        await fetch(`${API_BASE_URL}/logout`, { method: 'POST', credentials: 'include' });
-        window.location.href = '/';
-    });
-</script>
+        // Logout
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            await fetch(`${API_BASE_URL}/logout`, { method: 'POST' });
+            window.location.href = '/';
+        });
+    </script>
 </body>
 </html>
