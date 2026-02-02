@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+  <!DOCTYPE html>
 <html lang="en" class="h-full bg-slate-50">
 <head>
     <meta charset="UTF-8">
@@ -12,14 +12,16 @@
      <script src="{{ url_for('static', filename='tailwind.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> 
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
 
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     fontFamily: { sans: ['Outfit', 'sans-serif'] },
-                    colors: { primary: '#2563EB', dark: '#0F172A' },
-                    boxShadow: { 'up': '0 -4px 20px -5px rgba(0, 0, 0, 0.1)' }
+                    colors: { primary: '#2563EB', dark: '#0F172A' }
                 }
             }
         };
@@ -32,10 +34,10 @@
 </head>
 <body class="h-full flex flex-col text-slate-800 overflow-hidden">
 
-    <header class="bg-white px-6 py-5 flex justify-between items-center shadow-sm z-20 sticky top-0">
+    <header class="bg-white px-6 py-4 flex justify-between items-center shadow-sm z-20 sticky top-0">
         <div>
-            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Parent Portal</h1>
-            <p class="text-sm text-slate-500 font-medium" id="current-date">Today</p>
+            <h1 class="text-xl font-bold text-slate-900 tracking-tight">Parent Portal</h1>
+            <p class="text-xs text-slate-500 font-medium" id="current-date">Today</p>
         </div>
         <button id="notif-btn" onclick="requestNotificationPermission()" class="w-10 h-10 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center relative">
             <span class="material-symbols-rounded">notifications</span>
@@ -47,18 +49,27 @@
         
         <div id="view-dashboard" class="content-section space-y-6">
             
-            <div class="bg-white rounded-3xl p-6 shadow-lg shadow-slate-200/50 border border-slate-100 flex items-center gap-5">
+            <div id="child-selector-container" class="hidden">
+                <label class="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Select Child Profile</label>
                 <div class="relative">
+                    <select id="child-select" onchange="changeChild(this.value)" class="w-full p-4 bg-white border-2 border-blue-100 text-blue-900 font-bold rounded-2xl shadow-sm outline-none focus:ring-2 focus:ring-blue-500 appearance-none">
+                        </select>
+                    <span class="material-symbols-rounded absolute right-4 top-4 text-blue-400 pointer-events-none">expand_more</span>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-3xl p-6 shadow-lg shadow-slate-200/50 border border-slate-100 flex items-center gap-5 relative overflow-hidden">
+                <div class="relative z-10">
                     <div class="w-20 h-20 rounded-full p-1 bg-gradient-to-tr from-blue-500 to-indigo-500">
                         <img id="child-img" src="https://placehold.co/150" class="w-full h-full rounded-full object-cover border-4 border-white bg-white">
                     </div>
-                    <div class="absolute bottom-0 right-0 w-6 h-6 bg-green-500 border-4 border-white rounded-full"></div>
                 </div>
-                <div>
+                <div class="relative z-10">
                     <h2 class="text-xl font-bold text-slate-800 leading-tight" id="child-name">Loading...</h2>
                     <p class="text-sm text-slate-500 font-medium mt-1" id="child-batch">...</p>
                     <span class="inline-block mt-2 px-3 py-1 bg-blue-50 text-blue-700 text-xs font-bold rounded-full">Active Student</span>
                 </div>
+                <div class="absolute -right-10 -top-10 w-40 h-40 bg-blue-50 rounded-full blur-2xl opacity-50"></div>
             </div>
 
             <div id="fee-card" class="hidden bg-red-50 rounded-3xl p-6 border border-red-100 shadow-sm relative overflow-hidden">
@@ -72,37 +83,34 @@
                             <span class="material-symbols-rounded text-2xl">warning</span>
                         </div>
                     </div>
-                    <p class="text-sm text-red-600/80 mb-5 font-medium">Please clear the dues to avoid late fees.</p>
+                    <p class="text-sm text-red-600/80 mb-5 font-medium">Please clear dues to avoid late fees.</p>
                     <button onclick="initiatePayment()" id="pay-btn" class="w-full bg-slate-900 text-white font-bold text-lg py-4 rounded-xl shadow-lg shadow-slate-900/20 active:scale-95 transition-transform flex items-center justify-center gap-2">
-                        <span>Pay Now Securely</span>
+                        <span>Pay Now</span>
                         <span class="material-symbols-rounded">arrow_forward</span>
                     </button>
                 </div>
             </div>
 
-            <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex items-center justify-between">
-                <div>
-                    <p class="text-slate-400 text-sm font-bold uppercase tracking-wider">Attendance</p>
-                    <h3 class="text-3xl font-extrabold text-slate-900 mt-1" id="child-attendance">--%</h3>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 flex flex-col justify-between">
+                    <p class="text-slate-400 text-xs font-bold uppercase">Attendance</p>
+                    <h3 class="text-3xl font-extrabold text-slate-900 mt-2" id="child-attendance">--%</h3>
+                    <div class="h-1.5 w-full bg-slate-100 rounded-full mt-2 overflow-hidden">
+                        <div id="att-bar" class="h-full bg-green-500 rounded-full" style="width: 0%"></div>
+                    </div>
                 </div>
-                <div class="h-16 w-16 relative">
-                    <div id="att-circle" class="w-full h-full rounded-full" style="background: conic-gradient(#22c55e 0% 0%, #f1f5f9 0% 100%);"></div>
-                    <div class="absolute inset-2 bg-white rounded-full"></div>
+                <div class="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 flex flex-col justify-between" onclick="switchTab('analytics')">
+                    <p class="text-slate-400 text-xs font-bold uppercase">Performance</p>
+                    <div class="h-16 mt-2 relative">
+                        <canvas id="miniPerformanceChart"></canvas>
+                    </div>
                 </div>
-            </div>
-
-            <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="font-bold text-slate-800 text-lg">Performance</h3>
-                    <button onclick="switchTab('analytics')" class="text-blue-600 text-sm font-bold">See All</button>
-                </div>
-                <div class="h-40"><canvas id="miniPerformanceChart"></canvas></div>
             </div>
 
             <div>
                 <h3 class="font-bold text-slate-800 text-lg mb-3 px-1">Latest Updates</h3>
                 <div id="announcements-list" class="space-y-3">
-                    <p class="text-center text-slate-400 py-4">No updates yet.</p>
+                    <p class="text-center text-slate-400 py-4">Checking updates...</p>
                 </div>
             </div>
         </div>
@@ -123,43 +131,137 @@
             <h2 class="text-2xl font-bold mb-6">Settings</h2>
             <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-6">
                 <div><label class="text-xs text-slate-400 uppercase font-bold">Parent Name</label><p id="parent-name" class="text-lg font-medium text-slate-900">-</p></div>
-                <div><label class="text-xs text-slate-400 uppercase font-bold">Mobile Number</label><p id="parent-phone" class="text-lg font-medium text-slate-900">-</p></div>
-                <div><label class="text-xs text-slate-400 uppercase font-bold">Email ID</label><p id="parent-email" class="text-lg font-medium text-slate-900">-</p></div>
+                <div><label class="text-xs text-slate-400 uppercase font-bold">Email</label><p id="parent-email" class="text-lg font-medium text-slate-900">-</p></div>
                 <button id="logout-btn" class="w-full bg-red-50 text-red-600 font-bold py-4 rounded-xl mt-4 border border-red-100">Sign Out</button>
             </div>
         </div>
-
     </main>
 
     <nav class="bg-white border-t border-slate-200 fixed bottom-0 w-full z-50 pb-safe shadow-up h-20">
         <div class="grid grid-cols-4 h-full">
             <button onclick="switchTab('dashboard')" class="nav-btn group flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform" data-target="dashboard">
-                <span class="material-symbols-rounded text-3xl text-slate-400 group-hover:text-blue-600 transition-colors">home</span>
+                <span class="material-symbols-rounded text-3xl text-slate-400 group-hover:text-blue-600">home</span>
                 <span class="text-[10px] font-bold text-slate-400 group-hover:text-blue-600">Home</span>
             </button>
             <button onclick="switchTab('analytics')" class="nav-btn group flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform" data-target="analytics">
-                <span class="material-symbols-rounded text-3xl text-slate-400 group-hover:text-blue-600 transition-colors">monitoring</span>
+                <span class="material-symbols-rounded text-3xl text-slate-400 group-hover:text-blue-600">monitoring</span>
                 <span class="text-[10px] font-bold text-slate-400 group-hover:text-blue-600">Graph</span>
             </button>
             <button onclick="switchTab('attendance')" class="nav-btn group flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform" data-target="attendance">
-                <span class="material-symbols-rounded text-3xl text-slate-400 group-hover:text-blue-600 transition-colors">calendar_month</span>
+                <span class="material-symbols-rounded text-3xl text-slate-400 group-hover:text-blue-600">calendar_month</span>
                 <span class="text-[10px] font-bold text-slate-400 group-hover:text-blue-600">Attend</span>
             </button>
             <button onclick="switchTab('profile')" class="nav-btn group flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform" data-target="profile">
-                <span class="material-symbols-rounded text-3xl text-slate-400 group-hover:text-blue-600 transition-colors">person</span>
+                <span class="material-symbols-rounded text-3xl text-slate-400 group-hover:text-blue-600">person</span>
                 <span class="text-[10px] font-bold text-slate-400 group-hover:text-blue-600">Me</span>
             </button>
         </div>
     </nav>
 
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
-
     <script>
         const API_BASE_URL = '/api';
-        let childId = null;
+        
+        // --- GLOBAL STATE ---
+        let allChildren = [];  
+        let currentChild = null; 
 
-        // --- NAVIGATION ---
+        // --- 1. INITIAL LOADING ---
+        async function loadApp() {
+            try {
+                // Fetch ALL Children using NEW Endpoint
+                const res = await fetch(API_BASE_URL + '/parent/my_children');
+                const data = await res.json();
+                
+                if (data.length > 0) {
+                    allChildren = data;
+                    
+                    // Show Dropdown only if > 1 child
+                    if (allChildren.length > 1) {
+                        const selector = document.getElementById('child-select');
+                        document.getElementById('child-selector-container').classList.remove('hidden');
+                        
+                        selector.innerHTML = allChildren.map((child, index) => 
+                            `<option value="${index}">${child.name}</option>`
+                        ).join('');
+                    }
+
+                    // Select First Child by Default
+                    selectChildByIndex(0);
+                }
+                
+                loadProfile();
+                loadAnnouncements();
+
+            } catch(e) { console.error("Load Error:", e); }
+        }
+
+        // --- 2. SWITCH CHILD LOGIC ---
+        function changeChild(index) {
+            selectChildByIndex(parseInt(index));
+        }
+
+        async function selectChildByIndex(index) {
+            currentChild = allChildren[index];
+            
+            // Update UI with Child Info
+            document.getElementById('child-name').textContent = currentChild.name;
+            document.getElementById('child-batch').textContent = currentChild.batch;
+            if(currentChild.profile_photo_url) {
+                document.getElementById('child-img').src = currentChild.profile_photo_url;
+            } else {
+                document.getElementById('child-img').src = "https://placehold.co/150";
+            }
+
+            // Fetch Data Specific to THIS Child
+            await loadChildStats(currentChild.id);
+        }
+
+        async function loadChildStats(childId) {
+            try {
+                // CALL NEW BACKEND ENDPOINT
+                const res = await fetch(API_BASE_URL + '/parent/child_details', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ student_id: childId })
+                });
+                const data = await res.json();
+
+                // 1. Render Attendance
+                renderAttendance(data.attendance);
+
+                // 2. Render Fees
+                const due = data.fees_due || 0;
+                document.getElementById('child-fee').textContent = '₹' + due;
+                if (due > 0) document.getElementById('fee-card').classList.remove('hidden');
+                else document.getElementById('fee-card').classList.add('hidden');
+
+                // 3. Render Charts (Simulated for now)
+                renderChart(); 
+
+            } catch(e) { console.log(e); }
+        }
+
+        function renderAttendance(data) {
+            const tbody = document.getElementById('attendance-list');
+            if(!data || !data.length) { 
+                tbody.innerHTML = '<tr><td colspan="2" class="p-6 text-center text-slate-400">No records.</td></tr>'; 
+                document.getElementById('child-attendance').textContent = '0%';
+                document.getElementById('att-bar').style.width = '0%';
+                return; 
+            }
+            
+            let presentCount = 0;
+            tbody.innerHTML = data.map(a => {
+                if(a.status === 'Present') presentCount++;
+                return `<tr class="border-b border-slate-50 last:border-0"><td class="p-5"><p class="font-bold text-slate-800 text-base">${a.date}</p><p class="text-xs text-slate-400 font-medium">${a.time}</p></td><td class="p-5 text-right"><span class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider ${a.status==='Present'?'bg-green-100 text-green-700':'bg-red-100 text-red-700'}">${a.status}</span></td></tr>`;
+            }).join('');
+            
+            const pct = Math.round((presentCount / data.length) * 100);
+            document.getElementById('child-attendance').textContent = pct + '%';
+            document.getElementById('att-bar').style.width = pct + '%';
+        }
+
+        // --- NAVIGATION & HELPERS ---
         function switchTab(tabId) {
             document.querySelectorAll('.content-section').forEach(el => el.classList.add('hidden'));
             document.getElementById('view-' + tabId).classList.remove('hidden');
@@ -167,87 +269,22 @@
             document.querySelectorAll('.nav-btn span').forEach(el => { el.classList.remove('text-blue-600'); el.classList.add('text-slate-400'); });
             const activeBtn = document.querySelector(`.nav-btn[data-target="${tabId}"]`);
             if(activeBtn) { activeBtn.querySelectorAll('span').forEach(el => { el.classList.remove('text-slate-400'); el.classList.add('text-blue-600'); }); }
-
-            if(tabId === 'dashboard') loadDashboard();
-            if(tabId === 'attendance') loadAttendance();
-            if(tabId === 'profile') loadProfile();
-        }
-
-        // --- DATA ---
-        async function loadDashboard() {
-            try {
-                const res = await fetch(API_BASE_URL + '/parent/child_info');
-                const child = await res.json();
-                
-                if (child) {
-                    childId = child.id;
-                    document.getElementById('child-name').textContent = child.name;
-                    document.getElementById('child-batch').textContent = child.session_name || 'Batch N/A';
-                    if(child.profile_photo_url) document.getElementById('child-img').src = child.profile_photo_url;
-
-                    const statsRes = await fetch(API_BASE_URL + '/student/fees');
-                    if (statsRes.ok) {
-                        const feeData = await statsRes.json();
-                        const due = feeData.balance || 0;
-                        document.getElementById('child-fee').textContent = '₹' + due;
-                        if (due > 0) document.getElementById('fee-card').classList.remove('hidden');
-                        else document.getElementById('fee-card').classList.add('hidden');
-                    }
-                    renderChart();
-                }
-                loadAnnouncements();
-            } catch(e) { console.error(e); }
         }
 
         function renderChart() {
-            const examData = [{ exam: 'Test 1', pct: 65 }, { exam: 'Mid', pct: 78 }, { exam: 'Test 2', pct: 72 }, { exam: 'Final', pct: 88 }];
-            const labels = examData.map(e => e.exam);
-            const data = examData.map(e => e.pct);
-            const config = {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Marks %', data: data, borderColor: '#2563EB', backgroundColor: 'rgba(37, 99, 235, 0.1)', borderWidth: 3, pointRadius: 6, pointBackgroundColor: '#fff', pointBorderColor: '#2563EB', fill: true, tension: 0.4
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { display: false, min: 0, max: 100 } } }
-            };
+            const config = { type: 'line', data: { labels: ['T1','Mid','T2','Fin'], datasets: [{ data: [65,78,72,88], borderColor: '#2563EB', tension: 0.4 }] }, options: { plugins:{legend:false}, scales:{x:{display:false},y:{display:false}} } };
             if(document.getElementById('miniPerformanceChart')) new Chart(document.getElementById('miniPerformanceChart'), config);
             if(document.getElementById('mainPerformanceChart')) new Chart(document.getElementById('mainPerformanceChart'), config);
         }
 
         async function loadAnnouncements() {
-            const container = document.getElementById('announcements-list');
+            const c = document.getElementById('announcements-list');
             try {
                 const res = await fetch(API_BASE_URL + '/my/announcements');
-                const data = await res.json();
-                if(data.length === 0) { container.innerHTML = '<p class="text-center text-slate-400 py-4 text-sm">No updates.</p>'; return; }
-                container.innerHTML = data.map(n => `
-                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 mb-3">
-                        <div class="flex items-start gap-3">
-                            <div class="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center flex-shrink-0"><span class="material-symbols-rounded">campaign</span></div>
-                            <div><h4 class="font-bold text-slate-900 text-sm mb-1">${n.title}</h4><p class="text-xs text-slate-500 mb-2">${n.created_at}</p><p class="text-sm text-slate-600 leading-relaxed">${n.content}</p></div>
-                        </div>
-                    </div>`).join('');
-            } catch(e) {}
-        }
-
-        async function loadAttendance() {
-            const tbody = document.getElementById('attendance-list');
-            try {
-                const res = await fetch(API_BASE_URL + '/my/attendance');
-                const data = await res.json();
-                if(!data.length) { tbody.innerHTML = '<tr><td colspan="2" class="p-6 text-center text-slate-400">No records.</td></tr>'; return; }
-                let presentCount = 0;
-                tbody.innerHTML = data.map(a => {
-                    if(a.status === 'Present') presentCount++;
-                    return `<tr class="border-b border-slate-50 last:border-0"><td class="p-5"><p class="font-bold text-slate-800 text-base">${a.date}</p><p class="text-xs text-slate-400 font-medium">${a.time}</p></td><td class="p-5 text-right"><span class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider ${a.status==='Present'?'bg-green-100 text-green-700':'bg-red-100 text-red-700'}">${a.status}</span></td></tr>`;
-                }).join('');
-                const pct = data.length > 0 ? Math.round((presentCount / data.length) * 100) : 0;
-                document.getElementById('child-attendance').textContent = pct + '%';
-                document.getElementById('att-circle').style.background = `conic-gradient(#22c55e 0% ${pct}%, #f1f5f9 ${pct}% 100%)`;
-            } catch(e) {}
+                const d = await res.json();
+                if(!d.length) { c.innerHTML='<p class="text-center text-slate-400 py-4">No updates.</p>'; return; }
+                c.innerHTML = d.map(n => `<div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 mb-3"><h4 class="font-bold text-sm">${n.title}</h4><p class="text-xs text-slate-500 mb-2">${n.created_at}</p><p class="text-sm text-slate-600">${n.content}</p></div>`).join('');
+            } catch(e){}
         }
 
         async function loadProfile() {
@@ -256,30 +293,10 @@
                 const u = await res.json();
                 document.getElementById('parent-name').textContent = u.name;
                 document.getElementById('parent-email').textContent = u.email;
-                document.getElementById('parent-phone').textContent = u.phone_number || '-';
-            } catch(e) {}
+            } catch(e){}
         }
 
-        async function initiatePayment() {
-            const btn = document.getElementById('pay-btn'); btn.innerHTML = 'Processing...'; btn.disabled = true;
-            try {
-                const res = await fetch(API_BASE_URL + '/payment/create_order', { method: 'POST' });
-                const data = await res.json();
-                if (!res.ok) { alert(data.msg); btn.innerHTML = 'Pay Now'; btn.disabled = false; return; }
-                var options = {
-                    "key": data.key_id, "amount": data.amount, "currency": "INR",
-                    "name": "CST Institute", "description": "Fee Payment",
-                    "image": "https://placehold.co/100?text=CST", "order_id": data.order_id,
-                    "handler": async function (response){
-                        const verifyRes = await fetch(API_BASE_URL + '/payment/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ razorpay_payment_id: response.razorpay_payment_id, razorpay_order_id: response.razorpay_order_id, razorpay_signature: response.razorpay_signature, amount: data.amount }) });
-                        if(verifyRes.ok) { alert("✅ Payment Successful!"); loadDashboard(); } else { alert("Failed."); }
-                    }, "theme": { "color": "#0F172A" }
-                };
-                new Razorpay(options).open();
-            } catch (e) { alert("Server Error"); } finally { btn.innerHTML = `<span>Pay Now Securely</span><span class="material-symbols-rounded">arrow_forward</span>`; btn.disabled = false; }
-        }
-
-        // --- FIREBASE NOTIFICATIONS (Background Enabled) ---
+        // --- FIREBASE NOTIFICATIONS (RESTORED) ---
         function requestNotificationPermission() {
             if (!firebase.messaging.isSupported()) return alert("Notifications not supported on this browser.");
             const messaging = firebase.messaging();
@@ -302,15 +319,34 @@
             });
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const dateEl = document.getElementById('current-date');
-            dateEl.textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' });
-            switchTab('dashboard');
-        });
+        // --- PAYMENT LOGIC ---
+        async function initiatePayment() {
+            const btn = document.getElementById('pay-btn'); btn.innerHTML = 'Processing...'; btn.disabled = true;
+            try {
+                const res = await fetch(API_BASE_URL + '/payment/create_order', { method: 'POST' });
+                const data = await res.json();
+                if (!res.ok) { alert(data.msg); btn.innerHTML = 'Pay Now'; btn.disabled = false; return; }
+                var options = {
+                    "key": data.key_id, "amount": data.amount, "currency": "INR",
+                    "name": "CST Institute", "description": "Fee Payment",
+                    "image": "https://placehold.co/100?text=CST", "order_id": data.order_id,
+                    "handler": async function (response){
+                        const verifyRes = await fetch(API_BASE_URL + '/payment/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ razorpay_payment_id: response.razorpay_payment_id, razorpay_order_id: response.razorpay_order_id, razorpay_signature: response.razorpay_signature, amount: data.amount }) });
+                        if(verifyRes.ok) { alert("✅ Payment Successful!"); loadChildStats(currentChild.id); } else { alert("Failed."); }
+                    }, "theme": { "color": "#0F172A" }
+                };
+                new Razorpay(options).open();
+            } catch (e) { alert("Server Error"); } finally { btn.innerHTML = `<span>Pay Now</span><span class="material-symbols-rounded">arrow_forward</span>`; btn.disabled = false; }
+        }
 
+        // --- START ---
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' });
+            switchTab('dashboard');
+            loadApp(); 
+        });
+        
         document.getElementById('logout-btn').addEventListener('click', async () => { await fetch(`${API_BASE_URL}/logout`, { method: 'POST' }); window.location.href = '/'; });
     </script>
 </body>
-</html>   
-     
-     
+</html>     
