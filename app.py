@@ -2034,6 +2034,72 @@ def verify_payment():
         return jsonify({"msg": "Payment Verification Failed"}), 400
     except Exception as e:
         return jsonify({"msg": str(e)}), 500
+# ==========================================
+# PARENT PORTAL - MISSING FUNCTIONS
+# PASTE THIS AT THE BOTTOM OF app.py
+# ==========================================
+
+@app.route('/api/parent/my_children')
+@login_required
+def parent_get_all_children():
+    """Returns a list of all children linked to the logged-in parent"""
+    if current_user.role != 'parent': 
+        return jsonify([]), 403
+    
+    # Fetch ALL children
+    children = User.query.filter_by(parent_id=current_user.id).all()
+    
+    child_list = []
+    for child in children:
+        # Get Batch Name safely
+        batch_name = "N/A"
+        if child.session_id:
+            sess = db.session.get(AcademicSession, child.session_id)
+            if sess: batch_name = sess.name
+
+        child_list.append({
+            "id": child.id,
+            "name": child.name,
+            "batch": batch_name,
+            "profile_photo_url": f"/uploads/{child.profile_photo}" if child.profile_photo else None
+        })
+        
+    return jsonify(child_list)
+
+@app.route('/api/parent/child_details', methods=['POST'])
+@login_required
+def parent_get_child_details():
+    """Fetches specific data for the selected child"""
+    if current_user.role != 'parent': return jsonify({"msg": "Denied"}), 403
+    
+    data = request.json
+    student_id = data.get('student_id')
+    
+    # SECURITY: Ensure this student actually belongs to this parent
+    child = User.query.filter_by(id=student_id, parent_id=current_user.id).first()
+    if not child: 
+        return jsonify({"msg": "Invalid Child ID"}), 404
+
+    # 1. Get Attendance
+    att_records = Attendance.query.filter_by(student_id=child.id).order_by(Attendance.date.desc()).all()
+    attendance_data = [{
+        "date": a.date.strftime("%d-%b"),
+        "time": a.created_at.strftime("%I:%M %p"),
+        "status": a.status
+    } for a in att_records]
+
+    # 2. Get Fees
+    # (Reusing your existing logic, or defaulting to 0 if helper missing)
+    try:
+        fee_data = calculate_fee_status(child.id)
+        balance = fee_data['balance']
+    except:
+        balance = 0
+
+    return jsonify({
+        "attendance": attendance_data,
+        "fees_due": balance
+    })
 
 if __name__ == '__main__':
     initialize_database()
