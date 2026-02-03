@@ -2,9 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Modern Vertical ID Cards</title>
+    <title>CST Institute ID Cards</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@48,1,0,0" rel="stylesheet" />
     
     <style>
         body {
@@ -39,28 +38,28 @@
             width: 53mm;
             height: 85mm;
             background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 4mm;
+            border: 1px solid #ddd;
+            border-radius: 3mm;
             overflow: hidden;
             position: relative;
             display: flex;
             flex-direction: column;
             align-items: center;
             text-align: center;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
         }
 
         /* 1. Header with Logo & Name */
         .header {
             width: 100%;
-            height: 20mm; /* Increased height for Logo */
+            height: 18mm;
             background: linear-gradient(135deg, #1e3a8a, #2563eb);
             color: white;
             display: flex;
-            flex-direction: column;
             align-items: center;
-            justify-content: flex-start;
-            padding-top: 2mm;
+            justify-content: center; /* Center content */
+            gap: 2mm; /* Space between logo and text */
+            padding-bottom: 4mm; /* Space for photo overlap */
             position: relative;
             z-index: 1;
         }
@@ -71,29 +70,29 @@
             background: white;
             border-radius: 50%;
             padding: 0.5mm;
-            margin-bottom: 0.5mm;
             object-fit: contain;
         }
 
         .inst-name {
-            font-size: 8px;
+            font-size: 9px;
             font-weight: 800;
             letter-spacing: 0.5px;
             text-transform: uppercase;
-            line-height: 1;
+            color: #fff;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
 
-        /* 2. Photo (Overlapping Header) */
+        /* 2. Photo (Small Size & Centered) */
         .photo-container {
-            width: 24mm;
-            height: 24mm;
+            width: 19mm; /* SMALLER SIZE */
+            height: 19mm;
             border-radius: 50%;
             background: white;
-            padding: 1.5mm; /* Thicker white border */
+            padding: 1mm; 
             margin-top: -8mm; /* Pulls it up into header */
-            z-index: 10; /* Ensures it sits ON TOP of header */
+            z-index: 10;
             position: relative;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
         }
         
         .photo-img {
@@ -101,7 +100,7 @@
             height: 100%;
             border-radius: 50%;
             object-fit: cover;
-            object-position: top center; /* Focus on face */
+            object-position: top center;
             background-color: #f3f4f6;
         }
 
@@ -122,8 +121,8 @@
             color: #111;
             margin: 1mm 0 0 0;
             text-transform: uppercase;
-            line-height: 1.1;
-            max-width: 95%;
+            line-height: 1.2;
+            max-width: 98%;
         }
         
         .role-badge {
@@ -131,29 +130,30 @@
             color: #2563eb;
             font-size: 6px;
             font-weight: 700;
-            padding: 1px 4px;
-            border-radius: 2px;
+            padding: 1px 5px;
+            border-radius: 3px;
             margin: 1mm 0 2mm 0;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .info-table {
-            width: 95%;
+            width: 98%;
             font-size: 7px;
             border-collapse: collapse;
             text-align: left;
         }
         .info-table td {
-            padding: 0.6mm 0;
+            padding: 0.7mm 0;
             border-bottom: 1px dashed #f3f4f6;
         }
         .label {
             color: #6b7280;
             font-weight: 700;
-            width: 12mm;
+            width: 13mm;
         }
         .val {
-            color: #374151;
+            color: #1f2937;
             font-weight: 600;
         }
 
@@ -161,19 +161,19 @@
         .qr-area {
             width: 100%;
             background: white;
-            padding-bottom: 2mm;
+            padding-bottom: 3mm;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: flex-end;
-            margin-top: auto; /* Pushes to bottom */
+            margin-top: auto;
         }
         
         .qr-img {
-            width: 26mm; /* Large Size */
-            height: 26mm;
+            width: 28mm; /* Large Size for easy scanning */
+            height: 28mm;
             object-fit: contain;
-            border: 1px solid #111; /* Sharp border for scanning */
+            border: 2px solid #000; /* Dark border for scanner */
             padding: 1mm;
             background: white;
             border-radius: 2mm;
@@ -181,7 +181,7 @@
         
         .qr-text {
             font-size: 6px;
-            color: #64748b;
+            color: #4b5563;
             margin-top: 1mm;
             font-weight: 600;
             letter-spacing: 0.5px;
@@ -202,7 +202,9 @@
         <div class="id-card">
             
             <div class="header">
-                <img src="{{ url_for('static', filename='logo.png') }}" class="inst-logo" onerror="this.style.display='none'">
+                <img src="{{ url_for('static', filename='logo.png') }}" class="inst-logo" 
+                     onerror="this.style.display='none'">
+                
                 <div class="inst-name">CST INSTITUTE</div>
             </div>
 
@@ -237,7 +239,7 @@
             </div>
 
             <div class="qr-area">
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={{ student.admission_number }}" class="qr-img">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data={{ student.admission_number }}" class="qr-img">
                 <div class="qr-text">ATTENDANCE SCAN</div>
             </div>
 
