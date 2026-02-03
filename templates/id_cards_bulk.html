@@ -49,16 +49,16 @@
             box-shadow: 0 1px 2px rgba(0,0,0,0.1);
         }
 
-        /* 1. Header - Content pushed to TOP to avoid overlap */
+        /* 1. Header: Logo & Name at the VERY TOP */
         .header {
             width: 100%;
-            height: 20mm; /* Slightly taller to fit logo comfortably */
+            height: 22mm; /* Height for Logo area */
             background: linear-gradient(135deg, #1e3a8a, #2563eb);
             color: white;
             display: flex;
-            align-items: flex-start; /* Aligns content to TOP */
+            align-items: flex-start; /* Push content to top */
             justify-content: center; 
-            padding-top: 2mm; /* Space from top edge */
+            padding-top: 2mm; 
             gap: 2mm; 
             position: relative;
             z-index: 1;
@@ -79,18 +79,18 @@
             letter-spacing: 0.5px;
             text-transform: uppercase;
             color: #fff;
-            margin-top: 1.5mm; /* Aligns text with logo center */
+            margin-top: 1.5mm;
             text-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
 
-        /* 2. Photo */
+        /* 2. Photo: Overlaps bottom of header */
         .photo-container {
             width: 19mm; 
             height: 19mm;
             border-radius: 50%;
             background: white;
             padding: 1mm; 
-            margin-top: -8mm; /* Overlaps bottom of header only */
+            margin-top: -8mm; /* Pulls it up */
             z-index: 10;
             position: relative;
             box-shadow: 0 2px 4px rgba(0,0,0,0.15);
@@ -105,7 +105,7 @@
             background-color: #f3f4f6;
         }
 
-        /* 3. Details - Compact Spacing */
+        /* 3. Details: Compact & Clean */
         .details {
             width: 100%;
             padding: 0 2mm;
@@ -117,7 +117,7 @@
         }
         
         .name {
-            font-size: 9px; /* Slightly smaller for long names */
+            font-size: 9px;
             font-weight: 800;
             color: #111;
             margin: 1mm 0 0 0;
@@ -133,7 +133,7 @@
             font-weight: 700;
             padding: 0px 4px;
             border-radius: 2px;
-            margin: 0.5mm 0 1mm 0; /* Reduced margin */
+            margin: 1mm 0 1.5mm 0;
             text-transform: uppercase;
         }
 
@@ -145,9 +145,9 @@
             margin-top: 0;
         }
         
-        /* TIGHTER LINES */
+        /* Reduced Spacing between lines */
         .info-table td {
-            padding: 0.3mm 0; /* Very tight padding */
+            padding: 0.5mm 0; 
             border-bottom: 1px dashed #f3f4f6;
             vertical-align: middle;
         }
@@ -155,7 +155,7 @@
         .label {
             color: #6b7280;
             font-weight: 700;
-            width: 10mm; /* Reduced width */
+            width: 10mm;
         }
         .val {
             color: #1f2937;
@@ -166,7 +166,7 @@
             max-width: 35mm;
         }
 
-        /* 4. QR Code - Local File */
+        /* 4. QR Code: Local File */
         .qr-area {
             width: 100%;
             background: white;
@@ -249,8 +249,8 @@
             <div class="qr-area">
                 <img src="{{ url_for('static', filename='qr_codes/qr_' ~ student.admission_number ~ '.png') }}" 
                      class="qr-img" 
-                     alt="QR"
-                     onerror="this.src='https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ student.admission_number }}'">
+                     alt="QR Code"
+                     onerror="this.style.display='none'; alert('QR Missing for {{ student.admission_number }}');">
                 
                 <div class="qr-text">ATTENDANCE SCAN</div>
             </div>
@@ -261,7 +261,6 @@
     {% endfor %}
 
     <script>
-        // Auto Print
         window.onload = function() {
             setTimeout(() => { window.print(); }, 1500);
         };
