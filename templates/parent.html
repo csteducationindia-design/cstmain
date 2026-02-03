@@ -253,24 +253,61 @@
             }
         }
 
-        function renderAttendance(data) {
+       function renderAttendance(data) {
             const tbody = document.getElementById('attendance-list');
-            if(!data || !data.length) { 
-                tbody.innerHTML = '<tr><td colspan="2" class="p-6 text-center text-slate-400">No records found.</td></tr>'; 
-                document.getElementById('child-attendance').textContent = '0%';
-                document.getElementById('att-bar').style.width = '0%';
+            const pctText = document.getElementById('child-attendance');
+            const pctBar = document.getElementById('att-bar');
+
+            // 1. Handle No Data
+            if (!data || data.length === 0) { 
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="2" class="p-8 text-center">
+                            <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-100 text-slate-400 mb-3">
+                                <span class="material-symbols-rounded">calendar_today</span>
+                            </div>
+                            <p class="text-slate-500 text-sm font-medium">No attendance records yet.</p>
+                        </td>
+                    </tr>`; 
+                pctText.textContent = '0%';
+                pctBar.style.width = '0%';
                 return; 
             }
             
+            // 2. Calculate Percentage
             let presentCount = 0;
-            tbody.innerHTML = data.map(a => {
+            const rows = data.map(a => {
                 if(a.status === 'Present') presentCount++;
-                return `<tr class="border-b border-slate-50 last:border-0"><td class="p-5"><p class="font-bold text-slate-800 text-base">${a.date}</p><p class="text-xs text-slate-400 font-medium">${a.time}</p></td><td class="p-5 text-right"><span class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider ${a.status==='Present'?'bg-green-100 text-green-700':'bg-red-100 text-red-700'}">${a.status}</span></td></tr>`;
+                
+                // Color Logic: Green for Present, Red for Absent
+                const isPresent = a.status === 'Present';
+                const statusClass = isPresent 
+                    ? 'bg-green-100 text-green-700 border-green-200' 
+                    : 'bg-red-100 text-red-700 border-red-200';
+
+                return `
+                <tr class="border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors">
+                    <td class="p-5">
+                        <p class="font-bold text-slate-800 text-base">${a.date}</p>
+                        <p class="text-xs text-slate-400 font-medium">${a.time}</p>
+                    </td>
+                    <td class="p-5 text-right">
+                        <span class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider border ${statusClass}">
+                            ${a.status}
+                        </span>
+                    </td>
+                </tr>`;
             }).join('');
+
+            tbody.innerHTML = rows;
             
+            // 3. Update Percentage Bar
             const pct = Math.round((presentCount / data.length) * 100);
-            document.getElementById('child-attendance').textContent = pct + '%';
-            document.getElementById('att-bar').style.width = pct + '%';
+            pctText.textContent = pct + '%';
+            pctBar.style.width = pct + '%';
+            
+            // Color the bar based on percentage
+            pctBar.className = `h-full rounded-full transition-all duration-1000 ${pct < 75 ? 'bg-red-500' : 'bg-green-500'}`;
         }
 
         // --- OTHER HELPERS ---

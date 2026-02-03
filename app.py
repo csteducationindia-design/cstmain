@@ -2072,6 +2072,10 @@ def parent_get_all_children():
         print(f"Parent Child List Error: {e}")
         return jsonify([]), 500
 
+# ==========================================
+# FINAL FIX FOR ATTENDANCE & FEES (app.py)
+# ==========================================
+
 @app.route('/api/parent/child_details', methods=['POST'])
 @login_required
 def parent_get_child_details():
@@ -2087,26 +2091,28 @@ def parent_get_child_details():
         if not child: 
             return jsonify({"msg": "Invalid Child ID"}), 404
 
-        # 2. Get Attendance (Safe Mode)
+        # 2. GET ATTENDANCE (Fixed Column Name)
         attendance_data = []
         try:
-            att_records = Attendance.query.filter_by(student_id=child.id).order_by(Attendance.date.desc()).limit(30).all()
+            # ✅ FIX: Used 'check_in_time' instead of 'date'
+            att_records = Attendance.query.filter_by(student_id=child.id)\
+                .order_by(Attendance.check_in_time.desc())\
+                .limit(30).all()
+            
             attendance_data = [{
-                "date": a.date.strftime("%d-%b"),
-                "time": a.created_at.strftime("%I:%M %p"),
+                "date": a.check_in_time.strftime("%d-%b"),  # e.g., 12-Oct
+                "time": a.check_in_time.strftime("%I:%M %p"), # e.g., 10:00 AM
                 "status": a.status
             } for a in att_records]
         except Exception as e:
-            print(f"Attendance Error: {e}")
+            print(f"Attendance Query Error: {e}")
 
-        # 3. Get Fees (Safe Mode)
+        # 3. GET FEES
         balance = 0
         try:
-            # We assume calculate_fee_status exists in app.py. If not, it defaults to 0.
             fee_data = calculate_fee_status(child.id)
             balance = fee_data.get('balance', 0)
-        except Exception as e:
-            print(f"Fee Calculation Error: {e}")
+        except:
             balance = 0
 
         return jsonify({
@@ -2115,8 +2121,7 @@ def parent_get_child_details():
         })
 
     except Exception as e:
-        print(f"CRITICAL ERROR in child_details: {e}")
-        # Return empty data so app doesn't freeze
+        print(f"CRITICAL PARENT ERROR: {e}")
         return jsonify({"attendance": [], "fees_due": 0}), 200
 
 if __name__ == '__main__':
