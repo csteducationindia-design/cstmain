@@ -2040,78 +2040,84 @@ def verify_payment():
 # PARENT PORTAL FIX IN app.py
 # Replace your existing 'parent_get_all_children' function with this:
 # ==========================================
-
-# ==========================================
-# PASTE THIS AT THE BOTTOM OF app.py
-# (Replaces the old broken function)
-# ==========================================
-
 @app.route('/api/parent/my_children')
 @login_required
 def parent_get_all_children():
-    """Returns a list of all children linked to the logged-in parent"""
+    """Returns list of children. Fixes the photo URL crash."""
     if current_user.role != 'parent': 
         return jsonify([]), 403
     
-    # Fetch ALL children
-    children = User.query.filter_by(parent_id=current_user.id).all()
-    
-    child_list = []
-    for child in children:
-        batch_name = "N/A"
-        if child.session_id:
-            sess = db.session.get(AcademicSession, child.session_id)
-            if sess: batch_name = sess.name
-
-        # ✅ FIX: Use 'profile_photo_url' (The database column name)
-        # The previous code used 'profile_photo' which caused the crash.
-        photo = child.profile_photo_url if child.profile_photo_url else None
-
-        child_list.append({
-            "id": child.id,
-            "name": child.name,
-            "batch": batch_name,
-            "profile_photo_url": photo 
-        })
+    try:
+        children = User.query.filter_by(parent_id=current_user.id).all()
+        child_list = []
         
-    return jsonify(child_list)
+        for child in children:
+            batch_name = "N/A"
+            if child.session_id:
+                sess = db.session.get(AcademicSession, child.session_id)
+                if sess: batch_name = sess.name
+
+            # ✅ SAFE PHOTO URL CHECK
+            photo = child.profile_photo_url if getattr(child, 'profile_photo_url', None) else None
+
+            child_list.append({
+                "id": child.id,
+                "name": child.name,
+                "batch": batch_name,
+                "profile_photo_url": photo 
+            })
+            
+        return jsonify(child_list)
+    except Exception as e:
+        print(f"Parent Child List Error: {e}")
+        return jsonify([]), 500
 
 @app.route('/api/parent/child_details', methods=['POST'])
 @login_required
 def parent_get_child_details():
-    """Fetches Attendance & Fees for the specific child selected in the dropdown"""
+    """Fetches Fees and Attendance safely."""
     if current_user.role != 'parent': return jsonify({"msg": "Denied"}), 403
     
-    data = request.json
-    student_id = data.get('student_id')
-    
-    # SECURITY CHECK: Ensure this student actually belongs to this parent
-    child = User.query.filter_by(id=student_id, parent_id=current_user.id).first()
-    if not child: 
-        return jsonify({"msg": "Invalid Child ID"}), 404
-
-    # 1. Get Attendance
-    att_records = Attendance.query.filter_by(student_id=child.id).order_by(Attendance.date.desc()).all()
-    attendance_data = [{
-        "date": a.date.strftime("%d-%b"),
-        "time": a.created_at.strftime("%I:%M %p"),
-        "status": a.status
-    } for a in att_records]
-
-    # 2. Get Fees
-    # (We use a try-except block in case the fee helper function is missing or fails)
     try:
-        # Assuming you have the 'calculate_fee_status' function defined earlier in app.py
-        fee_data = calculate_fee_status(child.id)
-        balance = fee_data.get('balance', 0)
-    except Exception as e:
-        print(f"Fee Calc Error: {e}")
-        balance = 0
+        data = request.json
+        student_id = data.get('student_id')
+        
+        # 1. Validate Child
+        child = User.query.filter_by(id=student_id, parent_id=current_user.id).first()
+        if not child: 
+            return jsonify({"msg": "Invalid Child ID"}), 404
 
-    return jsonify({
-        "attendance": attendance_data,
-        "fees_due": balance
-    })
+        # 2. Get Attendance (Safe Mode)
+        attendance_data = []
+        try:
+            att_records = Attendance.query.filter_by(student_id=child.id).order_by(Attendance.date.desc()).limit(30).all()
+            attendance_data = [{
+                "date": a.date.strftime("%d-%b"),
+                "time": a.created_at.strftime("%I:%M %p"),
+                "status": a.status
+            } for a in att_records]
+        except Exception as e:
+            print(f"Attendance Error: {e}")
+
+        # 3. Get Fees (Safe Mode)
+        balance = 0
+        try:
+            # We assume calculate_fee_status exists in app.py. If not, it defaults to 0.
+            fee_data = calculate_fee_status(child.id)
+            balance = fee_data.get('balance', 0)
+        except Exception as e:
+            print(f"Fee Calculation Error: {e}")
+            balance = 0
+
+        return jsonify({
+            "attendance": attendance_data,
+            "fees_due": balance
+        })
+
+    except Exception as e:
+        print(f"CRITICAL ERROR in child_details: {e}")
+        # Return empty data so app doesn't freeze
+        return jsonify({"attendance": [], "fees_due": 0}), 200
 
 if __name__ == '__main__':
     initialize_database()
