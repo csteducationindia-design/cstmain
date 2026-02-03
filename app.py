@@ -2034,13 +2034,7 @@ def verify_payment():
         return jsonify({"msg": "Payment Verification Failed"}), 400
     except Exception as e:
         return jsonify({"msg": str(e)}), 500
-# ==========================================
-# PARENT PORTAL - MISSING FUNCTIONS
-# PASTE THIS AT THE BOTTOM OF app.py
-# ==========================================
 
-
-# --- REPLACE THIS FUNCTION IN app.py ---
 
 # ==========================================
 # PARENT PORTAL FIX IN app.py
@@ -2054,7 +2048,7 @@ def parent_get_all_children():
     if current_user.role != 'parent': 
         return jsonify([]), 403
     
-    # Fetch ALL children linked to this parent
+    # Fetch ALL children
     children = User.query.filter_by(parent_id=current_user.id).all()
     
     child_list = []
@@ -2065,15 +2059,14 @@ def parent_get_all_children():
             sess = db.session.get(AcademicSession, child.session_id)
             if sess: batch_name = sess.name
 
-        # ✅ FIX: Use the correct column name 'profile_photo_url'
-        # The database stores '/uploads/filename', so we use it directly.
-        photo = child.profile_photo_url if child.profile_photo_url else None
+        # ✅ CRITICAL FIX: Use 'profile_photo_url' (Not profile_photo)
+        photo_url = child.profile_photo_url if child.profile_photo_url else None
 
         child_list.append({
             "id": child.id,
             "name": child.name,
             "batch": batch_name,
-            "profile_photo_url": photo  # <--- This was the error causing the crash
+            "profile_photo_url": photo_url 
         })
         
     return jsonify(child_list)

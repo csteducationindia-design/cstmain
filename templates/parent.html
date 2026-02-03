@@ -5,26 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Parent Portal</title>
     <link rel="manifest" href="/static/manifest.json">
-    
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@48,400,1,0" rel="stylesheet" />
-    
-    <script src="{{ url_for('static', filename='tailwind.js') }}"></script>
+      <script src="{{ url_for('static', filename='tailwind.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> 
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-    
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
-
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: { sans: ['Outfit', 'sans-serif'] },
-                    colors: { primary: '#2563EB', dark: '#0F172A' }
-                }
-            }
-        };
+        tailwind.config = { theme: { extend: { fontFamily: { sans: ['Outfit', 'sans-serif'] }, colors: { primary: '#2563EB', dark: '#0F172A' } } } };
     </script>
     <style>
         .hide-scroll::-webkit-scrollbar { display: none; }
@@ -40,9 +29,7 @@
             <p class="text-xs text-slate-500 font-medium" id="current-date">Today</p>
         </div>
         <div class="flex items-center gap-3">
-            <button id="install-btn" class="hidden bg-slate-900 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm">
-                Install App
-            </button>
+            <button id="install-btn" class="hidden bg-slate-900 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm">Install App</button>
             <button id="notif-btn" onclick="requestNotificationPermission()" class="w-10 h-10 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center relative">
                 <span class="material-symbols-rounded">notifications</span>
                 <span id="notif-dot" class="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full hidden"></span>
@@ -51,14 +38,12 @@
     </header>
 
     <main class="flex-1 overflow-y-auto hide-scroll p-5 pb-32" id="main-scroll">
-        
         <div id="view-dashboard" class="content-section space-y-6">
             
             <div id="child-selector-container" class="hidden">
                 <label class="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Select Child Profile</label>
                 <div class="relative">
-                    <select id="child-select" onchange="changeChild(this.value)" class="w-full p-4 bg-white border-2 border-blue-100 text-blue-900 font-bold rounded-2xl shadow-sm outline-none focus:ring-2 focus:ring-blue-500 appearance-none">
-                        </select>
+                    <select id="child-select" onchange="changeChild(this.value)" class="w-full p-4 bg-white border-2 border-blue-100 text-blue-900 font-bold rounded-2xl shadow-sm outline-none focus:ring-2 focus:ring-blue-500 appearance-none"></select>
                     <span class="material-symbols-rounded absolute right-4 top-4 text-blue-400 pointer-events-none">expand_more</span>
                 </div>
             </div>
@@ -78,69 +63,50 @@
             </div>
 
             <div id="fee-card" class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm relative overflow-hidden transition-all duration-300">
-        <div class="relative z-10">
-            <div class="flex justify-between items-start mb-2">
-                <div>
-                    <p id="fee-label" class="text-slate-400 font-bold text-sm uppercase tracking-wider">Fee Status</p>
-                    <h3 class="text-3xl font-extrabold text-slate-900 mt-1" id="child-fee">Loading...</h3>
-                </div>
-                <div id="fee-icon-bg" class="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center text-slate-500">
-                    <span id="fee-icon" class="material-symbols-rounded text-2xl">currency_rupee</span>
+                <div class="relative z-10">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <p id="fee-label" class="text-slate-400 font-bold text-sm uppercase tracking-wider">Fee Status</p>
+                            <h3 class="text-3xl font-extrabold text-slate-900 mt-1" id="child-fee">...</h3>
+                        </div>
+                        <div id="fee-icon-bg" class="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center text-slate-500">
+                            <span id="fee-icon" class="material-symbols-rounded text-2xl">currency_rupee</span>
+                        </div>
+                    </div>
+                    <p id="fee-msg" class="text-sm text-slate-500 mb-5 font-medium">Checking fees...</p>
+                    <button onclick="initiatePayment()" id="pay-btn" class="hidden w-full bg-slate-900 text-white font-bold text-lg py-4 rounded-xl shadow-lg shadow-slate-900/20 active:scale-95 transition-transform flex items-center justify-center gap-2">
+                        <span>Pay Now</span><span class="material-symbols-rounded">arrow_forward</span>
+                    </button>
                 </div>
             </div>
-            
-            <p id="fee-msg" class="text-sm text-slate-500 mb-5 font-medium">Checking records...</p>
-            
-            <button onclick="initiatePayment()" id="pay-btn" class="hidden w-full bg-slate-900 text-white font-bold text-lg py-4 rounded-xl shadow-lg shadow-slate-900/20 active:scale-95 transition-transform flex items-center justify-center gap-2">
-                <span>Pay Now</span>
-                <span class="material-symbols-rounded">arrow_forward</span>
-            </button>
-        </div>
-    </div>
-    <div class="grid grid-cols-2 gap-4">
-        </div>
 
             <div class="grid grid-cols-2 gap-4">
                 <div class="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 flex flex-col justify-between">
                     <p class="text-slate-400 text-xs font-bold uppercase">Attendance</p>
                     <h3 class="text-3xl font-extrabold text-slate-900 mt-2" id="child-attendance">--%</h3>
-                    <div class="h-1.5 w-full bg-slate-100 rounded-full mt-2 overflow-hidden">
-                        <div id="att-bar" class="h-full bg-green-500 rounded-full transition-all duration-500" style="width: 0%"></div>
-                    </div>
+                    <div class="h-1.5 w-full bg-slate-100 rounded-full mt-2 overflow-hidden"><div id="att-bar" class="h-full bg-green-500 rounded-full transition-all duration-500" style="width: 0%"></div></div>
                 </div>
-                
                 <div class="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 flex flex-col justify-between" onclick="switchTab('analytics')">
                     <p class="text-slate-400 text-xs font-bold uppercase">Performance</p>
-                    <div class="h-16 mt-2 relative w-full">
-                        <canvas id="miniPerformanceChart"></canvas>
-                    </div>
+                    <div class="h-16 mt-2 relative w-full"><canvas id="miniPerformanceChart"></canvas></div>
                 </div>
             </div>
 
             <div>
                 <h3 class="font-bold text-slate-800 text-lg mb-3 px-1">Latest Updates</h3>
-                <div id="announcements-list" class="space-y-3">
-                    <p class="text-center text-slate-400 py-4">Checking updates...</p>
-                </div>
+                <div id="announcements-list" class="space-y-3"><p class="text-center text-slate-400 py-4">Checking updates...</p></div>
             </div>
         </div>
 
         <div id="view-analytics" class="content-section hidden p-2">
             <h2 class="text-2xl font-bold mb-6">Exam Analysis</h2>
-            <div class="bg-white p-4 rounded-2xl shadow-lg border border-slate-100 h-80 mb-6">
-                <canvas id="mainPerformanceChart"></canvas>
-            </div>
+            <div class="bg-white p-4 rounded-2xl shadow-lg border border-slate-100 h-80 mb-6"><canvas id="mainPerformanceChart"></canvas></div>
         </div>
 
         <div id="view-attendance" class="content-section hidden">
             <h2 class="text-2xl font-bold mb-6">Attendance Log</h2>
             <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                <table class="w-full text-left">
-                    <thead class="bg-slate-50 border-b border-slate-100">
-                        <tr><th class="p-5 font-bold text-slate-500 text-sm">Date</th><th class="p-5 font-bold text-slate-500 text-sm text-right">Status</th></tr>
-                    </thead>
-                    <tbody id="attendance-list" class="divide-y divide-slate-100"></tbody>
-                </table>
+                <table class="w-full text-left"><thead class="bg-slate-50 border-b border-slate-100"><tr><th class="p-5 font-bold text-slate-500 text-sm">Date</th><th class="p-5 font-bold text-slate-500 text-sm text-right">Status</th></tr></thead><tbody id="attendance-list" class="divide-y divide-slate-100"></tbody></table>
             </div>
         </div>
 
@@ -156,69 +122,43 @@
 
     <nav class="bg-white border-t border-slate-200 fixed bottom-0 w-full z-50 pb-safe shadow-up h-20">
         <div class="grid grid-cols-4 h-full">
-            <button onclick="switchTab('dashboard')" class="nav-btn group flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform" data-target="dashboard">
-                <span class="material-symbols-rounded text-3xl text-slate-400 group-hover:text-blue-600">home</span><span class="text-[10px] font-bold text-slate-400 group-hover:text-blue-600">Home</span>
-            </button>
-            <button onclick="switchTab('analytics')" class="nav-btn group flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform" data-target="analytics">
-                <span class="material-symbols-rounded text-3xl text-slate-400 group-hover:text-blue-600">monitoring</span><span class="text-[10px] font-bold text-slate-400 group-hover:text-blue-600">Graph</span>
-            </button>
-            <button onclick="switchTab('attendance')" class="nav-btn group flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform" data-target="attendance">
-                <span class="material-symbols-rounded text-3xl text-slate-400 group-hover:text-blue-600">calendar_month</span><span class="text-[10px] font-bold text-slate-400 group-hover:text-blue-600">Attend</span>
-            </button>
-            <button onclick="switchTab('profile')" class="nav-btn group flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform" data-target="profile">
-                <span class="material-symbols-rounded text-3xl text-slate-400 group-hover:text-blue-600">person</span><span class="text-[10px] font-bold text-slate-400 group-hover:text-blue-600">Me</span>
-            </button>
+            <button onclick="switchTab('dashboard')" class="nav-btn group flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform" data-target="dashboard"><span class="material-symbols-rounded text-3xl text-slate-400 group-hover:text-blue-600">home</span><span class="text-[10px] font-bold text-slate-400 group-hover:text-blue-600">Home</span></button>
+            <button onclick="switchTab('analytics')" class="nav-btn group flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform" data-target="analytics"><span class="material-symbols-rounded text-3xl text-slate-400 group-hover:text-blue-600">monitoring</span><span class="text-[10px] font-bold text-slate-400 group-hover:text-blue-600">Graph</span></button>
+            <button onclick="switchTab('attendance')" class="nav-btn group flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform" data-target="attendance"><span class="material-symbols-rounded text-3xl text-slate-400 group-hover:text-blue-600">calendar_month</span><span class="text-[10px] font-bold text-slate-400 group-hover:text-blue-600">Attend</span></button>
+            <button onclick="switchTab('profile')" class="nav-btn group flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform" data-target="profile"><span class="material-symbols-rounded text-3xl text-slate-400 group-hover:text-blue-600">person</span><span class="text-[10px] font-bold text-slate-400 group-hover:text-blue-600">Me</span></button>
         </div>
     </nav>
 
     <script>
         const API_BASE_URL = '/api';
-        let allChildren = [];  
-        let currentChild = null; 
-        
-        // Chart Instances
-        let miniChart = null;
-        let mainChart = null;
+        let allChildren = []; let currentChild = null; let miniChart = null; let mainChart = null;
+        let deferredPrompt; const installBtn = document.getElementById('install-btn');
 
-        // --- 1. PWA INSTALL LOGIC ---
-        let deferredPrompt;
-        const installBtn = document.getElementById('install-btn');
+        window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; installBtn.classList.remove('hidden'); });
+        installBtn.addEventListener('click', async () => { if (deferredPrompt) { deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; if (outcome === 'accepted') installBtn.classList.add('hidden'); deferredPrompt = null; } });
 
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            installBtn.classList.remove('hidden'); // Show button
-        });
-
-        installBtn.addEventListener('click', async () => {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') {
-                    installBtn.classList.add('hidden');
-                }
-                deferredPrompt = null;
-            }
-        });
-
-        // --- 2. INITIAL LOADING ---
         async function loadApp() {
             try {
                 const res = await fetch(API_BASE_URL + '/parent/my_children');
-                const data = await res.json();
+                if (!res.ok) throw new Error("Server Error: " + res.status);
                 
+                const data = await res.json();
                 if (data.length > 0) {
                     allChildren = data;
                     if (allChildren.length > 1) {
-                        const selector = document.getElementById('child-select');
                         document.getElementById('child-selector-container').classList.remove('hidden');
-                        selector.innerHTML = allChildren.map((child, index) => `<option value="${index}">${child.name}</option>`).join('');
+                        document.getElementById('child-select').innerHTML = allChildren.map((c, i) => `<option value="${i}">${c.name}</option>`).join('');
                     }
                     selectChildByIndex(0);
+                } else {
+                    document.getElementById('child-name').textContent = "No Student Found";
                 }
-                loadProfile();
-                loadAnnouncements();
-            } catch(e) { console.error("Load Error:", e); }
+                loadProfile(); loadAnnouncements();
+            } catch(e) { 
+                console.error("Load Error:", e); 
+                document.getElementById('child-name').textContent = "Connection Failed";
+                document.getElementById('fee-msg').textContent = "Cannot connect to server.";
+            }
         }
 
         function changeChild(index) { selectChildByIndex(parseInt(index)); }
@@ -228,85 +168,20 @@
             document.getElementById('child-name').textContent = currentChild.name;
             document.getElementById('child-batch').textContent = currentChild.batch;
             document.getElementById('child-img').src = currentChild.profile_photo_url || "https://placehold.co/150";
-            
             await loadChildStats(currentChild.id);
         }
 
         async function loadChildStats(childId) {
             try {
-                const res = await fetch(API_BASE_URL + '/parent/child_details', {
-                    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ student_id: childId })
-                });
+                const res = await fetch(API_BASE_URL + '/parent/child_details', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ student_id: childId }) });
                 const data = await res.json();
-
-                // Render Data
-                renderAttendance(data.attendance);
-                renderFees(data.fees_due);
-                renderGraphs(); // Fixed Graph Logic
-
+                renderAttendance(data.attendance); renderFees(data.fees_due); renderGraphs();
             } catch(e) { console.log(e); }
-        }
-
-        // --- 2. UPDATED ATTENDANCE LOGIC (Handles Empty Data) ---
-        function renderAttendance(data) {
-            const tbody = document.getElementById('attendance-list');
-            
-            if(!data || data.length === 0) { 
-                // Show clear message if no attendance
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="2" class="p-8 text-center">
-                            <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-100 text-slate-400 mb-3">
-                                <span class="material-symbols-rounded">calendar_today</span>
-                            </div>
-                            <p class="text-slate-500 text-sm font-medium">No attendance records found.</p>
-                        </td>
-                    </tr>`; 
-                document.getElementById('child-attendance').textContent = '0%';
-                document.getElementById('att-bar').style.width = '0%';
-                return; 
-            }
-            
-            let presentCount = 0;
-            tbody.innerHTML = data.map(a => {
-                if(a.status === 'Present') presentCount++;
-                // Status Color Logic
-                const statusColor = a.status === 'Present' ? 'text-green-600 bg-green-50 border-green-100' : 'text-red-600 bg-red-50 border-red-100';
-                
-                return `
-                <tr class="border-b border-slate-50 last:border-0">
-                    <td class="p-5">
-                        <p class="font-bold text-slate-800 text-base">${a.date}</p>
-                        <p class="text-xs text-slate-400 font-medium">${a.time}</p>
-                    </td>
-                    <td class="p-5 text-right">
-                        <span class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider border ${statusColor}">
-                            ${a.status}
-                        </span>
-                    </td>
-                </tr>`;
-            }).join('');
-            
-            const pct = Math.round((presentCount / data.length) * 100);
-            document.getElementById('child-attendance').textContent = pct + '%';
-            document.getElementById('att-bar').style.width = pct + '%';
-        }
-            
-            let presentCount = 0;
-            tbody.innerHTML = data.map(a => {
-                if(a.status === 'Present') presentCount++;
-                return `<tr class="border-b border-slate-50 last:border-0"><td class="p-5"><p class="font-bold text-slate-800 text-base">${a.date}</p><p class="text-xs text-slate-400 font-medium">${a.time}</p></td><td class="p-5 text-right"><span class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider ${a.status==='Present'?'bg-green-100 text-green-700':'bg-red-100 text-red-700'}">${a.status}</span></td></tr>`;
-            }).join('');
-            
-            const pct = Math.round((presentCount / data.length) * 100);
-            document.getElementById('child-attendance').textContent = pct + '%';
-            document.getElementById('att-bar').style.width = pct + '%';
         }
 
         function renderFees(due) {
             const dueAmt = parseFloat(due) || 0;
             document.getElementById('child-fee').textContent = '₹' + dueAmt;
-            
             const card = document.getElementById('fee-card');
             const label = document.getElementById('fee-label');
             const msg = document.getElementById('fee-msg');
@@ -314,92 +189,55 @@
             const iconBg = document.getElementById('fee-icon-bg');
             const icon = document.getElementById('fee-icon');
 
-            // Force Card to be Visible
-            card.classList.remove('hidden');
-
             if (dueAmt > 0) {
-                // RED MODE: Pending Fees
                 card.className = "bg-red-50 rounded-3xl p-6 border border-red-100 shadow-sm relative overflow-hidden";
                 label.className = "text-red-500 font-bold text-sm uppercase tracking-wider";
-                msg.className = "text-sm text-red-600/80 mb-5 font-medium";
-                msg.textContent = "Action Required: Pending Dues";
-                
-                iconBg.className = "w-12 h-12 bg-red-100 rounded-full flex items-center justify-center text-red-600";
-                icon.textContent = "warning";
-                
-                btn.classList.remove('hidden'); // SHOW BUTTON
+                msg.className = "text-sm text-red-600/80 mb-5 font-medium"; msg.textContent = "Pending Dues";
+                iconBg.className = "w-12 h-12 bg-red-100 rounded-full flex items-center justify-center text-red-600"; icon.textContent = "warning";
+                btn.classList.remove('hidden');
             } else {
-                // GREEN MODE: Fees Paid
                 card.className = "bg-green-50 rounded-3xl p-6 border border-green-100 shadow-sm relative overflow-hidden";
                 label.className = "text-green-600 font-bold text-sm uppercase tracking-wider";
-                msg.className = "text-sm text-green-700/80 mb-0 font-medium"; // mb-0 hides gap for button
-                msg.textContent = "Excellent! All fees are paid.";
-                
-                iconBg.className = "w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600";
-                icon.textContent = "check_circle";
-                
-                btn.classList.add('hidden'); // HIDE BUTTON
+                msg.className = "text-sm text-green-700/80 mb-0 font-medium"; msg.textContent = "All fees paid.";
+                iconBg.className = "w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600"; icon.textContent = "check_circle";
+                btn.classList.add('hidden');
             }
         }
 
-        // --- FIXED GRAPH LOGIC ---
+        function renderAttendance(data) {
+            const tbody = document.getElementById('attendance-list');
+            if(!data || !data.length) { 
+                tbody.innerHTML = '<tr><td colspan="2" class="p-6 text-center text-slate-400">No records found.</td></tr>'; 
+                document.getElementById('child-attendance').textContent = '0%'; document.getElementById('att-bar').style.width = '0%'; return; 
+            }
+            let presentCount = 0;
+            tbody.innerHTML = data.map(a => {
+                if(a.status === 'Present') presentCount++;
+                return `<tr class="border-b border-slate-50 last:border-0"><td class="p-5"><p class="font-bold text-slate-800 text-base">${a.date}</p><p class="text-xs text-slate-400 font-medium">${a.time}</p></td><td class="p-5 text-right"><span class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider ${a.status==='Present'?'bg-green-100 text-green-700':'bg-red-100 text-red-700'}">${a.status}</span></td></tr>`;
+            }).join('');
+            const pct = Math.round((presentCount / data.length) * 100);
+            document.getElementById('child-attendance').textContent = pct + '%'; document.getElementById('att-bar').style.width = pct + '%';
+        }
+
         function renderGraphs() {
-            // Destroy old charts to prevent overlapping/crashing
-            if (miniChart) { miniChart.destroy(); }
-            if (mainChart) { mainChart.destroy(); }
-
-            const config = { 
-                type: 'line', 
-                data: { 
-                    labels: ['Test 1','Mid','Test 2','Final'], 
-                    datasets: [{ 
-                        label: 'Performance', 
-                        data: [65, 78, 72, 88], // Dummy data for now
-                        borderColor: '#2563EB', 
-                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                        borderWidth: 3,
-                        pointRadius: 4,
-                        fill: true,
-                        tension: 0.4 
-                    }] 
-                }, 
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } }, 
-                    scales: { x: { display: false }, y: { display: false, min: 0, max: 100 } } 
-                } 
-            };
-
-            const miniCtx = document.getElementById('miniPerformanceChart');
-            const mainCtx = document.getElementById('mainPerformanceChart');
-
-            if(miniCtx) miniChart = new Chart(miniCtx, config);
-            
-            // Main chart needs axes visible
-            const mainConfig = JSON.parse(JSON.stringify(config)); // Clone config
-            mainConfig.options.scales.x.display = true;
-            mainConfig.options.scales.y.display = true;
-            if(mainCtx) mainChart = new Chart(mainCtx, mainConfig);
+            if (miniChart) miniChart.destroy(); if (mainChart) mainChart.destroy();
+            const config = { type: 'line', data: { labels: ['T1','Mid','T2','Final'], datasets: [{ label: 'Marks', data: [65, 78, 72, 88], borderColor: '#2563EB', backgroundColor: 'rgba(37, 99, 235, 0.1)', borderWidth: 3, pointRadius: 4, fill: true, tension: 0.4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false, min: 0, max: 100 } } } };
+            if(document.getElementById('miniPerformanceChart')) miniChart = new Chart(document.getElementById('miniPerformanceChart'), config);
+            const mainConfig = JSON.parse(JSON.stringify(config)); mainConfig.options.scales.x.display = true; mainConfig.options.scales.y.display = true;
+            if(document.getElementById('mainPerformanceChart')) mainChart = new Chart(document.getElementById('mainPerformanceChart'), mainConfig);
         }
 
         async function loadAnnouncements() {
-            const c = document.getElementById('announcements-list');
             try {
-                const res = await fetch(API_BASE_URL + '/my/announcements');
-                const d = await res.json();
+                const res = await fetch(API_BASE_URL + '/my/announcements'); const d = await res.json();
+                const c = document.getElementById('announcements-list');
                 if(!d.length) { c.innerHTML='<p class="text-center text-slate-400 py-4">No updates.</p>'; return; }
                 c.innerHTML = d.map(n => `<div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 mb-3"><h4 class="font-bold text-sm">${n.title}</h4><p class="text-xs text-slate-500 mb-2">${n.created_at}</p><p class="text-sm text-slate-600">${n.content}</p></div>`).join('');
             } catch(e){}
         }
 
         async function loadProfile() {
-            try {
-                const res = await fetch(API_BASE_URL + '/my/profile');
-                const u = await res.json();
-                document.getElementById('parent-name').textContent = u.name;
-                document.getElementById('parent-email').textContent = u.email;
-            } catch(e){}
+            try { const res = await fetch(API_BASE_URL + '/my/profile'); const u = await res.json(); document.getElementById('parent-name').textContent = u.name; document.getElementById('parent-email').textContent = u.email; } catch(e){}
         }
 
         function switchTab(tabId) {
@@ -408,8 +246,7 @@
             document.querySelectorAll('.nav-btn span').forEach(el => { el.classList.remove('text-blue-600'); el.classList.add('text-slate-400'); });
             const activeBtn = document.querySelector(`.nav-btn[data-target="${tabId}"]`);
             if(activeBtn) { activeBtn.querySelectorAll('span').forEach(el => { el.classList.remove('text-slate-400'); el.classList.add('text-blue-600'); }); }
-            
-            if(tabId === 'analytics') renderGraphs(); // Refresh graph when tab opens
+            if(tabId === 'analytics') renderGraphs();
         }
 
         function requestNotificationPermission() {
@@ -420,11 +257,7 @@
                     navigator.serviceWorker.register('/firebase-messaging-sw.js').then((registration) => {
                         return messaging.getToken({ vapidKey: 'BBOMxvKvbEs_t9ykKBa2zIewzCzD6FCbm9rxc8a9eWl2kjjH5vyTSH6TeQMksZ_OGl5jZyQpU2wBcf-KsZN1uko', serviceWorkerRegistration: registration });
                     }).then((token) => {
-                        if(token) {
-                            fetch('/api/save_fcm_token', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({token}) });
-                            alert("Notifications Enabled!");
-                            document.getElementById('notif-dot').classList.add('hidden');
-                        }
+                        if(token) { fetch('/api/save_fcm_token', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({token}) }); alert("Notifications Enabled!"); document.getElementById('notif-dot').classList.add('hidden'); }
                     }).catch(err => console.log('Firebase error', err));
                 } else { alert("Permission Denied"); }
             });
@@ -437,9 +270,7 @@
                 const data = await res.json();
                 if (!res.ok) { alert(data.msg); btn.innerHTML = 'Pay Now'; btn.disabled = false; return; }
                 var options = {
-                    "key": data.key_id, "amount": data.amount, "currency": "INR",
-                    "name": "CST Institute", "description": "Fee Payment",
-                    "image": "https://placehold.co/100?text=CST", "order_id": data.order_id,
+                    "key": data.key_id, "amount": data.amount, "currency": "INR", "name": "CST Institute", "description": "Fee Payment", "image": "https://placehold.co/100?text=CST", "order_id": data.order_id,
                     "handler": async function (response){
                         const verifyRes = await fetch(API_BASE_URL + '/payment/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ razorpay_payment_id: response.razorpay_payment_id, razorpay_order_id: response.razorpay_order_id, razorpay_signature: response.razorpay_signature, amount: data.amount }) });
                         if(verifyRes.ok) { alert("✅ Payment Successful!"); loadChildStats(currentChild.id); } else { alert("Failed."); }
@@ -451,8 +282,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' });
-            switchTab('dashboard');
-            loadApp(); 
+            switchTab('dashboard'); loadApp(); 
         });
         document.getElementById('logout-btn').addEventListener('click', async () => { await fetch(`${API_BASE_URL}/logout`, { method: 'POST' }); window.location.href = '/'; });
     </script>
