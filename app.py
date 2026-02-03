@@ -2053,20 +2053,20 @@ def parent_get_all_children():
     
     child_list = []
     for child in children:
-        # Get Batch Name safely
         batch_name = "N/A"
         if child.session_id:
             sess = db.session.get(AcademicSession, child.session_id)
             if sess: batch_name = sess.name
 
-        # ✅ CRITICAL FIX: Use 'profile_photo_url' (Not profile_photo)
-        photo_url = child.profile_photo_url if child.profile_photo_url else None
+        # ✅ FIX: Use 'profile_photo_url' directly. 
+        # (Your database already saves the full path like '/uploads/abc.jpg')
+        photo = child.profile_photo_url if child.profile_photo_url else None
 
         child_list.append({
             "id": child.id,
             "name": child.name,
             "batch": batch_name,
-            "profile_photo_url": photo_url 
+            "profile_photo_url": photo 
         })
         
     return jsonify(child_list)
