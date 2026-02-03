@@ -2040,7 +2040,6 @@ def verify_payment():
 # ==========================================
 
 
-
 @app.route('/api/parent/my_children')
 @login_required
 def parent_get_all_children():
@@ -2048,23 +2047,23 @@ def parent_get_all_children():
     if current_user.role != 'parent': 
         return jsonify([]), 403
     
-    # Fetch ALL children
     children = User.query.filter_by(parent_id=current_user.id).all()
     
     child_list = []
     for child in children:
-        # Get Batch Name safely
         batch_name = "N/A"
         if child.session_id:
             sess = db.session.get(AcademicSession, child.session_id)
             if sess: batch_name = sess.name
 
-        # FIX: Used correct field name 'profile_photo_url'
+        # ✅ FIX: Use 'profile_photo_url' directly (The database already has /uploads/...)
+        photo = child.profile_photo_url if child.profile_photo_url else None
+        
         child_list.append({
             "id": child.id,
             "name": child.name,
             "batch": batch_name,
-            "profile_photo_url": child.profile_photo_url if child.profile_photo_url else None
+            "profile_photo_url": photo 
         })
         
     return jsonify(child_list)
