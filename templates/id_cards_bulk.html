@@ -49,24 +49,24 @@
             box-shadow: 0 1px 2px rgba(0,0,0,0.1);
         }
 
-        /* 1. Header with Logo & Name */
+        /* 1. Header - Content pushed to TOP to avoid overlap */
         .header {
             width: 100%;
-            height: 18mm;
+            height: 20mm; /* Slightly taller to fit logo comfortably */
             background: linear-gradient(135deg, #1e3a8a, #2563eb);
             color: white;
             display: flex;
-            align-items: center;
-            justify-content: center; /* Center content */
-            gap: 2mm; /* Space between logo and text */
-            padding-bottom: 4mm; /* Space for photo overlap */
+            align-items: flex-start; /* Aligns content to TOP */
+            justify-content: center; 
+            padding-top: 2mm; /* Space from top edge */
+            gap: 2mm; 
             position: relative;
             z-index: 1;
         }
 
         .inst-logo {
-            width: 8mm;
-            height: 8mm;
+            width: 7mm;
+            height: 7mm;
             background: white;
             border-radius: 50%;
             padding: 0.5mm;
@@ -74,22 +74,23 @@
         }
 
         .inst-name {
-            font-size: 9px;
+            font-size: 8px;
             font-weight: 800;
             letter-spacing: 0.5px;
             text-transform: uppercase;
             color: #fff;
+            margin-top: 1.5mm; /* Aligns text with logo center */
             text-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
 
-        /* 2. Photo (Small Size & Centered) */
+        /* 2. Photo */
         .photo-container {
-            width: 19mm; /* SMALLER SIZE */
+            width: 19mm; 
             height: 19mm;
             border-radius: 50%;
             background: white;
             padding: 1mm; 
-            margin-top: -8mm; /* Pulls it up into header */
+            margin-top: -8mm; /* Overlaps bottom of header only */
             z-index: 10;
             position: relative;
             box-shadow: 0 2px 4px rgba(0,0,0,0.15);
@@ -104,7 +105,7 @@
             background-color: #f3f4f6;
         }
 
-        /* 3. Student Details */
+        /* 3. Details - Compact Spacing */
         .details {
             width: 100%;
             padding: 0 2mm;
@@ -116,12 +117,12 @@
         }
         
         .name {
-            font-size: 10px;
+            font-size: 9px; /* Slightly smaller for long names */
             font-weight: 800;
             color: #111;
             margin: 1mm 0 0 0;
             text-transform: uppercase;
-            line-height: 1.2;
+            line-height: 1.1;
             max-width: 98%;
         }
         
@@ -130,38 +131,46 @@
             color: #2563eb;
             font-size: 6px;
             font-weight: 700;
-            padding: 1px 5px;
-            border-radius: 3px;
-            margin: 1mm 0 2mm 0;
+            padding: 0px 4px;
+            border-radius: 2px;
+            margin: 0.5mm 0 1mm 0; /* Reduced margin */
             text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
 
         .info-table {
-            width: 98%;
+            width: 100%;
             font-size: 7px;
             border-collapse: collapse;
             text-align: left;
+            margin-top: 0;
         }
+        
+        /* TIGHTER LINES */
         .info-table td {
-            padding: 0.7mm 0;
+            padding: 0.3mm 0; /* Very tight padding */
             border-bottom: 1px dashed #f3f4f6;
+            vertical-align: middle;
         }
+        
         .label {
             color: #6b7280;
             font-weight: 700;
-            width: 13mm;
+            width: 10mm; /* Reduced width */
         }
         .val {
             color: #1f2937;
             font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 35mm;
         }
 
-        /* 4. Large QR Code Area */
+        /* 4. QR Code - Local File */
         .qr-area {
             width: 100%;
             background: white;
-            padding-bottom: 3mm;
+            padding-bottom: 2mm;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -170,10 +179,10 @@
         }
         
         .qr-img {
-            width: 28mm; /* Large Size for easy scanning */
+            width: 28mm;
             height: 28mm;
             object-fit: contain;
-            border: 2px solid #000; /* Dark border for scanner */
+            border: 2px solid #000;
             padding: 1mm;
             background: white;
             border-radius: 2mm;
@@ -182,7 +191,7 @@
         .qr-text {
             font-size: 6px;
             color: #4b5563;
-            margin-top: 1mm;
+            margin-top: 0.5mm;
             font-weight: 600;
             letter-spacing: 0.5px;
         }
@@ -204,7 +213,6 @@
             <div class="header">
                 <img src="{{ url_for('static', filename='logo.png') }}" class="inst-logo" 
                      onerror="this.style.display='none'">
-                
                 <div class="inst-name">CST INSTITUTE</div>
             </div>
 
@@ -220,12 +228,12 @@
 
                 <table class="info-table">
                     <tr>
-                        <td class="label">ID NO:</td>
+                        <td class="label">ID:</td>
                         <td class="val">{{ student.admission_number }}</td>
                     </tr>
                     <tr>
                         <td class="label">Course:</td>
-                        <td class="val">{{ student.courses_enrolled[0].name | truncate(18) if student.courses_enrolled else '-' }}</td>
+                        <td class="val">{{ student.courses_enrolled[0].name | truncate(20) if student.courses_enrolled else '-' }}</td>
                     </tr>
                     <tr>
                         <td class="label">DOB:</td>
@@ -239,7 +247,11 @@
             </div>
 
             <div class="qr-area">
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data={{ student.admission_number }}" class="qr-img">
+                <img src="{{ url_for('static', filename='qr_codes/qr_' ~ student.admission_number ~ '.png') }}" 
+                     class="qr-img" 
+                     alt="QR"
+                     onerror="this.src='https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ student.admission_number }}'">
+                
                 <div class="qr-text">ATTENDANCE SCAN</div>
             </div>
 
