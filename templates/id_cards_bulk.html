@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Bulk ID Cards (Vertical)</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <title>Modern Bulk ID Cards (Vertical)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     
     <style>
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Outfit', sans-serif;
             background-color: #e5e7eb;
             margin: 0;
             padding: 20px;
@@ -30,215 +30,198 @@
             gap: 5mm; 
             page-break-after: always;
             justify-items: center;
+            align-items: center;
         }
 
-        /* --- ID CARD (55mm x 86mm) --- */
+        /* --- VERTICAL ID CARD (53mm x 85mm) --- */
         .id-card {
-            width: 55mm;   
-            height: 86mm; 
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
+            width: 53mm;
+            height: 85mm;
             background: white;
+            border: 1px solid #ddd;
+            border-radius: 4mm;
             overflow: hidden;
             position: relative;
             display: flex;
             flex-direction: column;
-            box-sizing: border-box;
+            align-items: center;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
 
-        /* Header (Blue Bar) */
-        .header-bar {
-            background-color: #1173d4;
+        /* Header (Blue) */
+        .header {
+            width: 100%;
+            height: 18mm;
+            background: linear-gradient(135deg, #1e3a8a, #2563eb);
             color: white;
-            height: 7mm;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 9px;
-            font-weight: 800;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            flex-shrink: 0;
-        }
-
-        /* Content Area */
-        .card-body {
-            flex: 1;
-            padding: 2mm 3mm;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-        }
-
-        /* Logo Area */
-        .institute-name {
             font-size: 10px;
-            font-weight: 800;
-            color: #000;
+            font-weight: 700;
+            letter-spacing: 0.5px;
             text-transform: uppercase;
-            line-height: 1;
-            margin-top: 2mm;
-        }
-        .institute-sub {
-            font-size: 5px;
-            color: #666;
-            margin-bottom: 2mm;
+            padding-top: 1mm;
         }
 
-        /* Student Photo */
-        .photo-box {
+        /* Photo (Circle overlapping header) */
+        .photo-container {
             width: 22mm;
-            height: 26mm;
-            border: 1px solid #ddd;
-            border-radius: 3px;
-            margin-bottom: 2mm;
-            overflow: hidden;
-            background: #f9fafb;
+            height: 22mm;
+            border-radius: 50%;
+            background: white;
+            padding: 1mm;
+            margin-top: -10mm;
+            z-index: 2;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        .photo-box img {
+        .photo-img {
             width: 100%;
             height: 100%;
+            border-radius: 50%;
             object-fit: cover;
+            background-color: #f3f4f6;
         }
 
         /* Student Details */
-        .student-name {
-            font-size: 10px;
-            font-weight: 800;
-            color: #1173d4;
-            text-transform: uppercase;
-            margin-bottom: 2mm;
-            line-height: 1.1;
+        .details {
             width: 100%;
+            padding: 1mm 2mm;
+            box-sizing: border-box;
+            flex-grow: 1; /* Pushes QR code to bottom */
+        }
+        .name {
+            font-size: 11px;
+            font-weight: 700;
+            color: #111;
+            margin: 1mm 0 0.5mm 0;
+            line-height: 1.2;
+            text-transform: uppercase;
+        }
+        .role {
+            font-size: 8px;
+            color: #2563eb;
+            font-weight: 600;
+            margin-bottom: 2mm;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
-        .details-table {
+        /* Info Table (Compact) */
+        .info-table {
             width: 100%;
             font-size: 7px;
-            color: #000;
+            border-collapse: collapse;
             text-align: left;
             margin-bottom: 1mm;
-            line-height: 1.3;
         }
-        .details-table td {
-            padding: 0 1px;
-            vertical-align: top;
+        .info-table td {
+            padding: 0.8mm 0;
+            border-bottom: 1px dashed #eee;
         }
         .label {
-            font-weight: 700;
-            width: 12mm;
-            color: #333;
+            color: #6b7280;
+            font-weight: 600;
+            width: 14mm;
         }
         .val {
-            font-weight: 600;
+            color: #111;
+            font-weight: 500;
         }
 
-        /* QR Code */
-        .qr-container {
-            width: 14mm;
-            height: 14mm;
-            margin-bottom: 1mm;
+        /* QR Code Area (Large & Bottom) */
+        .qr-area {
+            width: 100%;
+            background: #f8fafc;
+            border-top: 1px dashed #ddd;
+            padding: 3mm 0;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
         }
         .qr-img {
-            width: 100%;
-            height: 100%;
+            width: 28mm; /* Very Large QR Code */
+            height: 28mm;
             object-fit: contain;
+            background: white;
+            padding: 1mm;
+            border-radius: 2mm;
+            border: 1px solid #eee;
         }
-
-        /* Footer */
-        .signature-area {
-            margin-top: auto;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .sign-img {
-            height: 6mm;
-            object-fit: contain;
-        }
-        .sign-text {
-            font-size: 5px;
-            color: #666;
-            font-weight: 600;
+        .qr-text {
+            font-size: 6px;
+            color: #64748b;
+            margin-top: 1mm;
+            font-weight: 500;
         }
 
         @media print {
-            body { background: white; padding: 0; margin: 0; }
-            .no-print { display: none !important; }
-            .a4-page { margin: 0; padding: 10mm; box-shadow: none; page-break-after: always; }
-            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            body { background: white; padding: 0; }
+            .a4-page { box-shadow: none; margin: 0; }
+            @page { margin: 0; size: A4; }
         }
     </style>
 </head>
 <body>
 
-    <div class="no-print" style="position: fixed; top: 20px; right: 20px; z-index: 100;">
-        <button onclick="window.print()" style="background: #2563eb; color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
-            Print ID Cards
-        </button>
-    </div>
-
     {% for batch in students | batch(9) %}
     <div class="a4-page">
         {% for student in batch %}
         <div class="id-card">
-            
-            <div class="header-bar">STUDENT</div>
+            <div class="header">
+                CST INSTITUTE
+            </div>
 
-            <div class="card-body">
-                <div class="institute-name">CST INSTITUTE</div>
-                <div class="institute-sub">Excellence in Education</div>
+            <div class="photo-container">
+                <img src="{{ student.profile_photo_url if student.profile_photo_url else 'https://placehold.co/100' }}" 
+                     class="photo-img" 
+                     onerror="this.src='https://placehold.co/100?text=No+Img'">
+            </div>
 
-                <div class="photo-box">
-                    {% if student.profile_photo_url %}
-                        <img src="{{ student.profile_photo_url }}" alt="Photo">
-                    {% else %}
-                        <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#ccc; font-size:8px;">NO PHOTO</div>
-                    {% endif %}
-                </div>
+            <div class="details">
+                <div class="name">{{ student.name | truncate(20) }}</div>
+                <div class="role">Student</div>
 
-                <div class="student-name">{{ student.name }}</div>
-
-                <table class="details-table">
+                <table class="info-table">
                     <tr>
-                        <td class="label">ID:</td>
-                        <td class="val">{{ student.admission_number or '-' }}</td>
+                        <td class="label">ID NO:</td>
+                        <td class="val">{{ student.admission_number }}</td>
                     </tr>
                     <tr>
                         <td class="label">Course:</td>
-                        <td class="val">{{ student.courses_enrolled[0].name if student.courses_enrolled else '-' }}</td>
-                    </tr>
-                    <tr>
-                        <td class="label">Phone:</td>
-                        <td class="val">{{ student.phone_number or '-' }}</td>
+                        <td class="val">{{ student.courses_enrolled[0].name | truncate(15) if student.courses_enrolled else '-' }}</td>
                     </tr>
                     <tr>
                         <td class="label">DOB:</td>
                         <td class="val">{{ student.dob or '-' }}</td>
                     </tr>
+                    <tr>
+                        <td class="label">Phone:</td>
+                        <td class="val">{{ student.phone_number }}</td>
+                    </tr>
                 </table>
+            </div>
 
-                <div class="qr-container">
-                    <img src="{{ url_for('static', filename='qr_codes/qr_' ~ student.admission_number ~ '.png') }}" 
-                         class="qr-img" 
-                         alt="QR"
-                         onerror="this.style.display='none'"> 
-                </div>
-
-                <div class="signature-area">
-                    <img src="{{ url_for('static', filename='signature_director.png') }}" class="sign-img" alt="Sign">
-                    <div class="sign-text">Authorized Signatory</div>
-                </div>
-
+            <div class="qr-area">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ student.admission_number }}" class="qr-img" alt="Scan Me">
+                
+                <div class="qr-text">SCAN FOR ATTENDANCE</div>
             </div>
         </div>
         {% endfor %}
     </div>
     {% endfor %}
+
+    <script>
+        // Auto Print when loaded
+        window.onload = function() {
+            setTimeout(() => {
+                window.print();
+            }, 1000);
+        };
+    </script>
 
 </body>
 </html>
