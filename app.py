@@ -2041,6 +2041,11 @@ def verify_payment():
 # Replace your existing 'parent_get_all_children' function with this:
 # ==========================================
 
+# ==========================================
+# PASTE THIS AT THE BOTTOM OF app.py
+# (Replaces the old broken function)
+# ==========================================
+
 @app.route('/api/parent/my_children')
 @login_required
 def parent_get_all_children():
@@ -2058,8 +2063,8 @@ def parent_get_all_children():
             sess = db.session.get(AcademicSession, child.session_id)
             if sess: batch_name = sess.name
 
-        # ✅ FIX: Use 'profile_photo_url' directly. 
-        # (Your database already saves the full path like '/uploads/abc.jpg')
+        # ✅ FIX: Use 'profile_photo_url' (The database column name)
+        # The previous code used 'profile_photo' which caused the crash.
         photo = child.profile_photo_url if child.profile_photo_url else None
 
         child_list.append({
