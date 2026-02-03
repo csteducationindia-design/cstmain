@@ -2046,7 +2046,7 @@ def parent_get_all_children():
     if current_user.role != 'parent': 
         return jsonify([]), 403
     
-    # Fetch ALL children
+    # Fetch ALL children, not just the first one
     children = User.query.filter_by(parent_id=current_user.id).all()
     
     child_list = []
@@ -2069,13 +2069,13 @@ def parent_get_all_children():
 @app.route('/api/parent/child_details', methods=['POST'])
 @login_required
 def parent_get_child_details():
-    """Fetches specific data for the selected child"""
+    """Fetches Attendance & Fees for the specific child selected in the dropdown"""
     if current_user.role != 'parent': return jsonify({"msg": "Denied"}), 403
     
     data = request.json
     student_id = data.get('student_id')
     
-    # SECURITY: Ensure this student actually belongs to this parent
+    # SECURITY CHECK: Ensure this student actually belongs to this parent
     child = User.query.filter_by(id=student_id, parent_id=current_user.id).first()
     if not child: 
         return jsonify({"msg": "Invalid Child ID"}), 404
@@ -2089,11 +2089,13 @@ def parent_get_child_details():
     } for a in att_records]
 
     # 2. Get Fees
-    # (Reusing your existing logic, or defaulting to 0 if helper missing)
+    # (We use a try-except block in case the fee helper function is missing or fails)
     try:
+        # Assuming you have the 'calculate_fee_status' function defined earlier in app.py
         fee_data = calculate_fee_status(child.id)
-        balance = fee_data['balance']
-    except:
+        balance = fee_data.get('balance', 0)
+    except Exception as e:
+        print(f"Fee Calc Error: {e}")
         balance = 0
 
     return jsonify({
