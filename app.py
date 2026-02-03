@@ -2042,6 +2042,11 @@ def verify_payment():
 
 # --- REPLACE THIS FUNCTION IN app.py ---
 
+# ==========================================
+# PARENT PORTAL FIX IN app.py
+# Replace your existing 'parent_get_all_children' function with this:
+# ==========================================
+
 @app.route('/api/parent/my_children')
 @login_required
 def parent_get_all_children():
@@ -2049,7 +2054,7 @@ def parent_get_all_children():
     if current_user.role != 'parent': 
         return jsonify([]), 403
     
-    # Fetch ALL children
+    # Fetch ALL children linked to this parent
     children = User.query.filter_by(parent_id=current_user.id).all()
     
     child_list = []
@@ -2060,15 +2065,15 @@ def parent_get_all_children():
             sess = db.session.get(AcademicSession, child.session_id)
             if sess: batch_name = sess.name
 
-        # ✅ FIX: Use 'profile_photo_url' (Correct Column Name)
-        # The database already saves it as "/uploads/filename", so we just use it directly.
+        # ✅ FIX: Use the correct column name 'profile_photo_url'
+        # The database stores '/uploads/filename', so we use it directly.
         photo = child.profile_photo_url if child.profile_photo_url else None
 
         child_list.append({
             "id": child.id,
             "name": child.name,
             "batch": batch_name,
-            "profile_photo_url": photo
+            "profile_photo_url": photo  # <--- This was the error causing the crash
         })
         
     return jsonify(child_list)
