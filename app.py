@@ -2039,6 +2039,8 @@ def verify_payment():
 # PASTE THIS AT THE BOTTOM OF app.py
 # ==========================================
 
+
+
 @app.route('/api/parent/my_children')
 @login_required
 def parent_get_all_children():
@@ -2046,7 +2048,7 @@ def parent_get_all_children():
     if current_user.role != 'parent': 
         return jsonify([]), 403
     
-    # Fetch ALL children, not just the first one
+    # Fetch ALL children
     children = User.query.filter_by(parent_id=current_user.id).all()
     
     child_list = []
@@ -2057,11 +2059,12 @@ def parent_get_all_children():
             sess = db.session.get(AcademicSession, child.session_id)
             if sess: batch_name = sess.name
 
+        # FIX: Used correct field name 'profile_photo_url'
         child_list.append({
             "id": child.id,
             "name": child.name,
             "batch": batch_name,
-            "profile_photo_url": f"/uploads/{child.profile_photo}" if child.profile_photo else None
+            "profile_photo_url": child.profile_photo_url if child.profile_photo_url else None
         })
         
     return jsonify(child_list)
