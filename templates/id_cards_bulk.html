@@ -46,21 +46,28 @@
             flex-direction: column;
             align-items: center;
             text-align: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
 
-        /* 1. HEADER (Logo + Name) */
+        /* 1. HEADER: Systematic Layout (Logo + Name at Top) */
         .header {
             width: 100%;
-            height: 22mm;
+            height: 24mm; /* Tall enough for Logo + Name + Photo Overlap */
             background: linear-gradient(135deg, #1e40af, #3b82f6);
             color: white;
             display: flex;
-            align-items: flex-start;
-            justify-content: center;
-            padding-top: 2.5mm;
-            gap: 2mm;
+            flex-direction: column; /* Stack Logo and Name vertically */
+            align-items: center;
+            justify-content: flex-start;
+            padding-top: 2mm;
             position: relative;
+            z-index: 1;
+        }
+
+        .header-top {
+            display: flex;
+            align-items: center;
+            gap: 2mm;
+            margin-bottom: 1mm;
         }
 
         .inst-logo {
@@ -72,38 +79,24 @@
             object-fit: contain;
         }
 
-        .inst-text {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            margin-top: 0.5mm;
-        }
-
         .inst-name {
             font-size: 8px;
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            line-height: 1;
-        }
-        
-        .inst-sub {
-            font-size: 4px;
-            font-weight: 400;
-            opacity: 0.9;
-            margin-top: 1px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
 
         /* 2. PHOTO (Overlapping) */
         .photo-container {
-            width: 19mm;
-            height: 19mm;
+            width: 20mm;
+            height: 20mm;
             border-radius: 50%;
             background: white;
             padding: 1mm;
-            margin-top: -9mm; /* Pull up into header */
+            margin-top: -10mm; /* Pulls photo up into header */
             z-index: 10;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .photo-img {
@@ -115,12 +108,16 @@
             background-color: #f1f5f9;
         }
 
-        /* 3. DETAILS (Compact) */
+        /* 3. DETAILS (Safe from Edges) */
         .details {
             width: 100%;
-            padding: 0 2mm;
-            margin-top: 1mm;
+            padding: 0 4mm; /* IMPORTANT: 4mm Padding keeps text away from cut lines */
+            box-sizing: border-box;
             flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 1mm;
         }
 
         .name {
@@ -130,11 +127,13 @@
             text-transform: uppercase;
             line-height: 1.1;
             margin-bottom: 0.5mm;
-            max-width: 100%;
+            width: 100%;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
         }
 
         .role-badge {
-            display: inline-block;
             background: #eff6ff;
             color: #2563eb;
             font-size: 6px;
@@ -155,20 +154,22 @@
         .info-table td {
             padding: 0.6mm 0;
             border-bottom: 1px dashed #e2e8f0;
+            white-space: nowrap; /* Prevents wrapping */
         }
 
         .label {
             color: #64748b;
             font-weight: 700;
-            width: 11mm;
+            width: 12mm; /* Fixed width for labels */
         }
         
         .val {
             color: #334155;
             font-weight: 600;
+            padding-left: 2mm; /* Space between label and value */
         }
 
-        /* 4. FOOTER (QR + Signature) */
+        /* 4. FOOTER (QR + Sign) */
         .footer {
             width: 100%;
             height: 20mm;
@@ -204,7 +205,7 @@
         }
 
         .sign-img {
-            height: 8mm; /* Adjust based on your image aspect ratio */
+            height: 8mm; 
             width: auto;
             max-width: 20mm;
             object-fit: contain;
@@ -236,10 +237,10 @@
         <div class="id-card">
             
             <div class="header">
-                <img src="{{ url_for('static', filename='logo.png') }}" class="inst-logo" onerror="this.style.opacity='0'">
-                <div class="inst-text">
+                <div class="header-top">
+                    <img src="{{ url_for('static', filename='logo.png') }}" class="inst-logo" 
+                         onerror="this.style.opacity='0'">
                     <div class="inst-name">CST INSTITUTE</div>
-                    <div class="inst-sub">Educational Services</div>
                 </div>
             </div>
 
@@ -250,7 +251,7 @@
             </div>
 
             <div class="details">
-                <div class="name">{{ student.name | truncate(22) }}</div>
+                <div class="name">{{ student.name | truncate(25) }}</div>
                 <div class="role-badge">Student</div>
 
                 <table class="info-table">
@@ -259,15 +260,15 @@
                         <td class="val">{{ student.admission_number }}</td>
                     </tr>
                     <tr>
-                        <td class="label">Course:</td>
-                        <td class="val">{{ student.courses_enrolled[0].name | truncate(18) if student.courses_enrolled else '-' }}</td>
+                        <td class="label">COURSE:</td>
+                        <td class="val">{{ student.courses_enrolled[0].name | truncate(15) if student.courses_enrolled else '-' }}</td>
                     </tr>
                     <tr>
                         <td class="label">DOB:</td>
                         <td class="val">{{ student.dob or '-' }}</td>
                     </tr>
                     <tr>
-                        <td class="label">Phone:</td>
+                        <td class="label">PHONE:</td>
                         <td class="val">{{ student.phone_number }}</td>
                     </tr>
                 </table>
@@ -293,7 +294,7 @@
 
     <script>
         window.onload = function() {
-            setTimeout(() => { window.print(); }, 1500);
+            setTimeout(() => { window.print(); }, 1000);
         };
     </script>
 
