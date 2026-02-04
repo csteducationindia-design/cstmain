@@ -18,19 +18,22 @@
             print-color-adjust: exact;
         }
 
-        /* A4 Page Container - Adjusted for EXACT 100% Scale */
+        /* A4 Page Container - SAFETY MARGINS APPLIED */
+        /* Total Content Width: 53mm*3 + 5mm*2 (gaps) = 169mm (Fits easily in 210mm A4) */
         .a4-page {
             width: 210mm;
             min-height: 297mm;
             background: white;
-            padding: 10mm; /* Safe margin for printer */
+            padding: 10mm; 
             box-sizing: border-box;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             margin-bottom: 20px;
             display: grid;
-            grid-template-columns: repeat(3, 53mm); /* EXACT WIDTH */
-            grid-template-rows: repeat(3, 85mm);    /* EXACT HEIGHT */
-            gap: 10mm; /* Spacing between cards */
+            /* EXACT COLUMN WIDTHS */
+            grid-template-columns: 53mm 53mm 53mm;
+            /* EXACT ROW HEIGHTS */
+            grid-template-rows: 85mm 85mm 85mm; 
+            gap: 5mm; /* Reduced gap to prevent printer shrinking */
             justify-content: center;
             align-content: start;
             page-break-after: always;
@@ -41,7 +44,7 @@
             width: 53mm;
             height: 85mm;
             background: white;
-            border: 1px solid #cbd5e1;
+            border: 1px solid #94a3b8; /* Visible cut line */
             border-radius: 3mm;
             overflow: hidden;
             position: relative;
@@ -50,10 +53,10 @@
             align-items: center;
             text-align: center;
             background-color: white !important;
-            box-sizing: border-box; /* Ensures border doesn't add to size */
+            box-sizing: border-box; /* Ensures border is INCLUDED in 53mm width */
         }
 
-        /* 1. HEADER (Gradient Blue) */
+        /* 1. HEADER */
         .header {
             width: 100%;
             height: 24mm;
@@ -80,9 +83,9 @@
             border-radius: 3px;
         }
 
-        /* Name (Reduced Size) */
+        /* Name */
         .inst-name {
-            font-size: 7px; /* REDUCED from 8px */
+            font-size: 7px;
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 0.3px;
@@ -204,7 +207,7 @@
         .sign-img { height: 6mm; width: auto; max-width: 18mm; object-fit: contain; }
         .sign-label { font-size: 4px; color: #64748b; border-top: 1px solid #cbd5e1; width: 18mm; text-align: center; }
 
-        /* 5. ADDRESS FOOTER (Yellow Strip) */
+        /* 5. ADDRESS FOOTER */
         .address-footer {
             width: 100%;
             background: #fbbf24 !important; 
@@ -214,6 +217,9 @@
             text-align: center;
             border-top: 1px solid #f59e0b;
             -webkit-print-color-adjust: exact !important;
+            position: absolute;
+            bottom: 0;
+            left: 0;
         }
         
         .address-text {
@@ -227,20 +233,27 @@
         @media print {
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             body { background: white; padding: 0; margin: 0; }
+            
             .a4-page {
                 box-shadow: none;
                 margin: 0;
-                padding: 10mm 15mm; /* Adjust left/right to center grid */
+                padding: 10mm 15mm; /* Safe print margin */
                 width: 210mm;
                 height: 297mm;
                 page-break-after: always;
+                display: grid;
+                grid-template-columns: 53mm 53mm 53mm; /* Force Grid on Print */
+                grid-template-rows: 85mm 85mm 85mm;
+                gap: 5mm;
             }
+            
             .id-card {
-                /* STRICTLY ENFORCE SIZE IN PRINT */
                 width: 53mm !important;
                 height: 85mm !important;
-                border: 1px solid #cbd5e1; /* Light border for cutting guide */
+                border: 1px solid #94a3b8; /* Cut lines */
+                page-break-inside: avoid;
             }
+            
             @page { margin: 0; size: A4; }
         }
     </style>
