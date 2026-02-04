@@ -6,7 +6,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
     
     <style>
-        /* --- GLOBAL PRINT SETTINGS --- */
+        /* --- GLOBAL SETTINGS --- */
         body {
             font-family: 'Outfit', sans-serif;
             background-color: #e5e7eb;
@@ -18,30 +18,37 @@
             print-color-adjust: exact;
         }
 
-        /* A4 Page Container */
+        /* A4 PAGE (Strict Dimensions for 9 Cards) */
         .a4-page {
             width: 210mm;
-            min-height: 297mm;
+            height: 296mm; /* Slightly less than 297 to force single page */
             background: white;
-            padding: 10mm; 
+            /* SAFE MARGINS to prevent printer cutoff */
+            padding: 10mm 15mm; 
             box-sizing: border-box;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             margin-bottom: 20px;
+            
+            /* GRID LAYOUT */
             display: grid;
             grid-template-columns: 53mm 53mm 53mm; /* Exact Widths */
             grid-template-rows: 85mm 85mm 85mm;    /* Exact Heights */
-            gap: 10mm; /* Spacing between cards */
+            
+            /* TIGHTER GAP to fit perfectly on page */
+            column-gap: 5mm; 
+            row-gap: 5mm; 
+            
             justify-content: center;
             align-content: start;
             page-break-after: always;
         }
 
-        /* CARD CONTAINER (Strict 53mm x 85mm) */
+        /* CARD CONTAINER (53mm x 85mm) */
         .id-card {
             width: 53mm;
             height: 85mm;
             background: white;
-            border: 1px solid #94a3b8; /* Cut line */
+            border: 1px solid #94a3b8; /* Light grey cut line */
             border-radius: 3mm;
             overflow: hidden;
             position: relative;
@@ -53,7 +60,7 @@
             background-color: white !important;
         }
 
-        /* 1. HEADER (22mm Height) */
+        /* 1. HEADER (22mm) */
         .header {
             width: 100%;
             height: 22mm; 
@@ -80,7 +87,7 @@
             border-radius: 3px;
         }
 
-        /* Name */
+        /* Name & Slogan */
         .inst-name {
             font-size: 7px;
             font-weight: 800;
@@ -106,7 +113,7 @@
             border-radius: 50%;
             background: white;
             padding: 0.8mm;
-            margin-top: -8mm; /* Pulls up into header */
+            margin-top: -8mm; 
             z-index: 10;
             box-shadow: 0 1px 3px rgba(0,0,0,0.2);
         }
@@ -120,10 +127,10 @@
             background-color: #f1f5f9;
         }
 
-        /* 3. DETAILS (Padding fixed for Left Cut-off) */
+        /* 3. DETAILS (Padding fixed) */
         .details {
             width: 100%;
-            padding-left: 5mm;  /* MOVED RIGHT TO PREVENT CUT */
+            padding-left: 5mm; 
             padding-right: 2mm;
             box-sizing: border-box;
             flex-grow: 1;
@@ -145,7 +152,7 @@
             overflow: hidden;
             text-overflow: ellipsis;
             text-align: center;
-            padding-right: 3mm; /* Balance center */
+            padding-right: 3mm;
         }
 
         .role-badge {
@@ -157,7 +164,7 @@
             border-radius: 3px;
             text-transform: uppercase;
             margin-bottom: 1mm;
-            margin-right: 3mm; /* Balance center */
+            margin-right: 3mm;
             -webkit-print-color-adjust: exact !important;
         }
 
@@ -169,7 +176,7 @@
         }
 
         .info-table td {
-            padding: 0.3mm 0; /* TIGHTER SPACING */
+            padding: 0.3mm 0;
             border-bottom: 1px dashed #e2e8f0;
             white-space: nowrap;
         }
@@ -177,17 +184,17 @@
         .label { color: #64748b; font-weight: 700; width: 10mm; }
         .val { color: #334155; font-weight: 600; padding-left: 1mm; }
 
-        /* 4. QR & SIGN AREA (Moved UP to fix hiding) */
+        /* 4. QR & SIGN AREA */
         .mid-footer {
             width: 100%;
-            height: 14mm; /* Fixed height */
+            height: 14mm;
             display: flex;
             justify-content: space-between;
-            align-items: flex-end; /* Align bottom */
+            align-items: flex-end;
             padding: 0 4mm;
             box-sizing: border-box;
             position: absolute;
-            bottom: 7mm; /* Sits exactly above the yellow strip */
+            bottom: 7mm; 
             left: 0;
         }
 
@@ -209,7 +216,7 @@
         .sign-img { height: 6mm; width: auto; max-width: 18mm; object-fit: contain; }
         .sign-label { font-size: 4px; color: #64748b; border-top: 1px solid #cbd5e1; width: 18mm; text-align: center; }
 
-        /* 5. ADDRESS FOOTER (Fixed at Bottom 6mm) */
+        /* 5. ADDRESS FOOTER */
         .address-footer {
             width: 100%;
             height: 6mm;
@@ -241,15 +248,20 @@
             
             .a4-page {
                 box-shadow: none;
-                margin: 0;
-                padding: 10mm 15mm; 
+                margin: 0 auto;
+                /* SAFETY MARGINS to prevent cutting off the last row */
+                padding: 10mm 0; 
                 width: 210mm;
-                height: 297mm;
+                height: 296mm; /* Force A4 height */
                 page-break-after: always;
+                
                 display: grid;
                 grid-template-columns: 53mm 53mm 53mm; 
                 grid-template-rows: 85mm 85mm 85mm;
-                gap: 5mm;
+                /* TIGHTER GAPS for safety */
+                column-gap: 5mm; 
+                row-gap: 5mm; 
+                justify-content: center;
             }
             
             .id-card {
@@ -259,7 +271,10 @@
                 page-break-inside: avoid;
             }
             
-            @page { margin: 0; size: A4; }
+            @page { 
+                margin: 0; 
+                size: A4 portrait; 
+            }
         }
     </style>
 </head>
