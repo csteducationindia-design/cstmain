@@ -20,12 +20,10 @@
             print-color-adjust: exact;
         }
 
-        /* CONTROL PANEL (Button) */
         .control-panel {
             margin-bottom: 20px;
             display: flex;
             gap: 10px;
-            z-index: 1000;
         }
 
         .btn-download {
@@ -38,12 +36,11 @@
             font-weight: 700;
             cursor: pointer;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: background 0.2s;
         }
         .btn-download:hover { background-color: #1d4ed8; }
         .btn-download:disabled { background-color: #94a3b8; cursor: wait; }
 
-        /* A4 PAGE (Strict Dimensions) */
+        /* A4 PAGE */
         .a4-page {
             width: 210mm;
             height: 296mm; 
@@ -52,20 +49,17 @@
             box-sizing: border-box;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             margin-bottom: 20px;
-            
             display: grid;
             grid-template-columns: 53mm 53mm 53mm; 
             grid-template-rows: 85mm 85mm 85mm;    
-            
             column-gap: 5mm; 
             row-gap: 5mm; 
-            
             justify-content: center;
             align-content: start;
             page-break-after: always; 
         }
 
-        /* CARD CONTAINER (53mm x 85mm) */
+        /* CARD CONTAINER (Flex Column Layout) */
         .id-card {
             width: 53mm;
             height: 85mm;
@@ -73,19 +67,19 @@
             border: 1px solid #94a3b8; 
             border-radius: 3mm;
             overflow: hidden;
-            position: relative;
-            display: flex;
+            display: flex; /* Flex layout prevents overlapping */
             flex-direction: column;
             align-items: center;
             text-align: center;
             box-sizing: border-box; 
             background-color: white !important;
+            position: relative;
         }
 
-        /* 1. HEADER (Optimized to 20mm to save space) */
+        /* 1. HEADER (Compact: 18mm) */
         .header {
             width: 100%;
-            height: 20mm; 
+            height: 18mm; 
             background: linear-gradient(135deg, #1e40af, #3b82f6) !important;
             background-color: #1e40af !important;
             color: white !important;
@@ -94,50 +88,47 @@
             align-items: center;
             justify-content: flex-start;
             padding-top: 1.5mm;
-            position: relative;
             z-index: 1;
         }
 
-        /* Logo */
         .inst-logo {
-            width: 6.5mm; 
-            height: 6.5mm;
+            width: 6mm; 
+            height: 6mm;
             object-fit: contain;
-            margin-bottom: 0.5mm;
             background: white;
             padding: 1px;
             border-radius: 3px;
+            margin-bottom: 0.5mm;
         }
 
-        /* Name */
         .inst-name {
-            font-size: 7px;
+            font-size: 6.5px;
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 0.3px;
             line-height: 1;
             color: white !important;
-            margin-top: 0.5mm;
         }
 
         .inst-slogan {
-            font-size: 4.5px;
+            font-size: 4px;
             font-weight: 400;
             font-style: italic;
             opacity: 0.95;
             color: white !important;
         }
 
-        /* 2. PHOTO (Slightly smaller: 17mm) */
+        /* 2. PHOTO (Compact: 16.5mm) */
         .photo-container {
-            width: 17mm;
-            height: 17mm;
+            width: 16.5mm;
+            height: 16.5mm;
             border-radius: 50%;
             background: white;
             padding: 0.8mm;
-            margin-top: -7mm; /* Pull up */
+            margin-top: -6mm; /* Pull up */
             z-index: 10;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            flex-shrink: 0; /* Prevent shrinking */
         }
 
         .photo-img {
@@ -149,13 +140,11 @@
             background-color: #f1f5f9;
         }
 
-        /* 3. DETAILS (Compact) */
+        /* 3. DETAILS (Flex Grow to fill space) */
         .details {
             width: 100%;
-            padding-left: 5mm; 
-            padding-right: 2mm;
+            padding: 0 2mm;
             box-sizing: border-box;
-            flex-grow: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -163,7 +152,7 @@
         }
 
         .name {
-            font-size: 8.5px;
+            font-size: 8px;
             font-weight: 800;
             color: #0f172a;
             text-transform: uppercase;
@@ -173,25 +162,22 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            text-align: center;
-            padding-right: 3mm;
         }
 
         .role-badge {
             background: #eff6ff !important;
             color: #2563eb !important;
-            font-size: 5px;
+            font-size: 4.5px;
             font-weight: 700;
             padding: 1px 5px;
             border-radius: 3px;
             text-transform: uppercase;
             margin-bottom: 1mm;
-            margin-right: 3mm;
             -webkit-print-color-adjust: exact !important;
         }
 
         .info-table {
-            width: 100%;
+            width: 95%;
             font-size: 6.5px;
             border-collapse: collapse;
             text-align: left;
@@ -204,45 +190,43 @@
         }
 
         .label { color: #64748b; font-weight: 700; width: 10mm; }
-        .val { color: #334155; font-weight: 600; padding-left: 1mm; }
+        .val { color: #334155; font-weight: 600; padding-left: 2mm; }
 
-        /* 4. QR & SIGN AREA (Increased Height for Bigger QR) */
-        .mid-footer {
+        /* 4. QR & SIGN ROW (Dedicated Row - NO OVERLAP) */
+        .qr-sign-row {
             width: 100%;
-            height: 17mm; /* Increased height */
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
-            padding: 0 4mm;
+            padding: 1mm 4mm;
             box-sizing: border-box;
-            position: absolute;
-            bottom: 8mm; /* Sits above address strip */
-            left: 0;
+            margin-top: auto; /* Push to bottom of available space */
+            margin-bottom: 7mm; /* Leave space for Address Footer */
         }
 
-        /* LARGER QR CODE */
+        /* LARGE QR CODE */
         .qr-img {
-            width: 15mm; /* Increased from 12mm */
-            height: 15mm;
+            width: 19mm; /* MAX VISIBILITY */
+            height: 19mm;
             border: 1px solid #000;
             padding: 0.5mm;
             object-fit: contain;
             background: white;
+            display: block;
         }
 
         .sign-section {
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding-bottom: 0.5mm;
         }
         .sign-img { height: 6mm; width: auto; max-width: 18mm; object-fit: contain; }
         .sign-label { font-size: 4px; color: #64748b; border-top: 1px solid #cbd5e1; width: 18mm; text-align: center; }
 
-        /* 5. ADDRESS FOOTER (Larger Font) */
+        /* 5. ADDRESS FOOTER (Fixed Absolute Bottom) */
         .address-footer {
             width: 100%;
-            height: 7.5mm; /* Increased slightly */
+            height: 6.5mm;
             background: #fbbf24 !important; 
             background-color: #fbbf24 !important;
             color: #000 !important;
@@ -255,18 +239,16 @@
             bottom: 0;
             left: 0;
             -webkit-print-color-adjust: exact !important;
-            padding: 0.5mm;
+            z-index: 20;
         }
         
-        /* LARGER ADDRESS TEXT */
         .address-text {
-            font-size: 5.5px; /* Increased from 4px */
+            font-size: 5px;
             font-weight: 700;
-            line-height: 1.2;
+            line-height: 1.1;
             color: #000 !important;
         }
 
-        /* PRINT MEDIA QUERY */
         @media print {
             .control-panel { display: none !important; }
             body { background: white; padding: 0; margin: 0; }
@@ -310,10 +292,10 @@
                     </table>
                 </div>
 
-                <div class="mid-footer">
+                <div class="qr-sign-row">
                     <img src="{{ url_for('static', filename='qr_codes/qr_' ~ student.admission_number ~ '.png') }}" 
                          class="qr-img" 
-                         onerror="this.src='https://api.qrserver.com/v1/create-qr-code/?size=100x100&data={{ student.admission_number }}'">
+                         onerror="this.src='https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ student.admission_number }}'">
 
                     <div class="sign-section">
                         <img src="{{ url_for('static', filename='signature_director.png') }}" class="sign-img" onerror="this.style.opacity='0'">
@@ -344,12 +326,7 @@
                 margin:       0,
                 filename:     'CST_ID_Cards_HD.pdf',
                 image:        { type: 'jpeg', quality: 0.98 }, 
-                html2canvas:  { 
-                    scale: 2, 
-                    useCORS: true,  
-                    scrollY: 0,
-                    logging: true
-                },
+                html2canvas:  { scale: 2, useCORS: true, scrollY: 0, logging: true },
                 jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
@@ -358,12 +335,11 @@
                     btn.innerHTML = "Download HD PDF";
                     btn.disabled = false;
                 }).catch(err => {
-                    console.error(err);
-                    alert("Error generating PDF. Please try printing normally (Ctrl+P).");
+                    alert("Error. Try printing with Ctrl+P.");
                     btn.innerHTML = "Download Failed";
                     btn.disabled = false;
                 });
-            }, 1000);
+            }, 500);
         }
     </script>
 
