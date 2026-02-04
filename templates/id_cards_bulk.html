@@ -6,6 +6,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
     
     <style>
+        /* --- GLOBAL STYLES --- */
         body {
             font-family: 'Outfit', sans-serif;
             background-color: #e5e7eb;
@@ -13,6 +14,9 @@
             padding: 20px;
             display: flex;
             justify-content: center;
+            /* Ensure colors show on screen */
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
         }
 
         .a4-page {
@@ -45,14 +49,18 @@
             flex-direction: column;
             align-items: center;
             text-align: center;
+            /* Ensure container background prints */
+            background-color: white !important;
         }
 
-        /* 1. HEADER (Logo + Name + Slogan) */
+        /* 1. HEADER (Blue Gradient) */
         .header {
             width: 100%;
             height: 24mm;
-            background: linear-gradient(135deg, #1e40af, #3b82f6);
-            color: white;
+            /* IMPORTANT FOR PRINTING COLOR */
+            background: linear-gradient(135deg, #1e40af, #3b82f6) !important;
+            background-color: #1e40af !important; /* Fallback solid color */
+            color: white !important;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -60,6 +68,9 @@
             padding-top: 1.5mm;
             position: relative;
             z-index: 1;
+             /* Force color printing for this element */
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
         }
 
         /* Logo (No Circle) */
@@ -70,7 +81,7 @@
             margin-bottom: 0.5mm;
             background: white;
             padding: 2px;
-            border-radius: 4px; /* Slight rounded corners for the image itself */
+            border-radius: 4px;
         }
 
         .inst-name {
@@ -80,6 +91,7 @@
             letter-spacing: 0.5px;
             line-height: 1;
             text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            color: white !important;
         }
 
         .inst-slogan {
@@ -88,6 +100,7 @@
             font-style: italic;
             opacity: 0.9;
             margin-top: 0.5mm;
+            color: white !important;
         }
 
         /* 2. PHOTO */
@@ -137,19 +150,22 @@
         }
 
         .role-badge {
-            background: #eff6ff;
-            color: #2563eb;
+            background: #eff6ff !important;
+            color: #2563eb !important;
             font-size: 5px;
             font-weight: 700;
             padding: 1px 5px;
             border-radius: 3px;
             text-transform: uppercase;
             margin-bottom: 1.5mm;
+             /* Force color printing */
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
         }
 
         .info-table {
             width: 100%;
-            font-size: 6.5px; /* Slightly smaller to fit everything */
+            font-size: 6.5px;
             border-collapse: collapse;
             text-align: left;
         }
@@ -192,26 +208,55 @@
         .sign-img { height: 7mm; width: auto; max-width: 18mm; object-fit: contain; }
         .sign-label { font-size: 4px; color: #64748b; border-top: 1px solid #cbd5e1; width: 18mm; text-align: center; }
 
-        /* 5. ADDRESS FOOTER */
+        /* 5. ADDRESS FOOTER (Yellow Strip) */
         .address-footer {
             width: 100%;
-            background: #fbbf24; /* Yellow strip for visibility */
-            color: #111;
+            /* IMPORTANT FOR PRINTING COLOR */
+            background: #fbbf24 !important; 
+            background-color: #fbbf24 !important;
+            color: #111 !important;
             padding: 1mm;
             text-align: center;
             border-top: 1px solid #f59e0b;
+             /* Force color printing */
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
         }
         
         .address-text {
             font-size: 5px;
             font-weight: 700;
             line-height: 1.1;
+            color: #000 !important;
         }
 
+        /* --- CRITICAL PRINT SETTINGS --- */
         @media print {
-            body { background: white; padding: 0; }
-            .a4-page { box-shadow: none; margin: 0; }
-            @page { margin: 0; size: A4; }
+            /* Tells the browser to respect colors exactly as defined */
+            * {
+                -webkit-print-color-adjust: exact !important;   /* Chrome/Safari/Edge */
+                print-color-adjust: exact !important;           /* Firefox/Standard */
+                color-adjust: exact !important;                 /* Older versions */
+            }
+
+            body { background: white; padding: 0; margin: 0; }
+            .a4-page {
+                box-shadow: none;
+                margin: 0;
+                border: none;
+                page-break-after: always;
+                padding: 10mm 5mm !important; /* Slight padding adjust for printer margins */
+            }
+            
+            /* Ensure gradients print */
+            .header {
+                background-image: linear-gradient(135deg, #1e40af, #3b82f6) !important;
+            }
+
+            @page {
+                margin: 0; /* Tell printer to use minimal margins */
+                size: A4 portrait;
+            }
         }
     </style>
 </head>
@@ -268,7 +313,8 @@
     {% endfor %}
 
     <script>
-        window.onload = function() { setTimeout(() => { window.print(); }, 1500); };
+        // Increased timeout slightly to ensure images load before print dialog
+        window.onload = function() { setTimeout(() => { window.print(); }, 2000); };
     </script>
 
 </body>
