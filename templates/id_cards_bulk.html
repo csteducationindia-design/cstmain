@@ -14,29 +14,29 @@
             padding: 20px;
             display: flex;
             justify-content: center;
-            /* Ensure colors show on screen */
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
         }
 
+        /* A4 Page Container - Adjusted for EXACT 100% Scale */
         .a4-page {
             width: 210mm;
             min-height: 297mm;
             background: white;
-            padding: 10mm;
+            padding: 10mm; /* Safe margin for printer */
             box-sizing: border-box;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             margin-bottom: 20px;
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            grid-template-rows: repeat(3, 1fr);
-            gap: 5mm; 
+            grid-template-columns: repeat(3, 53mm); /* EXACT WIDTH */
+            grid-template-rows: repeat(3, 85mm);    /* EXACT HEIGHT */
+            gap: 10mm; /* Spacing between cards */
+            justify-content: center;
+            align-content: start;
             page-break-after: always;
-            justify-items: center;
-            align-items: center;
         }
 
-        /* CARD CONTAINER (53mm x 85mm) */
+        /* CARD CONTAINER (Strict 53mm x 85mm) */
         .id-card {
             width: 53mm;
             height: 85mm;
@@ -49,17 +49,16 @@
             flex-direction: column;
             align-items: center;
             text-align: center;
-            /* Ensure container background prints */
             background-color: white !important;
+            box-sizing: border-box; /* Ensures border doesn't add to size */
         }
 
-        /* 1. HEADER (Blue Gradient) */
+        /* 1. HEADER (Gradient Blue) */
         .header {
             width: 100%;
             height: 24mm;
-            /* IMPORTANT FOR PRINTING COLOR */
             background: linear-gradient(135deg, #1e40af, #3b82f6) !important;
-            background-color: #1e40af !important; /* Fallback solid color */
+            background-color: #1e40af !important;
             color: white !important;
             display: flex;
             flex-direction: column;
@@ -68,37 +67,36 @@
             padding-top: 1.5mm;
             position: relative;
             z-index: 1;
-             /* Force color printing for this element */
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
         }
 
         /* Logo (No Circle) */
         .inst-logo {
-            width: 8mm; 
-            height: 8mm;
+            width: 7.5mm; 
+            height: 7.5mm;
             object-fit: contain;
             margin-bottom: 0.5mm;
             background: white;
-            padding: 2px;
-            border-radius: 4px;
+            padding: 1px;
+            border-radius: 3px;
         }
 
+        /* Name (Reduced Size) */
         .inst-name {
-            font-size: 8px;
+            font-size: 7px; /* REDUCED from 8px */
             font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.3px;
             line-height: 1;
             text-shadow: 0 1px 2px rgba(0,0,0,0.2);
             color: white !important;
+            margin-top: 0.5mm;
         }
 
         .inst-slogan {
-            font-size: 5px;
+            font-size: 4.5px;
             font-weight: 400;
             font-style: italic;
-            opacity: 0.9;
+            opacity: 0.95;
             margin-top: 0.5mm;
             color: white !important;
         }
@@ -137,7 +135,7 @@
         }
 
         .name {
-            font-size: 9px;
+            font-size: 8.5px;
             font-weight: 800;
             color: #0f172a;
             text-transform: uppercase;
@@ -157,10 +155,8 @@
             padding: 1px 5px;
             border-radius: 3px;
             text-transform: uppercase;
-            margin-bottom: 1.5mm;
-             /* Force color printing */
+            margin-bottom: 1mm;
             -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
         }
 
         .info-table {
@@ -182,18 +178,18 @@
         /* 4. QR & SIGN AREA */
         .mid-footer {
             width: 100%;
-            height: 16mm;
+            height: 15mm;
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
             padding: 0 3mm;
             box-sizing: border-box;
-            margin-bottom: 1mm;
+            margin-bottom: 0.5mm;
         }
 
         .qr-img {
-            width: 14mm;
-            height: 14mm;
+            width: 13mm;
+            height: 13mm;
             border: 1px solid #000;
             padding: 0.5mm;
             object-fit: contain;
@@ -203,60 +199,49 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding-bottom: 1mm;
+            padding-bottom: 0.5mm;
         }
-        .sign-img { height: 7mm; width: auto; max-width: 18mm; object-fit: contain; }
+        .sign-img { height: 6mm; width: auto; max-width: 18mm; object-fit: contain; }
         .sign-label { font-size: 4px; color: #64748b; border-top: 1px solid #cbd5e1; width: 18mm; text-align: center; }
 
         /* 5. ADDRESS FOOTER (Yellow Strip) */
         .address-footer {
             width: 100%;
-            /* IMPORTANT FOR PRINTING COLOR */
             background: #fbbf24 !important; 
             background-color: #fbbf24 !important;
             color: #111 !important;
-            padding: 1mm;
+            padding: 0.8mm;
             text-align: center;
             border-top: 1px solid #f59e0b;
-             /* Force color printing */
             -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
         }
         
         .address-text {
-            font-size: 5px;
+            font-size: 4.5px;
             font-weight: 700;
             line-height: 1.1;
             color: #000 !important;
         }
 
-        /* --- CRITICAL PRINT SETTINGS --- */
+        /* --- PRINT SETTINGS --- */
         @media print {
-            /* Tells the browser to respect colors exactly as defined */
-            * {
-                -webkit-print-color-adjust: exact !important;   /* Chrome/Safari/Edge */
-                print-color-adjust: exact !important;           /* Firefox/Standard */
-                color-adjust: exact !important;                 /* Older versions */
-            }
-
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             body { background: white; padding: 0; margin: 0; }
             .a4-page {
                 box-shadow: none;
                 margin: 0;
-                border: none;
+                padding: 10mm 15mm; /* Adjust left/right to center grid */
+                width: 210mm;
+                height: 297mm;
                 page-break-after: always;
-                padding: 10mm 5mm !important; /* Slight padding adjust for printer margins */
             }
-            
-            /* Ensure gradients print */
-            .header {
-                background-image: linear-gradient(135deg, #1e40af, #3b82f6) !important;
+            .id-card {
+                /* STRICTLY ENFORCE SIZE IN PRINT */
+                width: 53mm !important;
+                height: 85mm !important;
+                border: 1px solid #cbd5e1; /* Light border for cutting guide */
             }
-
-            @page {
-                margin: 0; /* Tell printer to use minimal margins */
-                size: A4 portrait;
-            }
+            @page { margin: 0; size: A4; }
         }
     </style>
 </head>
@@ -313,7 +298,6 @@
     {% endfor %}
 
     <script>
-        // Increased timeout slightly to ensure images load before print dialog
         window.onload = function() { setTimeout(() => { window.print(); }, 2000); };
     </script>
 
