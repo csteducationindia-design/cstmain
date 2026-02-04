@@ -15,7 +15,6 @@
             justify-content: center;
         }
 
-        /* A4 Page Layout (3x3 Grid = 9 Cards per page) */
         .a4-page {
             width: 210mm;
             min-height: 297mm;
@@ -33,13 +32,13 @@
             align-items: center;
         }
 
-        /* --- VERTICAL ID CARD (53mm x 85mm) --- */
+        /* CARD CONTAINER (53mm x 85mm) */
         .id-card {
             width: 53mm;
             height: 85mm;
             background: white;
             border: 1px solid #cbd5e1;
-            border-radius: 4mm;
+            border-radius: 3mm;
             overflow: hidden;
             position: relative;
             display: flex;
@@ -48,35 +47,30 @@
             text-align: center;
         }
 
-        /* 1. HEADER: Systematic Layout (Logo + Name at Top) */
+        /* 1. HEADER (Logo + Name + Slogan) */
         .header {
             width: 100%;
-            height: 24mm; /* Tall enough for Logo + Name + Photo Overlap */
+            height: 24mm;
             background: linear-gradient(135deg, #1e40af, #3b82f6);
             color: white;
             display: flex;
-            flex-direction: column; /* Stack Logo and Name vertically */
+            flex-direction: column;
             align-items: center;
             justify-content: flex-start;
-            padding-top: 2mm;
+            padding-top: 1.5mm;
             position: relative;
             z-index: 1;
         }
 
-        .header-top {
-            display: flex;
-            align-items: center;
-            gap: 2mm;
-            margin-bottom: 1mm;
-        }
-
+        /* Logo (No Circle) */
         .inst-logo {
-            width: 7mm;
-            height: 7mm;
-            background: white;
-            border-radius: 50%;
-            padding: 0.5mm;
+            width: 8mm; 
+            height: 8mm;
             object-fit: contain;
+            margin-bottom: 0.5mm;
+            background: white;
+            padding: 2px;
+            border-radius: 4px; /* Slight rounded corners for the image itself */
         }
 
         .inst-name {
@@ -84,17 +78,26 @@
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            line-height: 1;
             text-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
 
-        /* 2. PHOTO (Overlapping) */
+        .inst-slogan {
+            font-size: 5px;
+            font-weight: 400;
+            font-style: italic;
+            opacity: 0.9;
+            margin-top: 0.5mm;
+        }
+
+        /* 2. PHOTO */
         .photo-container {
-            width: 20mm;
-            height: 20mm;
+            width: 18mm;
+            height: 18mm;
             border-radius: 50%;
             background: white;
-            padding: 1mm;
-            margin-top: -10mm; /* Pulls photo up into header */
+            padding: 0.8mm;
+            margin-top: -8mm; /* Overlap header */
             z-index: 10;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
@@ -108,16 +111,16 @@
             background-color: #f1f5f9;
         }
 
-        /* 3. DETAILS (Safe from Edges) */
+        /* 3. DETAILS */
         .details {
             width: 100%;
-            padding: 0 4mm; /* IMPORTANT: 4mm Padding keeps text away from cut lines */
+            padding: 0 3mm;
             box-sizing: border-box;
             flex-grow: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin-top: 1mm;
+            margin-top: 0.5mm;
         }
 
         .name {
@@ -128,73 +131,56 @@
             line-height: 1.1;
             margin-bottom: 0.5mm;
             width: 100%;
-            overflow: hidden;
             white-space: nowrap;
+            overflow: hidden;
             text-overflow: ellipsis;
         }
 
         .role-badge {
             background: #eff6ff;
             color: #2563eb;
-            font-size: 6px;
+            font-size: 5px;
             font-weight: 700;
-            padding: 1px 6px;
-            border-radius: 4px;
+            padding: 1px 5px;
+            border-radius: 3px;
             text-transform: uppercase;
-            margin-bottom: 2mm;
+            margin-bottom: 1.5mm;
         }
 
         .info-table {
             width: 100%;
-            font-size: 7px;
+            font-size: 6.5px; /* Slightly smaller to fit everything */
             border-collapse: collapse;
             text-align: left;
         }
 
         .info-table td {
-            padding: 0.6mm 0;
+            padding: 0.4mm 0;
             border-bottom: 1px dashed #e2e8f0;
-            white-space: nowrap; /* Prevents wrapping */
+            white-space: nowrap;
         }
 
-        .label {
-            color: #64748b;
-            font-weight: 700;
-            width: 12mm; /* Fixed width for labels */
-        }
-        
-        .val {
-            color: #334155;
-            font-weight: 600;
-            padding-left: 2mm; /* Space between label and value */
-        }
+        .label { color: #64748b; font-weight: 700; width: 10mm; }
+        .val { color: #334155; font-weight: 600; padding-left: 1mm; }
 
-        /* 4. FOOTER (QR + Sign) */
-        .footer {
+        /* 4. QR & SIGN AREA */
+        .mid-footer {
             width: 100%;
-            height: 20mm;
+            height: 16mm;
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
-            padding: 2mm 3mm;
+            padding: 0 3mm;
             box-sizing: border-box;
-            background: #fafafa;
-            border-top: 1px solid #f0f0f0;
-        }
-
-        .qr-section {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            margin-bottom: 1mm;
         }
 
         .qr-img {
-            width: 16mm;
-            height: 16mm;
-            object-fit: contain;
+            width: 14mm;
+            height: 14mm;
             border: 1px solid #000;
             padding: 0.5mm;
-            background: white;
+            object-fit: contain;
         }
 
         .sign-section {
@@ -203,23 +189,23 @@
             align-items: center;
             padding-bottom: 1mm;
         }
+        .sign-img { height: 7mm; width: auto; max-width: 18mm; object-fit: contain; }
+        .sign-label { font-size: 4px; color: #64748b; border-top: 1px solid #cbd5e1; width: 18mm; text-align: center; }
 
-        .sign-img {
-            height: 8mm; 
-            width: auto;
-            max-width: 20mm;
-            object-fit: contain;
-            margin-bottom: 1mm;
-        }
-
-        .sign-label {
-            font-size: 5px;
-            color: #64748b;
-            font-weight: 600;
-            border-top: 1px solid #cbd5e1;
-            padding-top: 0.5mm;
-            width: 20mm;
+        /* 5. ADDRESS FOOTER */
+        .address-footer {
+            width: 100%;
+            background: #fbbf24; /* Yellow strip for visibility */
+            color: #111;
+            padding: 1mm;
             text-align: center;
+            border-top: 1px solid #f59e0b;
+        }
+        
+        .address-text {
+            font-size: 5px;
+            font-weight: 700;
+            line-height: 1.1;
         }
 
         @media print {
@@ -237,11 +223,9 @@
         <div class="id-card">
             
             <div class="header">
-                <div class="header-top">
-                    <img src="{{ url_for('static', filename='logo.png') }}" class="inst-logo" 
-                         onerror="this.style.opacity='0'">
-                    <div class="inst-name">CST INSTITUTE</div>
-                </div>
+                <img src="{{ url_for('static', filename='logo.png') }}" class="inst-logo" onerror="this.style.opacity='0'">
+                <div class="inst-name">CST INSTITUTE</div>
+                <div class="inst-slogan">Excellence in Education</div>
             </div>
 
             <div class="photo-container">
@@ -255,36 +239,27 @@
                 <div class="role-badge">Student</div>
 
                 <table class="info-table">
-                    <tr>
-                        <td class="label">ID NO:</td>
-                        <td class="val">{{ student.admission_number }}</td>
-                    </tr>
-                    <tr>
-                        <td class="label">COURSE:</td>
-                        <td class="val">{{ student.courses_enrolled[0].name | truncate(15) if student.courses_enrolled else '-' }}</td>
-                    </tr>
-                    <tr>
-                        <td class="label">DOB:</td>
-                        <td class="val">{{ student.dob or '-' }}</td>
-                    </tr>
-                    <tr>
-                        <td class="label">PHONE:</td>
-                        <td class="val">{{ student.phone_number }}</td>
-                    </tr>
+                    <tr><td class="label">ID NO:</td><td class="val">{{ student.admission_number }}</td></tr>
+                    <tr><td class="label">COURSE:</td><td class="val">{{ student.courses_enrolled[0].name | truncate(18) if student.courses_enrolled else '-' }}</td></tr>
+                    <tr><td class="label">DOB:</td><td class="val">{{ student.dob or '-' }}</td></tr>
+                    <tr><td class="label">PHONE:</td><td class="val">{{ student.phone_number }}</td></tr>
                 </table>
             </div>
 
-            <div class="footer">
-                <div class="qr-section">
-                    <img src="{{ url_for('static', filename='qr_codes/qr_' ~ student.admission_number ~ '.png') }}" 
-                         class="qr-img" 
-                         onerror="this.src='https://api.qrserver.com/v1/create-qr-code/?size=100x100&data={{ student.admission_number }}'">
-                </div>
+            <div class="mid-footer">
+                <img src="{{ url_for('static', filename='qr_codes/qr_' ~ student.admission_number ~ '.png') }}" 
+                     class="qr-img" 
+                     onerror="this.src='https://api.qrserver.com/v1/create-qr-code/?size=100x100&data={{ student.admission_number }}'">
 
                 <div class="sign-section">
                     <img src="{{ url_for('static', filename='signature_director.png') }}" class="sign-img" onerror="this.style.opacity='0'">
                     <div class="sign-label">Authorized Signatory</div>
                 </div>
+            </div>
+
+            <div class="address-footer">
+                <div class="address-text">Infront of St. Aloysius High School, Yawal Road Bhusawal</div>
+                <div class="address-text">Mobile: 70803021167</div>
             </div>
 
         </div>
@@ -293,9 +268,7 @@
     {% endfor %}
 
     <script>
-        window.onload = function() {
-            setTimeout(() => { window.print(); }, 1000);
-        };
+        window.onload = function() { setTimeout(() => { window.print(); }, 1500); };
     </script>
 
 </body>
