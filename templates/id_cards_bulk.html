@@ -38,30 +38,29 @@
             width: 53mm;
             height: 85mm;
             background: white;
-            border: 1px solid #ddd;
-            border-radius: 3mm;
+            border: 1px solid #cbd5e1;
+            border-radius: 4mm;
             overflow: hidden;
             position: relative;
             display: flex;
             flex-direction: column;
             align-items: center;
             text-align: center;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
 
-        /* 1. Header: Logo & Name at the VERY TOP */
+        /* 1. HEADER (Logo + Name) */
         .header {
             width: 100%;
-            height: 22mm; /* Height for Logo area */
-            background: linear-gradient(135deg, #1e3a8a, #2563eb);
+            height: 22mm;
+            background: linear-gradient(135deg, #1e40af, #3b82f6);
             color: white;
             display: flex;
-            align-items: flex-start; /* Push content to top */
-            justify-content: center; 
-            padding-top: 2mm; 
-            gap: 2mm; 
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 2.5mm;
+            gap: 2mm;
             position: relative;
-            z-index: 1;
         }
 
         .inst-logo {
@@ -73,68 +72,77 @@
             object-fit: contain;
         }
 
+        .inst-text {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            margin-top: 0.5mm;
+        }
+
         .inst-name {
             font-size: 8px;
             font-weight: 800;
-            letter-spacing: 0.5px;
             text-transform: uppercase;
-            color: #fff;
-            margin-top: 1.5mm;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            letter-spacing: 0.5px;
+            line-height: 1;
+        }
+        
+        .inst-sub {
+            font-size: 4px;
+            font-weight: 400;
+            opacity: 0.9;
+            margin-top: 1px;
         }
 
-        /* 2. Photo: Overlaps bottom of header */
+        /* 2. PHOTO (Overlapping) */
         .photo-container {
-            width: 19mm; 
+            width: 19mm;
             height: 19mm;
             border-radius: 50%;
             background: white;
-            padding: 1mm; 
-            margin-top: -8mm; /* Pulls it up */
+            padding: 1mm;
+            margin-top: -9mm; /* Pull up into header */
             z-index: 10;
-            position: relative;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
-        
+
         .photo-img {
             width: 100%;
             height: 100%;
             border-radius: 50%;
             object-fit: cover;
             object-position: top center;
-            background-color: #f3f4f6;
+            background-color: #f1f5f9;
         }
 
-        /* 3. Details: Compact & Clean */
+        /* 3. DETAILS (Compact) */
         .details {
             width: 100%;
             padding: 0 2mm;
-            box-sizing: border-box;
+            margin-top: 1mm;
             flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
         }
-        
+
         .name {
             font-size: 9px;
             font-weight: 800;
-            color: #111;
-            margin: 1mm 0 0 0;
+            color: #0f172a;
             text-transform: uppercase;
             line-height: 1.1;
-            max-width: 98%;
+            margin-bottom: 0.5mm;
+            max-width: 100%;
         }
-        
+
         .role-badge {
+            display: inline-block;
             background: #eff6ff;
             color: #2563eb;
             font-size: 6px;
             font-weight: 700;
-            padding: 0px 4px;
-            border-radius: 2px;
-            margin: 1mm 0 1.5mm 0;
+            padding: 1px 6px;
+            border-radius: 4px;
             text-transform: uppercase;
+            margin-bottom: 2mm;
         }
 
         .info-table {
@@ -142,58 +150,75 @@
             font-size: 7px;
             border-collapse: collapse;
             text-align: left;
-            margin-top: 0;
-        }
-        
-        /* Reduced Spacing between lines */
-        .info-table td {
-            padding: 0.5mm 0; 
-            border-bottom: 1px dashed #f3f4f6;
-            vertical-align: middle;
-        }
-        
-        .label {
-            color: #6b7280;
-            font-weight: 700;
-            width: 10mm;
-        }
-        .val {
-            color: #1f2937;
-            font-weight: 600;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 35mm;
         }
 
-        /* 4. QR Code: Local File */
-        .qr-area {
+        .info-table td {
+            padding: 0.6mm 0;
+            border-bottom: 1px dashed #e2e8f0;
+        }
+
+        .label {
+            color: #64748b;
+            font-weight: 700;
+            width: 11mm;
+        }
+        
+        .val {
+            color: #334155;
+            font-weight: 600;
+        }
+
+        /* 4. FOOTER (QR + Signature) */
+        .footer {
             width: 100%;
-            background: white;
-            padding-bottom: 2mm;
+            height: 20mm;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding: 2mm 3mm;
+            box-sizing: border-box;
+            background: #fafafa;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .qr-section {
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: flex-end;
-            margin-top: auto;
         }
-        
+
         .qr-img {
-            width: 28mm;
-            height: 28mm;
+            width: 16mm;
+            height: 16mm;
             object-fit: contain;
-            border: 2px solid #000;
-            padding: 1mm;
+            border: 1px solid #000;
+            padding: 0.5mm;
             background: white;
-            border-radius: 2mm;
         }
-        
-        .qr-text {
-            font-size: 6px;
-            color: #4b5563;
-            margin-top: 0.5mm;
+
+        .sign-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-bottom: 1mm;
+        }
+
+        .sign-img {
+            height: 8mm; /* Adjust based on your image aspect ratio */
+            width: auto;
+            max-width: 20mm;
+            object-fit: contain;
+            margin-bottom: 1mm;
+        }
+
+        .sign-label {
+            font-size: 5px;
+            color: #64748b;
             font-weight: 600;
-            letter-spacing: 0.5px;
+            border-top: 1px solid #cbd5e1;
+            padding-top: 0.5mm;
+            width: 20mm;
+            text-align: center;
         }
 
         @media print {
@@ -211,9 +236,11 @@
         <div class="id-card">
             
             <div class="header">
-                <img src="{{ url_for('static', filename='logo.png') }}" class="inst-logo" 
-                     onerror="this.style.display='none'">
-                <div class="inst-name">CST INSTITUTE</div>
+                <img src="{{ url_for('static', filename='logo.png') }}" class="inst-logo" onerror="this.style.opacity='0'">
+                <div class="inst-text">
+                    <div class="inst-name">CST INSTITUTE</div>
+                    <div class="inst-sub">Educational Services</div>
+                </div>
             </div>
 
             <div class="photo-container">
@@ -223,17 +250,17 @@
             </div>
 
             <div class="details">
-                <div class="name">{{ student.name | truncate(25) }}</div>
+                <div class="name">{{ student.name | truncate(22) }}</div>
                 <div class="role-badge">Student</div>
 
                 <table class="info-table">
                     <tr>
-                        <td class="label">ID:</td>
+                        <td class="label">ID NO:</td>
                         <td class="val">{{ student.admission_number }}</td>
                     </tr>
                     <tr>
                         <td class="label">Course:</td>
-                        <td class="val">{{ student.courses_enrolled[0].name | truncate(20) if student.courses_enrolled else '-' }}</td>
+                        <td class="val">{{ student.courses_enrolled[0].name | truncate(18) if student.courses_enrolled else '-' }}</td>
                     </tr>
                     <tr>
                         <td class="label">DOB:</td>
@@ -246,13 +273,17 @@
                 </table>
             </div>
 
-            <div class="qr-area">
-                <img src="{{ url_for('static', filename='qr_codes/qr_' ~ student.admission_number ~ '.png') }}" 
-                     class="qr-img" 
-                     alt="QR Code"
-                     onerror="this.style.display='none'; alert('QR Missing for {{ student.admission_number }}');">
-                
-                <div class="qr-text">ATTENDANCE SCAN</div>
+            <div class="footer">
+                <div class="qr-section">
+                    <img src="{{ url_for('static', filename='qr_codes/qr_' ~ student.admission_number ~ '.png') }}" 
+                         class="qr-img" 
+                         onerror="this.src='https://api.qrserver.com/v1/create-qr-code/?size=100x100&data={{ student.admission_number }}'">
+                </div>
+
+                <div class="sign-section">
+                    <img src="{{ url_for('static', filename='signature_director.png') }}" class="sign-img" onerror="this.style.opacity='0'">
+                    <div class="sign-label">Authorized Signatory</div>
+                </div>
             </div>
 
         </div>
