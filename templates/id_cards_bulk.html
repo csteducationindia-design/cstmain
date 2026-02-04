@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>CST Institute ID Cards</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
     <style>
         /* --- GLOBAL SETTINGS --- */
@@ -13,17 +14,40 @@
             margin: 0;
             padding: 20px;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+            align-items: center;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
         }
 
+        /* CONTROL PANEL (Button) - Hidden in PDF/Print */
+        .control-panel {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 1000;
+        }
+
+        .btn-download {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: background 0.2s;
+        }
+        .btn-download:hover { background-color: #1d4ed8; }
+        .btn-download:disabled { background-color: #94a3b8; cursor: wait; }
+
         /* A4 PAGE (Strict Dimensions for 9 Cards) */
         .a4-page {
             width: 210mm;
-            height: 296mm; /* Slightly less than 297 to force single page */
+            height: 296mm; /* Force A4 height */
             background: white;
-            /* SAFE MARGINS to prevent printer cutoff */
             padding: 10mm 15mm; 
             box-sizing: border-box;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
@@ -34,13 +58,12 @@
             grid-template-columns: 53mm 53mm 53mm; /* Exact Widths */
             grid-template-rows: 85mm 85mm 85mm;    /* Exact Heights */
             
-            /* TIGHTER GAP to fit perfectly on page */
             column-gap: 5mm; 
             row-gap: 5mm; 
             
             justify-content: center;
             align-content: start;
-            page-break-after: always;
+            page-break-after: always; /* Ensure PDF splits pages here */
         }
 
         /* CARD CONTAINER (53mm x 85mm) */
@@ -241,97 +264,100 @@
             color: #000 !important;
         }
 
-        /* --- PRINT SETTINGS --- */
+        /* Hide control panel when printing normally */
         @media print {
-            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            .control-panel { display: none !important; }
             body { background: white; padding: 0; margin: 0; }
-            
-            .a4-page {
-                box-shadow: none;
-                margin: 0 auto;
-                /* SAFETY MARGINS to prevent cutting off the last row */
-                padding: 10mm 0; 
-                width: 210mm;
-                height: 296mm; /* Force A4 height */
-                page-break-after: always;
-                
-                display: grid;
-                grid-template-columns: 53mm 53mm 53mm; 
-                grid-template-rows: 85mm 85mm 85mm;
-                /* TIGHTER GAPS for safety */
-                column-gap: 5mm; 
-                row-gap: 5mm; 
-                justify-content: center;
-            }
-            
-            .id-card {
-                width: 53mm !important;
-                height: 85mm !important;
-                border: 1px solid #94a3b8;
-                page-break-inside: avoid;
-            }
-            
-            @page { 
-                margin: 0; 
-                size: A4 portrait; 
-            }
+            .a4-page { box-shadow: none; margin: 0 auto; page-break-after: always; }
         }
     </style>
 </head>
 <body>
 
-    {% for batch in students | batch(9) %}
-    <div class="a4-page">
-        {% for student in batch %}
-        <div class="id-card">
-            
-            <div class="header">
-                <img src="{{ url_for('static', filename='logo.png') }}" class="inst-logo" onerror="this.style.opacity='0'">
-                <div class="inst-name">CST INSTITUTE</div>
-                <div class="inst-slogan">Excellence in Education</div>
-            </div>
+    <div class="control-panel" data-html2canvas-ignore="true">
+        <button onclick="generateHDPDF()" id="pdf-btn" class="btn-download">Download HD PDF</button>
+    </div>
 
-            <div class="photo-container">
-                <img src="{{ student.profile_photo_url if student.profile_photo_url else 'https://placehold.co/100' }}" 
-                     class="photo-img" 
-                     onerror="this.src='https://placehold.co/100?text=No+Img'">
-            </div>
-
-            <div class="details">
-                <div class="name">{{ student.name | truncate(25) }}</div>
-                <div class="role-badge">Student</div>
-
-                <table class="info-table">
-                    <tr><td class="label">ID NO:</td><td class="val">{{ student.admission_number }}</td></tr>
-                    <tr><td class="label">COURSE:</td><td class="val">{{ student.courses_enrolled[0].name | truncate(18) if student.courses_enrolled else '-' }}</td></tr>
-                    <tr><td class="label">DOB:</td><td class="val">{{ student.dob or '-' }}</td></tr>
-                    <tr><td class="label">PHONE:</td><td class="val">{{ student.phone_number }}</td></tr>
-                </table>
-            </div>
-
-            <div class="mid-footer">
-                <img src="{{ url_for('static', filename='qr_codes/qr_' ~ student.admission_number ~ '.png') }}" 
-                     class="qr-img" 
-                     onerror="this.src='https://api.qrserver.com/v1/create-qr-code/?size=100x100&data={{ student.admission_number }}'">
-
-                <div class="sign-section">
-                    <img src="{{ url_for('static', filename='signature_director.png') }}" class="sign-img" onerror="this.style.opacity='0'">
-                    <div class="sign-label">Authorized Signatory</div>
+    <div id="cards-container">
+        {% for batch in students | batch(9) %}
+        <div class="a4-page">
+            {% for student in batch %}
+            <div class="id-card">
+                
+                <div class="header">
+                    <img src="{{ url_for('static', filename='logo.png') }}" class="inst-logo" onerror="this.style.opacity='0'">
+                    <div class="inst-name">CST INSTITUTE</div>
+                    <div class="inst-slogan">Excellence in Education</div>
                 </div>
-            </div>
 
-            <div class="address-footer">
-                <div class="address-text">Infront of St. Aloysius High School, Yawal Road Bhusawal</div>
-                <div class="address-text">Mobile: 70803021167</div>
-            </div>
+                <div class="photo-container">
+                    <img src="{{ student.profile_photo_url if student.profile_photo_url else 'https://placehold.co/100' }}" 
+                         class="photo-img" 
+                         onerror="this.src='https://placehold.co/100?text=No+Img'">
+                </div>
 
+                <div class="details">
+                    <div class="name">{{ student.name | truncate(25) }}</div>
+                    <div class="role-badge">Student</div>
+
+                    <table class="info-table">
+                        <tr><td class="label">ID NO:</td><td class="val">{{ student.admission_number }}</td></tr>
+                        <tr><td class="label">COURSE:</td><td class="val">{{ student.courses_enrolled[0].name | truncate(18) if student.courses_enrolled else '-' }}</td></tr>
+                        <tr><td class="label">DOB:</td><td class="val">{{ student.dob or '-' }}</td></tr>
+                        <tr><td class="label">PHONE:</td><td class="val">{{ student.phone_number }}</td></tr>
+                    </table>
+                </div>
+
+                <div class="mid-footer">
+                    <img src="{{ url_for('static', filename='qr_codes/qr_' ~ student.admission_number ~ '.png') }}" 
+                         class="qr-img" 
+                         onerror="this.src='https://api.qrserver.com/v1/create-qr-code/?size=100x100&data={{ student.admission_number }}'">
+
+                    <div class="sign-section">
+                        <img src="{{ url_for('static', filename='signature_director.png') }}" class="sign-img" onerror="this.style.opacity='0'">
+                        <div class="sign-label">Authorized Signatory</div>
+                    </div>
+                </div>
+
+                <div class="address-footer">
+                    <div class="address-text">Infront of St. Aloysius High School, Yawal Road Bhusawal</div>
+                    <div class="address-text">Mobile: 70803021167</div>
+                </div>
+
+            </div>
+            {% endfor %}
         </div>
         {% endfor %}
     </div>
-    {% endfor %}
 
     <script>
-        window.onload = function() { setTimeout(() => { window.print(); }, 2000); };
+        function generateHDPDF() {
+            const element = document.getElementById('cards-container');
+            const btn = document.getElementById('pdf-btn');
+            
+            // 1. Change Button State
+            btn.innerHTML = "Generating HD PDF... (Please Wait)";
+            btn.disabled = true;
+
+            // 2. High Quality Settings
+            const opt = {
+                margin:       0,
+                filename:     'CST_ID_Cards_HD.pdf',
+                image:        { type: 'jpeg', quality: 0.98 }, // Highest JPEG quality
+                html2canvas:  { 
+                    scale: 4,       // 4x Resolution (Creates 300+ DPI)
+                    useCORS: true,  // Ensures local images/logos load correctly
+                    scrollY: 0      // Prevents scrolling issues
+                },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            // 3. Generate and Save
+            html2pdf().set(opt).from(element).save().then(() => {
+                btn.innerHTML = "Download HD PDF";
+                btn.disabled = false;
+            });
+        }
     </script>
 
 </body>
