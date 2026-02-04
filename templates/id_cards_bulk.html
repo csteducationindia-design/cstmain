@@ -336,27 +336,35 @@
             const btn = document.getElementById('pdf-btn');
             
             // 1. Change Button State
-            btn.innerHTML = "Generating HD PDF... (Please Wait)";
+            btn.innerHTML = "Processing... (Please Wait)";
             btn.disabled = true;
 
-            // 2. High Quality Settings
+            // 2. Optimized High Quality Settings (Faster)
             const opt = {
                 margin:       0,
                 filename:     'CST_ID_Cards_HD.pdf',
-                image:        { type: 'jpeg', quality: 0.98 }, // Highest JPEG quality
+                image:        { type: 'jpeg', quality: 0.98 }, 
                 html2canvas:  { 
-                    scale: 4,       // 4x Resolution (Creates 300+ DPI)
-                    useCORS: true,  // Ensures local images/logos load correctly
-                    scrollY: 0      // Prevents scrolling issues
+                    scale: 2,       // 2x Resolution (OPTIMIZED - Prevents Freezing)
+                    useCORS: true,  
+                    scrollY: 0,
+                    logging: true
                 },
                 jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
-            // 3. Generate and Save
-            html2pdf().set(opt).from(element).save().then(() => {
-                btn.innerHTML = "Download HD PDF";
-                btn.disabled = false;
-            });
+            // 3. Wait for images to load, then Generate
+            setTimeout(() => {
+                html2pdf().set(opt).from(element).save().then(() => {
+                    btn.innerHTML = "Download HD PDF";
+                    btn.disabled = false;
+                }).catch(err => {
+                    console.error(err);
+                    alert("Error generating PDF. Please try printing normally (Ctrl+P).");
+                    btn.innerHTML = "Download Failed";
+                    btn.disabled = false;
+                });
+            }, 1000);
         }
     </script>
 
