@@ -20,7 +20,7 @@
             print-color-adjust: exact;
         }
 
-        /* CONTROL PANEL (Button) - Hidden in PDF/Print */
+        /* CONTROL PANEL (Button) */
         .control-panel {
             margin-bottom: 20px;
             display: flex;
@@ -43,35 +43,34 @@
         .btn-download:hover { background-color: #1d4ed8; }
         .btn-download:disabled { background-color: #94a3b8; cursor: wait; }
 
-        /* A4 PAGE (Strict Dimensions for 9 Cards) */
+        /* A4 PAGE (Strict Dimensions) */
         .a4-page {
             width: 210mm;
-            height: 296mm; /* Force A4 height */
+            height: 296mm; 
             background: white;
             padding: 10mm 15mm; 
             box-sizing: border-box;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             margin-bottom: 20px;
             
-            /* GRID LAYOUT */
             display: grid;
-            grid-template-columns: 55mm 55mm 55mm; /* Exact Widths */
-            grid-template-rows: 87mm 87mm 87mm;    /* Exact Heights */
+            grid-template-columns: 53mm 53mm 53mm; 
+            grid-template-rows: 85mm 85mm 85mm;    
             
             column-gap: 5mm; 
             row-gap: 5mm; 
             
             justify-content: center;
             align-content: start;
-            page-break-after: always; /* Ensure PDF splits pages here */
+            page-break-after: always; 
         }
 
         /* CARD CONTAINER (53mm x 85mm) */
         .id-card {
-            width: 55mm;
-            height: 87mm;
+            width: 53mm;
+            height: 85mm;
             background: white;
-            border: 1px solid #94a3b8; /* Light grey cut line */
+            border: 1px solid #94a3b8; 
             border-radius: 3mm;
             overflow: hidden;
             position: relative;
@@ -83,10 +82,10 @@
             background-color: white !important;
         }
 
-        /* 1. HEADER (22mm) */
+        /* 1. HEADER (Optimized to 20mm to save space) */
         .header {
             width: 100%;
-            height: 22mm; 
+            height: 20mm; 
             background: linear-gradient(135deg, #1e40af, #3b82f6) !important;
             background-color: #1e40af !important;
             color: white !important;
@@ -101,8 +100,8 @@
 
         /* Logo */
         .inst-logo {
-            width: 8mm; 
-            height: 8mm;
+            width: 6.5mm; 
+            height: 6.5mm;
             object-fit: contain;
             margin-bottom: 0.5mm;
             background: white;
@@ -110,9 +109,9 @@
             border-radius: 3px;
         }
 
-        /* Name & Slogan */
+        /* Name */
         .inst-name {
-            font-size: 9px;
+            font-size: 7px;
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 0.3px;
@@ -129,14 +128,14 @@
             color: white !important;
         }
 
-        /* 2. PHOTO (Overlapping) */
+        /* 2. PHOTO (Slightly smaller: 17mm) */
         .photo-container {
-            width: 18mm;
-            height: 18mm;
+            width: 17mm;
+            height: 17mm;
             border-radius: 50%;
             background: white;
             padding: 0.8mm;
-            margin-top: -8mm; 
+            margin-top: -7mm; /* Pull up */
             z-index: 10;
             box-shadow: 0 1px 3px rgba(0,0,0,0.2);
         }
@@ -150,7 +149,7 @@
             background-color: #f1f5f9;
         }
 
-        /* 3. DETAILS (Padding fixed) */
+        /* 3. DETAILS (Compact) */
         .details {
             width: 100%;
             padding-left: 5mm; 
@@ -207,23 +206,24 @@
         .label { color: #64748b; font-weight: 700; width: 10mm; }
         .val { color: #334155; font-weight: 600; padding-left: 1mm; }
 
-        /* 4. QR & SIGN AREA */
+        /* 4. QR & SIGN AREA (Increased Height for Bigger QR) */
         .mid-footer {
             width: 100%;
-            height: 14mm;
+            height: 17mm; /* Increased height */
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
             padding: 0 4mm;
             box-sizing: border-box;
             position: absolute;
-            bottom: 7mm; 
+            bottom: 8mm; /* Sits above address strip */
             left: 0;
         }
 
+        /* LARGER QR CODE */
         .qr-img {
-            width: 12mm;
-            height: 12mm;
+            width: 15mm; /* Increased from 12mm */
+            height: 15mm;
             border: 1px solid #000;
             padding: 0.5mm;
             object-fit: contain;
@@ -239,10 +239,10 @@
         .sign-img { height: 6mm; width: auto; max-width: 18mm; object-fit: contain; }
         .sign-label { font-size: 4px; color: #64748b; border-top: 1px solid #cbd5e1; width: 18mm; text-align: center; }
 
-        /* 5. ADDRESS FOOTER */
+        /* 5. ADDRESS FOOTER (Larger Font) */
         .address-footer {
             width: 100%;
-            height: 6mm;
+            height: 7.5mm; /* Increased slightly */
             background: #fbbf24 !important; 
             background-color: #fbbf24 !important;
             color: #000 !important;
@@ -255,16 +255,18 @@
             bottom: 0;
             left: 0;
             -webkit-print-color-adjust: exact !important;
+            padding: 0.5mm;
         }
         
+        /* LARGER ADDRESS TEXT */
         .address-text {
-            font-size: 4px;
+            font-size: 5.5px; /* Increased from 4px */
             font-weight: 700;
-            line-height: 1.1;
+            line-height: 1.2;
             color: #000 !important;
         }
 
-        /* Hide control panel when printing normally */
+        /* PRINT MEDIA QUERY */
         @media print {
             .control-panel { display: none !important; }
             body { background: white; padding: 0; margin: 0; }
@@ -321,7 +323,7 @@
 
                 <div class="address-footer">
                     <div class="address-text">Infront of St. Aloysius High School, Yawal Road Bhusawal</div>
-                    <div class="address-text">Mobile: 70803021167,9822826307</div>
+                    <div class="address-text">Mobile: 70803021167</div>
                 </div>
 
             </div>
@@ -335,17 +337,15 @@
             const element = document.getElementById('cards-container');
             const btn = document.getElementById('pdf-btn');
             
-            // 1. Change Button State
             btn.innerHTML = "Processing... (Please Wait)";
             btn.disabled = true;
 
-            // 2. Optimized High Quality Settings (Faster)
             const opt = {
                 margin:       0,
                 filename:     'CST_ID_Cards_HD.pdf',
                 image:        { type: 'jpeg', quality: 0.98 }, 
                 html2canvas:  { 
-                    scale: 2,       // 2x Resolution (OPTIMIZED - Prevents Freezing)
+                    scale: 2, 
                     useCORS: true,  
                     scrollY: 0,
                     logging: true
@@ -353,7 +353,6 @@
                 jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
-            // 3. Wait for images to load, then Generate
             setTimeout(() => {
                 html2pdf().set(opt).from(element).save().then(() => {
                     btn.innerHTML = "Download HD PDF";
