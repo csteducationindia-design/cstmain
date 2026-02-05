@@ -110,15 +110,15 @@
                     </div>
                     <span class="font-bold text-gray-700 text-base">Results</span>
                 </button>
-                <button onclick="window.open('/student/my_hallticket', '_blank')" class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 hover:bg-gray-50 transition-all group col-span-2">
-                    <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
-                        <span class="material-symbols-rounded">badge</span>
-                    </div>
-                    <div class="text-left">
-                        <span class="block font-bold text-gray-700 text-base">Hall Ticket</span>
-                        <span class="text-[10px] text-gray-400">Download & Print</span>
-                    </div>
-                </button>
+                <button id="hall-ticket-btn" class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 hover:bg-gray-50 transition-all group col-span-2">
+    <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
+        <span class="material-symbols-rounded">badge</span>
+    </div>
+    <div class="text-left">
+        <span id="ht-title" class="block font-bold text-gray-700 text-base">Hall Ticket</span>
+        <span id="ht-sub" class="text-[10px] text-gray-400">Download & Print</span>
+    </div>
+</button>
             </div>
 
             <div id="fee-alert" class="hidden bg-red-50 p-5 rounded-2xl border border-red-100 flex gap-4 mb-6">
@@ -375,7 +375,8 @@
             await Promise.allSettled([
                 fetchFees(), 
                 fetchAttendanceSummary(),
-                loadStudentAssignments() // <--- We added this new function call
+                loadStudentAssignments(), // <--- We added this new function call
+		checkHallTicketStatus()
             ]);
         } catch (error) {
             console.error("Initialization error:", error);
@@ -391,6 +392,39 @@
             } else {
                 initFirebase();
             }
+        }
+    }
+// --- NEW HALL TICKET LOGIC ---
+    async function checkHallTicketStatus() {
+        try {
+            // Calls the python route you updated earlier
+            const res = await fetch(`${API_BASE_URL}/student/dashboard`, { credentials: 'include' });
+            if (!res.ok) return;
+            const data = await res.json();
+
+            const htBtn = document.getElementById('hall-ticket-btn');
+            const htTitle = document.getElementById('ht-title');
+            const htSub = document.getElementById('ht-sub');
+
+            if (!htBtn) return;
+
+            if (data.is_blocked) {
+                // CASE: BLOCKED
+                htBtn.onclick = (e) => { e.preventDefault(); alert("Hall Ticket Locked: Please clear pending fees."); };
+                htBtn.classList.add('opacity-60', 'grayscale', 'cursor-not-allowed');
+                htBtn.classList.remove('hover:bg-gray-50', 'group'); // Remove hover effects
+                
+                if(htTitle) htTitle.textContent = "Hall Ticket (Locked)";
+                if(htTitle) htTitle.classList.add('text-red-500');
+                if(htSub) htSub.textContent = "Fees Pending";
+                if(htSub) htSub.classList.add('text-red-400', 'font-bold');
+            } else {
+                // CASE: ALLOWED
+                htBtn.onclick = () => window.open('/student/my_hallticket', '_blank');
+                // Optional: Reset styles if needed
+            }
+        } catch (e) {
+            console.error("Hall Ticket Check Error:", e);
         }
     }
 async function loadStudentAssignments() {
@@ -589,7 +623,40 @@ async function loadStudentAssignments() {
             }
         } catch (e) { console.error('Fee fetch error', e); }
     }
+async function checkHallTicketStatus() {
+    try {
+        const res = await fetch(`${API_BASE_URL}/student/dashboard`, { credentials: 'include' });
+        if (!res.ok) return;
+        const data = await res.json();
 
+        const htBtn = document.getElementById('hall-ticket-btn');
+        const htTitle = document.getElementById('ht-title');
+        const htSub = document.getElementById('ht-sub');
+
+        if (!htBtn) return;
+
+        if (data.is_blocked) {
+            // BLOCK THE BUTTON
+            htBtn.onclick = (e) => { e.preventDefault(); alert("Hall Ticket Locked: Please clear pending fees."); };
+            htBtn.classList.add('opacity-60', 'grayscale', 'cursor-not-allowed');
+            htBtn.classList.remove('hover:bg-gray-50', 'group'); 
+            
+            if(htTitle) {
+                htTitle.textContent = "Locked";
+                htTitle.classList.add('text-red-500');
+            }
+            if(htSub) {
+                htSub.textContent = "Fees Pending";
+                htSub.classList.add('text-red-400', 'font-bold');
+            }
+        } else {
+            // ENABLE THE BUTTON
+            htBtn.onclick = () => window.open('/student/my_hallticket', '_blank');
+        }
+    } catch (e) {
+        console.error("Hall Ticket Check Error:", e);
+    }
+}
     async function fetchAttendanceSummary() {
         try {
             const res = await fetch(`${API_BASE_URL}/student/attendance`, { credentials: 'include' });
