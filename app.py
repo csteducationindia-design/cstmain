@@ -437,42 +437,93 @@ def sw(): return send_from_directory(app.static_folder, 'firebase-messaging-sw.j
 @app.route('/api/student/dashboard')
 @login_required
 def api_student_dashboard():
-    # 1. Security Check
-    if current_user.role != 'student': 
-        return jsonify({"msg": "Denied"}), 403
+    if current_user.role != 'student': return jsonify({"msg": "Denied"}), 403
     
-    # 2. Calculate Attendance
-    att_records = Attendance.query.filter_by(student_id=current_user.id).all()
-    total_days = len(att_records)
-    
-    present_days = 0
-    for r in att_records:
-        if r.status in ['Present', 'Checked-In']:
-            present_days += 1
-            
-    # Default to 0% if no records exist
-    if total_days > 0:
-        att_percent = int((present_days / total_days) * 100)
-    else:
-        att_percent = 0 
-
-    # 3. Calculate Fees (Using the Helper Function to avoid crashes)
     try:
-        fee_data = calculate_fee_status(current_user.id)
+        fee_data = calculate_fee_status(current_user.id) 
         fees_due = fee_data.get('balance', 0)
-    except Exception as e:
-        print(f"Fee Calc Error: {e}")
+    except:
         fees_due = 0
-    
-    # 4. Return Data
+
+    # Logic: Block if Admin Blocked OR Fees Pending
+    admin_block = getattr(current_user, 'hall_ticket_blocked', False)
+    is_blocked = admin_block or (fees_due > 0)
+
+    att_records = Attendance.query.filter_by(student_id=current_user.id).all()
+    total = len(att_records)
+    present = len([r for r in att_records if r.status in ['Present', 'Checked-In']])
+    att_percent = int((present / total) * 100) if total > 0 else 0
+
     return jsonify({
         "name": current_user.name,
         "email": current_user.email,
         "admission_number": current_user.admission_number,
-        "attendance_percent": att_percent, 
-        "fees_due": fees_due, 
-        "initial": current_user.name[0].upper() if current_user.name else 'U'
+        "attendance_percent": att_percent,
+        "fees_due": fees_due,
+        "initial": current_user.name[0].upper() if current_user.name else 'U',
+        "is_blocked": is_blocked 
     })
+
+@app.route('/api/admin/toggle_hall_ticket_block', methods=['POST'])
+@login_required
+def toggle_hall_ticket_block():
+    if current_user.role != 'admin': return jsonify({'msg': 'Denied'}), 403
+    data = request.json
+    student = db.session.get(User, data['student_id'])
+    if student:
+        student.hall_ticket_blocked = not student.hall_ticket_blocked
+        db.session.commit()
+        return jsonify({'msg': 'Updated', 'new_status': student.hall_ticket_blocked})
+    return jsonify({'msg': 'Student not found'}), 404
+
+# --- CRITICAL DATABASE FIX ROUTE ---
+@app.route('/fix_db_hall_ticket')
+def fix_db_hall_ticket():
+    with app.app_context():
+        from sqlalchemy import text
+        with db.engine.connect() as con:
+            try:
+                con.execute(text('ALTER TABLE user ADD COLUMN hall_ticket_blocked BOOLEAN DEFAULT 0'))
+                con.commit()
+                return "✅ Database Updated Successfully! You can now use the blocking feature."
+            except Exception as e:
+                return f"⚠️ Database Check: {e} (If it says 'duplicate column', your data is safe and ready!)"
+
+@app.route('/student/my_hallticket')
+@login_required
+def my_hallticket():
+    if current_user.role != 'student': return "Denied", 403
+    
+    # Check block status before serving
+    fee_data = calculate_fee_status(current_user.id)
+    fees_due = fee_data.get('balance', 0)
+    if current_user.hall_ticket_blocked or fees_due > 0:
+        return "<h1>Hall Ticket Locked</h1><p>Please clear pending fees.</p>", 403
+
+    student = current_user
+    session_name = "Not Assigned"
+    if student.session_id:
+        sess = db.session.get(AcademicSession, student.session_id)
+        if sess: session_name = sess.name
+
+    exam = None
+    if student.session_id:
+        exam = Exam.query.filter_by(
+            session_id=student.session_id
+        ).order_by(Exam.id.desc()).first()
+
+    courses = ", ".join([c.name for c in student.courses_enrolled]) or "N/A"
+    photo = student.profile_photo_url if student.profile_photo_url else "https://placehold.co/150"
+
+    return render_template(
+        "hallticket.html",
+        student=student,
+        session_name=session_name,
+        courses=courses,
+        photo=photo,
+        exam=exam
+    )
+
 # --- ADD THIS NEW ROUTE TO app.py ---
 @app.route('/api/payments/<int:id>', methods=['DELETE'])
 @login_required
