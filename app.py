@@ -450,27 +450,31 @@ def api_student_dashboard():
         if r.status in ['Present', 'Checked-In']:
             present_days += 1
             
-    # Default to 0% if no records exist
     if total_days > 0:
         att_percent = int((present_days / total_days) * 100)
     else:
         att_percent = 0 
 
-    # 3. Calculate Fees
+    # 3. Calculate Fees (FIXED NEGATIVE ISSUE)
     try:
         fee_data = calculate_fee_status(current_user.id)
-        fees_due = fee_data.get('balance', 0)
+        raw_balance = fee_data.get('balance', 0)
+        
+        # ✅ LOGIC: If balance is negative (e.g. -4000), treat it as 0 (Paid)
+        if raw_balance < 0:
+            fees_due = 0
+        else:
+            fees_due = raw_balance
+
     except Exception as e:
         print(f"Fee Calc Error: {e}")
         fees_due = 0
     
-    # ✅ NEW LOGIC: Calculate Block Status
-    # Block if (Fees are pending) OR (Admin manually blocked them)
-    # We use 'or False' to handle cases where hall_ticket_blocked might be None
+    # 4. Block Status Check
     admin_blocked = current_user.hall_ticket_blocked or False
     is_blocked_status = (fees_due > 0) or admin_blocked
 
-    # 4. Return Data
+    # 5. Return Data
     return jsonify({
         "name": current_user.name,
         "email": current_user.email,
@@ -478,8 +482,6 @@ def api_student_dashboard():
         "attendance_percent": att_percent, 
         "fees_due": fees_due, 
         "initial": current_user.name[0].upper() if current_user.name else 'U',
-        
-        # ✅ CRITICAL ADDITION: Send the status to the frontend
         "is_blocked": is_blocked_status 
     })
 # ---------------------------------------------------------
