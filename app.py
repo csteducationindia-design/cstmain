@@ -169,7 +169,7 @@ class User(db.Model, UserMixin):
     pincode = db.Column(db.String(20), nullable=True)
     fcm_token = db.Column(db.String(500), nullable=True)
     session_id = db.Column(db.Integer, db.ForeignKey('academic_session.id'), nullable=True)
-    hall_ticket_blocked = db.Column(db.Boolean, default=False) 
+    hall_ticket_blocked = db.Column(db.Boolean, default=False)
    
     
     courses_enrolled = db.relationship('Course', secondary=student_course_association, lazy='subquery', backref=db.backref('students', lazy=True))
@@ -441,7 +441,11 @@ def sw(): return send_from_directory(app.static_folder, 'firebase-messaging-sw.j
 # PASTE AT THE BOTTOM OF app.py
 # ==========================================
 
-# 1. UPDATED DASHBOARD ROUTE
+# ==========================================
+# PASTE AT THE BOTTOM OF app.py
+# ==========================================
+
+# 1. UPDATED DASHBOARD (Sends Block Status to Frontend)
 @app.route('/api/student/dashboard')
 @login_required
 def api_student_dashboard():
@@ -454,12 +458,12 @@ def api_student_dashboard():
     except:
         fees_due = 0
 
-    # BLOCKING LOGIC: Block if Admin said so OR Fees are pending
-    # We use getattr() to prevent crashes if you haven't run the DB fix yet
+    # BLOCKING LOGIC: Block if Admin Blocked OR Fees Pending
+    # We use getattr() to prevent crashes if DB isn't updated yet
     admin_block = getattr(current_user, 'hall_ticket_blocked', False)
     is_blocked = admin_block or (fees_due > 0)
 
-    # Attendance Logic (Keep your existing logic)
+    # Calculate Attendance
     att_records = Attendance.query.filter_by(student_id=current_user.id).all()
     total = len(att_records)
     present = len([r for r in att_records if r.status in ['Present', 'Checked-In']])
@@ -472,10 +476,10 @@ def api_student_dashboard():
         "attendance_percent": att_percent,
         "fees_due": fees_due,
         "initial": current_user.name[0].upper() if current_user.name else 'U',
-        "is_blocked": is_blocked  # <--- CRITICAL: Sending this to frontend
+        "is_blocked": is_blocked  # <--- CRITICAL
     })
 
-# 2. ADMIN BLOCK TOGGLE ROUTE
+# 2. ADMIN TOGGLE ROUTE (To Block/Unblock)
 @app.route('/api/admin/toggle_hall_ticket_block', methods=['POST'])
 @login_required
 def toggle_hall_ticket_block():
@@ -488,29 +492,20 @@ def toggle_hall_ticket_block():
         return jsonify({'msg': 'Updated', 'new_status': student.hall_ticket_blocked})
     return jsonify({'msg': 'Student not found'}), 404
 
-# 3. DATABASE FIX ROUTE (Run this once)
+# 3. DATABASE FIX ROUTE (Prevents Server Crash)
 @app.route('/fix_db_hall_ticket')
 def fix_db_hall_ticket():
     with app.app_context():
         from sqlalchemy import text
         with db.engine.connect() as con:
             try:
+                # This command adds the missing column to your database
                 con.execute(text('ALTER TABLE user ADD COLUMN hall_ticket_blocked BOOLEAN DEFAULT 0'))
                 con.commit()
-                return "✅ Database Updated Successfully"
+                return "✅ Database Updated Successfully! You can now use the feature."
             except Exception as e:
-                return f"⚠️ Error (Column might already exist): {e}"
-# 3. ONE-TIME DB FIX (Run this once)
-@app.route('/fix_db_hall_ticket')
-def fix_db_hall_ticket():
-    with app.app_context():
-        from sqlalchemy import text
-        with db.engine.connect() as con:
-            try:
-                con.execute(text('ALTER TABLE user ADD COLUMN hall_ticket_blocked BOOLEAN DEFAULT 0'))
-                return "✅ Database Updated Successfully"
-            except:
-                return "⚠️ Column might already exist."
+                return f"⚠️ Database Check: {e} (If it says 'duplicate column', you are safe!)"
+
 # --- ADD THIS NEW ROUTE TO app.py ---
 @app.route('/api/payments/<int:id>', methods=['DELETE'])
 @login_required
