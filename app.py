@@ -456,7 +456,7 @@ def api_student_dashboard():
     else:
         att_percent = 0 
 
-    # 3. Calculate Fees (Using the Helper Function to avoid crashes)
+    # 3. Calculate Fees
     try:
         fee_data = calculate_fee_status(current_user.id)
         fees_due = fee_data.get('balance', 0)
@@ -464,6 +464,12 @@ def api_student_dashboard():
         print(f"Fee Calc Error: {e}")
         fees_due = 0
     
+    # ✅ NEW LOGIC: Calculate Block Status
+    # Block if (Fees are pending) OR (Admin manually blocked them)
+    # We use 'or False' to handle cases where hall_ticket_blocked might be None
+    admin_blocked = current_user.hall_ticket_blocked or False
+    is_blocked_status = (fees_due > 0) or admin_blocked
+
     # 4. Return Data
     return jsonify({
         "name": current_user.name,
@@ -471,7 +477,10 @@ def api_student_dashboard():
         "admission_number": current_user.admission_number,
         "attendance_percent": att_percent, 
         "fees_due": fees_due, 
-        "initial": current_user.name[0].upper() if current_user.name else 'U'
+        "initial": current_user.name[0].upper() if current_user.name else 'U',
+        
+        # ✅ CRITICAL ADDITION: Send the status to the frontend
+        "is_blocked": is_blocked_status 
     })
 # ---------------------------------------------------------
 # ✅ ADD THIS TO APP.PY TO HANDLE THE BLOCK BUTTON
