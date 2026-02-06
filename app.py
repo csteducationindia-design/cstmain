@@ -170,7 +170,7 @@ class User(db.Model, UserMixin):
     fcm_token = db.Column(db.String(500), nullable=True)
     session_id = db.Column(db.Integer, db.ForeignKey('academic_session.id'), nullable=True)
     hall_ticket_blocked = db.Column(db.Boolean, default=False) 
-    
+   
     
     courses_enrolled = db.relationship('Course', secondary=student_course_association, lazy='subquery', backref=db.backref('students', lazy=True))
 
@@ -437,32 +437,45 @@ def sw(): return send_from_directory(app.static_folder, 'firebase-messaging-sw.j
 # --- IN app.py, REPLACE 'api_student_dashboard' WITH THIS FIXED VERSION ---
 
 # 1. UPDATED DASHBOARD (Checks Block Status)
+# ==========================================
+# PASTE AT THE BOTTOM OF app.py
+# ==========================================
+
+# 1. UPDATED DASHBOARD ROUTE
 @app.route('/api/student/dashboard')
 @login_required
 def api_student_dashboard():
     if current_user.role != 'student': return jsonify({"msg": "Denied"}), 403
     
-    # Fees Check
+    # Calculate Fees
     try:
-        # Ensure you have 'calculate_fee_status' defined in app.py, or implement manual check
-        # If you don't have that function, use: fees_due = 0 
         fee_data = calculate_fee_status(current_user.id) 
         fees_due = fee_data.get('balance', 0)
     except:
         fees_due = 0
 
-    # Logic: Block if Admin said so OR Fees are pending
+    # BLOCKING LOGIC: Block if Admin said so OR Fees are pending
+    # We use getattr() to prevent crashes if you haven't run the DB fix yet
     admin_block = getattr(current_user, 'hall_ticket_blocked', False)
     is_blocked = admin_block or (fees_due > 0)
+
+    # Attendance Logic (Keep your existing logic)
+    att_records = Attendance.query.filter_by(student_id=current_user.id).all()
+    total = len(att_records)
+    present = len([r for r in att_records if r.status in ['Present', 'Checked-In']])
+    att_percent = int((present / total) * 100) if total > 0 else 0
 
     return jsonify({
         "name": current_user.name,
         "email": current_user.email,
+        "admission_number": current_user.admission_number,
+        "attendance_percent": att_percent,
         "fees_due": fees_due,
-        "is_blocked": is_blocked # <--- IMPORTANT
+        "initial": current_user.name[0].upper() if current_user.name else 'U',
+        "is_blocked": is_blocked  # <--- CRITICAL: Sending this to frontend
     })
 
-# 2. NEW ADMIN ROUTE (To Toggle Block)
+# 2. ADMIN BLOCK TOGGLE ROUTE
 @app.route('/api/admin/toggle_hall_ticket_block', methods=['POST'])
 @login_required
 def toggle_hall_ticket_block():
@@ -475,6 +488,18 @@ def toggle_hall_ticket_block():
         return jsonify({'msg': 'Updated', 'new_status': student.hall_ticket_blocked})
     return jsonify({'msg': 'Student not found'}), 404
 
+# 3. DATABASE FIX ROUTE (Run this once)
+@app.route('/fix_db_hall_ticket')
+def fix_db_hall_ticket():
+    with app.app_context():
+        from sqlalchemy import text
+        with db.engine.connect() as con:
+            try:
+                con.execute(text('ALTER TABLE user ADD COLUMN hall_ticket_blocked BOOLEAN DEFAULT 0'))
+                con.commit()
+                return "✅ Database Updated Successfully"
+            except Exception as e:
+                return f"⚠️ Error (Column might already exist): {e}"
 # 3. ONE-TIME DB FIX (Run this once)
 @app.route('/fix_db_hall_ticket')
 def fix_db_hall_ticket():
