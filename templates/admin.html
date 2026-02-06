@@ -169,11 +169,17 @@
             
             <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm overflow-hidden">
                 <table class="w-full text-left">
-                    <thead class="bg-slate-100 dark:bg-slate-800 border-b">
-                        <tr><th class="p-3 font-medium">Adm No</th><th class="p-3 font-medium">Name</th><th class="p-3 font-medium">Email</th><th class="p-3 font-medium">Batch</th><th class="p-3 font-medium text-right">Actions</th></tr>
-                    </thead>
-                    <tbody id="usersTableBody" class="divide-y divide-slate-100"></tbody>
-                </table>
+    <thead>
+        <tr>
+            <th class="p-3 text-left">Admission No</th>
+            <th class="p-3 text-left">Name</th>
+            <th class="p-3 text-left">Batch</th>
+            <th class="p-3 text-left">Hall Ticket</th> 
+            <th class="p-3 text-right">Actions</th>
+        </tr>
+    </thead>
+    <tbody id="usersTableBody" class="divide-y divide-slate-100"></tbody>
+</table>
             </div>
         </div>
 
@@ -496,6 +502,37 @@
             }
         }
     }
+async function toggleBlock(btn) {
+        // Get data from the button attributes we added
+        const studentId = btn.getAttribute('data-id');
+        const isBlocked = btn.getAttribute('data-status') === 'true';
+
+        const action = isBlocked ? "Unblock" : "Block";
+        if (!confirm(`Are you sure you want to ${action} this student's Hall Ticket?`)) return;
+
+        try {
+            const response = await fetch('/api/admin/toggle_hall_ticket_block', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ student_id: parseInt(studentId) })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                alert(result.msg);
+                // Reload the data to update the button color/text
+                // Ensure you have these functions defined in your main script
+                if (typeof loadUsers === 'function') loadUsers();       // For Admin
+                if (typeof loadStudents === 'function') loadStudents(); // For Teacher
+            } else {
+                alert("Error: " + result.msg);
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Server Error. Check console.");
+        }
+    }
 
     // --- NAVIGATION ---
     function showSection(hash) {
@@ -572,7 +609,7 @@
             <tr class="border-b hover:bg-slate-50"><td class="p-3 font-medium">${s.name}</td><td class="p-3 text-sm text-gray-500">${s.start_date} - ${s.end_date}</td><td class="p-3"><span class="px-2 py-1 rounded text-xs ${s.status==='Active'?'bg-green-100 text-green-700':'bg-gray-100 text-gray-700'}">${s.status}</span></td><td class="p-3 text-right"><button onclick="editSession(${s.id})" class="text-blue-600 mr-3"><span class="material-symbols-outlined">edit</span></button><button onclick="del('/api/sessions?id=${s.id}')" class="text-red-600"><span class="material-symbols-outlined">delete</span></button></td></tr>`).join('');
     }
 
-    async function loadUsers() {
+   async function loadUsers() {
         const sid = document.getElementById('filterSession').value;
         const term = document.getElementById('userSearch').value.toLowerCase();
         const res = await fetch(`${API_BASE_URL}/users?session_id=${sid}&search=${term}`);
@@ -582,8 +619,28 @@
         const pSel = document.getElementById('student-parent');
         if(pSel) pSel.innerHTML = '<option value="">-- Select Parent --</option>' + parents.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
 
+        // ✅ UPDATED ROW GENERATION WITH BLOCK BUTTON
         document.getElementById('usersTableBody').innerHTML = users.filter(u=>u.role==='student').map(u => `
-            <tr class="border-b hover:bg-slate-50"><td class="p-3">${u.admission_number||'-'}</td><td class="p-3 font-bold text-slate-700">${u.name}</td><td class="p-3 text-sm text-gray-500">${u.email}</td><td class="p-3 text-sm text-blue-600">${u.session_name}</td><td class="p-3 text-right"><a href="/admin/id_card/${u.id}" target="_blank" class="text-purple-600 mr-2" title="ID Card"><span class="material-symbols-outlined">badge</span></a><button onclick="editUser(${u.id}, 'student')" class="text-blue-600 mr-2"><span class="material-symbols-outlined">edit</span></button><button onclick="del('/api/users/${u.id}')" class="text-red-600"><span class="material-symbols-outlined">delete</span></button></td></tr>`).join('');
+            <tr class="border-b hover:bg-slate-50">
+                <td class="p-3">${u.admission_number||'-'}</td>
+                <td class="p-3 font-bold text-slate-700">${u.name}</td>
+                <td class="p-3 text-sm text-blue-600">${u.session_name}</td>
+                
+                <td class="p-3">
+                    <button onclick="toggleBlock(this)" 
+                        data-id="${u.id}" 
+                        data-status="${u.hall_ticket_blocked}"
+                        class="px-3 py-1 rounded text-white text-xs font-bold transition-colors ${u.hall_ticket_blocked ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'}">
+                        ${u.hall_ticket_blocked ? 'BLOCKED' : 'ACTIVE'}
+                    </button>
+                </td>
+
+                <td class="p-3 text-right">
+                    <a href="/admin/id_card/${u.id}" target="_blank" class="text-purple-600 mr-2" title="ID Card"><span class="material-symbols-outlined">badge</span></a>
+                    <button onclick="editUser(${u.id}, 'student')" class="text-blue-600 mr-2"><span class="material-symbols-outlined">edit</span></button>
+                    <button onclick="del('/api/users/${u.id}')" class="text-red-600"><span class="material-symbols-outlined">delete</span></button>
+                </td>
+            </tr>`).join('');
     }
 
     async function loadTeachers() {
