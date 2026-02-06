@@ -442,25 +442,33 @@ def api_student_dashboard():
         return jsonify({"msg": "Denied"}), 403
     
     # 2. Calculate Attendance
-    att_records = Attendance.query.filter_by(student_id=current_user.id).all()
-    total_days = len(att_records)
-    
-    present_days = 0
-    for r in att_records:
-        if r.status in ['Present', 'Checked-In']:
-            present_days += 1
+    try:
+        # Get all attendance records for this student
+        att_records = Attendance.query.filter_by(student_id=current_user.id).all()
+        total_days = len(att_records)
+        
+        present_days = 0
+        for r in att_records:
+            # Check for valid "Present" statuses
+            if r.status in ['Present', 'Checked-In']:
+                present_days += 1
+                
+        # Calculate Percentage (Avoid division by zero)
+        if total_days > 0:
+            att_percent = int((present_days / total_days) * 100)
+        else:
+            att_percent = 0
             
-    if total_days > 0:
-        att_percent = int((present_days / total_days) * 100)
-    else:
-        att_percent = 0 
+    except Exception as e:
+        print(f"Attendance Calc Error: {e}")
+        att_percent = 0
 
-    # 3. Calculate Fees (FIXED NEGATIVE ISSUE)
+    # 3. Calculate Fees (✅ FIX: Prevent Negative Amount)
     try:
         fee_data = calculate_fee_status(current_user.id)
         raw_balance = fee_data.get('balance', 0)
         
-        # ✅ LOGIC: If balance is negative (e.g. -4000), treat it as 0 (Paid)
+        # ✅ LOGIC FIX: If balance is negative (Overpaid), show 0
         if raw_balance < 0:
             fees_due = 0
         else:
@@ -471,10 +479,11 @@ def api_student_dashboard():
         fees_due = 0
     
     # 4. Block Status Check
+    # Block if (Fees are pending) OR (Admin manually blocked them)
     admin_blocked = current_user.hall_ticket_blocked or False
     is_blocked_status = (fees_due > 0) or admin_blocked
 
-    # 5. Return Data
+    # 5. Return Data to Student Portal
     return jsonify({
         "name": current_user.name,
         "email": current_user.email,
