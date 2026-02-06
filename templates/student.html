@@ -384,10 +384,9 @@
             
             // UPDATED: Now loading Fees, Attendance, AND Assignments
             await Promise.allSettled([
-                fetchFees(), 
-                fetchAttendanceSummary(),
-                loadStudentAssignments(), // <--- We added this new function call
-		checkHallTicketStatus()
+                fetchDashboard(),
+                loadStudentAssignments() // <--- We added this new function call
+		
             ]);
         } catch (error) {
             console.error("Initialization error:", error);
@@ -597,51 +596,71 @@ async function loadStudentAssignments() {
 
 
 // --- REPLACE YOUR EXISTING fetchFees FUNCTION WITH THIS ---
-   async function fetchFees() {
+  // ✅ NEW: Fetch EVERYTHING from the fixed Dashboard API
+    async function fetchDashboard() {
         try {
-            // FIX: Changed URL to /api/my/fees
-            const res = await fetch(`${API_BASE_URL}/my/fees`, { credentials: 'include' });
+            const res = await fetch(`${API_BASE_URL}/student/dashboard`, { credentials: 'include' });
             if (!res.ok) return;
             const data = await res.json();
+
+            // 1. Update Profile Info
+            const nameEl = document.getElementById('dash-name');
+            const emailEl = document.getElementById('dash-email');
+            const initialEl = document.getElementById('dash-profile-initial');
             
-            // ... (Rest of the function is fine, just the URL needed fixing) ...
-            const balance = data.balance || 0;
-            const dashFees = document.getElementById('dash-fees');
-            if(dashFees) dashFees.textContent = `₹${balance}`;
+            if(nameEl) nameEl.textContent = data.name.split(' ')[0]; // Show first name
+            if(emailEl) emailEl.textContent = data.email;
+            if(initialEl) initialEl.textContent = data.initial;
+
+            // 2. Update Attendance (From Server Calculation)
+            const attEl = document.getElementById('dash-attendance');
+            if(attEl) attEl.textContent = `${data.attendance_percent}%`;
+
+            // 3. Update Fees (From Server Calculation - No Negatives!)
+            const feeEl = document.getElementById('dash-fees');
+            const profileFee = document.getElementById('profile-view-balance');
             
-            const profileBal = document.getElementById('profile-view-balance');
-            if(profileBal) {
-                profileBal.textContent = `₹${balance}`;
-                profileBal.className = balance > 0 ? "text-4xl font-bold text-red-500" : "text-4xl font-bold text-green-600";
+            // Format fee with ₹ symbol
+            const formattedFee = `₹${data.fees_due}`;
+            
+            if(feeEl) feeEl.textContent = formattedFee;
+            if(profileFee) {
+                profileFee.textContent = formattedFee;
+                // Green if 0, Red if pending
+                profileFee.className = data.fees_due > 0 ? "text-4xl font-bold text-red-500" : "text-4xl font-bold text-green-600";
             }
 
+            // 4. Update Fee Alert Box
             const alertBox = document.getElementById('fee-alert');
             const alertText = document.getElementById('fee-alert-text');
             if(alertBox && alertText) {
-                if (balance > 0) {
+                if (data.fees_due > 0) {
                     alertBox.classList.remove('hidden');
-                    alertText.innerHTML = `You have a total pending balance of <span class="font-bold">₹${balance}</span>.`;
+                    alertText.innerHTML = `You have a total pending balance of <span class="font-bold">${formattedFee}</span>.`;
                 } else {
                     alertBox.classList.add('hidden');
                 }
             }
-        } catch (e) { console.error('Fee fetch error', e); }
-    }
 
-    async function fetchAttendanceSummary() {
-        try {
-            const res = await fetch(`${API_BASE_URL}/student/attendance`, { credentials: 'include' });
-            if(res.ok) {
-                const data = await res.json();
-                if (Array.isArray(data)) {
-                    const total = data.length;
-                    const present = data.filter(r => r.status === 'Present' || r.status === 'Checked-In').length;
-                    const percent = total > 0 ? Math.round((present / total) * 100) : 0;
-                    const dashAtt = document.getElementById('dash-attendance');
-                    if(dashAtt) dashAtt.textContent = `${percent}%`;
+            // 5. Hall Ticket Blocking Logic
+            const htAction = document.getElementById('ht-action-area');
+            const htMsg = document.getElementById('ht-locked-msg');
+
+            if (htAction && htMsg) {
+                if (data.is_blocked) {
+                    // BLOCKED: Hide Button, Show Lock
+                    htAction.classList.add('hidden');
+                    htMsg.classList.remove('hidden');
+                } else {
+                    // ACTIVE: Show Button, Hide Lock
+                    htAction.classList.remove('hidden');
+                    htMsg.classList.add('hidden');
                 }
             }
-        } catch (e) { console.error('Att summary error', e); }
+
+        } catch (e) {
+            console.error("Dashboard Sync Error:", e);
+        }
     }
 
     async function fetchAttendance() {
