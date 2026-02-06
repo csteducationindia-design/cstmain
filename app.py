@@ -169,7 +169,7 @@ class User(db.Model, UserMixin):
     pincode = db.Column(db.String(20), nullable=True)
     fcm_token = db.Column(db.String(500), nullable=True)
     session_id = db.Column(db.Integer, db.ForeignKey('academic_session.id'), nullable=True)
-    
+    hall_ticket_blocked = db.Column(db.Boolean, default=False)
     courses_enrolled = db.relationship('Course', secondary=student_course_association, lazy='subquery', backref=db.backref('students', lazy=True))
 
     def to_dict(self):
