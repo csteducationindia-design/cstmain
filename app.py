@@ -20,7 +20,8 @@ import logging
 import pandas as pd
 from io import BytesIO
 import threading
-import razorpay 
+import razorpay # NEW
+# REMOVED: from PIL import Image (This was causing the crash)
 
 # =========================================================
 # CONFIGURATION & SETUP
@@ -47,7 +48,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 # --- RAZORPAY CONFIGURATION ---
-# Replace these with your actual keys
+# Replace these with your actual keys from https://dashboard.razorpay.com/app/keys
 RAZORPAY_KEY_ID = "rzp_test_YOUR_KEY_HERE" 
 RAZORPAY_KEY_SECRET = "YOUR_SECRET_HERE"
 
@@ -71,6 +72,7 @@ def load_user(user_id):
         return db.session.get(User, int(user_id))
     except:
         return None
+
 
 # =========================================================
 # FIREBASE & NOTIFICATION LOGIC
@@ -168,9 +170,6 @@ class User(db.Model, UserMixin):
     fcm_token = db.Column(db.String(500), nullable=True)
     session_id = db.Column(db.Integer, db.ForeignKey('academic_session.id'), nullable=True)
     
-    # ✅ HALL TICKET BLOCKING COLUMN
-    hall_ticket_blocked = db.Column(db.Boolean, default=False)
-    
     courses_enrolled = db.relationship('Course', secondary=student_course_association, lazy='subquery', backref=db.backref('students', lazy=True))
 
     def to_dict(self):
@@ -189,7 +188,6 @@ class User(db.Model, UserMixin):
             "session_id": self.session_id, 
             "session_name": sess_name,
             "admission_number": self.admission_number,
-            "hall_ticket_blocked": self.hall_ticket_blocked, # ✅ Added to dict
             "course_ids": [c.id for c in self.courses_enrolled] if self.role == 'student' else []
         }
 
@@ -287,7 +285,9 @@ class AssignmentTask(db.Model):
     teacher_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     due_date = db.Column(db.Date, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
     course = db.relationship('Course', backref=db.backref('assignments', lazy=True))
+
     def to_dict(self):
         return {
             "id": self.id,
@@ -297,22 +297,25 @@ class AssignmentTask(db.Model):
             "due_date": self.due_date.strftime('%Y-%m-%d'),
             "created_at": self.created_at.strftime('%Y-%m-%d')
         }
-
+# --- DATABASE MODEL FOR DOUBTS ---
 class Doubt(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     student_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     teacher_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     question = db.Column(db.Text, nullable=False)
-    answer = db.Column(db.Text, nullable=True) 
+    answer = db.Column(db.Text, nullable=True) # Null means not answered yet
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
     student = db.relationship('User', foreign_keys=[student_id], backref='doubts_asked')
     teacher = db.relationship('User', foreign_keys=[teacher_id], backref='doubts_received')
 
 # =========================================================
 # HELPER FUNCTIONS
 # =========================================================
-
+# =========================================================
 # WHATSAPP CONFIGURATION
+# =========================================================
 INSTANCE_ID = "instance159860"
 TOKEN = "m24ozhanmom1ev3c"
 
@@ -338,12 +341,14 @@ def calculate_fee_status(student_id):
         total_due = 0.0
         due_dates = []
 
+        # Calculate Course Fees
         if student.courses_enrolled:
             for course in student.courses_enrolled:
                 for fee_struct in FeeStructure.query.filter_by(course_id=course.id).all():
                     total_due += fee_struct.total_amount
                     if fee_struct.due_date: due_dates.append(fee_struct.due_date)
         
+        # Calculate Session Fees
         if student.session_id:
             for gf in FeeStructure.query.filter(FeeStructure.course_id == None, FeeStructure.academic_session_id == student.session_id).all():
                 total_due += gf.total_amount
@@ -427,104 +432,48 @@ def serve_role_page(role):
 @app.route('/firebase-messaging-sw.js')
 def sw(): return send_from_directory(app.static_folder, 'firebase-messaging-sw.js')
 
-# --- ✅ 1. UPDATED DASHBOARD (Sends Block Status to Frontend) ---
+# --- IN app.py, REPLACE 'api_student_dashboard' WITH THIS FIXED VERSION ---
+
 @app.route('/api/student/dashboard')
 @login_required
 def api_student_dashboard():
-    if current_user.role != 'student': return jsonify({"msg": "Denied"}), 403
+    # 1. Security Check
+    if current_user.role != 'student': 
+        return jsonify({"msg": "Denied"}), 403
     
-    # Calculate Fees
-    try:
-        fee_data = calculate_fee_status(current_user.id) 
-        fees_due = fee_data.get('balance', 0)
-    except:
-        fees_due = 0
-
-    # BLOCKING LOGIC: Block if Admin Blocked OR Fees Pending
-    # We use getattr() to prevent crashes if DB isn't updated yet
-    admin_block = getattr(current_user, 'hall_ticket_blocked', False)
-    is_blocked = admin_block or (fees_due > 0)
-
-    # Calculate Attendance
+    # 2. Calculate Attendance
     att_records = Attendance.query.filter_by(student_id=current_user.id).all()
-    total = len(att_records)
-    present = len([r for r in att_records if r.status in ['Present', 'Checked-In']])
-    att_percent = int((present / total) * 100) if total > 0 else 0
+    total_days = len(att_records)
+    
+    present_days = 0
+    for r in att_records:
+        if r.status in ['Present', 'Checked-In']:
+            present_days += 1
+            
+    # Default to 0% if no records exist
+    if total_days > 0:
+        att_percent = int((present_days / total_days) * 100)
+    else:
+        att_percent = 0 
 
+    # 3. Calculate Fees (Using the Helper Function to avoid crashes)
+    try:
+        fee_data = calculate_fee_status(current_user.id)
+        fees_due = fee_data.get('balance', 0)
+    except Exception as e:
+        print(f"Fee Calc Error: {e}")
+        fees_due = 0
+    
+    # 4. Return Data
     return jsonify({
         "name": current_user.name,
         "email": current_user.email,
         "admission_number": current_user.admission_number,
-        "attendance_percent": att_percent,
-        "fees_due": fees_due,
-        "initial": current_user.name[0].upper() if current_user.name else 'U',
-        "is_blocked": is_blocked  # <--- CRITICAL
+        "attendance_percent": att_percent, 
+        "fees_due": fees_due, 
+        "initial": current_user.name[0].upper() if current_user.name else 'U'
     })
-
-# --- ✅ 2. ADMIN TOGGLE ROUTE ---
-@app.route('/api/admin/toggle_hall_ticket_block', methods=['POST'])
-@login_required
-def toggle_hall_ticket_block():
-    if current_user.role != 'admin': return jsonify({'msg': 'Denied'}), 403
-    data = request.json
-    student = db.session.get(User, data['student_id'])
-    if student:
-        student.hall_ticket_blocked = not student.hall_ticket_blocked
-        db.session.commit()
-        return jsonify({'msg': 'Updated', 'new_status': student.hall_ticket_blocked})
-    return jsonify({'msg': 'Student not found'}), 404
-
-# --- ✅ 3. DATABASE FIX ROUTE ---
-@app.route('/fix_db_hall_ticket')
-def fix_db_hall_ticket():
-    with app.app_context():
-        from sqlalchemy import text
-        with db.engine.connect() as con:
-            try:
-                con.execute(text('ALTER TABLE user ADD COLUMN hall_ticket_blocked BOOLEAN DEFAULT 0'))
-                con.commit()
-                return "✅ Database Updated Successfully! You can now use the blocking feature."
-            except Exception as e:
-                return f"⚠️ Database Check: {e} (If it says 'duplicate column', you are safe!)"
-
-# --- ✅ 4. HALL TICKET ROUTE (WITH BLOCK CHECK) ---
-@app.route('/student/my_hallticket')
-@login_required
-def my_hallticket():
-    if current_user.role != 'student': return "Denied", 403
-    
-    # Check block status before serving
-    fee_data = calculate_fee_status(current_user.id)
-    fees_due = fee_data.get('balance', 0)
-    admin_block = getattr(current_user, 'hall_ticket_blocked', False)
-    
-    if admin_block or fees_due > 0:
-        return "<h1>Hall Ticket Locked</h1><p>Please clear pending fees.</p>", 403
-
-    student = current_user
-    session_name = "Not Assigned"
-    if student.session_id:
-        sess = db.session.get(AcademicSession, student.session_id)
-        if sess: session_name = sess.name
-
-    exam = None
-    if student.session_id:
-        exam = Exam.query.filter_by(
-            session_id=student.session_id
-        ).order_by(Exam.id.desc()).first()
-
-    courses = ", ".join([c.name for c in student.courses_enrolled]) or "N/A"
-    photo = student.profile_photo_url if student.profile_photo_url else "https://placehold.co/150"
-
-    return render_template(
-        "hallticket.html",
-        student=student,
-        session_name=session_name,
-        courses=courses,
-        photo=photo,
-        exam=exam
-    )
-
+# --- ADD THIS NEW ROUTE TO app.py ---
 @app.route('/api/payments/<int:id>', methods=['DELETE'])
 @login_required
 def delete_payment(id):
@@ -733,11 +682,14 @@ def save_exam():
     db.session.commit()
     return jsonify({"msg": "Exam saved"})
 
+# --- IN app.py, REPLACE THE 'api_users' ROUTE WITH THIS IMPROVED VERSION ---
+
 @app.route('/api/users', methods=['GET', 'POST', 'PUT'])
 @login_required
 def api_users():
     if current_user.role != 'admin': return jsonify({"msg": "Denied"}), 403
     
+    # --- GET USERS ---
     if request.method == 'GET':
         search = request.args.get('search', '').lower()
         session_id = request.args.get('session_id')
@@ -751,18 +703,22 @@ def api_users():
             
         return jsonify([u.to_dict() for u in q.all()])
 
+    # --- CREATE / UPDATE USER ---
     d = request.form
     
+    # 1. AUTO-GENERATE EMAIL FOR PARENTS IF MISSING
     email = d.get('email', '').strip()
     phone = d.get('phone_number', '').strip()
     role = d.get('role', 'student')
 
     if role == 'parent' and not email and phone:
+        # Auto-generate email so Admin doesn't have to type it
         email = f"{phone}@cst.com"
     
     if not email:
         return jsonify({"msg": "Email or Phone is required"}), 400
 
+    # 2. CREATE NEW USER
     if request.method == 'POST' and not d.get('id'):
         if User.query.filter_by(email=email).first(): 
             return jsonify({"msg": "User with this Email/Phone already exists"}), 400
@@ -775,17 +731,21 @@ def api_users():
         )
         db.session.add(u)
     
+    # 3. UPDATE EXISTING USER
     else: 
         u_id = d.get('id')
         if not u_id: return jsonify({"msg": "Missing ID for update"}), 400
         u = db.session.get(User, int(u_id))
         if not u: return jsonify({"msg": "Not found"}), 404
         
+        # Only update password if provided
         if d.get('password'): 
             u.password = bcrypt.generate_password_hash(d['password']).decode('utf-8')
         
+        # Update email if changed (and valid)
         if email: u.email = email
 
+    # 4. UPDATE COMMON FIELDS
     u.name = d['name']
     u.phone_number = phone
     u.admission_number = d.get('admission_number')
@@ -804,6 +764,7 @@ def api_users():
     if d.get('parent_id') and str(d.get('parent_id')).isdigit():
         u.parent_id = int(d.get('parent_id'))
 
+    # Handle Photo Upload
     if 'profile_photo_file' in request.files:
         file = request.files['profile_photo_file']
         if file and allowed_file(file.filename, ALLOWED_IMAGE_EXTENSIONS):
@@ -812,6 +773,7 @@ def api_users():
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], uid))
             u.profile_photo_url = f"/uploads/{uid}"
 
+    # Handle Course Enrollment
     if u.role == 'student':
         c_ids = request.form.getlist('course_ids')
         if c_ids:
@@ -990,9 +952,11 @@ def manage_fees():
 @app.route('/api/announcements', methods=['GET', 'POST', 'DELETE'])
 @login_required
 def admin_announcements():
+    # Only Admin or Teacher can access
     if current_user.role not in ['admin', 'teacher']: 
         return jsonify({"msg": "Denied"}), 403
     
+    # --- 1. POST NEW ANNOUNCEMENT (WITH ALERTS) ---
     if request.method == 'POST':
         d = request.json
         title = d.get('title')
@@ -1000,6 +964,7 @@ def admin_announcements():
         target_group = d.get('target_group', 'all')
         category = d.get('category', 'General')
 
+        # Save to DB
         a = Announcement(
             title=title, 
             content=content, 
@@ -1010,6 +975,8 @@ def admin_announcements():
         db.session.add(a)
         db.session.commit()
 
+        # --- SEND NOTIFICATIONS ---
+        # 1. Determine Recipients
         query = User.query
         if target_group == 'students':
             query = query.filter_by(role='student')
@@ -1018,14 +985,22 @@ def admin_announcements():
         elif target_group == 'parents':
             query = query.filter_by(role='parent')
         else:
+            # 'all' means everyone except maybe admins
             query = query.filter(User.role.in_(['student', 'teacher', 'parent']))
             
         recipients = query.all()
         
+        # 2. Send Alerts
         count = 0
         for user in recipients:
+            # Send App Push Notification
             if user.fcm_token:
                 send_push_notification(user.id, f"New Announcement: {title}", content[:100])
+            
+            # Optional: Send WhatsApp if critical (e.g., Holiday)
+            # if category == 'Holiday' and user.phone_number:
+            #     send_whatsapp_message(user.phone_number, f"*New Announcement*\n\n*{title}*\n{content}")
+            
             count += 1
         
         return jsonify({
@@ -1033,6 +1008,7 @@ def admin_announcements():
             "data": a.to_dict()
         }), 201
 
+    # --- 2. DELETE ANNOUNCEMENT ---
     if request.method == 'DELETE':
         a = db.session.get(Announcement, int(request.args.get('id')))
         if a: 
@@ -1040,6 +1016,7 @@ def admin_announcements():
             db.session.commit()
         return jsonify({"msg": "Deleted"})
 
+    # --- 3. GET ANNOUNCEMENTS ---
     return jsonify([a.to_dict() for a in Announcement.query.order_by(Announcement.created_at.desc()).all()])
 
 @app.route('/api/parents', methods=['GET'])
@@ -1461,6 +1438,35 @@ def save_attendance():
 @app.route('/api/student/fees', methods=['GET'])
 @login_required
 def s_fees(): return jsonify(calculate_fee_status(current_user.id))
+
+@app.route('/student/my_hallticket')
+@login_required
+def my_hallticket():
+    if current_user.role != 'student': return "Denied", 403
+    
+    student = current_user
+    session_name = "Not Assigned"
+    if student.session_id:
+        sess = db.session.get(AcademicSession, student.session_id)
+        if sess: session_name = sess.name
+
+    exam = None
+    if student.session_id:
+        exam = Exam.query.filter_by(
+            session_id=student.session_id
+        ).order_by(Exam.id.desc()).first()
+
+    courses = ", ".join([c.name for c in student.courses_enrolled]) or "N/A"
+    photo = student.profile_photo_url if student.profile_photo_url else "https://placehold.co/150"
+
+    return render_template(
+        "hallticket.html",
+        student=student,
+        session_name=session_name,
+        courses=courses,
+        photo=photo,
+        exam=exam
+    )
 
 @app.route('/api/reports/download')
 @login_required
