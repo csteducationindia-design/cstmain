@@ -169,8 +169,6 @@ class User(db.Model, UserMixin):
     pincode = db.Column(db.String(20), nullable=True)
     fcm_token = db.Column(db.String(500), nullable=True)
     session_id = db.Column(db.Integer, db.ForeignKey('academic_session.id'), nullable=True)
-    hall_ticket_blocked = db.Column(db.Boolean, default=False)
-   
     
     courses_enrolled = db.relationship('Course', secondary=student_course_association, lazy='subquery', backref=db.backref('students', lazy=True))
 
@@ -436,76 +434,45 @@ def sw(): return send_from_directory(app.static_folder, 'firebase-messaging-sw.j
 
 # --- IN app.py, REPLACE 'api_student_dashboard' WITH THIS FIXED VERSION ---
 
-# 1. UPDATED DASHBOARD (Checks Block Status)
-# ==========================================
-# PASTE AT THE BOTTOM OF app.py
-# ==========================================
-
-# ==========================================
-# PASTE AT THE BOTTOM OF app.py
-# ==========================================
-
-# 1. UPDATED DASHBOARD (Sends Block Status to Frontend)
 @app.route('/api/student/dashboard')
 @login_required
 def api_student_dashboard():
-    if current_user.role != 'student': return jsonify({"msg": "Denied"}), 403
+    # 1. Security Check
+    if current_user.role != 'student': 
+        return jsonify({"msg": "Denied"}), 403
     
-    # Calculate Fees
-    try:
-        fee_data = calculate_fee_status(current_user.id) 
-        fees_due = fee_data.get('balance', 0)
-    except:
-        fees_due = 0
-
-    # BLOCKING LOGIC: Block if Admin Blocked OR Fees Pending
-    # We use getattr() to prevent crashes if DB isn't updated yet
-    admin_block = getattr(current_user, 'hall_ticket_blocked', False)
-    is_blocked = admin_block or (fees_due > 0)
-
-    # Calculate Attendance
+    # 2. Calculate Attendance
     att_records = Attendance.query.filter_by(student_id=current_user.id).all()
-    total = len(att_records)
-    present = len([r for r in att_records if r.status in ['Present', 'Checked-In']])
-    att_percent = int((present / total) * 100) if total > 0 else 0
+    total_days = len(att_records)
+    
+    present_days = 0
+    for r in att_records:
+        if r.status in ['Present', 'Checked-In']:
+            present_days += 1
+            
+    # Default to 0% if no records exist
+    if total_days > 0:
+        att_percent = int((present_days / total_days) * 100)
+    else:
+        att_percent = 0 
 
+    # 3. Calculate Fees (Using the Helper Function to avoid crashes)
+    try:
+        fee_data = calculate_fee_status(current_user.id)
+        fees_due = fee_data.get('balance', 0)
+    except Exception as e:
+        print(f"Fee Calc Error: {e}")
+        fees_due = 0
+    
+    # 4. Return Data
     return jsonify({
         "name": current_user.name,
         "email": current_user.email,
         "admission_number": current_user.admission_number,
-        "attendance_percent": att_percent,
-        "fees_due": fees_due,
-        "initial": current_user.name[0].upper() if current_user.name else 'U',
-        "is_blocked": is_blocked  # <--- CRITICAL
+        "attendance_percent": att_percent, 
+        "fees_due": fees_due, 
+        "initial": current_user.name[0].upper() if current_user.name else 'U'
     })
-
-# 2. ADMIN TOGGLE ROUTE (To Block/Unblock)
-@app.route('/api/admin/toggle_hall_ticket_block', methods=['POST'])
-@login_required
-def toggle_hall_ticket_block():
-    if current_user.role != 'admin': return jsonify({'msg': 'Denied'}), 403
-    data = request.json
-    student = db.session.get(User, data['student_id'])
-    if student:
-        student.hall_ticket_blocked = not student.hall_ticket_blocked
-        db.session.commit()
-        return jsonify({'msg': 'Updated', 'new_status': student.hall_ticket_blocked})
-    return jsonify({'msg': 'Student not found'}), 404
-
-# 3. DATABASE FIX ROUTE (Prevents Server Crash)
-@app.route('/fix_db_hall_ticket')
-def fix_db_hall_ticket():
-    with app.app_context():
-        from sqlalchemy import text
-        with db.engine.connect() as con:
-            try:
-                # This command adds the missing column to your database
-                con.execute(text('ALTER TABLE user ADD COLUMN hall_ticket_blocked BOOLEAN DEFAULT 0'))
-                con.commit()
-                return "✅ Database Updated Successfully! You can now use the feature."
-            except Exception as e:
-                return f"⚠️ Database Check: {e} (If it says 'duplicate column', you are safe!)"
-
 # --- ADD THIS NEW ROUTE TO app.py ---
 @app.route('/api/payments/<int:id>', methods=['DELETE'])
 @login_required
