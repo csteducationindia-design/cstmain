@@ -169,7 +169,7 @@ class User(db.Model, UserMixin):
     pincode = db.Column(db.String(20), nullable=True)
     fcm_token = db.Column(db.String(500), nullable=True)
     session_id = db.Column(db.Integer, db.ForeignKey('academic_session.id'), nullable=True)
-    
+    hall_ticket_blocked = db.Column(db.Boolean, default=False)
     courses_enrolled = db.relationship('Course', secondary=student_course_association, lazy='subquery', backref=db.backref('students', lazy=True))
 
     def to_dict(self):
@@ -473,6 +473,37 @@ def api_student_dashboard():
         "fees_due": fees_due, 
         "initial": current_user.name[0].upper() if current_user.name else 'U'
     })
+# ---------------------------------------------------------
+# ✅ ADD THIS TO APP.PY TO HANDLE THE BLOCK BUTTON
+# ---------------------------------------------------------
+@app.route('/api/admin/toggle_hall_ticket_block', methods=['POST'])
+@login_required
+def toggle_hall_ticket_block():
+    # 1. Security Check: Only Admin or Teacher can block
+    if current_user.role not in ['admin', 'teacher']:
+        return jsonify({'msg': 'Permission Denied'}), 403
+
+    # 2. Get the Student ID from the request
+    data = request.get_json()
+    student_id = data.get('student_id')
+    
+    # 3. Find the Student in the Database
+    student = User.query.get(student_id)
+    if not student:
+        return jsonify({'msg': 'Student not found'}), 404
+
+    # 4. Toggle the Status (True -> False, or False -> True)
+    # logic: if it's currently True, make it False. If None or False, make it True.
+    current_status = True if student.hall_ticket_blocked else False
+    student.hall_ticket_blocked = not current_status
+    
+    # 5. Save to Database
+    db.session.commit()
+
+    # 6. Return Success Message
+    status_text = "BLOCKED" if student.hall_ticket_blocked else "ACTIVE"
+    return jsonify({'msg': f'Success: Hall Ticket is now {status_text}'})
+
 # --- ADD THIS NEW ROUTE TO app.py ---
 @app.route('/api/payments/<int:id>', methods=['DELETE'])
 @login_required
@@ -701,7 +732,16 @@ def api_users():
         if search: 
             q = q.filter(or_(User.name.ilike(f'%{search}%'), User.email.ilike(f'%{search}%'), User.phone_number.ilike(f'%{search}%')))
             
-        return jsonify([u.to_dict() for u in q.all()])
+        
+        # ✅ REPLACEMENT CODE: Inject 'hall_ticket_blocked' status
+        users_list = []
+        for u in q.all():
+            user_data = u.to_dict()
+            user_data['hall_ticket_blocked'] = u.hall_ticket_blocked  # Explicitly add the status
+            users_list.append(user_data)
+            
+        return jsonify(users_list)
+        # ✅ REPLACEMENT CODE END
 
     # --- CREATE / UPDATE USER ---
     d = request.form
