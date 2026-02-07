@@ -277,6 +277,18 @@ class Exam(db.Model):
     exam_time = db.Column(db.String(20), nullable=False)
     instructions = db.Column(db.Text, nullable=True)
 
+
+# ✅ NEW MODEL: Stores Exam Results
+class ExamResult(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    exam_title = db.Column(db.String(150), nullable=False) # e.g. "Java Core - Mid Term"
+    theory = db.Column(db.Integer, default=0)
+    practical = db.Column(db.Integer, default=0)
+    total_obtained = db.Column(db.Integer, default=0) 
+    max_marks = db.Column(db.Integer, default=100) 
+    date_added = db.Column(db.DateTime, default=datetime.utcnow)
+
 class AssignmentTask(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(150), nullable=False)
@@ -2183,7 +2195,161 @@ def parent_get_child_details():
     except Exception as e:
         print(f"CRITICAL PARENT ERROR: {e}")
         return jsonify({"attendance": [], "fees_due": 0}), 200
+# --- 1. TEACHER: Add Exam Result ---
+@app.route('/api/results', methods=['POST', 'GET'])
+@login_required
+def manage_results():
+    # Security: Only Admin/Teacher
+    if current_user.role not in ['admin', 'teacher']:
+        return jsonify({"msg": "Denied"}), 403
 
+    # SAVE NEW RESULT
+    if request.method == 'POST':
+        data = request.get_json()
+        student_id = data.get('student_id')
+        title = data.get('exam_title')
+        theory = int(data.get('theory', 0))
+        practical = int(data.get('practical', 0))
+        max_marks = int(data.get('max_marks', 100))
+
+        if not student_id or not title:
+            return jsonify({"msg": "Student and Exam Title required"}), 400
+
+        result = ExamResult(
+            student_id=student_id,
+            exam_title=title,
+            theory=theory,
+            practical=practical,
+            total_obtained=theory + practical,
+            max_marks=max_marks
+        )
+        db.session.add(result)
+        db.session.commit()
+        return jsonify({"msg": "Result Published Successfully!"})
+
+    # GET RECENT RESULTS (For Admin Table)
+    if request.method == 'GET':
+        results = db.session.query(ExamResult, User).join(User, ExamResult.student_id == User.id).order_by(ExamResult.date_added.desc()).limit(20).all()
+        return jsonify([{
+            "id": r.ExamResult.id,
+            "student_name": r.User.name,
+            "exam_title": r.ExamResult.exam_title,
+            "theory": r.ExamResult.theory,
+            "practical": r.ExamResult.practical,
+            "total": r.ExamResult.total_obtained,
+            "max": r.ExamResult.max_marks
+        } for r in results])
+
+# --- 2. DELETE RESULT ---
+@app.route('/api/results/<int:id>', methods=['DELETE'])
+@login_required
+def delete_result(id):
+    if current_user.role != 'admin': return jsonify({"msg": "Denied"}), 403
+    r = ExamResult.query.get(id)
+    if r:
+        db.session.delete(r)
+        db.session.commit()
+    return jsonify({"msg": "Deleted"})
+
+# --- 3. STUDENT: View Grades ---
+@app.route('/student/grades')
+@login_required
+def get_student_grades():
+    if current_user.role != 'student': return jsonify({"msg": "Denied"}), 403
+    
+    results = ExamResult.query.filter_by(student_id=current_user.id).order_by(ExamResult.date_added.desc()).all()
+    
+    # Format exactly as student.html expects
+    return jsonify([{
+        "course_name": r.exam_title.split('-')[0], # Extracts "Java" from "Java - Final"
+        "assessment_name": r.exam_title,
+        "marks_obtained": r.total_obtained,
+        "total_marks": r.max_marks,
+        "theory": r.theory,
+        "practical": r.practical
+    } for r in results])
+# --- 1. TEACHER: Get List of Students (For Dropdown) ---
+@app.route('/api/teacher/students', methods=['GET'])
+@login_required
+def get_teacher_students():
+    if current_user.role not in ['admin', 'teacher']:
+        return jsonify({"msg": "Denied"}), 403
+    
+    # Fetch all students so teacher can select one
+    students = User.query.filter_by(role='student').all()
+    return jsonify([{'id': s.id, 'name': s.name, 'admission_number': s.admission_number} for s in students])
+
+# --- 2. TEACHER: Add/View Exam Results ---
+@app.route('/api/results', methods=['POST', 'GET'])
+@login_required
+def manage_results():
+    if current_user.role not in ['admin', 'teacher']:
+        return jsonify({"msg": "Denied"}), 403
+
+    # SAVE NEW RESULT
+    if request.method == 'POST':
+        data = request.get_json()
+        student_id = data.get('student_id')
+        title = data.get('exam_title')
+        theory = int(data.get('theory', 0))
+        practical = int(data.get('practical', 0))
+        max_marks = int(data.get('max_marks', 100))
+
+        if not student_id or not title:
+            return jsonify({"msg": "Student and Exam Title required"}), 400
+
+        result = ExamResult(
+            student_id=student_id,
+            exam_title=title,
+            theory=theory,
+            practical=practical,
+            total_obtained=theory + practical,
+            max_marks=max_marks
+        )
+        db.session.add(result)
+        db.session.commit()
+        return jsonify({"msg": "Result Published Successfully!"})
+
+    # GET RECENT RESULTS
+    if request.method == 'GET':
+        results = db.session.query(ExamResult, User).join(User, ExamResult.student_id == User.id).order_by(ExamResult.date_added.desc()).limit(20).all()
+        return jsonify([{
+            "id": r.ExamResult.id,
+            "student_name": r.User.name,
+            "exam_title": r.ExamResult.exam_title,
+            "theory": r.ExamResult.theory,
+            "practical": r.ExamResult.practical,
+            "total": r.ExamResult.total_obtained,
+            "max": r.ExamResult.max_marks
+        } for r in results])
+
+# --- 3. DELETE RESULT ---
+@app.route('/api/results/<int:id>', methods=['DELETE'])
+@login_required
+def delete_result(id):
+    if current_user.role not in ['admin', 'teacher']: return jsonify({"msg": "Denied"}), 403
+    r = ExamResult.query.get(id)
+    if r:
+        db.session.delete(r)
+        db.session.commit()
+    return jsonify({"msg": "Deleted"})
+
+# --- 4. STUDENT: View Grades ---
+@app.route('/student/grades')
+@login_required
+def get_student_grades():
+    if current_user.role != 'student': return jsonify({"msg": "Denied"}), 403
+    
+    results = ExamResult.query.filter_by(student_id=current_user.id).order_by(ExamResult.date_added.desc()).all()
+    
+    return jsonify([{
+        "course_name": r.exam_title.split('-')[0], 
+        "assessment_name": r.exam_title,
+        "marks_obtained": r.total_obtained,
+        "total_marks": r.max_marks,
+        "theory": r.theory,
+        "practical": r.practical
+    } for r in results])
 if __name__ == '__main__':
     initialize_database()
     app.run(debug=True, host='0.0.0.0', port=5000)
