@@ -6,11 +6,10 @@
     <title>Teacher Portal - CST Institute</title>
     
     <link rel="manifest" href="/static/manifest.json">
-
     <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
     <link as="style" href="https://fonts.googleapis.com/css2?display=swap&family=Inter:wght@400;500;600;700;900" onload="this.rel='stylesheet'" rel="stylesheet"/>
     
-<script src="{{ url_for('static', filename='tailwind.js') }}"></script>
+    <script src="{{ url_for('static', filename='tailwind.js') }}"></script>
     <script>
         tailwind.config = {
             darkMode: "class",
@@ -33,55 +32,21 @@
     </script>
     
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
-    
     <style>
-        /* Custom Scrollbar for Sidebar */
-        .scrollbar-thin::-webkit-scrollbar {
-            width: 6px;
-        }
-        .scrollbar-thin::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .scrollbar-thin::-webkit-scrollbar-thumb {
-            background-color: #cbd5e1;
-            border-radius: 20px;
-        }
-        .dark .scrollbar-thin::-webkit-scrollbar-thumb {
-            background-color: #475569;
-        }
-        
-        /* Animation Utilities */
-        .animate-fade-in {
-            animation: fadeIn 0.3s ease-in-out;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Table Responsive Helpers */
-        .table-container {
-            overflow-x: auto;
-            width: 100%;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            white-space: nowrap;
-        }
+        .scrollbar-thin::-webkit-scrollbar { width: 6px; }
+        .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
+        .dark .scrollbar-thin::-webkit-scrollbar-thumb { background-color: #475569; }
+        .animate-fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="bg-background-light dark:bg-background-dark font-display text-slate-800 dark:text-slate-200 antialiased h-screen overflow-hidden flex">
 
-    <aside class="w-64 bg-surface-light dark:bg-surface-dark border-r border-slate-200 dark:border-slate-800 flex flex-col shadow-xl z-20 transition-all duration-300">
-        
+    <aside class="w-64 bg-surface-light dark:bg-surface-dark border-r border-slate-200 dark:border-slate-800 flex flex-col shadow-xl z-20">
         <div class="p-6 border-b border-slate-100 dark:border-slate-700">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-blue-500/30">
-                    T
-                </div>
+                <div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg">T</div>
                 <div>
                     <h1 class="text-lg font-bold text-slate-900 dark:text-white leading-tight">Teacher Portal</h1>
                     <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">CST Institute</p>
@@ -90,71 +55,57 @@
         </div>
 
         <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto scrollbar-thin">
-            
             <a href="#dashboard" class="nav-link group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-primary/5 dark:hover:bg-primary/10">
-                <span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">dashboard</span>
-                <span class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-primary dark:group-hover:text-primary-400">Dashboard</span>
+                <span class="material-symbols-outlined text-slate-400 group-hover:text-primary">dashboard</span>
+                <span class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-primary">Dashboard</span>
             </a>
-            <a href="#announcements" class="nav-link group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-primary/5 dark:hover:bg-primary/10">
-    <span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">campaign</span>
-    <span class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-primary">Announcements</span>
-</a>
-            <a href="#courses" class="nav-link group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-primary/5 dark:hover:bg-primary/10">
-                <span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">book</span>
-                <span class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-primary dark:group-hover:text-primary-400">My Courses</span>
+            <a href="#announcements" class="nav-link group flex items-center gap-3 px-4 py-3 rounded-xl transition-all hover:bg-primary/5">
+                <span class="material-symbols-outlined text-slate-400 group-hover:text-primary">campaign</span>
+                <span class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-primary">Announcements</span>
+            </a>
+            <a href="#courses" class="nav-link group flex items-center gap-3 px-4 py-3 rounded-xl transition-all hover:bg-primary/5">
+                <span class="material-symbols-outlined text-slate-400 group-hover:text-primary">book</span>
+                <span class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-primary">My Courses</span>
             </a>
             
             <div class="pt-4 pb-1 pl-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Academics</div>
 
-<a href="#results" onclick="showSection('results'); loadResultData()" class="nav-link group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-primary/5 dark:hover:bg-primary/10">
-                <span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">grade</span>
-                <span class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-primary dark:group-hover:text-primary-400">Exam Results</span>
+            <a href="#results" class="nav-link group flex items-center gap-3 px-4 py-3 rounded-xl transition-all hover:bg-primary/5">
+                <span class="material-symbols-outlined text-slate-400 group-hover:text-primary">grade</span>
+                <span class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-primary">Exam Results</span>
+            </a>
+            <a href="#attendance" class="nav-link group flex items-center gap-3 px-4 py-3 rounded-xl transition-all hover:bg-primary/5">
+                <span class="material-symbols-outlined text-slate-400 group-hover:text-primary">fact_check</span>
+                <span class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-primary">Mark Attendance</span>
+            </a>
+            <a href="#syllabus" class="nav-link group flex items-center gap-3 px-4 py-3 rounded-xl transition-all hover:bg-primary/5">
+                <span class="material-symbols-outlined text-slate-400 group-hover:text-primary">menu_book</span>
+                <span class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-primary">Syllabus Tracker</span>
+            </a>
+            <a href="#assignments" class="nav-link group flex items-center gap-3 px-4 py-3 rounded-xl transition-all hover:bg-primary/5">
+                <span class="material-symbols-outlined text-slate-400 group-hover:text-primary">assignment</span>
+                <span class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-primary">Assignments</span>
             </a>
 
-            <a href="#attendance" class="nav-link group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-primary/5 dark:hover:bg-primary/10">
-                <span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">fact_check</span>
-                <span class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-primary dark:group-hover:text-primary-400">Mark Attendance</span>
-            </a>
+            <div class="pt-4 pb-1 pl-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Resources</div>
 
-            <a href="#syllabus" class="nav-link group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-primary/5 dark:hover:bg-primary/10">
-                <span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">menu_book</span>
-                <span class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-primary dark:group-hover:text-primary-400">Syllabus Tracker</span>
+            <a href="#notes" class="nav-link group flex items-center gap-3 px-4 py-3 rounded-xl transition-all hover:bg-primary/5">
+                <span class="material-symbols-outlined text-slate-400 group-hover:text-primary">upload_file</span>
+                <span class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-primary">Share Notes</span>
             </a>
-
-            <a href="#assignments" class="nav-link group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-primary/5 dark:hover:bg-primary/10">
-                <span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">assignment</span>
-                <span class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-primary dark:group-hover:text-primary-400">Assignments</span>
+            <a href="#doubts" class="nav-link group flex items-center gap-3 px-4 py-3 rounded-xl transition-all hover:bg-primary/5">
+                <span class="material-symbols-outlined text-slate-400 group-hover:text-primary">help</span>
+                <span class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-primary">Student Doubts</span>
             </a>
-            
-            <div class="pt-4 pb-1 pl-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Resources & Reports</div>
-
-            <a href="#notes" class="nav-link group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-primary/5 dark:hover:bg-primary/10">
-                <span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">upload_file</span>
-                <span class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-primary dark:group-hover:text-primary-400">Share Notes</span>
+            <a href="#reports" class="nav-link group flex items-center gap-3 px-4 py-3 rounded-xl transition-all hover:bg-primary/5">
+                <span class="material-symbols-outlined text-slate-400 group-hover:text-primary">analytics</span>
+                <span class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-primary">Reports</span>
             </a>
-            <a href="#doubts" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-white/10 hover:text-white transition-all group">
-    <span class="material-symbols-outlined group-hover:scale-110 transition-transform">help</span>
-    <span class="font-medium">Student Doubts</span>
-</a>
-<a href="#profile" class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-white/10 hover:text-white transition-all group">
-    <span class="material-symbols-outlined group-hover:scale-110 transition-transform">account_circle</span>
-    <span class="font-medium">My Profile</span>
-</a>
-            <a href="#reports" class="nav-link group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-primary/5 dark:hover:bg-primary/10">
-                <span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">analytics</span>
-                <span class="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-primary dark:group-hover:text-primary-400">Student Reports</span>
-            </a>
-
-            <button id="install-app-btn" class="hidden w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-green-50 text-green-700 hover:bg-green-100 transition-colors mt-6 border border-green-200 shadow-sm">
-                <span class="material-symbols-outlined">download</span>
-                <span class="text-sm font-bold">Install App</span>
-            </button>
         </nav>
 
         <div class="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
-            <button id="logout-btn" class="flex items-center justify-center gap-2 w-full bg-red-50 text-red-600 hover:bg-red-100 font-bold py-3 px-4 rounded-xl text-sm transition duration-150 border border-red-100">
-                <span class="material-symbols-outlined text-lg">logout</span>
-                Logout
+            <button id="logout-btn" class="flex items-center justify-center gap-2 w-full bg-red-50 text-red-600 hover:bg-red-100 font-bold py-3 px-4 rounded-xl text-sm transition border border-red-100">
+                <span class="material-symbols-outlined text-lg">logout</span> Logout
             </button>
         </div>
     </aside>
@@ -165,844 +116,475 @@
             <header class="flex justify-between items-end border-b border-slate-200 dark:border-slate-700 pb-6">
                 <div>
                     <h1 class="text-3xl font-bold text-slate-900 dark:text-white tracking-tight" id="page-title">Dashboard</h1>
-                    <p class="text-slate-500 dark:text-slate-400 mt-2 text-sm font-medium" id="welcome-message">Welcome back, Teacher.</p>
-                </div>
-                <div class="hidden md:flex flex-col items-end">
-                    <span class="px-4 py-1.5 bg-blue-100 text-blue-700 text-xs font-bold uppercase tracking-wider rounded-full dark:bg-blue-900 dark:text-blue-200 mb-2">
-                        Instructor Account
-                    </span>
-                    <p class="text-xs text-slate-400" id="current-date-display">...</p>
+                    <p class="text-slate-500 dark:text-slate-400 mt-2 text-sm font-medium" id="welcome-message">Welcome back.</p>
                 </div>
             </header>
 
             <div id="content-dashboard" class="content-section animate-fade-in">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm p-6 border border-slate-100 dark:border-slate-700 relative overflow-hidden group hover:shadow-md transition-shadow">
-                        <div class="absolute right-0 top-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
-                        <div class="flex items-center gap-4 relative z-10">
-                            <div class="p-4 bg-blue-100 text-blue-600 rounded-2xl dark:bg-blue-900/30 dark:text-blue-400 shadow-sm">
-                                <span class="material-symbols-outlined text-3xl">book</span>
-                            </div>
-                            <div>
-                                <p class="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">My Courses</p>
-                                <p class="text-3xl font-bold text-slate-900 dark:text-white mt-1" id="total-my-courses">0</p>
-                            </div>
-                        </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm p-6 border border-slate-100 flex items-center gap-4">
+                        <div class="p-4 bg-blue-100 text-blue-600 rounded-2xl"><span class="material-symbols-outlined text-3xl">book</span></div>
+                        <div><p class="text-sm text-slate-500 uppercase">My Courses</p><p class="text-3xl font-bold" id="total-my-courses">0</p></div>
                     </div>
-
-                    <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm p-6 border border-slate-100 dark:border-slate-700 relative overflow-hidden group hover:shadow-md transition-shadow">
-                        <div class="absolute right-0 top-0 w-24 h-24 bg-emerald-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
-                        <div class="flex items-center gap-4 relative z-10">
-                            <div class="p-4 bg-emerald-100 text-emerald-600 rounded-2xl dark:bg-emerald-900/30 dark:text-emerald-400 shadow-sm">
-                                <span class="material-symbols-outlined text-3xl">groups</span>
-                            </div>
-                            <div>
-                                <p class="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Total Students</p>
-                                <p class="text-3xl font-bold text-slate-900 dark:text-white mt-1" id="total-my-students">0</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm p-6 border border-slate-100 dark:border-slate-700 relative overflow-hidden group hover:shadow-md transition-shadow">
-                        <div class="absolute right-0 top-0 w-24 h-24 bg-purple-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
-                        <div class="flex items-center gap-4 relative z-10">
-                            <div class="p-4 bg-purple-100 text-purple-600 rounded-2xl dark:bg-purple-900/30 dark:text-purple-400 shadow-sm">
-                                <span class="material-symbols-outlined text-3xl">description</span>
-                            </div>
-                            <div>
-                                <p class="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Shared Notes</p>
-                                <p class="text-3xl font-bold text-slate-900 dark:text-white mt-1" id="total-shared-notes">0</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
-                    <div class="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
-                        <h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
-                            <span class="material-symbols-outlined text-primary">calendar_month</span>
-                            My Weekly Timetable
-                        </h3>
-                        <span class="text-xs text-slate-400 uppercase font-bold tracking-wider">Schedule</span>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                            <thead class="bg-slate-50 dark:bg-slate-800">
-                                <tr>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Day</th>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">10:00 AM - 12:00 PM</th>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">02:00 PM - 04:00 PM</th>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Lab Session</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white dark:bg-surface-dark divide-y divide-slate-200 dark:divide-slate-700 text-sm">
-                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition"><td class="px-6 py-4 font-bold text-slate-700 dark:text-slate-300">Monday</td><td class="px-6 py-4"><span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-bold">Java Programming</span></td><td class="px-6 py-4"><span class="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-bold">C++ Basics</span></td><td class="px-6 py-4 text-slate-400">-</td></tr>
-                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition"><td class="px-6 py-4 font-bold text-slate-700 dark:text-slate-300">Tuesday</td><td class="px-6 py-4"><span class="px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs font-bold">Python Advanced</span></td><td class="px-6 py-4"><span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-bold">Java Programming</span></td><td class="px-6 py-4 text-slate-400">-</td></tr>
-                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition"><td class="px-6 py-4 font-bold text-slate-700 dark:text-slate-300">Wednesday</td><td class="px-6 py-4"><span class="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-bold">C++ Basics</span></td><td class="px-6 py-4"><span class="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-bold">Tally Prime</span></td><td class="px-6 py-4 text-slate-400">-</td></tr>
-                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition"><td class="px-6 py-4 font-bold text-slate-700 dark:text-slate-300">Thursday</td><td class="px-6 py-4"><span class="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-bold">Tally Prime</span></td><td class="px-6 py-4"><span class="px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs font-bold">Python Advanced</span></td><td class="px-6 py-4 text-slate-400">-</td></tr>
-                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition"><td class="px-6 py-4 font-bold text-slate-700 dark:text-slate-300">Friday</td><td class="px-6 py-4 text-slate-400">Free</td><td class="px-6 py-4 text-slate-400">Free</td><td class="px-6 py-4"><span class="px-2 py-1 bg-slate-100 text-slate-700 rounded text-xs font-bold">Practical Lab</span></td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-<div id="content-results" class="content-section hidden animate-fade-in">
-            <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6 mb-6">
-                <div class="border-b border-slate-100 dark:border-slate-700 pb-4 mb-6">
-                    <h2 class="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                        <span class="material-symbols-outlined text-primary">assignment_turned_in</span> 
-                        Enter Student Marks
-                    </h2>
-                </div>
-
-                <form id="result-form" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
-            <div class="md:col-span-2">
-                <label class="block text-sm font-bold text-slate-600 dark:text-slate-400 mb-2">Select Batch / Session</label>
-                <select id="result-session-filter" onchange="filterStudentsByBatch()" class="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary outline-none shadow-sm">
-                    <option value="all">Loading Batches...</option>
-                </select>
-            </div>
-
-            <div class="md:col-span-2">
-                <label class="block text-sm font-bold text-slate-600 dark:text-slate-400 mb-2">Select Student</label>
-                <select id="result-student" name="student_id" class="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary outline-none" required>
-                    <option value="">-- First Select a Batch --</option>
-                </select>
-            </div>
-
-            <div>
-                <label class="block text-sm font-bold text-slate-600 dark:text-slate-400 mb-2">Exam Title</label>
-                <input name="exam_title" placeholder="e.g. Tally Final Exam" class="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary outline-none" required>
-            </div>
-            
-            <div>
-                <label class="block text-sm font-bold text-slate-600 dark:text-slate-400 mb-2">Total Max Marks</label>
-                <input name="max_marks" type="number" value="200" class="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary outline-none font-bold" required>
-            </div>
-
-            <div>
-                <label class="block text-sm font-bold text-slate-600 dark:text-slate-400 mb-2">Theory Marks</label>
-                <input name="theory" type="number" placeholder="Obtained" class="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary outline-none" required>
-            </div>
-            <div>
-                <label class="block text-sm font-bold text-slate-600 dark:text-slate-400 mb-2">Practical Marks</label>
-                <input name="practical" type="number" placeholder="Obtained" class="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary outline-none" required>
-            </div>
-
-            <div class="md:col-span-2">
-                <button type="submit" class="w-full bg-primary hover:bg-primary-hover text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-500/30 transition-all flex justify-center items-center gap-2">
-                    <span class="material-symbols-outlined">save</span> Publish Result
-                </button>
-            </div>
-        </form>
-            </div>
-
-            <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
-                <div class="p-6 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
-                    <h3 class="font-bold text-slate-800 dark:text-white">Recently Published Results</h3>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm text-slate-600 dark:text-slate-300">
-                        <thead class="bg-slate-50 dark:bg-slate-800 text-xs uppercase font-bold text-slate-500">
-                            <tr>
-                                <th class="p-4">Student</th>
-                                <th class="p-4">Exam</th>
-                                <th class="p-4">Theory</th>
-                                <th class="p-4">Practical</th>
-                                <th class="p-4">Total</th>
-                                <th class="p-4 text-right">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="results-table-body" class="divide-y divide-slate-100 dark:divide-slate-700">
-                            <tr><td colspan="6" class="p-4 text-center">Loading...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-            <div id="content-courses" class="content-section hidden animate-fade-in">
-                <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
-                    <div class="p-6 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
-                        <h2 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                            <span class="material-symbols-outlined text-primary">library_books</span>
-                            Assigned Subjects
-                        </h2>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                            <thead class="bg-slate-50 dark:bg-slate-800">
-                                <tr>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Course Name</th>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Subjects / Topics Included</th>
-                                    <th class="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="teacher-courses-body" class="divide-y divide-slate-200 dark:divide-slate-700 bg-white dark:bg-surface-dark">
-                                <tr><td colspan="3" class="px-6 py-12 text-center text-slate-500">Loading courses...</td></tr>
-                            </tbody>
-                        </table>
+                    <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm p-6 border border-slate-100 flex items-center gap-4">
+                        <div class="p-4 bg-emerald-100 text-emerald-600 rounded-2xl"><span class="material-symbols-outlined text-3xl">groups</span></div>
+                        <div><p class="text-sm text-slate-500 uppercase">Total Students</p><p class="text-3xl font-bold" id="total-my-students">0</p></div>
                     </div>
                 </div>
             </div>
 
-<div id="content-attendance" class="content-section hidden animate-fade-in">
-                
-                <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-md p-8 border border-slate-100 dark:border-slate-700 mb-8 relative overflow-hidden">
-                    <div class="absolute top-0 left-0 w-1 h-full bg-primary"></div>
-                    <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-6">Step 1: Select Batch, Course & Date</h3>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div>
-                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">1. Select Batch (Session)</label>
-                            <select id="attendance-session-select" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary p-2.5 shadow-sm transition">
-                                <option value="">All Batches</option>
+            <div id="content-results" class="content-section hidden animate-fade-in">
+                <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm p-6 border border-slate-100 dark:border-slate-700">
+                    <h2 class="text-xl font-bold mb-6">Enter Student Marks</h2>
+                    <form id="result-form" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-bold mb-2">Select Batch</label>
+                            <select id="result-session-filter" onchange="filterStudentsByBatch()" class="w-full p-3 rounded-xl border border-slate-300 dark:bg-slate-800">
+                                <option value="">Loading Batches...</option>
                             </select>
                         </div>
-                        <div>
-                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">2. Select Course</label>
-                            <select id="attendance-course-select" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary p-2.5 shadow-sm transition">
-                                <option value="">-- Choose Course --</option>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-bold mb-2">Select Student</label>
+                            <select id="result-student" name="student_id" class="w-full p-3 rounded-xl border border-slate-300 dark:bg-slate-800">
+                                <option value="">-- First Select a Batch --</option>
                             </select>
                         </div>
-                        <div>
-                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">3. Select Date</label>
-                            <input type="date" id="attendance-date" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary p-2.5 shadow-sm transition">
-                        </div>
-                    </div>
-
-                    <div class="mt-6 text-sm text-blue-700 bg-blue-50 dark:bg-blue-900/30 p-4 rounded-xl border border-blue-100 dark:border-blue-800 flex gap-3 items-start">
-                        <span class="material-symbols-outlined text-blue-600">lightbulb</span>
-                        <div>
-                            <span class="font-bold block mb-1">Tip:</span> 
-                            Ensure you select the correct course to avoid mixing students from different batches.
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm overflow-hidden border border-slate-100 dark:border-slate-700 mb-6">
-                    <div class="p-4 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center flex-wrap gap-4">
-                        <h3 class="font-bold text-slate-700 dark:text-slate-200 text-lg">Student List</h3>
-                        <div class="space-x-3">
-                            <button id="mark-present-btn" disabled class="px-5 py-2.5 bg-green-100 text-green-700 rounded-lg text-sm font-bold hover:bg-green-200 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm flex-inline items-center gap-2">
-                                <span class="material-symbols-outlined text-sm">check_circle</span> Mark Selected Present
-                            </button>
-                            <button id="mark-absent-btn" disabled class="px-5 py-2.5 bg-red-100 text-red-700 rounded-lg text-sm font-bold hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm flex-inline items-center gap-2">
-                                <span class="material-symbols-outlined text-sm">cancel</span> Mark Selected Absent
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                            <thead class="bg-slate-50 dark:bg-slate-800">
-                                <tr>
-                                    <th class="px-6 py-4 text-left w-16">
-                                        <input type="checkbox" id="select-all-students" class="rounded border-slate-300 text-primary focus:ring-primary w-5 h-5 cursor-pointer" disabled>
-                                    </th>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">ID</th>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Student Name</th>
-                                    <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Current Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="attendance-table-body" class="divide-y divide-slate-200 dark:divide-slate-700 bg-white dark:bg-surface-dark">
-                                <tr><td colspan="4" class="px-6 py-16 text-center text-slate-400">
-                                    <div class="flex flex-col items-center gap-2">
-                                        <span class="material-symbols-outlined text-4xl text-slate-300">fact_check</span>
-                                        <p>Please select a course above to load the student list.</p>
-                                    </div>
-                                </td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="flex justify-end pb-8">
-                    <button id="submit-attendance-btn" disabled class="bg-primary text-white font-bold py-3.5 px-10 rounded-xl shadow-lg shadow-blue-200 dark:shadow-none hover:bg-primary-hover transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transform active:scale-95">
-                        <span class="material-symbols-outlined">save</span>
-                        Submit Attendance Log
-                    </button>
-                </div>
-            </div>
-<div id="content-doubts" class="content-section hidden animate-fade">
-    <h1 class="text-3xl font-bold text-slate-800 dark:text-white mb-6">Student Doubts</h1>
-    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-        <div id="doubts-list" class="divide-y divide-slate-100 dark:divide-slate-700">
-            <div class="p-8 text-center text-slate-400">Loading doubts...</div>
-        </div>
-    </div>
-</div>
-
-<div id="content-profile" class="content-section hidden animate-fade">
-    <h1 class="text-3xl font-bold text-slate-800 dark:text-white mb-6">My Profile</h1>
-    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-8 max-w-lg">
-        <div class="flex flex-col items-center">
-            <div class="w-32 h-32 rounded-full border-4 border-slate-100 overflow-hidden mb-4 relative">
-                <img id="my-photo-preview" src="" class="w-full h-full object-cover">
-            </div>
-            
-            <h2 id="my-name-display" class="text-xl font-bold mb-1">Teacher Name</h2>
-            <p class="text-sm text-slate-500 mb-6">Upload a clear photo for students to see.</p>
-
-            <label class="w-full cursor-pointer bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all">
-                <span class="material-symbols-outlined">cloud_upload</span>
-                <span>Choose New Photo</span>
-                <input type="file" id="profile-upload-input" accept="image/*" class="hidden" onchange="uploadProfilePhoto(this)">
-            </label>
-        </div>
-    </div>
-</div>
-<div id="content-syllabus" class="content-section hidden animate-fade-in">
-                <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm p-8 border border-slate-100 dark:border-slate-700 max-w-4xl mx-auto">
-                    <div class="flex items-center gap-3 mb-6 pb-6 border-b border-slate-100 dark:border-slate-700">
-                        <div class="p-3 bg-indigo-50 text-indigo-600 rounded-xl"><span class="material-symbols-outlined">menu_book</span></div>
-                        <div>
-                            <h3 class="text-xl font-bold text-slate-900 dark:text-white">Daily Syllabus Log</h3>
-                            <p class="text-sm text-slate-500">Record what was taught in class today.</p>
-                        </div>
-                    </div>
-                    
-                    <form id="syllabus-form" class="space-y-6">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div>
-                                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">1. Select Batch</label>
-                                <select id="syllabus-session-select" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-sm p-3 focus:ring-primary">
-                                    <option value="">-- All Batches --</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">2. Select Course</label>
-                                <select id="syllabus-course-select" required class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-sm p-3 focus:ring-primary">
-                                    <option value="">-- Choose Course --</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">3. Date</label>
-                                <input type="date" id="syllabus-date" required class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-sm p-3 focus:ring-primary">
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Topics Covered Today</label>
-                            <textarea id="syllabus-topic" rows="4" required placeholder="e.g. Introduction to Loops, While Loop syntax..." class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-sm p-3 focus:ring-primary"></textarea>
-                        </div>
-                        <div class="flex justify-end">
-                            <button type="submit" class="bg-indigo-600 text-white font-bold py-3 px-8 rounded-xl hover:bg-indigo-700 shadow-md transition flex items-center gap-2">
-                                <span class="material-symbols-outlined text-sm">save_as</span>
-                                Save Syllabus Log
-                            </button>
-                        </div>
+                        <div><label class="block text-sm font-bold mb-2">Exam Title</label><input name="exam_title" class="w-full p-3 rounded-xl border border-slate-300" placeholder="e.g. Mid Term" required></div>
+                        <div><label class="block text-sm font-bold mb-2">Max Marks</label><input name="max_marks" type="number" value="100" class="w-full p-3 rounded-xl border border-slate-300" required></div>
+                        <div><label class="block text-sm font-bold mb-2">Theory</label><input name="theory" type="number" class="w-full p-3 rounded-xl border border-slate-300" required></div>
+                        <div><label class="block text-sm font-bold mb-2">Practical</label><input name="practical" type="number" class="w-full p-3 rounded-xl border border-slate-300" required></div>
+                        <div class="md:col-span-2"><button type="submit" class="w-full bg-primary text-white font-bold py-3 rounded-xl hover:bg-primary-hover">Publish Result</button></div>
                     </form>
-<div class="mt-10 pt-8 border-t border-slate-200 dark:border-slate-700">
-                        <h4 class="text-lg font-bold text-slate-900 dark:text-white mb-4">Syllabus History</h4>
-                        <div class="bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-                            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                                <thead class="bg-slate-100 dark:bg-slate-900">
-                                    <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Batch / Course</th>
-                                        <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Topic Log</th>
-                                        <th class="px-6 py-3 text-right text-xs font-bold text-slate-500 uppercase">Entry Date</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="syllabus-history-body" class="divide-y divide-slate-200 dark:divide-slate-700 text-sm">
-                                    <tr><td colspan="3" class="p-6 text-center text-slate-500">Loading history...</td></tr>
-                                </tbody>
-                            </table>
+                </div>
+                <div class="mt-8 bg-white dark:bg-surface-dark rounded-2xl shadow-sm p-6 border border-slate-100">
+                    <h3 class="font-bold mb-4">Recent Results</h3>
+                    <table class="w-full text-left text-sm"><tbody id="results-table-body"></tbody></table>
+                </div>
+            </div>
+
+            <div id="content-attendance" class="content-section hidden animate-fade-in">
+                <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm p-6 border border-slate-100 mb-6">
+                    <h3 class="text-lg font-bold mb-4">Take Attendance</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <select id="attendance-session-select" class="w-full p-3 rounded-xl border border-slate-300"><option value="">All Batches</option></select>
+                        <select id="attendance-course-select" class="w-full p-3 rounded-xl border border-slate-300"><option value="">Select Course</option></select>
+                        <input type="date" id="attendance-date" class="w-full p-3 rounded-xl border border-slate-300">
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="p-4 bg-slate-50 flex justify-between items-center">
+                        <h3 class="font-bold">Student List</h3>
+                        <div class="space-x-2">
+                            <button id="mark-present-btn" disabled class="px-4 py-2 bg-green-100 text-green-700 rounded-lg text-xs font-bold">Mark Present</button>
+                            <button id="mark-absent-btn" disabled class="px-4 py-2 bg-red-100 text-red-700 rounded-lg text-xs font-bold">Mark Absent</button>
                         </div>
                     </div>
-                </div> </div>
-                </div>
-            </div>
-
-            
-<div id="content-assignments" class="content-section hidden animate-fade-in">
-    <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm p-6 border border-slate-100 dark:border-slate-700 mb-8">
-        <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
-            <span class="material-symbols-outlined text-primary">add_task</span>
-            Create New Assignment
-        </h3>
-        <form id="create-assignment-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="md:col-span-2">
-                <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Assignment Title</label>
-                <input type="text" id="assign-title" required class="w-full rounded-xl border border-slate-300 p-3" placeholder="e.g. Write a C program for Matrix Multiplication">
-            </div>
-            <div>
-                <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Select Course</label>
-                <select id="assign-course-select" required class="w-full rounded-xl border border-slate-300 p-3 bg-white"></select>
-            </div>
-            <div>
-                <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Due Date</label>
-                <input type="date" id="assign-date" required class="w-full rounded-xl border border-slate-300 p-3">
-            </div>
-            <div class="md:col-span-2">
-                <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Description / Instructions</label>
-                <textarea id="assign-desc" rows="3" class="w-full rounded-xl border border-slate-300 p-3" placeholder="Detailed instructions..."></textarea>
-            </div>
-            <div class="md:col-span-2 text-right">
-                <button type="submit" class="bg-primary text-white font-bold py-3 px-8 rounded-xl hover:bg-primary-hover shadow-lg">
-                    Post Assignment
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<div id="content-announcements" class="content-section hidden animate-fade-in">
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div class="lg:col-span-1">
-            <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm p-6 border border-slate-100 dark:border-slate-700">
-                <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
-                    <span class="material-symbols-outlined text-primary">campaign</span>
-                    Post Announcement
-                </h3>
-                <form id="teacher-announcement-form" class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Category</label>
-                        <input list="category-suggestions" id="ann-category" required 
-                               class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 p-3 placeholder-slate-400" 
-                               placeholder="Select or type (e.g. Tally Class Start)...">
-                        
-                        <datalist id="category-suggestions">
-                            <option value="Class Start">
-                            <option value="Holiday">
-                            <option value="Assignment Test">
-                            <option value="Practical Test">
-                            <option value="Certificate Collection">
-                            <option value="Batch Time Update">
-                            <option value="Exam Notice">
-                        </datalist>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Title</label>
-                        <input type="text" id="ann-title" required class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 p-3">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Message Content</label>
-                        <textarea id="ann-content" rows="4" required class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 p-3"></textarea>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Target Audience</label>
-                        <select id="ann-target" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 p-3">
-                            <option value="students">Students Only</option>
-                            <option value="parents">Parents Only</option>
-                            <option value="all">Everyone</option>
-                        </select>
-                    </div>
-                    <button type="submit" class="w-full bg-primary text-white py-3 rounded-xl font-bold hover:bg-primary-hover shadow-lg transition">Broadcast Notification</button>
-                </form>
-            </div>
-        </div>
-
-        <div class="lg:col-span-2">
-            <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
-                <div class="p-6 border-b border-slate-100 dark:border-slate-700">
-                    <h3 class="font-bold">My Sent Notifications</h3>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                        <tbody id="announcement-history-body" class="divide-y divide-slate-200 dark:divide-slate-700">
-                            <tr><td class="p-6 text-center text-slate-500">Loading history...</td></tr>
-                        </tbody>
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50"><tr><th class="p-4 w-10"><input type="checkbox" id="select-all-students"></th><th class="p-4">Name</th><th class="p-4 text-center">Status</th></tr></thead>
+                        <tbody id="attendance-table-body"><tr><td colspan="3" class="p-6 text-center text-slate-500">Select a course to load students.</td></tr></tbody>
                     </table>
                 </div>
+                <div class="flex justify-end mt-6">
+                    <button id="submit-attendance-btn" disabled class="bg-primary text-white font-bold py-3 px-8 rounded-xl opacity-50 cursor-not-allowed">Submit Attendance</button>
+                </div>
             </div>
-        </div>
-    </div>
-</div>
-            <div id="content-notes" class="content-section hidden animate-fade-in">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div class="lg:col-span-1">
-                        <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm p-6 border border-slate-100 dark:border-slate-700 sticky top-4">
-                            <div class="flex items-center gap-2 mb-6">
-                                <span class="material-symbols-outlined text-primary">cloud_upload</span>
-                                <h3 class="text-lg font-bold text-slate-900 dark:text-white">Upload Material</h3>
-                            </div>
-                            
-                            <form id="upload-note-form" class="space-y-5">
-                                <div>
-                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Title</label>
-                                    <input type="text" name="title" required class="w-full rounded-lg border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-sm focus:ring-primary p-2.5" placeholder="e.g. Chapter 1 Notes">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Course</label>
-                                    <select id="note-course-select" name="course_id" required class="w-full rounded-lg border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-sm focus:ring-primary p-2.5"></select>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Description</label>
-                                    <textarea name="description" rows="3" class="w-full rounded-lg border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-sm focus:ring-primary p-2.5" placeholder="Short description..."></textarea>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">File Attachment</label>
-                                    <input type="file" id="note-file" name="file" required accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.jpg,.png" class="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 transition cursor-pointer">
-                                    <p class="text-xs text-slate-400 mt-2">Supported: PDF, DOC, PPT, IMG (Max 16MB)</p>
-                                </div>
-                                <button type="submit" id="upload-note-btn" class="w-full bg-primary text-white font-bold py-3 rounded-xl hover:bg-primary-hover transition shadow-md flex justify-center items-center gap-2">
-                                    <span class="material-symbols-outlined text-sm">publish</span>
-                                    Upload & Notify Students
-                                </button>
-                            </form>
-                            <div id="upload-progress" class="hidden mt-6">
-                                <div class="w-full bg-slate-200 rounded-full h-2"><div id="upload-bar" class="bg-green-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div></div>
-                                <p id="upload-status" class="text-xs text-center mt-2 text-slate-500 font-medium">Uploading...</p>
-                            </div>
+
+            <div id="content-syllabus" class="content-section hidden animate-fade-in">
+                <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm p-6 border border-slate-100">
+                    <h3 class="text-xl font-bold mb-4">Daily Syllabus Log</h3>
+                    <form id="syllabus-form" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <select id="syllabus-session-select" class="w-full p-3 rounded-xl border border-slate-300"><option value="">All Batches</option></select>
+                            <select id="syllabus-course-select" required class="w-full p-3 rounded-xl border border-slate-300"><option value="">Select Course</option></select>
+                            <input type="date" id="syllabus-date" required class="w-full p-3 rounded-xl border border-slate-300">
                         </div>
-                    </div>
+                        <textarea id="syllabus-topic" rows="3" required class="w-full p-3 rounded-xl border border-slate-300" placeholder="What did you teach today?"></textarea>
+                        <button type="submit" class="bg-indigo-600 text-white font-bold py-3 px-6 rounded-xl">Save Log</button>
+                    </form>
+                </div>
+                <div class="mt-8 bg-white dark:bg-surface-dark rounded-2xl shadow-sm p-6 border border-slate-100">
+                    <h3 class="font-bold mb-4">History</h3>
+                    <table class="w-full text-sm text-left"><tbody id="syllabus-history-body"></tbody></table>
+                </div>
+            </div>
 
-                    <div class="lg:col-span-2">
-                        <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
-                            <div class="p-6 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
-                                <h3 class="font-bold text-slate-900 dark:text-white">My Uploaded Notes History</h3>
-                            </div>
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                                    <thead class="bg-slate-50 dark:bg-slate-800">
-                                        <tr>
-                                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Title</th>
-                                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Course</th>
-                                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Date</th>
-                                            <th class="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="teacher-notes-body" class="divide-y divide-slate-200 dark:divide-slate-700 bg-white dark:bg-surface-dark">
-                                        <tr><td colspan="4" class="px-6 py-12 text-center text-slate-500">No notes uploaded yet.</td></tr>
-                                    </tbody>
-                                </table>
-                            </div>
+            <div id="content-announcements" class="content-section hidden animate-fade-in">
+                <div class="bg-white rounded-2xl shadow-sm p-6 border border-slate-100">
+                    <h3 class="text-lg font-bold mb-4">Post Announcement</h3>
+                    <form id="teacher-announcement-form" class="space-y-4">
+                        <input id="ann-title" type="text" placeholder="Title" required class="w-full p-3 rounded-xl border border-slate-300">
+                        <textarea id="ann-content" rows="3" placeholder="Message" required class="w-full p-3 rounded-xl border border-slate-300"></textarea>
+                        <div class="grid grid-cols-2 gap-4">
+                            <input id="ann-category" placeholder="Category (e.g. Exam)" class="w-full p-3 rounded-xl border border-slate-300">
+                            <select id="ann-target" class="w-full p-3 rounded-xl border border-slate-300">
+                                <option value="students">Students</option>
+                                <option value="all">Everyone</option>
+                            </select>
                         </div>
-                    </div>
+                        <button type="submit" class="bg-primary text-white font-bold py-3 px-6 rounded-xl">Post</button>
+                    </form>
+                </div>
+                <div class="mt-6 bg-white rounded-2xl shadow-sm p-6 border border-slate-100">
+                    <h3 class="font-bold mb-2">History</h3>
+                    <table class="w-full text-sm"><tbody id="announcement-history-body"></tbody></table>
                 </div>
             </div>
 
-            <div id="content-reports" class="content-section hidden animate-fade-in">
-                <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm p-6 mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 border border-slate-100 dark:border-slate-700">
-                    <div>
-                        <h2 class="text-xl font-bold text-slate-900 dark:text-white">Student Reports</h2>
-                        <p class="text-sm text-slate-500 mt-1">View comprehensive student data by course.</p>
-                    </div>
-                    <div class="w-full md:w-72">
-                        <label for="report-course-select" class="block text-xs font-bold uppercase text-slate-400 mb-1">Filter by Course</label>
-                        <select id="report-course-select" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm p-2.5 focus:ring-primary">
-                            <option value="">Show All Students</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm overflow-hidden border border-slate-100 dark:border-slate-700">
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                            <thead class="bg-slate-50 dark:bg-slate-800">
-                                <tr>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Photo</th>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Name</th>
-                                    <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Attendance</th>
-                                    <th class="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Quick Remarks & Message</th>
-                                </tr>
-                            </thead>
-                            <tbody id="teacher-reports-body" class="divide-y divide-slate-200 dark:divide-slate-700 bg-white dark:bg-surface-dark">
-                                <tr><td colspan="4" class="px-6 py-12 text-center text-slate-500">Loading reports data...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
+            <div id="content-doubts" class="content-section hidden animate-fade-in">
+                <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm border border-slate-100 p-6">
+                    <h2 class="text-xl font-bold mb-4">Student Doubts</h2>
+                    <div id="doubts-list" class="space-y-4"></div>
                 </div>
             </div>
+
+            <div id="content-courses" class="content-section hidden"><div class="p-6 bg-white rounded-xl shadow-sm"><h2 class="font-bold text-xl mb-4">My Courses</h2><table class="w-full text-sm"><tbody id="teacher-courses-body"></tbody></table></div></div>
+            <div id="content-assignments" class="content-section hidden"><div class="p-6 bg-white rounded-xl shadow-sm">Assignments functionality coming soon.</div></div>
+            <div id="content-notes" class="content-section hidden"><div class="p-6 bg-white rounded-xl shadow-sm">Notes upload functionality coming soon.</div></div>
+            <div id="content-reports" class="content-section hidden"><div class="p-6 bg-white rounded-xl shadow-sm">Reports functionality coming soon.</div></div>
 
         </div>
     </main>
-</div>
 
-<div id="notify-modal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-slate-900 bg-opacity-75 transition-opacity backdrop-blur-sm" id="modal-backdrop"></div>
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-        <div class="inline-block align-bottom bg-white dark:bg-surface-dark rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-slate-200 dark:border-slate-700">
-            <div class="px-6 py-6">
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="p-2 bg-blue-50 text-blue-600 rounded-lg"><span class="material-symbols-outlined">send</span></div>
-                    <h3 class="text-xl font-bold text-slate-900 dark:text-white" id="notify-modal-title">Send Message</h3>
-                </div>
-                
-                <form class="space-y-4">
-                    <input type="hidden" id="notify-student-id">
-                    <div>
-                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Subject</label>
-                        <input type="text" id="notify-subject" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm focus:ring-primary p-3" placeholder="Important Update...">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Message Body</label>
-                        <textarea id="notify-body" rows="4" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm focus:ring-primary p-3" placeholder="Type your message here..."></textarea>
-                    </div>
-                    <div>
-<div class="flex items-center gap-2 py-2">
-    <input type="checkbox" id="notify-include-parent" class="w-5 h-5 text-primary border-slate-300 rounded focus:ring-primary">
-    <label for="notify-include-parent" class="text-sm font-bold text-slate-700 dark:text-slate-300">
-        Send copy to Parent?
-    </label>
-</div>
-                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Communication Channel</label>
-                        <select id="notify-type" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm focus:ring-primary p-3">
-                            <option value="portal">📱 App Notification (Push)</option>
-                            <option value="sms">💬 SMS</option>
-                            <option value="whatsapp">💚 WhatsApp</option>
-                            <option value="email">📧 Email</option>
-                        </select>
-                    </div>
-                </form>
-            </div>
-            <div class="bg-slate-50 dark:bg-slate-800/50 px-6 py-4 flex flex-row-reverse gap-3 border-t border-slate-100 dark:border-slate-700">
-                <button type="button" id="send-notify-btn" class="w-full sm:w-auto px-6 py-2.5 bg-primary text-white rounded-xl font-bold hover:bg-primary-hover shadow-md transition transform active:scale-95 flex items-center justify-center gap-2">
-                    <span class="material-symbols-outlined text-sm">send</span> Send Message
-                </button>
-                <button type="button" id="cancel-notify-btn" class="w-full sm:w-auto px-6 py-2.5 bg-white border border-slate-300 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition transform active:scale-95">Cancel</button>
-            </div>
-        </div>
-    </div>
-</div>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
 
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
+    <script>
+        const API_ORIGIN = window.location.origin;
+        const API_BASE_URL = API_ORIGIN + '/api';
 
-<script>
-    // --- APP CONFIGURATION ---
-    const API_ORIGIN = window.location.origin;
-    const API_BASE_URL = API_ORIGIN + '/api';
-<script>
-    const API_ORIGIN = window.location.origin;
-    const API_BASE_URL = API_ORIGIN + '/api';
+        // --- GLOBAL VARIABLES ---
+        let allTeacherCourses = [];
+        let allSessions = []; 
+        let allTeacherStudents = [];
+        let currentAttendanceStatus = {};
 
-    // --- GLOBAL STATE ---
-    let allTeacherCourses = [];
-    let allSessions = []; 
-    let allTeacherStudents = [];
-
-    // --- HELPER: Fill multiple dropdowns at once ---
-    function fillDropdowns(ids, data, defaultText = "Select Option") {
-        ids.forEach(id => {
-            const select = document.getElementById(id);
-            if (!select) return;
-
-            // Preserve existing options if needed, or clear
-            select.innerHTML = `<option value="">${defaultText}</option>`;
-            
-            if (!data || data.length === 0) {
-                select.innerHTML += '<option disabled>No Data Found</option>';
-                return;
-            }
-
-            data.forEach(item => {
-                const opt = document.createElement('option');
-                opt.value = item.id;
-                opt.textContent = item.name;
-                select.appendChild(opt);
-            });
-        });
-    }
-
-    // --- 1. INITIAL DATA LOADING ---
-    async function checkSessionAndInit() {
-        try {
-            const response = await fetch(`${API_BASE_URL}/check_session`, {credentials: 'include'});
-            const result = await response.json();
-            
-            if (!response.ok || !result.logged_in || result.user.role !== 'teacher') {
-                window.location.href = '/';
-                return;
-            }
-
-            // Update Profile UI
-            document.getElementById('welcome-message').textContent = `Welcome back, ${result.user.name}.`;
-            const profileName = document.getElementById('my-name-display');
-            const profilePhoto = document.getElementById('my-photo-preview');
-            
-            if(profileName) profileName.textContent = result.user.name;
-            if(profilePhoto) {
-                profilePhoto.src = result.user.profile_photo_url 
-                    ? result.user.profile_photo_url 
-                    : `https://ui-avatars.com/api/?name=${result.user.name}&background=random&size=128`;
-            }
-
-            // LOAD CORE DATA
-            await Promise.all([
-                fetchSessions(),
-                fetchTeacherCourses(),
-                fetchTeacherStudents()
-            ]);
-
-            // POPULATE ALL DROPDOWNS AFTER DATA IS LOADED
-            populateAllDropdowns();
-            
-            // Initialize View
-            loadContent();
-            setTimeout(initFirebase, 2000);
-
-        } catch (error) { 
-            console.error("Init Failed:", error); 
-        }
-    }
-
-    async function fetchSessions() {
-        try {
-            const res = await fetch(`${API_BASE_URL}/teacher/sessions`, { credentials: 'include' });
-            allSessions = await res.json();
-        } catch (e) { console.error("Session load error", e); }
-    }
-
-    async function fetchTeacherCourses() {
-        try {
-            const res = await fetch(`${API_BASE_URL}/teacher/courses`, { credentials: 'include' });
-            allTeacherCourses = await res.json();
-            document.getElementById('total-my-courses').textContent = allTeacherCourses.length;
-        } catch (e) { console.error("Course load error", e); }
-    }
-
-    async function fetchTeacherStudents() {
-        try {
-            const res = await fetch(`${API_BASE_URL}/teacher/students`, { credentials: 'include' });
-            allTeacherStudents = await res.json();
-            document.getElementById('total-my-students').textContent = allTeacherStudents.length;
-        } catch (e) { console.error("Student load error", e); }
-    }
-
-    function populateAllDropdowns() {
-        // 1. Fill Sessions (Batches)
-        fillDropdowns(
-            ['result-session-filter', 'attendance-session-select', 'syllabus-session-select', 'assignment-session-select'], 
-            allSessions, 
-            "All Batches"
-        );
-
-        // 2. Fill Courses
-        fillDropdowns(
-            ['attendance-course-select', 'note-course-select', 'syllabus-course-select', 'assignment-course-select', 'report-course-select'], 
-            allTeacherCourses, 
-            "Select Course"
-        );
-    }
-
-    // --- 2. NAVIGATION ---
-    function showSection(hash) {
-        const targetId = hash.substring(1) || 'dashboard';
-        document.querySelectorAll('.content-section').forEach(s => s.classList.add('hidden'));
-        
-        const target = document.getElementById(`content-${targetId}`);
-        if(target) target.classList.remove('hidden');
-
-        // Update active nav state
-        document.querySelectorAll('.nav-link').forEach(link => {
-            if(link.getAttribute('href') === `#${targetId}`) {
-                link.classList.add('bg-primary/5', 'text-primary');
-            } else {
-                link.classList.remove('bg-primary/5', 'text-primary');
-            }
-        });
-    }
-
-    function loadContent() {
-        const hash = window.location.hash || '#dashboard';
-        showSection(hash);
-
-        if (hash === '#results') loadResultData();
-        if (hash === '#announcements') fetchTeacherAnnouncements();
-        if (hash === '#notes') fetchTeacherNotes();
-        if (hash === '#syllabus') fetchSyllabusHistory();
-        if (hash === '#doubts') loadDoubts();
-        if (hash === '#reports') fetchTeacherAttendanceReport();
-    }
-    
-    window.addEventListener('hashchange', loadContent);
-
-    // --- 3. ATTENDANCE LOGIC ---
-    async function loadAttendanceStudents() {
-        const sid = document.getElementById('attendance-session-select').value;
-        const cid = document.getElementById('attendance-course-select').value;
-        const tbody = document.getElementById('attendance-table-body');
-
-        if (!cid) {
-            tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-gray-500">Please select a Course to view students.</td></tr>';
-            return;
-        }
-
-        tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center">Loading...</td></tr>';
-
-        try {
-            let url = `${API_BASE_URL}/teacher/students?course_id=${cid}`;
-            if (sid) url += `&session_id=${sid}`;
-
-            const res = await fetch(url, { credentials: 'include' });
-            const students = await res.json();
-
-            if (students.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-red-500">No students found.</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = students.map(s => `
-                <tr class="hover:bg-gray-50 border-b">
-                    <td class="p-4"><input type="checkbox" class="student-checkbox w-5 h-5 rounded text-primary" data-id="${s.id}"></td>
-                    <td class="p-4 font-mono text-xs text-gray-500">${s.admission_number || '-'}</td>
-                    <td class="p-4 font-bold text-gray-800">${s.name}</td>
-                    <td class="p-4 text-center"><span id="status-${s.id}" class="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">Present</span></td>
-                </tr>
-            `).join('');
-
-            // Enable buttons
-            document.getElementById('submit-attendance-btn').disabled = false;
-            document.getElementById('mark-present-btn').disabled = false;
-            document.getElementById('mark-absent-btn').disabled = false;
-            document.getElementById('select-all-students').disabled = false;
-
-        } catch (e) {
-            console.error(e);
-            tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-red-500">Error loading data.</td></tr>';
-        }
-    }
-
-    // Attach Listeners for Attendance
-    document.getElementById('attendance-session-select')?.addEventListener('change', loadAttendanceStudents);
-    document.getElementById('attendance-course-select')?.addEventListener('change', loadAttendanceStudents);
-
-    // --- 4. GENERIC HELPERS (Marking, Submitting) ---
-    // (Simplified for brevity - ensure your existing ID references match)
-    
-    // --- 5. INITIALIZATION ---
-    document.addEventListener('DOMContentLoaded', () => {
-        checkSessionAndInit();
-
-        // Logout
-        document.getElementById('logout-btn')?.addEventListener('click', async () => {
-            await fetch(`${API_BASE_URL}/logout`, { method: 'POST', credentials: 'include' });
-            window.location.href = '/';
-        });
-        
-        // Date Defaults
-        document.querySelectorAll('input[type="date"]').forEach(i => i.valueAsDate = new Date());
-    });
-
-    // --- 6. FIREBASE INIT ---
-    function initFirebase() {
-        try {
-            const firebaseConfig = {
-                apiKey: "AIzaSyBkzEHM9fXRoCYSgEW-hk_lN7sL_nSLDfU",
-                authDomain: "cst-institute-app.firebaseapp.com",
-                projectId: "cst-institute-app",
-                storageBucket: "cst-institute-app.firebasestorage.app",
-                messagingSenderId: "485166460200",
-                appId: "1:485166460200:web:4eae20e2010ab92baeb41d"
-            };
-            if (typeof firebase !== 'undefined' && !firebase.apps.length) {
-                firebase.initializeApp(firebaseConfig);
-                const messaging = firebase.messaging();
-                if ('serviceWorker' in navigator) {
-                    navigator.serviceWorker.register('/firebase-messaging-sw.js')
-                    .then((reg) => messaging.getToken({ vapidKey: 'BBOMxvKvbEs_t9ykKBa2zIewzCzD6FCbm9rxc8a9eWl2kjjH5vyTSH6TeQMksZ_OGl5jZyQpU2wBcf-KsZN1uko', serviceWorkerRegistration: reg }))
-                    .then((token) => {
-                        if (token) fetch('/api/save_fcm_token', { method: 'POST', headers: {'Content-Type': 'application/json'}, credentials: 'include', body: JSON.stringify({token}) });
-                    }).catch(console.error);
+        // --- 1. DROPDOWN POPULATOR ---
+        function fillDropdowns(ids, data, defaultText = "Select Option") {
+            ids.forEach(id => {
+                const select = document.getElementById(id);
+                if (!select) return;
+                select.innerHTML = `<option value="">${defaultText}</option>`;
+                if (!data || data.length === 0) {
+                    select.innerHTML += '<option disabled>No Data Found</option>';
+                    return;
                 }
+                data.forEach(item => {
+                    const opt = document.createElement('option');
+                    opt.value = item.id;
+                    opt.textContent = item.name;
+                    select.appendChild(opt);
+                });
+            });
+        }
+
+        // --- 2. INITIALIZATION ---
+        async function checkSessionAndInit() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/check_session`, {credentials: 'include'});
+                const result = await response.json();
+                
+                if (!response.ok || !result.logged_in || result.user.role !== 'teacher') {
+                    window.location.href = '/';
+                    return;
+                }
+
+                document.getElementById('welcome-message').textContent = `Welcome back, ${result.user.name}.`;
+
+                // LOAD DATA PARALLEL
+                await Promise.all([
+                    fetchSessions(),
+                    fetchTeacherCourses(),
+                    fetchTeacherStudents()
+                ]);
+
+                // FILL UI
+                populateAllDropdowns();
+                loadContent(); // Load current view
+                
+                setTimeout(initFirebase, 2000);
+
+            } catch (error) { 
+                console.error("Init Failed:", error); 
             }
-        } catch (e) { console.log('Firebase error:', e); }
-    }
-</script>
-</body>
-</html>  
-</script>
+        }
+
+        // --- 3. DATA FETCHERS ---
+        async function fetchSessions() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/teacher/sessions`, { credentials: 'include' });
+                allSessions = await res.json();
+            } catch (e) { console.error("Session Error", e); }
+        }
+
+        async function fetchTeacherCourses() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/teacher/courses`, { credentials: 'include' });
+                allTeacherCourses = await res.json();
+                document.getElementById('total-my-courses').textContent = allTeacherCourses.length;
+                renderCoursesTable();
+            } catch (e) { console.error("Course Error", e); }
+        }
+
+        async function fetchTeacherStudents() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/teacher/students`, { credentials: 'include' });
+                allTeacherStudents = await res.json();
+                document.getElementById('total-my-students').textContent = allTeacherStudents.length;
+            } catch (e) { console.error("Student Error", e); }
+        }
+
+        function populateAllDropdowns() {
+            fillDropdowns(
+                ['result-session-filter', 'attendance-session-select', 'syllabus-session-select'], 
+                allSessions, 
+                "All Batches"
+            );
+            fillDropdowns(
+                ['attendance-course-select', 'syllabus-course-select'], 
+                allTeacherCourses, 
+                "Select Course"
+            );
+        }
+
+        // --- 4. NAVIGATION ---
+        function showSection(hash) {
+            const targetId = hash.substring(1) || 'dashboard';
+            document.querySelectorAll('.content-section').forEach(s => s.classList.add('hidden'));
+            const target = document.getElementById(`content-${targetId}`);
+            if(target) target.classList.remove('hidden');
+            
+            // Update Sidebar
+            document.querySelectorAll('.nav-link').forEach(l => {
+                if(l.getAttribute('href') === `#${targetId}`) l.classList.add('bg-primary/5', 'text-primary');
+                else l.classList.remove('bg-primary/5', 'text-primary');
+            });
+        }
+
+        function loadContent() {
+            const hash = window.location.hash || '#dashboard';
+            showSection(hash);
+            if (hash === '#results') loadResultData();
+            if (hash === '#announcements') fetchTeacherAnnouncements();
+            if (hash === '#syllabus') fetchSyllabusHistory();
+            if (hash === '#doubts') loadDoubts();
+        }
+        window.addEventListener('hashchange', loadContent);
+
+        // --- 5. ATTENDANCE LOGIC ---
+        async function loadAttendanceStudents() {
+            const sid = document.getElementById('attendance-session-select').value;
+            const cid = document.getElementById('attendance-course-select').value;
+            const tbody = document.getElementById('attendance-table-body');
+
+            if (!cid) {
+                tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-gray-500">Please select a Course.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center">Loading...</td></tr>';
+            currentAttendanceStatus = {};
+
+            try {
+                let url = `${API_BASE_URL}/teacher/students?course_id=${cid}`;
+                if (sid) url += `&session_id=${sid}`;
+
+                const res = await fetch(url, { credentials: 'include' });
+                const students = await res.json();
+
+                if (students.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-red-500">No students found.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = students.map(s => {
+                    currentAttendanceStatus[s.id] = 'Present'; // Default
+                    return `
+                    <tr class="hover:bg-gray-50 border-b">
+                        <td class="p-4"><input type="checkbox" class="student-checkbox w-5 h-5 rounded text-primary" data-id="${s.id}"></td>
+                        <td class="p-4 font-bold text-gray-800">${s.name} <span class="text-xs font-normal text-gray-500">(${s.admission_number || '-'})</span></td>
+                        <td class="p-4 text-center"><span id="status-${s.id}" class="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">Present</span></td>
+                    </tr>`;
+                }).join('');
+
+                // Enable UI
+                document.getElementById('submit-attendance-btn').disabled = false;
+                document.getElementById('submit-attendance-btn').classList.remove('opacity-50', 'cursor-not-allowed');
+                document.getElementById('mark-present-btn').disabled = false;
+                document.getElementById('mark-absent-btn').disabled = false;
+
+            } catch (e) {
+                console.error(e);
+                tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-red-500">Error loading data.</td></tr>';
+            }
+        }
+
+        function bulkMark(status) {
+            document.querySelectorAll('.student-checkbox:checked').forEach(cb => {
+                const id = cb.dataset.id;
+                currentAttendanceStatus[id] = status;
+                const badge = document.getElementById(`status-${id}`);
+                badge.textContent = status;
+                badge.className = status === 'Present' 
+                    ? "px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700"
+                    : "px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700";
+                cb.checked = false;
+            });
+        }
+
+        // Attach Attendance Listeners
+        document.getElementById('attendance-session-select')?.addEventListener('change', loadAttendanceStudents);
+        document.getElementById('attendance-course-select')?.addEventListener('change', loadAttendanceStudents);
+        document.getElementById('mark-present-btn')?.addEventListener('click', () => bulkMark('Present'));
+        document.getElementById('mark-absent-btn')?.addEventListener('click', () => bulkMark('Absent'));
+        
+        document.getElementById('submit-attendance-btn')?.addEventListener('click', async () => {
+            const btn = document.getElementById('submit-attendance-btn');
+            btn.disabled = true; btn.textContent = "Saving...";
+            
+            const payload = {
+                date: document.getElementById('attendance-date').value,
+                attendance_data: Object.entries(currentAttendanceStatus).map(([sid, stat]) => ({ student_id: sid, status: stat }))
+            };
+
+            try {
+                await fetch(`${API_BASE_URL}/teacher/attendance`, { method: 'POST', headers: {'Content-Type': 'application/json'}, credentials: 'include', body: JSON.stringify(payload) });
+                alert("Attendance Saved!");
+            } catch(e) { alert("Error saving."); }
+            btn.disabled = false; btn.textContent = "Submit Attendance";
+        });
+
+        // --- 6. EXAM RESULT FILTER ---
+        async function filterStudentsByBatch() {
+            const sid = document.getElementById('result-session-filter').value;
+            const sel = document.getElementById('result-student');
+            sel.innerHTML = '<option>Loading...</option>';
+            try {
+                const res = await fetch(`${API_BASE_URL}/teacher/students?session_id=${sid}`);
+                const data = await res.json();
+                sel.innerHTML = '<option value="">Select Student</option>' + data.map(s => `<option value="${s.id}">${s.name} (${s.admission_number})</option>`).join('');
+            } catch(e) { sel.innerHTML = '<option>Error</option>'; }
+        }
+
+        // --- 7. EXAM RESULT SUBMIT ---
+        document.getElementById('result-form')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            try {
+                const res = await fetch(`${API_BASE_URL}/results`, { method: 'POST', headers: {'Content-Type': 'application/json'}, credentials: 'include', body: JSON.stringify(data) });
+                const json = await res.json();
+                alert(json.msg);
+                loadResultData(); // Refresh table
+                e.target.reset();
+            } catch(e) { alert("Error saving result"); }
+        });
+
+        // --- 8. LOAD RESULTS ---
+        async function loadResultData() {
+            const res = await fetch(`${API_BASE_URL}/results`, {credentials: 'include'});
+            const data = await res.json();
+            document.getElementById('results-table-body').innerHTML = data.map(r => `
+                <tr class="border-b hover:bg-gray-50"><td class="p-4 font-bold">${r.student_name}</td><td class="p-4">${r.exam_title}</td><td class="p-4">${r.theory}</td><td class="p-4">${r.practical}</td><td class="p-4 font-bold text-green-600">${r.total}/${r.max}</td><td class="p-4"><button onclick="deleteResult(${r.id})" class="text-red-500">Delete</button></td></tr>
+            `).join('');
+        }
+        async function deleteResult(id) {
+            if(confirm("Delete?")) { await fetch(`${API_BASE_URL}/results/${id}`, {method: 'DELETE', credentials: 'include'}); loadResultData(); }
+        }
+
+        // --- 9. SYLLABUS LOGIC ---
+        document.getElementById('syllabus-form')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {
+                course_id: document.getElementById('syllabus-course-select').value,
+                session_id: document.getElementById('syllabus-session-select').value,
+                date: document.getElementById('syllabus-date').value,
+                topic: document.getElementById('syllabus-topic').value
+            };
+            await fetch(`${API_BASE_URL}/teacher/daily_topic`, { method: 'POST', headers: {'Content-Type': 'application/json'}, credentials: 'include', body: JSON.stringify(payload) });
+            alert("Syllabus Saved!");
+            fetchSyllabusHistory();
+            e.target.reset();
+        });
+
+        async function fetchSyllabusHistory() {
+            const res = await fetch(`${API_BASE_URL}/teacher/announcements`, {credentials: 'include'});
+            const data = await res.json();
+            const logs = data.filter(i => i.category === 'Syllabus');
+            document.getElementById('syllabus-history-body').innerHTML = logs.map(l => `<tr class="border-b"><td class="p-4 font-bold">${l.title}</td><td class="p-4">${l.content}</td></tr>`).join('');
+        }
+
+        // --- 10. ANNOUNCEMENTS ---
+        document.getElementById('teacher-announcement-form')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {
+                title: document.getElementById('ann-title').value,
+                content: document.getElementById('ann-content').value,
+                category: document.getElementById('ann-category').value,
+                target_group: document.getElementById('ann-target').value
+            };
+            await fetch(`${API_BASE_URL}/teacher/announcements`, { method: 'POST', headers: {'Content-Type': 'application/json'}, credentials: 'include', body: JSON.stringify(payload) });
+            alert("Sent!");
+            fetchTeacherAnnouncements();
+            e.target.reset();
+        });
+
+        async function fetchTeacherAnnouncements() {
+            const res = await fetch(`${API_BASE_URL}/teacher/announcements`, {credentials: 'include'});
+            const data = await res.json();
+            document.getElementById('announcement-history-body').innerHTML = data.map(a => `<tr class="border-b"><td class="p-4"><div class="font-bold">${a.title}</div><div class="text-xs text-gray-500">${a.content}</div></td></tr>`).join('');
+        }
+
+        // --- 11. DOUBTS ---
+        async function loadDoubts() {
+            const res = await fetch(`${API_BASE_URL}/teacher/doubts`, {credentials: 'include'});
+            const data = await res.json();
+            const list = document.getElementById('doubts-list');
+            if(data.length === 0) list.innerHTML = '<p class="text-gray-500">No doubts found.</p>';
+            else {
+                list.innerHTML = data.map(d => `
+                    <div class="p-4 border rounded-xl bg-slate-50">
+                        <div class="font-bold text-sm mb-1">${d.student_name}</div>
+                        <div class="mb-2 italic">"${d.question}"</div>
+                        ${d.answer ? `<div class="text-green-600 text-sm font-bold">Answered: ${d.answer}</div>` : 
+                        `<div class="flex gap-2"><input id="reply-${d.id}" class="border p-2 rounded w-full text-sm" placeholder="Reply..."><button onclick="sendReply(${d.id})" class="bg-blue-600 text-white px-4 rounded text-sm">Send</button></div>`}
+                    </div>
+                `).join('');
+            }
+        }
+        async function sendReply(id) {
+            const ans = document.getElementById(`reply-${id}`).value;
+            await fetch(`${API_BASE_URL}/teacher/reply_doubt`, { method: 'POST', headers: {'Content-Type': 'application/json'}, credentials: 'include', body: JSON.stringify({doubt_id: id, answer: ans}) });
+            loadDoubts();
+        }
+
+        // --- 12. COURSES RENDER ---
+        function renderCoursesTable() {
+            document.getElementById('teacher-courses-body').innerHTML = allTeacherCourses.map(c => `<tr class="border-b"><td class="p-4 font-bold">${c.name}</td><td class="p-4 text-gray-500">${c.subjects.join(', ')}</td></tr>`).join('');
+        }
+
+        // --- 13. STARTUP ---
+        document.addEventListener('DOMContentLoaded', () => {
+            checkSessionAndInit();
+            document.getElementById('logout-btn')?.addEventListener('click', async () => {
+                await fetch(`${API_BASE_URL}/logout`, { method: 'POST', credentials: 'include' });
+                window.location.href = '/';
+            });
+            document.querySelectorAll('input[type="date"]').forEach(i => i.valueAsDate = new Date());
+        });
+
+        // --- 14. FIREBASE ---
+        function initFirebase() {
+            try {
+                const firebaseConfig = { apiKey: "AIzaSyBkzEHM9fXRoCYSgEW-hk_lN7sL_nSLDfU", authDomain: "cst-institute-app.firebaseapp.com", projectId: "cst-institute-app", storageBucket: "cst-institute-app.firebasestorage.app", messagingSenderId: "485166460200", appId: "1:485166460200:web:4eae20e2010ab92baeb41d" };
+                if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                    const messaging = firebase.messaging();
+                    if ('serviceWorker' in navigator) {
+                        navigator.serviceWorker.register('/firebase-messaging-sw.js').then((reg) => messaging.getToken({ vapidKey: 'BBOMxvKvbEs_t9ykKBa2zIewzCzD6FCbm9rxc8a9eWl2kjjH5vyTSH6TeQMksZ_OGl5jZyQpU2wBcf-KsZN1uko', serviceWorkerRegistration: reg })).then((token) => { if (token) fetch('/api/save_fcm_token', { method: 'POST', headers: {'Content-Type': 'application/json'}, credentials: 'include', body: JSON.stringify({token}) }); }).catch(console.error);
+                    }
+                }
+            } catch (e) { console.log('Firebase error:', e); }
+        }
+    </script>
 </body>
 </html>
