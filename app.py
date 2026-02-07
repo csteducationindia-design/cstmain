@@ -674,6 +674,52 @@ def teacher_notify_student():
 
     except Exception as e:
         return jsonify({"message": f"Server Error: {str(e)}"}), 500
+# ==========================================
+#  PASTE THIS INTO app.py (Teacher Section)
+# ==========================================
+
+@app.route('/api/teacher/sessions', methods=['GET'])
+@login_required
+def teacher_sessions():
+    # Allow teachers to see the list of Batches (Sessions)
+    if current_user.role not in ['teacher', 'admin']: 
+        return jsonify({"msg": "Denied"}), 403
+    
+    sessions = AcademicSession.query.order_by(AcademicSession.id.desc()).all()
+    return jsonify([s.to_dict() for s in sessions])
+
+@app.route('/api/teacher/students', methods=['GET'])
+@login_required
+def teacher_students():
+    # Allow teachers to see students, optionally filtered by Batch (Session) or Course
+    if current_user.role not in ['teacher', 'admin']: 
+        return jsonify({"msg": "Denied"}), 403
+        
+    session_id = request.args.get('session_id')
+    course_id = request.args.get('course_id')
+    
+    query = User.query.filter_by(role='student')
+
+    # Filter by Batch (Session) if selected
+    if session_id and session_id != 'null' and session_id != '':
+        query = query.filter_by(session_id=int(session_id))
+
+    # Filter by Course if selected
+    if course_id and course_id != 'null' and course_id != '':
+        # Join with the association table to find students in this course
+        query = query.join(User.courses_enrolled).filter(Course.id == int(course_id))
+
+    students = query.all()
+    
+    # Return formatted list
+    student_list = []
+    for s in students:
+        s_dict = s.to_dict()
+        # Add extra details useful for the teacher view
+        s_dict['course_ids'] = [c.id for c in s.courses_enrolled]
+        student_list.append(s_dict)
+
+    return jsonify(student_list)
 
 @app.route('/api/fees/collect', methods=['POST'])
 @login_required
