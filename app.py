@@ -1210,11 +1210,7 @@ def serve_receipt(id):
     p = db.session.get(Payment, id)
     return f"<h1>Receipt #{p.id}</h1><p>Amount: {p.amount_paid}</p><button onclick='window.print()'>Print</button>" if p else "Not Found"
 
-@app.route('/api/teacher/sessions', methods=['GET'])
-@login_required
-def teacher_sessions():
-    sessions = AcademicSession.query.all()
-    return jsonify([s.to_dict() for s in sessions])
+
 
 @app.route('/api/my/profile', methods=['GET'])
 @login_required
@@ -1276,36 +1272,7 @@ def my_announcements():
     anns = Announcement.query.filter(Announcement.target_group.in_(['all', target])).order_by(Announcement.created_at.desc()).all()
     return jsonify([a.to_dict() for a in anns])
 
-@app.route('/api/teacher/students', methods=['GET'])
-@login_required
-def teacher_students():
-    sid = request.args.get('session_id')
-    cid = request.args.get('course_id')
-    
-    if sid in ['null', 'undefined', '', 'None']: sid = None
-    if cid in ['null', 'undefined', '', 'None']: cid = None
 
-    query = Course.query.filter_by(teacher_id=current_user.id)
-    if cid: query = query.filter_by(id=int(cid))
-    courses = query.all()
-    
-    students_list = []
-    seen = set()
-    for c in courses:
-        for s in c.students:
-            if sid and str(s.session_id) != str(sid): continue
-            if s.id not in seen:
-                students_list.append({
-                    "id": s.id, 
-                    "name": s.name, 
-                    "admission_number": s.admission_number,
-                    "profile_photo_url": s.profile_photo_url, 
-                    "session_name": s.to_dict().get('session_name', 'N/A'),
-                    "phone_number": s.phone_number,
-                    "course_ids": [course.id for course in s.courses_enrolled]
-                })
-                seen.add(s.id)
-    return jsonify(students_list)
 
 @app.route('/api/teacher/reports/attendance', methods=['GET'])
 @login_required
