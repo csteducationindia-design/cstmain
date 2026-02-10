@@ -1796,77 +1796,54 @@ window.deleteAnnouncement = async (id) => {
             } catch(e) { alert("Deletion failed."); }
         };
 
-async function sendAction(studentId, type, studentName) {
-    let endpoint = '';
-    let confirmMsg = '';
 
-    if (type === 'sms') {
-        endpoint = '/api/send_sms_alert';
-        confirmMsg = `Send SMS to ${studentName}?`;
-    } else if (type === 'email') {
-        endpoint = '/api/send_email_alert'; // Ensure this route exists in app.py
-        confirmMsg = `Send Email to ${studentName}?`;
-    } else if (type === 'push') {
-        endpoint = '/api/send_push_notification'; // Ensure this route exists in app.py
-        confirmMsg = `Send Push Notification to ${studentName}?`;
-    }
-
-    if (!confirm(confirmMsg)) return;
-
-    try {
-        const res = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ student_id: studentId })
-        });
-        
-        const data = await res.json();
-        if (res.ok) {
-            alert(`✅ ${type.toUpperCase()} Sent Successfully!`);
-        } else {
-            alert(`❌ Failed: ${data.msg || 'Error'}`);
-        }
-    } catch (e) {
-        alert("Server Error: " + e.message);
-    }
-}
         // --- REPORTS LOGIC (Updated with Photo & Messaging) ---
-       async function fetchTeacherAttendanceReport() {
+async function fetchTeacherAttendanceReport() {
     const sessionSelect = document.getElementById('report-session-select');
+    // Safety check: Stop if dropdown doesn't exist
     if (!sessionSelect) return; 
 
     const sessionId = sessionSelect.value;
     const tbody = document.getElementById('teacher-reports-body');
     
-    tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-slate-500">Loading data...</td></tr>`;
+    // Show loading spinner
+    tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-slate-500">Loading student reports...</td></tr>`;
 
     try {
-        const res = await fetch(`${API_BASE_URL}/teacher/reports?session_id=${sessionId || ''}`);
-        if (!res.ok) throw new Error("Failed");
+        // ✅ URL FIXED: Explicitly pointing to the correct API route in app.py
+        const res = await fetch(`/api/teacher/reports?session_id=${sessionId || ''}`);
+        
+        if (!res.ok) throw new Error("Server Error");
         
         const students = await res.json();
 
         if (students.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-slate-500">No students found.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-slate-500">No students found for this session.</td></tr>`;
             return;
         }
 
         tbody.innerHTML = students.map(s => {
-            // Phone logic
+            // ✅ PHONE LOGIC: Clean the number for WhatsApp
             const cleanPhone = s.phone_number ? s.phone_number.toString().replace(/\D/g, '') : '';
+            
+            // Only create link if phone is valid (10+ digits)
             const whatsappLink = cleanPhone.length >= 10 
-                ? `https://wa.me/91${cleanPhone.slice(-10)}?text=Hello ${encodeURIComponent(s.name)}, regarding your progress...`
+                ? `https://wa.me/91${cleanPhone.slice(-10)}?text=Hello ${encodeURIComponent(s.name)}, regarding your academic progress...`
                 : '#';
+            
+            // ✅ IMAGE SAFEGUARD: Removed API_ORIGIN dependency to prevent crashes
+            // If profile_photo_url exists, use it; otherwise use placeholder
+            const imgSrc = s.profile_photo_url || 'https://placehold.co/40?text=User';
 
             return `
             <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition border-b border-slate-100 dark:border-slate-800">
                 <td class="px-6 py-4">
-                    <img src="${s.profile_photo_url ? API_ORIGIN + s.profile_photo_url : 'https://placehold.co/40'}" class="w-8 h-8 rounded-full object-cover border border-slate-200">
+                    <img src="${imgSrc}" class="w-8 h-8 rounded-full object-cover border border-slate-200">
                 </td>
                 
                 <td class="px-6 py-4">
                      <div class="text-sm font-bold text-slate-700 dark:text-slate-200">${s.name}</div>
-                     <div class="text-[10px] text-slate-400 font-normal mt-0.5">${s.phone_number || ''}</div>
+                     <div class="text-[10px] text-slate-400 font-normal mt-0.5">${s.phone_number || 'No Phone'}</div>
                 </td>
                 
                 <td class="px-6 py-4 text-center">
@@ -1876,28 +1853,20 @@ async function sendAction(studentId, type, studentName) {
                 </td>
                 
                 <td class="px-6 py-4 text-right">
-                    <div class="text-xs text-slate-500 dark:text-slate-400 mb-2">${s.last_remark || 'No recent remarks'}</div>
-                    
+                    <div class="text-xs text-slate-500 dark:text-slate-400 mb-2">${s.last_remark || '-'}</div>
                     <div class="flex justify-end gap-2">
-                        <button onclick="sendAction('${s.id}', 'email', '${s.name}')" class="text-slate-400 hover:text-blue-600 transition-colors" title="Send Email">
-                            <span class="material-symbols-outlined text-[18px]">mail</span>
-                        </button>
-                        
-                        <button onclick="sendAction('${s.id}', 'sms', '${s.name}')" class="text-slate-400 hover:text-orange-600 transition-colors" title="Send SMS">
-                            <span class="material-symbols-outlined text-[18px]">sms</span>
-                        </button>
-                        
-                        <button onclick="sendAction('${s.id}', 'push', '${s.name}')" class="text-slate-400 hover:text-purple-600 transition-colors" title="Send Push Notification">
-                            <span class="material-symbols-outlined text-[18px]">notifications_active</span>
-                        </button>
+                        <button onclick="sendAction('${s.id}', 'email', '${s.name}')" class="text-slate-400 hover:text-blue-600 transition-colors" title="Send Email"><span class="material-symbols-outlined text-[18px]">mail</span></button>
+                        <button onclick="sendAction('${s.id}', 'sms', '${s.name}')" class="text-slate-400 hover:text-orange-600 transition-colors" title="Send SMS"><span class="material-symbols-outlined text-[18px]">sms</span></button>
+                        <button onclick="sendAction('${s.id}', 'push', '${s.name}')" class="text-slate-400 hover:text-purple-600 transition-colors" title="Push Notification"><span class="material-symbols-outlined text-[18px]">notifications_active</span></button>
                     </div>
                 </td>
                 
                 <td class="px-6 py-4 text-center">
                      <a href="${whatsappLink}" 
-                       target="_blank"
-                       class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 transition-colors border border-green-200 shadow-sm"
-                       title="Chat on WhatsApp">
+                        target="${cleanPhone.length >= 10 ? '_blank' : '_self'}"
+                        onclick="${cleanPhone.length < 10 ? 'alert(\'Invalid Phone Number\'); return false;' : ''}"
+                        class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 transition-colors border border-green-200 shadow-sm" 
+                        title="Chat on WhatsApp">
                         <span class="material-symbols-outlined text-[18px]">chat</span>
                     </a>
                 </td>
@@ -1906,10 +1875,54 @@ async function sendAction(studentId, type, studentName) {
         }).join('');
 
     } catch (error) {
-        console.error("Error:", error);
+        console.error("Report Error:", error);
+        tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-red-500">Error loading data. Try refreshing.</td></tr>`;
     }
 }
 
+// ✅ THE ONLY "sendAction" FUNCTION YOU NEED
+async function sendAction(studentId, type, studentName) {
+    let endpoint = '';
+    let confirmMsg = '';
+
+    // 1. Determine which API to hit based on the button clicked
+    if (type === 'sms') {
+        endpoint = '/api/send_sms_alert';
+        confirmMsg = `Send SMS to ${studentName}?`;
+    } else if (type === 'email') {
+        endpoint = '/api/send_email_alert'; 
+        confirmMsg = `Send Email to ${studentName}?`;
+    } else if (type === 'push') {
+        endpoint = '/api/send_push_notification'; 
+        confirmMsg = `Send Push Notification to ${studentName}?`;
+    } else {
+        alert("Unknown action type");
+        return;
+    }
+
+    // 2. Ask for confirmation
+    if (!confirm(confirmMsg)) return;
+
+    // 3. Send the request to the server
+    try {
+        const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ student_id: studentId })
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok) {
+            alert(`✅ ${type.toUpperCase()} Sent Successfully!`);
+        } else {
+            alert(`❌ Failed: ${data.msg || 'Unknown Error'}`);
+        }
+    } catch (e) {
+        console.error("Action Error:", e);
+        alert("Server Error: Unable to send request.");
+    }
+}   
         function renderReportTable(data) {
             const tbody = document.getElementById('teacher-reports-body');
             
