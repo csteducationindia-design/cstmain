@@ -1796,60 +1796,117 @@ window.deleteAnnouncement = async (id) => {
             } catch(e) { alert("Deletion failed."); }
         };
 
+async function sendAction(studentId, type, studentName) {
+    let endpoint = '';
+    let confirmMsg = '';
 
+    if (type === 'sms') {
+        endpoint = '/api/send_sms_alert';
+        confirmMsg = `Send SMS to ${studentName}?`;
+    } else if (type === 'email') {
+        endpoint = '/api/send_email_alert'; // Ensure this route exists in app.py
+        confirmMsg = `Send Email to ${studentName}?`;
+    } else if (type === 'push') {
+        endpoint = '/api/send_push_notification'; // Ensure this route exists in app.py
+        confirmMsg = `Send Push Notification to ${studentName}?`;
+    }
+
+    if (!confirm(confirmMsg)) return;
+
+    try {
+        const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ student_id: studentId })
+        });
+        
+        const data = await res.json();
+        if (res.ok) {
+            alert(`✅ ${type.toUpperCase()} Sent Successfully!`);
+        } else {
+            alert(`❌ Failed: ${data.msg || 'Error'}`);
+        }
+    } catch (e) {
+        alert("Server Error: " + e.message);
+    }
+}
         // --- REPORTS LOGIC (Updated with Photo & Messaging) ---
        async function fetchTeacherAttendanceReport() {
     const sessionSelect = document.getElementById('report-session-select');
-    const sessionId = sessionSelect ? sessionSelect.value : null;
+    if (!sessionSelect) return; 
+
+    const sessionId = sessionSelect.value;
     const tbody = document.getElementById('teacher-reports-body');
     
-    // Show loading...
-    tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-slate-500">Generating report...</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-slate-500">Loading data...</td></tr>`;
 
     try {
-        // Fetch the report data
         const res = await fetch(`${API_BASE_URL}/teacher/reports?session_id=${sessionId || ''}`);
         if (!res.ok) throw new Error("Failed");
+        
         const students = await res.json();
 
         if (students.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-slate-500">No data found.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-slate-500">No students found.</td></tr>`;
             return;
         }
 
-        // Render rows WITH WhatsApp Button
-        tbody.innerHTML = students.map(s => `
+        tbody.innerHTML = students.map(s => {
+            // Phone logic
+            const cleanPhone = s.phone_number ? s.phone_number.toString().replace(/\D/g, '') : '';
+            const whatsappLink = cleanPhone.length >= 10 
+                ? `https://wa.me/91${cleanPhone.slice(-10)}?text=Hello ${encodeURIComponent(s.name)}, regarding your progress...`
+                : '#';
+
+            return `
             <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition border-b border-slate-100 dark:border-slate-800">
                 <td class="px-6 py-4">
-                    <img src="${s.profile_photo_url ? API_ORIGIN + s.profile_photo_url : 'https://placehold.co/40'}" class="w-8 h-8 rounded-full object-cover">
+                    <img src="${s.profile_photo_url ? API_ORIGIN + s.profile_photo_url : 'https://placehold.co/40'}" class="w-8 h-8 rounded-full object-cover border border-slate-200">
                 </td>
+                
                 <td class="px-6 py-4">
                      <div class="text-sm font-bold text-slate-700 dark:text-slate-200">${s.name}</div>
                      <div class="text-[10px] text-slate-400 font-normal mt-0.5">${s.phone_number || ''}</div>
                 </td>
+                
                 <td class="px-6 py-4 text-center">
                     <span class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full font-bold">
                         ${s.attendance_percentage || 0}%
                     </span>
                 </td>
-                <td class="px-6 py-4 text-right text-xs text-slate-500 dark:text-slate-400">
-                    ${s.last_remark || 'No remarks'}
+                
+                <td class="px-6 py-4 text-right">
+                    <div class="text-xs text-slate-500 dark:text-slate-400 mb-2">${s.last_remark || 'No recent remarks'}</div>
+                    
+                    <div class="flex justify-end gap-2">
+                        <button onclick="sendAction('${s.id}', 'email', '${s.name}')" class="text-slate-400 hover:text-blue-600 transition-colors" title="Send Email">
+                            <span class="material-symbols-outlined text-[18px]">mail</span>
+                        </button>
+                        
+                        <button onclick="sendAction('${s.id}', 'sms', '${s.name}')" class="text-slate-400 hover:text-orange-600 transition-colors" title="Send SMS">
+                            <span class="material-symbols-outlined text-[18px]">sms</span>
+                        </button>
+                        
+                        <button onclick="sendAction('${s.id}', 'push', '${s.name}')" class="text-slate-400 hover:text-purple-600 transition-colors" title="Send Push Notification">
+                            <span class="material-symbols-outlined text-[18px]">notifications_active</span>
+                        </button>
+                    </div>
                 </td>
                 
                 <td class="px-6 py-4 text-center">
-                     <a href="https://wa.me/91${s.phone_number}?text=Hello ${encodeURIComponent(s.name)}, regarding your academic report (Attendance: ${s.attendance_percentage}%)..." 
-                       target="_blank" 
-                       class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 transition-colors border border-green-200"
+                     <a href="${whatsappLink}" 
+                       target="_blank"
+                       class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 transition-colors border border-green-200 shadow-sm"
                        title="Chat on WhatsApp">
                         <span class="material-symbols-outlined text-[18px]">chat</span>
                     </a>
                 </td>
             </tr>
-        `).join('');
+            `;
+        }).join('');
 
     } catch (error) {
         console.error("Error:", error);
-        tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-red-500">Error loading report.</td></tr>`;
     }
 }
 
