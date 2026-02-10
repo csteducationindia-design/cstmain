@@ -1798,47 +1798,51 @@ window.deleteAnnouncement = async (id) => {
 
 
         // --- REPORTS LOGIC (Updated with Photo & Messaging) ---
+// =========================================================
+// 1. FETCH REPORT DATA (Fixes Image & URL Issues)
+// =========================================================
 async function fetchTeacherAttendanceReport() {
     const sessionSelect = document.getElementById('report-session-select');
-    // Safety check: Stop if dropdown doesn't exist
     if (!sessionSelect) return; 
 
     const sessionId = sessionSelect.value;
     const tbody = document.getElementById('teacher-reports-body');
     
-    // Show loading spinner
-    tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-slate-500">Loading student reports...</td></tr>`;
+    // Loading State
+    tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-slate-500">Loading reports...</td></tr>`;
 
     try {
-        // ✅ URL FIXED: Explicitly pointing to the correct API route in app.py
+        // FIXED URL: Explicitly pointing to /api/teacher/reports
         const res = await fetch(`/api/teacher/reports?session_id=${sessionId || ''}`);
         
-        if (!res.ok) throw new Error("Server Error");
+        if (!res.ok) throw new Error("Failed to load report data");
         
         const students = await res.json();
 
         if (students.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-slate-500">No students found for this session.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-slate-500">No students found.</td></tr>`;
             return;
         }
 
         tbody.innerHTML = students.map(s => {
-            // ✅ PHONE LOGIC: Clean the number for WhatsApp
+            // FIXED IMAGE LOGIC: Safe fallback if photo is missing
+            // This prevents the "API_ORIGIN is not defined" crash
+            const imgSrc = s.profile_photo_url 
+                ? s.profile_photo_url 
+                : 'https://placehold.co/40?text=User';
+
+            // FIXED PHONE LOGIC: Clean number for WhatsApp
             const cleanPhone = s.phone_number ? s.phone_number.toString().replace(/\D/g, '') : '';
+            const isPhoneValid = cleanPhone.length >= 10;
             
-            // Only create link if phone is valid (10+ digits)
-            const whatsappLink = cleanPhone.length >= 10 
+            const whatsappLink = isPhoneValid 
                 ? `https://wa.me/91${cleanPhone.slice(-10)}?text=Hello ${encodeURIComponent(s.name)}, regarding your academic progress...`
                 : '#';
-            
-            // ✅ IMAGE SAFEGUARD: Removed API_ORIGIN dependency to prevent crashes
-            // If profile_photo_url exists, use it; otherwise use placeholder
-            const imgSrc = s.profile_photo_url || 'https://placehold.co/40?text=User';
 
             return `
             <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition border-b border-slate-100 dark:border-slate-800">
                 <td class="px-6 py-4">
-                    <img src="${imgSrc}" class="w-8 h-8 rounded-full object-cover border border-slate-200">
+                    <img src="${imgSrc}" class="w-8 h-8 rounded-full object-cover border border-slate-200" alt="${s.name}">
                 </td>
                 
                 <td class="px-6 py-4">
@@ -1863,9 +1867,9 @@ async function fetchTeacherAttendanceReport() {
                 
                 <td class="px-6 py-4 text-center">
                      <a href="${whatsappLink}" 
-                        target="${cleanPhone.length >= 10 ? '_blank' : '_self'}"
-                        onclick="${cleanPhone.length < 10 ? 'alert(\'Invalid Phone Number\'); return false;' : ''}"
-                        class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 transition-colors border border-green-200 shadow-sm" 
+                        target="${isPhoneValid ? '_blank' : '_self'}"
+                        onclick="${!isPhoneValid ? 'alert(\'Invalid Phone Number\'); return false;' : ''}"
+                        class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 transition-colors border border-green-200 shadow-sm ${!isPhoneValid ? 'opacity-50 cursor-not-allowed' : ''}" 
                         title="Chat on WhatsApp">
                         <span class="material-symbols-outlined text-[18px]">chat</span>
                     </a>
@@ -1876,16 +1880,17 @@ async function fetchTeacherAttendanceReport() {
 
     } catch (error) {
         console.error("Report Error:", error);
-        tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-red-500">Error loading data. Try refreshing.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-red-500">Error: ${error.message}</td></tr>`;
     }
 }
 
-// ✅ THE ONLY "sendAction" FUNCTION YOU NEED
+// =========================================================
+// 2. SEND ACTION (Consolidated Function)
+// =========================================================
 async function sendAction(studentId, type, studentName) {
     let endpoint = '';
     let confirmMsg = '';
 
-    // 1. Determine which API to hit based on the button clicked
     if (type === 'sms') {
         endpoint = '/api/send_sms_alert';
         confirmMsg = `Send SMS to ${studentName}?`;
@@ -1896,14 +1901,11 @@ async function sendAction(studentId, type, studentName) {
         endpoint = '/api/send_push_notification'; 
         confirmMsg = `Send Push Notification to ${studentName}?`;
     } else {
-        alert("Unknown action type");
         return;
     }
 
-    // 2. Ask for confirmation
     if (!confirm(confirmMsg)) return;
 
-    // 3. Send the request to the server
     try {
         const res = await fetch(endpoint, {
             method: 'POST',
@@ -1919,10 +1921,9 @@ async function sendAction(studentId, type, studentName) {
             alert(`❌ Failed: ${data.msg || 'Unknown Error'}`);
         }
     } catch (e) {
-        console.error("Action Error:", e);
         alert("Server Error: Unable to send request.");
     }
-}   
+}
         function renderReportTable(data) {
             const tbody = document.getElementById('teacher-reports-body');
             
