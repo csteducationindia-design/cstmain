@@ -1801,21 +1801,20 @@ window.deleteAnnouncement = async (id) => {
 // =========================================================
 // 1. FETCH REPORT DATA (Fixes Image & URL Issues)
 // =========================================================
+// ✅ 1. FETCH REPORTS FUNCTION
 async function fetchTeacherAttendanceReport() {
     const sessionSelect = document.getElementById('report-session-select');
     if (!sessionSelect) return; 
-
     const sessionId = sessionSelect.value;
     const tbody = document.getElementById('teacher-reports-body');
     
-    // Loading State
     tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-slate-500">Loading reports...</td></tr>`;
 
     try {
-        // FIXED URL: Explicitly pointing to /api/teacher/reports
+        // FIXED URL to match app.py
         const res = await fetch(`/api/teacher/reports?session_id=${sessionId || ''}`);
         
-        if (!res.ok) throw new Error("Failed to load report data");
+        if (!res.ok) throw new Error("Server Error: Route not found");
         
         const students = await res.json();
 
@@ -1825,16 +1824,12 @@ async function fetchTeacherAttendanceReport() {
         }
 
         tbody.innerHTML = students.map(s => {
-            // FIXED IMAGE LOGIC: Safe fallback if photo is missing
-            // This prevents the "API_ORIGIN is not defined" crash
-            const imgSrc = s.profile_photo_url 
-                ? s.profile_photo_url 
-                : 'https://placehold.co/40?text=User';
+            // FIXED IMAGE: Prevents crash if 'API_ORIGIN' is missing
+            const imgSrc = s.profile_photo_url || 'https://placehold.co/40?text=User';
 
-            // FIXED PHONE LOGIC: Clean number for WhatsApp
+            // FIXED PHONE: Clean number for WhatsApp link
             const cleanPhone = s.phone_number ? s.phone_number.toString().replace(/\D/g, '') : '';
             const isPhoneValid = cleanPhone.length >= 10;
-            
             const whatsappLink = isPhoneValid 
                 ? `https://wa.me/91${cleanPhone.slice(-10)}?text=Hello ${encodeURIComponent(s.name)}, regarding your academic progress...`
                 : '#';
@@ -1842,69 +1837,47 @@ async function fetchTeacherAttendanceReport() {
             return `
             <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition border-b border-slate-100 dark:border-slate-800">
                 <td class="px-6 py-4">
-                    <img src="${imgSrc}" class="w-8 h-8 rounded-full object-cover border border-slate-200" alt="${s.name}">
+                    <img src="${imgSrc}" class="w-8 h-8 rounded-full object-cover border border-slate-200">
                 </td>
-                
                 <td class="px-6 py-4">
                      <div class="text-sm font-bold text-slate-700 dark:text-slate-200">${s.name}</div>
                      <div class="text-[10px] text-slate-400 font-normal mt-0.5">${s.phone_number || 'No Phone'}</div>
                 </td>
-                
                 <td class="px-6 py-4 text-center">
-                    <span class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full font-bold">
-                        ${s.attendance_percentage || 0}%
-                    </span>
+                    <span class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full font-bold">${s.attendance_percentage || 0}%</span>
                 </td>
-                
                 <td class="px-6 py-4 text-right">
-                    <div class="text-xs text-slate-500 dark:text-slate-400 mb-2">${s.last_remark || '-'}</div>
                     <div class="flex justify-end gap-2">
-                        <button onclick="sendAction('${s.id}', 'email', '${s.name}')" class="text-slate-400 hover:text-blue-600 transition-colors" title="Send Email"><span class="material-symbols-outlined text-[18px]">mail</span></button>
-                        <button onclick="sendAction('${s.id}', 'sms', '${s.name}')" class="text-slate-400 hover:text-orange-600 transition-colors" title="Send SMS"><span class="material-symbols-outlined text-[18px]">sms</span></button>
-                        <button onclick="sendAction('${s.id}', 'push', '${s.name}')" class="text-slate-400 hover:text-purple-600 transition-colors" title="Push Notification"><span class="material-symbols-outlined text-[18px]">notifications_active</span></button>
+                        <button onclick="sendAction('${s.id}', 'email', '${s.name}')" class="text-slate-400 hover:text-blue-600" title="Email"><span class="material-symbols-outlined text-[18px]">mail</span></button>
+                        <button onclick="sendAction('${s.id}', 'sms', '${s.name}')" class="text-slate-400 hover:text-orange-600" title="SMS"><span class="material-symbols-outlined text-[18px]">sms</span></button>
+                        <button onclick="sendAction('${s.id}', 'push', '${s.name}')" class="text-slate-400 hover:text-purple-600" title="Push"><span class="material-symbols-outlined text-[18px]">notifications_active</span></button>
                     </div>
                 </td>
-                
                 <td class="px-6 py-4 text-center">
-                     <a href="${whatsappLink}" 
-                        target="${isPhoneValid ? '_blank' : '_self'}"
+                     <a href="${whatsappLink}" target="${isPhoneValid ? '_blank' : '_self'}"
                         onclick="${!isPhoneValid ? 'alert(\'Invalid Phone Number\'); return false;' : ''}"
-                        class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 transition-colors border border-green-200 shadow-sm ${!isPhoneValid ? 'opacity-50 cursor-not-allowed' : ''}" 
-                        title="Chat on WhatsApp">
+                        class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-50 text-green-600 hover:bg-green-100 border border-green-200 shadow-sm ${!isPhoneValid ? 'opacity-50 cursor-not-allowed' : ''}">
                         <span class="material-symbols-outlined text-[18px]">chat</span>
                     </a>
                 </td>
-            </tr>
-            `;
+            </tr>`;
         }).join('');
 
     } catch (error) {
-        console.error("Report Error:", error);
-        tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-red-500">Error: ${error.message}</td></tr>`;
+        console.error(error);
+        tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-red-500">Error loading data.</td></tr>`;
     }
 }
 
-// =========================================================
-// 2. SEND ACTION (Consolidated Function)
-// =========================================================
+// ✅ 2. SINGLE SEND ACTION FUNCTION
 async function sendAction(studentId, type, studentName) {
     let endpoint = '';
-    let confirmMsg = '';
+    if (type === 'sms') endpoint = '/api/send_sms_alert';
+    else if (type === 'email') endpoint = '/api/send_email_alert';
+    else if (type === 'push') endpoint = '/api/send_push_notification';
+    else return;
 
-    if (type === 'sms') {
-        endpoint = '/api/send_sms_alert';
-        confirmMsg = `Send SMS to ${studentName}?`;
-    } else if (type === 'email') {
-        endpoint = '/api/send_email_alert'; 
-        confirmMsg = `Send Email to ${studentName}?`;
-    } else if (type === 'push') {
-        endpoint = '/api/send_push_notification'; 
-        confirmMsg = `Send Push Notification to ${studentName}?`;
-    } else {
-        return;
-    }
-
-    if (!confirm(confirmMsg)) return;
+    if (!confirm(`Send ${type.toUpperCase()} to ${studentName}?`)) return;
 
     try {
         const res = await fetch(endpoint, {
@@ -1912,16 +1885,11 @@ async function sendAction(studentId, type, studentName) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ student_id: studentId })
         });
-        
         const data = await res.json();
-        
-        if (res.ok) {
-            alert(`✅ ${type.toUpperCase()} Sent Successfully!`);
-        } else {
-            alert(`❌ Failed: ${data.msg || 'Unknown Error'}`);
-        }
+        if (res.ok) alert(`✅ Sent!`);
+        else alert(`❌ Failed: ${data.msg}`);
     } catch (e) {
-        alert("Server Error: Unable to send request.");
+        alert("Server Error");
     }
 }
         function renderReportTable(data) {

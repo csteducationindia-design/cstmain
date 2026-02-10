@@ -622,10 +622,13 @@ def teacher_send_message():
 # ==========================================
 #  ✅ ADD THIS MISSING ROUTE TO APP.PY
 # ==========================================
+# ==========================================
+#  ✅ MISSING ROUTE: ADD THIS TO APP.PY
+# ==========================================
 @app.route('/api/teacher/reports', methods=['GET'])
 @login_required
 def get_teacher_reports():
-    # 1. Security Check
+    # 1. Permission Check
     if current_user.role != 'teacher':
         return jsonify({"msg": "Denied"}), 403
 
@@ -633,9 +636,9 @@ def get_teacher_reports():
     session_id = request.args.get('session_id')
 
     # 3. Query Students
+    # (Ensure 'User' and 'Attendance' models are imported or defined in your app)
     query = User.query.filter_by(role='student')
     
-    # Filter by session if provided and valid
     if session_id and session_id != 'undefined' and session_id != 'null':
         try:
             query = query.filter_by(session_id=int(session_id))
@@ -657,8 +660,7 @@ def get_teacher_reports():
         except Exception:
             percentage = 0
 
-        # 5. Handle Phone Number Safety
-        # Checks for 'phone_number', 'mobile', or defaults to empty string
+        # 5. Handle Phone Number
         phone = getattr(s, 'phone_number', getattr(s, 'mobile', ''))
 
         report_data.append({
@@ -671,7 +673,6 @@ def get_teacher_reports():
         })
 
     return jsonify(report_data)
-
 @app.route('/api/teacher/notify', methods=['POST'])
 @login_required
 def teacher_notify_student():
