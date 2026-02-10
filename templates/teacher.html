@@ -962,6 +962,73 @@
             }
         });
     }
+// --- ADD THIS CODE TO THE BOTTOM OF YOUR SCRIPT SECTION ---
+
+async function loadReportsData() {
+    const sessionSelect = document.getElementById('report-session-select');
+    // If the select box doesn't exist, we can't load data
+    if (!sessionSelect) return; 
+
+    const sessionId = sessionSelect.value;
+    const tbody = document.getElementById('teacher-reports-body');
+    
+    // Show loading state
+    tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-slate-500">Loading student reports...</td></tr>`;
+
+    try {
+        // Fetch students for the selected session
+        // Note: We use the existing endpoint to get students
+        const res = await fetch(`${API_BASE_URL}/teacher/students?session_id=${sessionId || ''}`);
+        
+        if (!res.ok) throw new Error("Failed to load students");
+        
+        const students = await res.json();
+
+        if (students.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-slate-500">No students found in this batch.</td></tr>`;
+            return;
+        }
+
+        // Render the table rows with the WhatsApp button
+        tbody.innerHTML = students.map(s => `
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition border-b border-slate-100 dark:border-slate-800">
+                <td class="px-6 py-4">
+                    <img src="${s.profile_photo_url ? API_ORIGIN + s.profile_photo_url : 'https://placehold.co/40'}" class="w-8 h-8 rounded-full object-cover border border-slate-200">
+                </td>
+                <td class="px-6 py-4">
+                    <div class="text-sm font-bold text-slate-700 dark:text-slate-200">${s.name}</div>
+                    <div class="text-[10px] text-slate-400 font-normal mt-0.5">${s.phone_number || ''}</div>
+                </td>
+                <td class="px-6 py-4 text-center">
+                    <span class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full font-bold">
+                        ${s.attendance_percentage || 0}%
+                    </span>
+                </td>
+                <td class="px-6 py-4 text-right text-xs text-slate-500 dark:text-slate-400">
+                    ${s.last_remark || 'No remarks yet'}
+                </td>
+
+                <td class="px-6 py-4 text-center">
+                     <a href="https://wa.me/91${s.phone_number}?text=Hello ${encodeURIComponent(s.name)}, regarding your academic report..." 
+                       target="_blank" 
+                       class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 transition-colors border border-green-200"
+                       title="Chat on WhatsApp">
+                        <span class="material-symbols-outlined text-[18px]">chat</span>
+                    </a>
+                </td>
+            </tr>
+        `).join('');
+
+    } catch (error) {
+        console.error("Error loading reports:", error);
+        tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
+    }
+}
+
+// Make sure to call this when the tab is switched or dropdown changes
+// Add this event listener if it's not already there:
+document.getElementById('report-session-select')?.addEventListener('change', loadReportsData);
+
 
     // Delete Result
     async function deleteResult(id) {
@@ -1731,16 +1798,60 @@ window.deleteAnnouncement = async (id) => {
 
 
         // --- REPORTS LOGIC (Updated with Photo & Messaging) ---
-        async function fetchTeacherAttendanceReport() {
-            const tbody = document.getElementById('teacher-reports-body');
-            try {
-                const res = await fetch(`${API_BASE_URL}/teacher/reports/attendance`, { credentials: 'include' });
-                reportData = await res.json(); // Cache data for filtering
-                renderReportTable(reportData);
-            } catch (e) {
-                tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-red-500">Error loading report.</td></tr>';
-            }
+       async function fetchTeacherAttendanceReport() {
+    const sessionSelect = document.getElementById('report-session-select');
+    const sessionId = sessionSelect ? sessionSelect.value : null;
+    const tbody = document.getElementById('teacher-reports-body');
+    
+    // Show loading...
+    tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-slate-500">Generating report...</td></tr>`;
+
+    try {
+        // Fetch the report data
+        const res = await fetch(`${API_BASE_URL}/teacher/reports?session_id=${sessionId || ''}`);
+        if (!res.ok) throw new Error("Failed");
+        const students = await res.json();
+
+        if (students.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-slate-500">No data found.</td></tr>`;
+            return;
         }
+
+        // Render rows WITH WhatsApp Button
+        tbody.innerHTML = students.map(s => `
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition border-b border-slate-100 dark:border-slate-800">
+                <td class="px-6 py-4">
+                    <img src="${s.profile_photo_url ? API_ORIGIN + s.profile_photo_url : 'https://placehold.co/40'}" class="w-8 h-8 rounded-full object-cover">
+                </td>
+                <td class="px-6 py-4">
+                     <div class="text-sm font-bold text-slate-700 dark:text-slate-200">${s.name}</div>
+                     <div class="text-[10px] text-slate-400 font-normal mt-0.5">${s.phone_number || ''}</div>
+                </td>
+                <td class="px-6 py-4 text-center">
+                    <span class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full font-bold">
+                        ${s.attendance_percentage || 0}%
+                    </span>
+                </td>
+                <td class="px-6 py-4 text-right text-xs text-slate-500 dark:text-slate-400">
+                    ${s.last_remark || 'No remarks'}
+                </td>
+                
+                <td class="px-6 py-4 text-center">
+                     <a href="https://wa.me/91${s.phone_number}?text=Hello ${encodeURIComponent(s.name)}, regarding your academic report (Attendance: ${s.attendance_percentage}%)..." 
+                       target="_blank" 
+                       class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 transition-colors border border-green-200"
+                       title="Chat on WhatsApp">
+                        <span class="material-symbols-outlined text-[18px]">chat</span>
+                    </a>
+                </td>
+            </tr>
+        `).join('');
+
+    } catch (error) {
+        console.error("Error:", error);
+        tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-red-500">Error loading report.</td></tr>`;
+    }
+}
 
         function renderReportTable(data) {
             const tbody = document.getElementById('teacher-reports-body');
