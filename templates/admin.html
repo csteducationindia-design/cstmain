@@ -609,55 +609,59 @@ async function toggleBlock(btn) {
             <tr class="border-b hover:bg-slate-50"><td class="p-3 font-medium">${s.name}</td><td class="p-3 text-sm text-gray-500">${s.start_date} - ${s.end_date}</td><td class="p-3"><span class="px-2 py-1 rounded text-xs ${s.status==='Active'?'bg-green-100 text-green-700':'bg-gray-100 text-gray-700'}">${s.status}</span></td><td class="p-3 text-right"><button onclick="editSession(${s.id})" class="text-blue-600 mr-3"><span class="material-symbols-outlined">edit</span></button><button onclick="del('/api/sessions?id=${s.id}')" class="text-red-600"><span class="material-symbols-outlined">delete</span></button></td></tr>`).join('');
     }
 
-   async function loadUsers() {
-        const sid = document.getElementById('filterSession').value;
-        const term = document.getElementById('userSearch').value.toLowerCase();
-        const res = await fetch(`${API_BASE_URL}/users?session_id=${sid}&search=${term}`);
-        users = await res.json();
-        
-        const parents = users.filter(u => u.role === 'parent');
-        const pSel = document.getElementById('student-parent');
-        if(pSel) pSel.innerHTML = '<option value="">-- Select Parent --</option>' + parents.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+   // FIND THIS FUNCTION IN YOUR SCRIPT AND REPLACE IT COMPLETELY
+async function loadUsers() {
+    const sessionFilter = document.getElementById('filterSession').value;
+    const search = document.getElementById('userSearch').value.toLowerCase();
+    
+    const filtered = users.filter(u => u.role === 'student' && 
+        (sessionFilter === '' || u.session_id == sessionFilter) &&
+        (u.name.toLowerCase().includes(search) || u.admission_number.toString().includes(search))
+    );
 
-        // ✅ UPDATED ROW GENERATION WITH BLOCK BUTTON
-        document.getElementById('usersTableBody').innerHTML = users.filter(u=>u.role==='student').map(u => `
-    <tr class="border-b hover:bg-slate-50">
-        <td class="p-3">${u.admission_number||'-'}</td>
-        <td class="p-3 font-bold text-slate-700">
-            ${u.name}
-            <div class="text-xs text-slate-400 font-normal">${u.phone_number || ''}</div>
-        </td>
-        <td class="p-3 text-sm text-blue-600">${u.session_name}</td>
-        
-        <td class="p-3">
-            <button onclick="toggleBlock(this)" 
-                data-id="${u.id}" 
-                data-status="${u.hall_ticket_blocked}"
-                class="px-3 py-1 rounded text-white text-xs font-bold transition-colors ${u.hall_ticket_blocked ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'}">
-                ${u.hall_ticket_blocked ? 'BLOCKED' : 'ACTIVE'}
-            </button>
-        </td>
-
-        <td class="p-3 text-right flex justify-end items-center">
+    document.getElementById('usersTableBody').innerHTML = filtered.map(u => `
+        <tr class="border-b hover:bg-slate-50 transition-colors">
+            <td class="p-3 align-middle">${u.admission_number || '-'}</td>
+            <td class="p-3 align-middle">
+                <div class="font-bold text-slate-700">${u.name}</div>
+                <div class="text-xs text-slate-400 font-normal">${u.phone_number || ''}</div>
+            </td>
+            <td class="p-3 align-middle text-sm text-blue-600">${u.session_name || 'No Batch'}</td>
             
-            <a href="https://wa.me/91${u.phone_number}?text=Hello ${encodeURIComponent(u.name)}, regarding your classes..." 
-               target="_blank" 
-               class="text-green-600 hover:text-green-800 mr-3" 
-               title="WhatsApp Chat">
-               <span class="material-symbols-outlined">chat</span>
-            </a>
-            <a href="/admin/id_card/${u.id}" target="_blank" class="text-purple-600 mr-2" title="ID Card">
-                <span class="material-symbols-outlined">badge</span>
-            </a>
-            <button onclick="editUser(${u.id}, 'student')" class="text-blue-600 mr-2">
-                <span class="material-symbols-outlined">edit</span>
-            </button>
-            <button onclick="del('/api/users/${u.id}')" class="text-red-600">
-                <span class="material-symbols-outlined">delete</span>
-            </button>
-        </td>
-    </tr>`).join('');
+            <td class="p-3 align-middle">
+                <button onclick="toggleBlock(this)" 
+                    data-id="${u.id}" 
+                    data-status="${u.hall_ticket_blocked}"
+                    class="px-3 py-1 rounded text-white text-xs font-bold transition-colors ${u.hall_ticket_blocked ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'}">
+                    ${u.hall_ticket_blocked ? 'BLOCKED' : 'ACTIVE'}
+                </button>
+            </td>
 
+            <td class="p-3 align-middle text-right">
+                <div class="flex justify-end items-center gap-2">
+                    <a href="https://wa.me/91${u.phone_number}?text=Hello ${encodeURIComponent(u.name)}, regarding your classes..." 
+                       target="_blank" 
+                       class="text-green-600 hover:text-green-800 p-1 hover:bg-green-50 rounded-full transition-colors" 
+                       title="WhatsApp Chat">
+                       <span class="material-symbols-outlined">chat</span>
+                    </a>
+
+                    <a href="/admin/id_card/${u.id}" target="_blank" class="text-purple-600 hover:text-purple-800 p-1 hover:bg-purple-50 rounded-full transition-colors" title="ID Card">
+                        <span class="material-symbols-outlined">badge</span>
+                    </a>
+
+                    <button onclick="editUser(${u.id}, 'student')" class="text-blue-600 hover:text-blue-800 p-1 hover:bg-blue-50 rounded-full transition-colors" title="Edit">
+                        <span class="material-symbols-outlined">edit</span>
+                    </button>
+
+                    <button onclick="del('/api/users/${u.id}')" class="text-red-600 hover:text-red-800 p-1 hover:bg-red-50 rounded-full transition-colors" title="Delete">
+                        <span class="material-symbols-outlined">delete</span>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
     async function loadTeachers() {
         if(!users.length) await loadGlobalData();
         const list = users.filter(u => u.role === 'teacher');
