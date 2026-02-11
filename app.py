@@ -622,57 +622,7 @@ def teacher_send_message():
 # ==========================================
 #  ✅ ADD THIS MISSING ROUTE TO APP.PY
 # ==========================================
-# ==========================================
-#  ✅ MISSING ROUTE: ADD THIS TO APP.PY
-# ==========================================
-@app.route('/api/teacher/reports', methods=['GET'])
-@login_required
-def get_teacher_reports():
-    # 1. Permission Check
-    if current_user.role != 'teacher':
-        return jsonify({"msg": "Denied"}), 403
 
-    # 2. Get Filters
-    session_id = request.args.get('session_id')
-
-    # 3. Query Students
-    # (Ensure 'User' and 'Attendance' models are imported or defined in your app)
-    query = User.query.filter_by(role='student')
-    
-    if session_id and session_id != 'undefined' and session_id != 'null':
-        try:
-            query = query.filter_by(session_id=int(session_id))
-        except ValueError:
-            pass 
-            
-    students = query.all()
-    report_data = []
-
-    for s in students:
-        # 4. Calculate Attendance Percentage
-        try:
-            total_classes = Attendance.query.filter_by(student_id=s.id).count()
-            present_count = Attendance.query.filter_by(student_id=s.id, status='Present').count()
-            
-            percentage = 0
-            if total_classes > 0:
-                percentage = int((present_count / total_classes) * 100)
-        except Exception:
-            percentage = 0
-
-        # 5. Handle Phone Number
-        phone = getattr(s, 'phone_number', getattr(s, 'mobile', ''))
-
-        report_data.append({
-            "id": s.id,
-            "name": s.name,
-            "phone_number": phone,
-            "profile_photo_url": s.profile_photo_url,
-            "attendance_percentage": percentage,
-            "last_remark": "-" 
-        })
-
-    return jsonify(report_data)
 @app.route('/api/teacher/notify', methods=['POST'])
 @login_required
 def teacher_notify_student():
