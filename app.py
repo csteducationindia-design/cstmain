@@ -1327,21 +1327,24 @@ def my_announcements():
 #  ✅ ADD THIS TO APP.PY (WITH DEBUGGING)
 # ==========================================
 
+# ==========================================
+#  ✅ TEACHER REPORTS (Paste this ONCE)
+# ==========================================
 @app.route('/api/teacher/reports', methods=['GET'])
 @login_required
 def get_teacher_reports():
-    # 1. Permission Check
+    # 1. Check Permissions
     if current_user.role != 'teacher':
         return jsonify({"msg": "Denied"}), 403
 
     # 2. Get Filters
     session_id = request.args.get('session_id')
 
-    # 3. Query Students
     try:
+        # 3. Query Students
         query = User.query.filter_by(role='student')
-
-        # Filter by Session if provided
+        
+        # Apply Session Filter
         if session_id and session_id not in ['undefined', 'null', '']:
             query = query.filter_by(session_id=int(session_id))
         
@@ -1349,18 +1352,19 @@ def get_teacher_reports():
         report_data = []
 
         for s in students:
-            # Safe Attendance Calculation
+            # 4. Safe Attendance Calculation
             pct = 0
             try:
-                # Check if Attendance model exists to avoid crashes
+                # Check if Attendance model is available
                 if 'Attendance' in globals():
                     total = Attendance.query.filter_by(student_id=s.id).count()
                     present = Attendance.query.filter_by(student_id=s.id, status='Present').count()
-                    pct = int((present / total) * 100) if total > 0 else 0
+                    if total > 0:
+                        pct = int((present / total) * 100)
             except:
                 pct = 0
 
-            # Safe Phone Number
+            # 5. Safe Phone Number
             phone = getattr(s, 'phone_number', getattr(s, 'mobile', ''))
 
             report_data.append({
@@ -1375,7 +1379,7 @@ def get_teacher_reports():
         return jsonify(report_data)
 
     except Exception as e:
-        print(f"❌ Server Error: {e}")
+        print(f"Server Error: {e}")
         return jsonify([])
 
 @app.route('/api/teacher/announcements', methods=['GET', 'POST'])
