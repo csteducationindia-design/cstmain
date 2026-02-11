@@ -1801,70 +1801,78 @@ window.deleteAnnouncement = async (id) => {
 // =========================================================
 // 1. FETCH REPORT DATA (Fixes Image & URL Issues)
 // =========================================================
-// ✅ 1. FETCH REPORTS FUNCTION
 async function fetchTeacherAttendanceReport() {
-    const sessionSelect = document.getElementById('report-session-select');
-    if (!sessionSelect) return; 
-
-    const sessionId = sessionSelect.value;
+    // 1. We removed the 'report-session-select' check because your HTML uses 'report-course-select'
     const tbody = document.getElementById('teacher-reports-body');
     
     // Show Loading
     tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-slate-500">Loading reports...</td></tr>`;
 
     try {
-        console.log("Fetching reports for Session:", sessionId); // Debug Log
-
-        // Call the API
-        const res = await fetch(`/api/teacher/reports?session_id=${sessionId || ''}`);
+        // 2. Fetch ALL students (The backend handles this if no session_id is sent)
+        const res = await fetch(`/api/teacher/reports`);
         
         if (!res.ok) throw new Error(`Server Error: ${res.status}`);
         
         const students = await res.json();
-        console.log("Data received:", students); // Debug Log
+        
+        // Save to global variable so the Course Filter works later
+        window.reportData = students; 
 
         if (students.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-slate-500">No students found for this session (ID: ${sessionId}).</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-slate-500">No students found.</td></tr>`;
             return;
         }
 
-        // Render Rows
-        tbody.innerHTML = students.map(s => {
-            const imgSrc = s.profile_photo_url || 'https://placehold.co/40?text=User';
-            const cleanPhone = s.phone_number ? s.phone_number.toString().replace(/\D/g, '') : '';
-            const isPhoneValid = cleanPhone.length >= 10;
-            const whatsappLink = isPhoneValid 
-                ? `https://wa.me/91${cleanPhone.slice(-10)}?text=Hello ${encodeURIComponent(s.name)}, regarding your academic progress...`
-                : '#';
-
-            return `
-            <tr class="hover:bg-slate-50 border-b border-slate-100">
-                <td class="px-6 py-4"><img src="${imgSrc}" class="w-8 h-8 rounded-full object-cover"></td>
-                <td class="px-6 py-4">
-                     <div class="text-sm font-bold text-slate-700">${s.name}</div>
-                     <div class="text-[10px] text-slate-400">${s.phone_number || '-'}</div>
-                </td>
-                <td class="px-6 py-4 text-center">
-                    <span class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full font-bold">${s.attendance_percentage}%</span>
-                </td>
-                <td class="px-6 py-4 text-right">
-                    <div class="flex justify-end gap-2">
-                        <button onclick="sendAction('${s.id}', 'email', '${s.name}')" class="text-slate-400 hover:text-blue-600"><span class="material-symbols-outlined text-[18px]">mail</span></button>
-                        <button onclick="sendAction('${s.id}', 'sms', '${s.name}')" class="text-slate-400 hover:text-orange-600"><span class="material-symbols-outlined text-[18px]">sms</span></button>
-                    </div>
-                </td>
-                <td class="px-6 py-4 text-center">
-                     <a href="${whatsappLink}" target="${isPhoneValid ? '_blank' : '_self'}" class="text-green-600">
-                        <span class="material-symbols-outlined text-[18px]">chat</span>
-                    </a>
-                </td>
-            </tr>`;
-        }).join('');
+        // 3. Render the table
+        renderReportTable(students);
 
     } catch (error) {
         console.error("Report Error:", error);
         tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-red-500">Error: ${error.message}</td></tr>`;
     }
+}
+
+// Helper function to render the rows (Use this to avoid code duplication)
+function renderReportTable(data) {
+    const tbody = document.getElementById('teacher-reports-body');
+    
+    if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-slate-500">No students found for this selection.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = data.map(s => {
+        const imgSrc = s.profile_photo_url ? s.profile_photo_url : 'https://placehold.co/40?text=U';
+        const cleanPhone = s.phone_number ? s.phone_number.toString().replace(/\D/g, '') : '';
+        const isPhoneValid = cleanPhone.length >= 10;
+        const whatsappLink = isPhoneValid 
+            ? `https://wa.me/91${cleanPhone.slice(-10)}?text=Hello ${encodeURIComponent(s.name)}, regarding your academic progress...`
+            : '#';
+
+        return `
+        <tr class="hover:bg-slate-50 border-b border-slate-100">
+            <td class="px-6 py-4"><img src="${imgSrc}" class="w-8 h-8 rounded-full object-cover"></td>
+            <td class="px-6 py-4">
+                 <div class="text-sm font-bold text-slate-700">${s.name}</div>
+                 <div class="text-[10px] text-slate-400">${s.phone_number || '-'}</div>
+            </td>
+            <td class="px-6 py-4 text-center">
+                <span class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full font-bold">${s.attendance_percentage}%</span>
+            </td>
+            <td class="px-6 py-4 text-right">
+                <div class="flex justify-end gap-2">
+                    <button onclick="sendAction('${s.id}', 'email', '${s.name}')" class="text-slate-400 hover:text-blue-600" title="Email"><span class="material-symbols-outlined text-[18px]">mail</span></button>
+                    <button onclick="sendAction('${s.id}', 'sms', '${s.name}')" class="text-slate-400 hover:text-orange-600" title="SMS"><span class="material-symbols-outlined text-[18px]">sms</span></button>
+                </div>
+            </td>
+            <td class="px-6 py-4 text-center">
+                 <a href="${whatsappLink}" target="${isPhoneValid ? '_blank' : '_self'}" class="text-green-600">
+                    <span class="material-symbols-outlined text-[18px]">chat</span>
+                </a>
+            </td>
+        </tr>`;
+    }).join('');
 }
 // ✅ 2. SINGLE SEND ACTION FUNCTION
 async function sendAction(studentId, type, studentName) {

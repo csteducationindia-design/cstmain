@@ -1380,7 +1380,7 @@ def get_teacher_reports():
 
     except Exception as e:
         print(f"Server Error: {e}")
-        return jsonify([])
+        return jsonify(report_data)
 
 @app.route('/api/teacher/announcements', methods=['GET', 'POST'])
 @login_required
