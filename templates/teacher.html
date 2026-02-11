@@ -1785,28 +1785,29 @@ async function fetchTeacherAttendanceReport() {
 
 // ✅ CORRECT RENDER FUNCTION (Matches Backend Data)
 // ✅ CORRECT & SAFE RENDER FUNCTION
+// ✅ SAFE RENDER FUNCTION (Fixes the crash)
 function renderReportTable(data) {
     const tbody = document.getElementById('teacher-reports-body');
     
-    // Safety Check: If data is empty or null, show message
+    // 1. Safety Check: If no data, stop here
     if (!data || !Array.isArray(data) || data.length === 0) {
         tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-slate-500">No students found for this selection.</td></tr>`;
         return;
     }
 
     tbody.innerHTML = data.map(s => {
-        // 1. SAFETY: Ensure name exists, default to "Unknown" if missing
-        const safeName = s.name ? s.name : "Unknown Student";
+        // 2. SAFETY FIX: Use "Unknown" if name is missing. Prevents charAt crash.
+        const safeName = (s.name && s.name.trim() !== "") ? s.name : "Unknown Student";
         
-        // 2. SAFETY: Ensure we can get the first letter without crashing
+        // 3. Get Initial safely
         const initial = safeName.charAt(0).toUpperCase();
 
-        // 3. IMAGE LOGIC: Use photo if available, otherwise use placeholder with initial
+        // 4. Image Logic: Use photo if valid, otherwise placeholder with Initial
         const imgSrc = s.profile_photo_url 
             ? `${API_ORIGIN}${s.profile_photo_url}` 
             : `https://placehold.co/40x40/e2e8f0/475569?text=${initial}`;
 
-        // 4. PHONE LOGIC: Clean phone number
+        // 5. Phone Logic
         const cleanPhone = s.phone_number ? s.phone_number.toString().replace(/\D/g, '') : '';
         const isPhoneValid = cleanPhone.length >= 10;
         const whatsappLink = isPhoneValid 
@@ -1816,7 +1817,7 @@ function renderReportTable(data) {
         return `
         <tr class="hover:bg-slate-50 border-b border-slate-100 dark:border-slate-800 dark:hover:bg-slate-800 transition">
             <td class="px-6 py-4">
-                <img src="${imgSrc}" class="w-10 h-10 rounded-full object-cover border border-slate-200 shadow-sm" alt="${safeName}">
+                <img src="${imgSrc}" class="w-10 h-10 rounded-full object-cover border border-slate-200 shadow-sm" alt="${initial}">
             </td>
             
             <td class="px-6 py-4">
@@ -1855,6 +1856,7 @@ function renderReportTable(data) {
         </tr>`;
     }).join('');
 }
+
 // ✅ FILTER LOGIC (Corrected to match backend keys)
 // ==========================================
 // ✅ UNIFIED REPORT FILTER (Batch + Course)
