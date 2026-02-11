@@ -1326,65 +1326,57 @@ def my_announcements():
 # ==========================================
 #  ✅ ADD THIS TO APP.PY (WITH DEBUGGING)
 # ==========================================
+
 @app.route('/api/teacher/reports', methods=['GET'])
 @login_required
 def get_teacher_reports():
-    print("--- 🟢 API HIT: /api/teacher/reports ---") # Debug Print
-    
     # 1. Permission Check
     if current_user.role != 'teacher':
-        print("❌ Denied: User is not teacher")
         return jsonify({"msg": "Denied"}), 403
 
     # 2. Get Filters
     session_id = request.args.get('session_id')
-    print(f"🔹 Requested Session ID: {session_id}")
 
     # 3. Query Students
     try:
         query = User.query.filter_by(role='student')
-        
-        # Filter by session if provided
-        if session_id and session_id != 'undefined' and session_id != 'null' and session_id != '':
-            query = query.filter_by(session_id=int(session_id))
-            print(f"🔹 Filtering by Session ID: {session_id}")
-        else:
-            print("🔸 No Session ID provided, fetching all students")
-            
-        students = query.all()
-        print(f"✅ Found {len(students)} students")
 
+        # Filter by Session if provided
+        if session_id and session_id not in ['undefined', 'null', '']:
+            query = query.filter_by(session_id=int(session_id))
+        
+        students = query.all()
         report_data = []
 
         for s in students:
-            # 4. Calculate Attendance
+            # Safe Attendance Calculation
+            pct = 0
             try:
-                total_classes = Attendance.query.filter_by(student_id=s.id).count()
-                present_count = Attendance.query.filter_by(student_id=s.id, status='Present').count()
-                percentage = int((present_count / total_classes) * 100) if total_classes > 0 else 0
-            except Exception as e:
-                print(f"⚠️ Error calc attendance for {s.name}: {e}")
-                percentage = 0
+                # Check if Attendance model exists to avoid crashes
+                if 'Attendance' in globals():
+                    total = Attendance.query.filter_by(student_id=s.id).count()
+                    present = Attendance.query.filter_by(student_id=s.id, status='Present').count()
+                    pct = int((present / total) * 100) if total > 0 else 0
+            except:
+                pct = 0
 
-            # 5. Handle Phone & Photo
-            # Using safe getters to prevent crashes
+            # Safe Phone Number
             phone = getattr(s, 'phone_number', getattr(s, 'mobile', ''))
-            
+
             report_data.append({
                 "id": s.id,
                 "name": s.name,
                 "phone_number": phone,
                 "profile_photo_url": s.profile_photo_url,
-                "attendance_percentage": percentage,
-                "last_remark": "-" 
+                "attendance_percentage": pct,
+                "last_remark": "-"
             })
 
-        print(f"🚀 Sending {len(report_data)} records to frontend")
         return jsonify(report_data)
 
     except Exception as e:
-        print(f"❌ SERVER ERROR: {str(e)}")
-        return jsonify({"msg": "Server Error", "error": str(e)}), 500
+        print(f"❌ Server Error: {e}")
+        return jsonify([])
 
 @app.route('/api/teacher/announcements', methods=['GET', 'POST'])
 @login_required
