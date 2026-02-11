@@ -1370,6 +1370,7 @@ def get_teacher_reports():
             report_data.append({
                 "id": s.id,
                 "name": s.name,
+		"session_id": s.session_id,
                 "phone_number": phone,
                 "profile_photo_url": s.profile_photo_url,
                 "attendance_percentage": pct,

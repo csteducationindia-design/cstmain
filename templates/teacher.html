@@ -665,17 +665,27 @@
 
             <div id="content-reports" class="content-section hidden animate-fade-in">
                 <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm p-6 mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 border border-slate-100 dark:border-slate-700">
-                    <div>
-                        <h2 class="text-xl font-bold text-slate-900 dark:text-white">Student Reports</h2>
-                        <p class="text-sm text-slate-500 mt-1">View comprehensive student data by course.</p>
-                    </div>
-                    <div class="w-full md:w-72">
-                        <label for="report-course-select" class="block text-xs font-bold uppercase text-slate-400 mb-1">Filter by Course</label>
-                        <select id="report-course-select" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm p-2.5 focus:ring-primary">
-                            <option value="">Show All Students</option>
-                        </select>
-                    </div>
-                </div>
+    <div>
+        <h2 class="text-xl font-bold text-slate-900 dark:text-white">Student Reports</h2>
+        <p class="text-sm text-slate-500 mt-1">View comprehensive student data.</p>
+    </div>
+    
+    <div class="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+        <div class="w-full md:w-56">
+            <label for="report-session-select" class="block text-xs font-bold uppercase text-slate-400 mb-1">Filter by Batch</label>
+            <select id="report-session-select" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm p-2.5 focus:ring-primary">
+                <option value="">All Batches</option>
+            </select>
+        </div>
+
+        <div class="w-full md:w-56">
+            <label for="report-course-select" class="block text-xs font-bold uppercase text-slate-400 mb-1">Filter by Course</label>
+            <select id="report-course-select" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm p-2.5 focus:ring-primary">
+                <option value="">All Courses</option>
+            </select>
+        </div>
+    </div>
+</div>
 
                 <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm overflow-hidden border border-slate-100 dark:border-slate-700">
                     <div class="overflow-x-auto">
@@ -964,70 +974,6 @@
     }
 // --- ADD THIS CODE TO THE BOTTOM OF YOUR SCRIPT SECTION ---
 
-async function loadReportsData() {
-    const sessionSelect = document.getElementById('report-session-select');
-    // If the select box doesn't exist, we can't load data
-    if (!sessionSelect) return; 
-
-    const sessionId = sessionSelect.value;
-    const tbody = document.getElementById('teacher-reports-body');
-    
-    // Show loading state
-    tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-slate-500">Loading student reports...</td></tr>`;
-
-    try {
-        // Fetch students for the selected session
-        // Note: We use the existing endpoint to get students
-        const res = await fetch(`${API_BASE_URL}/teacher/students?session_id=${sessionId || ''}`);
-        
-        if (!res.ok) throw new Error("Failed to load students");
-        
-        const students = await res.json();
-
-        if (students.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-slate-500">No students found in this batch.</td></tr>`;
-            return;
-        }
-
-        // Render the table rows with the WhatsApp button
-        tbody.innerHTML = students.map(s => `
-            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition border-b border-slate-100 dark:border-slate-800">
-                <td class="px-6 py-4">
-                    <img src="${s.profile_photo_url ? API_ORIGIN + s.profile_photo_url : 'https://placehold.co/40'}" class="w-8 h-8 rounded-full object-cover border border-slate-200">
-                </td>
-                <td class="px-6 py-4">
-                    <div class="text-sm font-bold text-slate-700 dark:text-slate-200">${s.name}</div>
-                    <div class="text-[10px] text-slate-400 font-normal mt-0.5">${s.phone_number || ''}</div>
-                </td>
-                <td class="px-6 py-4 text-center">
-                    <span class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full font-bold">
-                        ${s.attendance_percentage || 0}%
-                    </span>
-                </td>
-                <td class="px-6 py-4 text-right text-xs text-slate-500 dark:text-slate-400">
-                    ${s.last_remark || 'No remarks yet'}
-                </td>
-
-                <td class="px-6 py-4 text-center">
-                     <a href="https://wa.me/91${s.phone_number}?text=Hello ${encodeURIComponent(s.name)}, regarding your academic report..." 
-                       target="_blank" 
-                       class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 transition-colors border border-green-200"
-                       title="Chat on WhatsApp">
-                        <span class="material-symbols-outlined text-[18px]">chat</span>
-                    </a>
-                </td>
-            </tr>
-        `).join('');
-
-    } catch (error) {
-        console.error("Error loading reports:", error);
-        tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>`;
-    }
-}
-
-// Make sure to call this when the tab is switched or dropdown changes
-// Add this event listener if it's not already there:
-document.getElementById('report-session-select')?.addEventListener('change', loadReportsData);
 
 
     // Delete Result
@@ -1259,7 +1205,8 @@ document.getElementById('report-session-select')?.addEventListener('change', loa
         const sessionSelects = [
             document.getElementById('attendance-session-select'),
             document.getElementById('syllabus-session-select'),
-            document.getElementById('assignment-session-select')
+            document.getElementById('assignment-session-select'),
+	    document.getElementById('report-session-select')
         ];
 
         sessionSelects.forEach(select => {
@@ -1899,25 +1846,46 @@ function renderReportTable(data) {
 }
 
 // ✅ FILTER LOGIC (Corrected to match backend keys)
-if(document.getElementById('report-course-select')) {
-    document.getElementById('report-course-select').addEventListener('change', (e) => {
-        const courseId = e.target.value;
+// ==========================================
+// ✅ UNIFIED REPORT FILTER (Batch + Course)
+// ==========================================
+
+const reportSessionSelect = document.getElementById('report-session-select');
+const reportCourseSelect = document.getElementById('report-course-select');
+
+function applyReportFilters() {
+    // 1. Get selected values
+    const sessionId = reportSessionSelect ? reportSessionSelect.value : '';
+    const courseId = reportCourseSelect ? reportCourseSelect.value : '';
+
+    // 2. Start with ALL data
+    // (If reportData is empty, show nothing)
+    let filteredData = window.reportData || [];
+
+    // 3. Filter by BATCH (Session)
+    if (sessionId) {
+        // Ensure we compare strings/numbers correctly (using ==)
+        filteredData = filteredData.filter(student => student.session_id == sessionId);
+    }
+
+    // 4. Filter by COURSE
+    if (courseId) {
+        // Check if student is enrolled in the selected course
+        const enrolledStudentIds = allTeacherStudents
+            .filter(s => s.course_ids && s.course_ids.includes(parseInt(courseId)))
+            .map(s => s.id);
         
-        if (!courseId) {
-            renderReportTable(window.reportData); // Show all if no course selected
-        } else {
-            // Find students enrolled in this course ID
-            // We use 'allTeacherStudents' which contains the full details including course_ids
-            const enrolledStudentIds = allTeacherStudents
-                .filter(s => s.course_ids && s.course_ids.includes(parseInt(courseId)))
-                .map(s => s.id);
-            
-            // Filter the report data
-            const filteredData = window.reportData.filter(row => enrolledStudentIds.includes(row.id));
-            renderReportTable(filteredData);
-        }
-    });
+        filteredData = filteredData.filter(student => enrolledStudentIds.includes(student.id));
+    }
+
+    // 5. Render result
+    renderReportTable(filteredData);
 }
+
+// Attach Listeners to BOTH dropdowns
+if (reportSessionSelect) reportSessionSelect.addEventListener('change', applyReportFilters);
+if (reportCourseSelect) reportCourseSelect.addEventListener('change', applyReportFilters);
+
 // ✅ 2. SINGLE SEND ACTION FUNCTION
 async function sendAction(studentId, type, studentName) {
     let endpoint = '';
