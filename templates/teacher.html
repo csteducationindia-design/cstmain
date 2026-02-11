@@ -1801,22 +1801,25 @@ window.deleteAnnouncement = async (id) => {
 // =========================================================
 // 1. FETCH REPORT DATA (Fixes Image & URL Issues)
 // =========================================================
+// =========================================================
+//  ✅ FIXED REPORTS LOGIC (Copy & Replace this entire block)
+// =========================================================
+
 async function fetchTeacherAttendanceReport() {
-    // 1. We removed the 'report-session-select' check because your HTML uses 'report-course-select'
     const tbody = document.getElementById('teacher-reports-body');
     
     // Show Loading
     tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-slate-500">Loading reports...</td></tr>`;
 
     try {
-        // 2. Fetch ALL students (The backend handles this if no session_id is sent)
-        const res = await fetch(`/api/teacher/reports`);
+        // 1. Fetch Data from Backend
+        const res = await fetch(`${API_BASE_URL}/teacher/reports`);
         
         if (!res.ok) throw new Error(`Server Error: ${res.status}`);
         
         const students = await res.json();
         
-        // Save to global variable so the Course Filter works later
+        // 2. Save to global variable for filtering
         window.reportData = students; 
 
         if (students.length === 0) {
@@ -1824,7 +1827,7 @@ async function fetchTeacherAttendanceReport() {
             return;
         }
 
-        // 3. Render the table
+        // 3. Render Table
         renderReportTable(students);
 
     } catch (error) {
@@ -1833,17 +1836,19 @@ async function fetchTeacherAttendanceReport() {
     }
 }
 
-// Helper function to render the rows (Use this to avoid code duplication)
+// ✅ CORRECT RENDER FUNCTION (Matches Backend Data)
 function renderReportTable(data) {
     const tbody = document.getElementById('teacher-reports-body');
     
-    if (data.length === 0) {
+    if (!data || data.length === 0) {
         tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-slate-500">No students found for this selection.</td></tr>`;
         return;
     }
 
     tbody.innerHTML = data.map(s => {
-        const imgSrc = s.profile_photo_url ? s.profile_photo_url : 'https://placehold.co/40?text=U';
+        // Backend sends: id, name, phone_number, profile_photo_url, attendance_percentage
+        
+        const imgSrc = s.profile_photo_url ? `${API_ORIGIN}${s.profile_photo_url}` : `https://placehold.co/40x40/e2e8f0/475569?text=${s.name.charAt(0)}`;
         const cleanPhone = s.phone_number ? s.phone_number.toString().replace(/\D/g, '') : '';
         const isPhoneValid = cleanPhone.length >= 10;
         const whatsappLink = isPhoneValid 
@@ -1851,28 +1856,67 @@ function renderReportTable(data) {
             : '#';
 
         return `
-        <tr class="hover:bg-slate-50 border-b border-slate-100">
-            <td class="px-6 py-4"><img src="${imgSrc}" class="w-8 h-8 rounded-full object-cover"></td>
+        <tr class="hover:bg-slate-50 border-b border-slate-100 dark:border-slate-800 dark:hover:bg-slate-800 transition">
             <td class="px-6 py-4">
-                 <div class="text-sm font-bold text-slate-700">${s.name}</div>
-                 <div class="text-[10px] text-slate-400">${s.phone_number || '-'}</div>
+                <img src="${imgSrc}" class="w-10 h-10 rounded-full object-cover border border-slate-200 shadow-sm">
             </td>
+            
+            <td class="px-6 py-4">
+                 <div class="text-sm font-bold text-slate-900 dark:text-white">${s.name}</div>
+                 <div class="text-[10px] text-slate-400 font-normal mt-0.5">${s.phone_number || 'No Phone'}</div>
+            </td>
+            
             <td class="px-6 py-4 text-center">
-                <span class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full font-bold">${s.attendance_percentage}%</span>
+                <span class="bg-blue-100 text-blue-700 text-xs px-2.5 py-1 rounded-full font-bold">
+                    ${s.attendance_percentage}%
+                </span>
             </td>
+            
             <td class="px-6 py-4 text-right">
                 <div class="flex justify-end gap-2">
-                    <button onclick="sendAction('${s.id}', 'email', '${s.name}')" class="text-slate-400 hover:text-blue-600" title="Email"><span class="material-symbols-outlined text-[18px]">mail</span></button>
-                    <button onclick="sendAction('${s.id}', 'sms', '${s.name}')" class="text-slate-400 hover:text-orange-600" title="SMS"><span class="material-symbols-outlined text-[18px]">sms</span></button>
+                    <button onclick="sendRemark(${s.id}, '${s.name.replace(/'/g, "\\'")}', 'star')" class="p-2 bg-yellow-50 text-yellow-600 rounded-lg hover:bg-yellow-100 transition" title="Send Praise">
+                        <span class="material-symbols-outlined text-lg">star</span>
+                    </button>
+                    <button onclick="sendRemark(${s.id}, '${s.name.replace(/'/g, "\\'")}', 'warn')" class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition" title="Send Warning">
+                        <span class="material-symbols-outlined text-lg">warning</span>
+                    </button>
+                    <button onclick="openMessageModal(${s.id}, '${s.name.replace(/'/g, "\\'")}')" class="px-3 py-2 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition flex items-center gap-1">
+                        <span class="material-symbols-outlined text-sm">mail</span> Msg
+                    </button>
                 </div>
             </td>
+            
             <td class="px-6 py-4 text-center">
-                 <a href="${whatsappLink}" target="${isPhoneValid ? '_blank' : '_self'}" class="text-green-600">
+                 <a href="${whatsappLink}" 
+                    target="${isPhoneValid ? '_blank' : '_self'}"
+                    onclick="${!isPhoneValid ? 'alert(\'Invalid Phone Number\'); return false;' : ''}"
+                    class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-50 text-green-600 hover:bg-green-100 border border-green-200 shadow-sm ${!isPhoneValid ? 'opacity-50 cursor-not-allowed' : ''}">
                     <span class="material-symbols-outlined text-[18px]">chat</span>
                 </a>
             </td>
         </tr>`;
     }).join('');
+}
+
+// ✅ FILTER LOGIC (Corrected to match backend keys)
+if(document.getElementById('report-course-select')) {
+    document.getElementById('report-course-select').addEventListener('change', (e) => {
+        const courseId = e.target.value;
+        
+        if (!courseId) {
+            renderReportTable(window.reportData); // Show all if no course selected
+        } else {
+            // Find students enrolled in this course ID
+            // We use 'allTeacherStudents' which contains the full details including course_ids
+            const enrolledStudentIds = allTeacherStudents
+                .filter(s => s.course_ids && s.course_ids.includes(parseInt(courseId)))
+                .map(s => s.id);
+            
+            // Filter the report data
+            const filteredData = window.reportData.filter(row => enrolledStudentIds.includes(row.id));
+            renderReportTable(filteredData);
+        }
+    });
 }
 // ✅ 2. SINGLE SEND ACTION FUNCTION
 async function sendAction(studentId, type, studentName) {
