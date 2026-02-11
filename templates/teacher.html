@@ -1941,70 +1941,7 @@ async function sendAction(studentId, type, studentName) {
         alert("Server Error");
     }
 }
-        function renderReportTable(data) {
-            const tbody = document.getElementById('teacher-reports-body');
-            
-            if(!data || data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-12 text-center text-slate-500">No student data found.</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = data.map(row => {
-                // Get Full Student Object from cache to get photo url properly
-                const studentDetails = allTeacherStudents.find(s => s.id === row.student_id);
-                // Use photo from student details, fallback to generic
-                const photoUrl = (studentDetails && studentDetails.profile_photo_url) 
-                                 ? `${API_ORIGIN}${studentDetails.profile_photo_url}` 
-                                 : `https://placehold.co/40x40/e2e8f0/475569?text=${row.student_name.charAt(0)}`;
-
-                return `
-                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition border-b border-slate-50 dark:border-slate-800">
-                    <td class="px-6 py-4">
-                        <img src="${photoUrl}" alt="${row.student_name}" class="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm">
-                    </td>
-                    <td class="px-6 py-4">
-                        <div class="font-bold text-slate-900 dark:text-white">${row.student_name}</div>
-                        <div class="text-xs text-slate-400 font-normal mt-0.5">ID: #${row.student_id} | Phone: ${row.phone_number || 'N/A'}</div>
-                    </td>
-                    <td class="px-6 py-4 text-center">
-                        <div class="flex flex-col items-center">
-                            <span class="text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">${row.present} / ${row.total_classes} Classes</span>
-                            <div class="w-20 h-2 bg-slate-100 rounded-full overflow-hidden">
-                                <div class="bg-green-500 h-full rounded-full" style="width: ${(row.present/row.total_classes)*100 || 0}%"></div>
-                            </div>
-                        </div>
-                    </td>
-                    <td class="px-6 py-4 text-right">
-                        <div class="flex justify-end gap-2">
-                            <button onclick="sendRemark(${row.student_id}, '${row.student_name.replace(/'/g, "\\'")}', 'star')" class="p-2 bg-yellow-50 text-yellow-600 rounded-xl hover:bg-yellow-100 transition border border-yellow-100" title="Send Praise">
-                                <span class="material-symbols-outlined text-lg">star</span>
-                            </button>
-                            <button onclick="sendRemark(${row.student_id}, '${row.student_name.replace(/'/g, "\\'")}', 'warn')" class="p-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition border border-red-100" title="Send Warning">
-                                <span class="material-symbols-outlined text-lg">warning</span>
-                            </button>
-                            <button onclick="openMessageModal(${row.student_id}, '${row.student_name.replace(/'/g, "\\'")}')" class="px-4 py-2 bg-primary text-white rounded-xl text-xs font-bold hover:bg-primary-hover transition shadow-sm flex items-center gap-1">
-                                <span class="material-symbols-outlined text-sm">chat</span> Message
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-            `}).join('');
-        }
-
-        // Report Filter Logic
-        reportCourseSelect.addEventListener('change', (e) => {
-            const courseId = e.target.value;
-            if (!courseId) {
-                renderReportTable(reportData); // Show all
-            } else {
-                const enrolledStudentIds = allTeacherStudents
-                    .filter(s => s.course_ids && s.course_ids.includes(parseInt(courseId)))
-                    .map(s => s.id);
-                const filteredData = reportData.filter(row => enrolledStudentIds.includes(row.student_id));
-                renderReportTable(filteredData);
-            }
-        });
-
+        
 
         // --- MESSAGING MODAL LOGIC ---
 
