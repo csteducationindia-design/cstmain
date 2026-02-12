@@ -256,10 +256,17 @@
         </div>
 
         <form id="result-form" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="md:col-span-2">
-                <label class="block text-sm font-bold text-slate-600 dark:text-slate-400 mb-2">Select Student</label>
+            <div>
+                <label class="block text-sm font-bold text-slate-600 dark:text-slate-400 mb-2">1. Select Batch</label>
+                <select id="result-session-select" class="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary outline-none">
+                    <option value="">-- All Batches --</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-bold text-slate-600 dark:text-slate-400 mb-2">2. Select Student</label>
                 <select id="result-student" name="student_id" class="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary outline-none" required>
-                    <option value="">Loading students...</option>
+                    <option value="">Select a Batch First...</option>
                 </select>
             </div>
 
@@ -894,18 +901,13 @@
     let allSessions = []; 
 
 // --- EXAM RESULTS LOGIC ---
-    async function loadResultData() {
+    // 1. Load Result Data (Only loads table, waits for batch select to load students)
+    window.loadResultData = async function() {
         try {
-            // 1. Load Students for Dropdown
-            const sRes = await fetch(API_BASE_URL + '/teacher/students');
-            if(sRes.ok) {
-                const students = await sRes.json();
-                const sel = document.getElementById('result-student');
-                sel.innerHTML = '<option value="">-- Select Student --</option>' + 
-                    students.map(s => `<option value="${s.id}">${s.name} (${s.admission_number || '-'})</option>`).join('');
-            }
+            // We NO LONGER load all students here. 
+            // The batch dropdown listener below handles student loading.
 
-            // 2. Load Recent Results Table
+            // Load Recent Results Table
             const rRes = await fetch(API_BASE_URL + '/results');
             if(rRes.ok) {
                 const results = await rRes.json();
@@ -934,7 +936,7 @@
         } catch(e) {
             console.error("Error loading results:", e);
         }
-    }
+    };
 
     // Handle Form Submit
     const resultForm = document.getElementById('result-form');
@@ -1036,6 +1038,34 @@ document.getElementById('report-session-select')?.addEventListener('change', loa
         await fetch(`${API_BASE_URL}/results/${id}`, { method: 'DELETE' });
         loadResultData();
     }
+
+// ✅ NEW: Filter Students in Result Form when Batch changes
+    const resultBatchSelect = document.getElementById('result-session-select');
+    if(resultBatchSelect) {
+        resultBatchSelect.addEventListener('change', async function() {
+            const sessionId = this.value;
+            const studentSelect = document.getElementById('result-student');
+            
+            studentSelect.innerHTML = '<option value="">Loading...</option>';
+            
+            try {
+                // Fetch students filtered by the selected session
+                const res = await fetch(`${API_BASE_URL}/teacher/students?session_id=${sessionId || ''}`);
+                const students = await res.json();
+                
+                if (students.length === 0) {
+                    studentSelect.innerHTML = '<option value="">No students in this batch</option>';
+                } else {
+                    studentSelect.innerHTML = '<option value="">-- Select Student --</option>' + 
+                        students.map(s => `<option value="${s.id}">${s.name} (${s.admission_number || '-'})</option>`).join('');
+                }
+            } catch(e) {
+                console.error(e);
+                studentSelect.innerHTML = '<option value="">Error loading students</option>';
+            }
+        });
+    }
+
     async function checkSessionAndInit() {
         try {
             const response = await fetch(`${API_BASE_URL}/check_session`, {credentials: 'include'});
@@ -1258,8 +1288,10 @@ document.getElementById('report-session-select')?.addEventListener('change', loa
         // 2. Populate BATCH/SESSION Dropdowns
         const sessionSelects = [
             document.getElementById('attendance-session-select'),
-            document.getElementById('syllabus-session-select'),
-            document.getElementById('assignment-session-select')
+                document.getElementById('syllabus-session-select'),
+                document.getElementById('assignment-session-select'),
+                document.getElementById('report-session-select'),
+                document.getElementById('result-session-select')
         ];
 
         sessionSelects.forEach(select => {
