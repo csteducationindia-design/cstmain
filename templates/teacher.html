@@ -256,44 +256,44 @@
         </div>
 
         <form id="result-form" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-                <label class="block text-sm font-bold text-slate-600 dark:text-slate-400 mb-2">1. Select Batch</label>
-                <select id="result-session-select" class="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary outline-none">
-                    <option value="">-- All Batches --</option>
-                </select>
-            </div>
+    <div>
+        <label class="block text-sm font-bold text-slate-600 dark:text-slate-400 mb-2">1. Select Batch (Session)</label>
+        <select id="result-session-select" class="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary outline-none">
+            <option value="">-- Select Batch --</option>
+        </select>
+    </div>
 
-            <div>
-                <label class="block text-sm font-bold text-slate-600 dark:text-slate-400 mb-2">2. Select Student</label>
-                <select id="result-student" name="student_id" class="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary outline-none" required>
-                    <option value="">Select a Batch First...</option>
-                </select>
-            </div>
+    <div>
+        <label class="block text-sm font-bold text-slate-600 dark:text-slate-400 mb-2">2. Select Student</label>
+        <select id="result-student" name="student_id" class="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary outline-none" required>
+            <option value="">Select a Batch first...</option>
+        </select>
+    </div>
 
-            <div>
-                <label class="block text-sm font-bold text-slate-600 dark:text-slate-400 mb-2">Exam Title</label>
-                <input name="exam_title" placeholder="e.g. Java - Final Exam" class="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary outline-none" required>
-            </div>
-            <div>
-                <label class="block text-sm font-bold text-slate-600 dark:text-slate-400 mb-2">Total Max Marks</label>
-                <input name="max_marks" type="number" value="100" class="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary outline-none" required>
-            </div>
+    <div>
+        <label class="block text-sm font-bold text-slate-600 dark:text-slate-400 mb-2">Exam Title</label>
+        <input name="exam_title" placeholder="e.g. Java - Mid Term" class="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary outline-none" required>
+    </div>
+    <div>
+        <label class="block text-sm font-bold text-slate-600 dark:text-slate-400 mb-2">Total Max Marks</label>
+        <input name="max_marks" type="number" value="100" class="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary outline-none" required>
+    </div>
 
-            <div>
-                <label class="block text-sm font-bold text-slate-600 dark:text-slate-400 mb-2">Theory Marks</label>
-                <input name="theory" type="number" placeholder="0" class="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary outline-none" required>
-            </div>
-            <div>
-                <label class="block text-sm font-bold text-slate-600 dark:text-slate-400 mb-2">Practical Marks</label>
-                <input name="practical" type="number" placeholder="0" class="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary outline-none" required>
-            </div>
+    <div>
+        <label class="block text-sm font-bold text-slate-600 dark:text-slate-400 mb-2">Theory Marks</label>
+        <input name="theory" type="number" placeholder="0" class="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary outline-none" required>
+    </div>
+    <div>
+        <label class="block text-sm font-bold text-slate-600 dark:text-slate-400 mb-2">Practical Marks</label>
+        <input name="practical" type="number" placeholder="0" class="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary outline-none" required>
+    </div>
 
-            <div class="md:col-span-2">
-                <button type="submit" class="w-full bg-primary hover:bg-primary-hover text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-500/30 transition-all flex justify-center items-center gap-2">
-                    <span class="material-symbols-outlined">save</span> Publish Result
-                </button>
-            </div>
-        </form>
+    <div class="md:col-span-2">
+        <button type="submit" class="w-full bg-primary hover:bg-primary-hover text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-500/30 transition-all flex justify-center items-center gap-2">
+            <span class="material-symbols-outlined">save</span> Publish Result
+        </button>
+    </div>
+</form>
     </div>
 
     <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
@@ -1039,33 +1039,39 @@ document.getElementById('report-session-select')?.addEventListener('change', loa
         loadResultData();
     }
 
-// ✅ NEW: Filter Students in Result Form when Batch changes
+// ==========================================
+    // ✅ NEW: Exam Results - Filter Students by Batch
+    // ==========================================
     const resultBatchSelect = document.getElementById('result-session-select');
-    if(resultBatchSelect) {
+    
+    if (resultBatchSelect) {
         resultBatchSelect.addEventListener('change', async function() {
             const sessionId = this.value;
             const studentSelect = document.getElementById('result-student');
             
-            studentSelect.innerHTML = '<option value="">Loading...</option>';
-            
+            // 1. Clear current list
+            studentSelect.innerHTML = '<option value="">Loading students...</option>';
+            studentSelect.disabled = true;
+
             try {
-                // Fetch students filtered by the selected session
-                const res = await fetch(`${API_BASE_URL}/teacher/students?session_id=${sessionId || ''}`);
+                // 2. Fetch students specifically for this batch
+                const res = await fetch(`${API_BASE_URL}/teacher/students?session_id=${sessionId}`);
                 const students = await res.json();
-                
+
+                // 3. Populate Dropdown
                 if (students.length === 0) {
                     studentSelect.innerHTML = '<option value="">No students in this batch</option>';
                 } else {
                     studentSelect.innerHTML = '<option value="">-- Select Student --</option>' + 
-                        students.map(s => `<option value="${s.id}">${s.name} (${s.admission_number || '-'})</option>`).join('');
+                        students.map(s => `<option value="${s.id}">${s.name} (${s.admission_number || 'No ID'})</option>`).join('');
+                    studentSelect.disabled = false;
                 }
-            } catch(e) {
+            } catch (e) {
                 console.error(e);
                 studentSelect.innerHTML = '<option value="">Error loading students</option>';
             }
         });
     }
-
     async function checkSessionAndInit() {
         try {
             const response = await fetch(`${API_BASE_URL}/check_session`, {credentials: 'include'});
@@ -1287,21 +1293,21 @@ document.getElementById('report-session-select')?.addEventListener('change', loa
 
         // 2. Populate BATCH/SESSION Dropdowns
         const sessionSelects = [
-            document.getElementById('attendance-session-select'),
+                document.getElementById('attendance-session-select'),
                 document.getElementById('syllabus-session-select'),
                 document.getElementById('assignment-session-select'),
                 document.getElementById('report-session-select'),
-                document.getElementById('result-session-select')
-        ];
+                document.getElementById('result-session-select') // <--- ✅ ADD THIS NEW ID
+            ];
 
-        sessionSelects.forEach(select => {
-            if(!select) return;
-            const defaultOption = select.querySelector('option')?.outerHTML || '<option value="">All Batches</option>';
-            
-            select.innerHTML = defaultOption + 
-                allSessions.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-        });
-    }
+            sessionSelects.forEach(select => {
+                if(!select) return;
+                const defaultOption = select.querySelector('option')?.outerHTML || '<option value="">All Batches</option>';
+                
+                select.innerHTML = defaultOption + 
+                    allSessions.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+            });
+        }
 
         async function fetchDashboardData() {
             document.getElementById('total-my-courses').textContent = allTeacherCourses.length;
