@@ -2290,33 +2290,44 @@ def delete_result(id):
 # ==========================================
 #  ✅ STUDENT: VIEW GRADES ROUTE
 # ==========================================
+# ==========================================
+#  ✅ CORRECTED STUDENT GRADES ROUTE
+# ==========================================
 @app.route('/student/grades')
 @login_required
 def get_student_grades():
-    # 1. Security Check
-    if current_user.role != 'student':
+    if current_user.role != 'student': 
         return jsonify({"msg": "Denied"}), 403
     
-    # 2. Query Results for THIS student only
-    try:
-        results = ExamResult.query.filter_by(student_id=current_user.id).order_by(ExamResult.date_added.desc()).all()
+    # Fetch results sorted by newest first
+    results = ExamResult.query.filter_by(student_id=current_user.id).order_by(ExamResult.date_added.desc()).all()
+    
+    data = []
+    for r in results:
+        # 1. Calculate Percentage
+        pct = 0
+        if r.max_marks > 0:
+            pct = int((r.total_obtained / r.max_marks) * 100)
         
-        data = []
-        for r in results:
-            data.append({
-                "exam_title": r.exam_title,
-                "theory": r.theory,
-                "practical": r.practical,
-                "total": r.total_obtained,
-                "max": r.max_marks,
-                "percentage": int((r.total_obtained / r.max_marks) * 100) if r.max_marks > 0 else 0,
-                "date": r.date_added.strftime("%d %b %Y")
-            })
+        # 2. Safety Cap: If teacher entered wrong max marks, don't show > 100%
+        if pct > 100: 
+            pct = 100
             
-        return jsonify(data)
-    except Exception as e:
-        print(f"Error fetching grades: {e}")
-        return jsonify([])
+        # 3. Format Date
+        date_str = r.date_added.strftime("%d %b %Y")
+        
+        # 4. Prepare JSON with EXACT keys expected by student.html
+        data.append({
+            "exam_title": r.exam_title,
+            "theory": r.theory,
+            "practical": r.practical,
+            "total": r.total_obtained,
+            "max": r.max_marks,
+            "percentage": pct,
+            "date": date_str
+        })
+
+    return jsonify(data)
 
 if __name__ == '__main__':
     initialize_database()
