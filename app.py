@@ -4,24 +4,18 @@ from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_bcrypt import Bcrypt
-from flask_mail import Mail, Message as MailMessage
 import os
 import json
 from datetime import datetime, timedelta, date
-import csv
-from io import StringIO
-import requests
 import uuid 
 from werkzeug.utils import secure_filename 
-import urllib.parse 
 import firebase_admin
 from firebase_admin import credentials, messaging
 import logging
 import pandas as pd
 from io import BytesIO
 import threading
-import razorpay # NEW
-# REMOVED: from PIL import Image (This was causing the crash)
+import razorpay 
 
 # =========================================================
 # CONFIGURATION & SETUP
@@ -48,7 +42,6 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 # --- RAZORPAY CONFIGURATION ---
-# Replace these with your actual keys from https://dashboard.razorpay.com/app/keys
 RAZORPAY_KEY_ID = "rzp_test_YOUR_KEY_HERE" 
 RAZORPAY_KEY_SECRET = "YOUR_SECRET_HERE"
 
@@ -282,11 +275,13 @@ class Exam(db.Model):
 class ExamResult(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     student_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    teacher_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     exam_title = db.Column(db.String(150), nullable=False) # e.g. "Java Core - Mid Term"
     theory = db.Column(db.Integer, default=0)
     practical = db.Column(db.Integer, default=0)
     total_obtained = db.Column(db.Integer, default=0) 
     max_marks = db.Column(db.Integer, default=100) 
+    percentage = db.Column(db.Float, default=0.0)
     date_added = db.Column(db.DateTime, default=datetime.utcnow)
 
 class AssignmentTask(db.Model):
@@ -317,6 +312,7 @@ class Doubt(db.Model):
     question = db.Column(db.Text, nullable=False)
     answer = db.Column(db.Text, nullable=True) # Null means not answered yet
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    resolved_at = db.Column(db.DateTime)
     
     # Relationships
     student = db.relationship('User', foreign_keys=[student_id], backref='doubts_asked')
@@ -1370,7 +1366,7 @@ def get_teacher_reports():
             report_data.append({
                 "id": s.id,
                 "name": s.name,
-		"session_id": s.session_id,
+                "session_id": s.session_id,
                 "phone_number": phone,
                 "profile_photo_url": s.profile_photo_url,
                 "attendance_percentage": pct,
@@ -2061,319 +2057,112 @@ def ask_doubt():
     )
     
     return jsonify({"msg": "Question sent to teacher successfully!"})
-# --- PAYMENT ROUTES ---
 
-@app.route('/api/payment/create_order', methods=['POST'])
+@app.route('/api/teacher/results', methods=['GET'])
 @login_required
-def create_payment_order():
-    if current_user.role not in ['parent', 'student']: 
-        return jsonify({"msg": "Denied"}), 403
-
-    # 1. Calculate Amount to Pay
-    # Logic: Get the child ID (if parent) or self ID (if student)
-    student_id = current_user.id
-    if current_user.role == 'parent':
-        child = User.query.filter_by(parent_id=current_user.id).first()
-        if not child: return jsonify({"msg": "No child linked"}), 404
-        student_id = child.id
-
-    fee_data = calculate_fee_status(student_id)
-    amount_due_inr = fee_data['balance'] 
+def get_teacher_results():
+    if current_user.role not in ['admin', 'teacher']: return jsonify({"msg": "Denied"}), 403
+    q = ExamResult.query
+    if current_user.role == 'teacher': q = q.filter_by(teacher_id=current_user.id)
+    results = q.order_by(ExamResult.date_added.desc()).all()
     
-    if amount_due_inr <= 0:
-        return jsonify({"msg": "No pending dues!"}), 400
-
-    # 2. Create Razorpay Order (Amount must be in Paise: 1 INR = 100 Paise)
-    amount_paise = int(amount_due_inr * 100)
-    
-    try:
-        data = { "amount": amount_paise, "currency": "INR", "receipt": f"order_rcptid_{student_id}" }
-        order = client.order.create(data=data)
-        
-        return jsonify({
-            "order_id": order['id'],
-            "amount": amount_paise,
-            "key_id": RAZORPAY_KEY_ID,
-            "student_name": current_user.name,
-            "student_email": current_user.email,
-            "contact": current_user.phone_number
+    data = []
+    for r in results:
+        student = db.session.get(User, r.student_id)
+        data.append({
+            "id": r.id,
+            "student_name": student.name if student else "Unknown",
+            "exam_title": r.exam_title,
+            "theory": r.theory,
+            "practical": r.practical,
+            "total_obtained": r.total_obtained,
+            "max_marks": r.max_marks,
+            "percentage": r.percentage,
+            "date_added": r.date_added.isoformat()
         })
-    except Exception as e:
-        return jsonify({"msg": str(e)}), 500
+    return jsonify(data)
 
-@app.route('/api/payment/verify', methods=['POST'])
+@app.route('/api/results', methods=['POST'])
 @login_required
-def verify_payment():
-    d = request.json
+def add_result():
+    if current_user.role not in ['admin', 'teacher']: return jsonify({"msg": "Denied"}), 403
+    d = request.json or request.form
     
-    try:
-        # 1. Verify Signature
-        params_dict = {
-            'razorpay_order_id': d['razorpay_order_id'],
-            'razorpay_payment_id': d['razorpay_payment_id'],
-            'razorpay_signature': d['razorpay_signature']
-        }
-        client.utility.verify_payment_signature(params_dict)
-        
-        # 2. Signature Valid - Save Payment to Database
-        student_id = current_user.id
-        if current_user.role == 'parent':
-            child = User.query.filter_by(parent_id=current_user.id).first()
-            if child: student_id = child.id
+    student_id = d.get('student_id')
+    title = d.get('exam_title')
+    theory = int(d.get('theory', 0))
+    practical = int(d.get('practical', 0))
+    total = theory + practical
+    mx = int(d.get('max_marks', 100))
+    pct = (total / mx) * 100 if mx > 0 else 0
+    if pct > 100: pct = 100
 
-        # Find a fee structure to attach this payment to (usually the general one or first pending one)
-        # For simplicity, we attach it to the first Fee Structure found for the session
-        fee_struct = FeeStructure.query.first() # You might want to make this more specific logic
-        fee_struct_id = fee_struct.id if fee_struct else 1
+    res = ExamResult(
+        student_id=student_id,
+        teacher_id=current_user.id,
+        exam_title=title,
+        theory=theory, practical=practical,
+        total_obtained=total, max_marks=mx, percentage=pct
+    )
+    db.session.add(res)
+    db.session.commit()
+    return jsonify({"msg": "Result Published Successfully!"})
 
-        new_payment = Payment(
-            student_id=student_id,
-            fee_structure_id=fee_struct_id, # Linking to a generic fee type for now
-            amount_paid=float(d['amount']) / 100, # Convert back to Rupees
-            payment_method='Online (Razorpay)'
-        )
-        db.session.add(new_payment)
-        db.session.commit()
-        
-        return jsonify({"msg": "Payment Successful & Recorded!"})
-
-    except razorpay.errors.SignatureVerificationError:
-        return jsonify({"msg": "Payment Verification Failed"}), 400
-    except Exception as e:
-        return jsonify({"msg": str(e)}), 500
-
-
-# ==========================================
-# PARENT PORTAL FIX IN app.py
-# Replace your existing 'parent_get_all_children' function with this:
-# ==========================================
-@app.route('/api/parent/my_children')
-@login_required
-def parent_get_all_children():
-    """Returns list of children. Fixes the photo URL crash."""
-    if current_user.role != 'parent': 
-        return jsonify([]), 403
-    
-    try:
-        children = User.query.filter_by(parent_id=current_user.id).all()
-        child_list = []
-        
-        for child in children:
-            batch_name = "N/A"
-            if child.session_id:
-                sess = db.session.get(AcademicSession, child.session_id)
-                if sess: batch_name = sess.name
-
-            # ✅ SAFE PHOTO URL CHECK
-            photo = child.profile_photo_url if getattr(child, 'profile_photo_url', None) else None
-
-            child_list.append({
-                "id": child.id,
-                "name": child.name,
-                "batch": batch_name,
-                "profile_photo_url": photo 
-            })
-            
-        return jsonify(child_list)
-    except Exception as e:
-        print(f"Parent Child List Error: {e}")
-        return jsonify([]), 500
-
-# ==========================================
-# FINAL FIX FOR ATTENDANCE & FEES (app.py)
-# ==========================================
-
-@app.route('/api/parent/child_details', methods=['POST'])
-@login_required
-def parent_get_child_details():
-    """Fetches Fees and Attendance safely."""
-    if current_user.role != 'parent': return jsonify({"msg": "Denied"}), 403
-    
-    try:
-        data = request.json
-        student_id = data.get('student_id')
-        
-        # 1. Validate Child
-        child = User.query.filter_by(id=student_id, parent_id=current_user.id).first()
-        if not child: 
-            return jsonify({"msg": "Invalid Child ID"}), 404
-
-        # 2. GET ATTENDANCE (Fixed Column Name)
-        attendance_data = []
-        try:
-            # ✅ FIX: Used 'check_in_time' instead of 'date'
-            att_records = Attendance.query.filter_by(student_id=child.id)\
-                .order_by(Attendance.check_in_time.desc())\
-                .limit(30).all()
-            
-            attendance_data = [{
-                "date": a.check_in_time.strftime("%d-%b"),  # e.g., 12-Oct
-                "time": a.check_in_time.strftime("%I:%M %p"), # e.g., 10:00 AM
-                "status": a.status
-            } for a in att_records]
-        except Exception as e:
-            print(f"Attendance Query Error: {e}")
-
-        # 3. GET FEES
-        balance = 0
-        try:
-            fee_data = calculate_fee_status(child.id)
-            balance = fee_data.get('balance', 0)
-        except:
-            balance = 0
-
-        return jsonify({
-            "attendance": attendance_data,
-            "fees_due": balance
-        })
-
-    except Exception as e:
-        print(f"CRITICAL PARENT ERROR: {e}")
-        return jsonify({"attendance": [], "fees_due": 0}), 200
-# --- 1. TEACHER: Add Exam Result ---
-@app.route('/api/results', methods=['POST', 'GET'])
-@login_required
-def manage_results():
-    # Security: Only Admin/Teacher
-    if current_user.role not in ['admin', 'teacher']:
-        return jsonify({"msg": "Denied"}), 403
-
-    # SAVE NEW RESULT
-    if request.method == 'POST':
-        data = request.get_json()
-        student_id = data.get('student_id')
-        title = data.get('exam_title')
-        theory = int(data.get('theory', 0))
-        practical = int(data.get('practical', 0))
-        max_marks = int(data.get('max_marks', 100))
-
-        if not student_id or not title:
-            return jsonify({"msg": "Student and Exam Title required"}), 400
-
-        result = ExamResult(
-            student_id=student_id,
-            exam_title=title,
-            theory=theory,
-            practical=practical,
-            total_obtained=theory + practical,
-            max_marks=max_marks
-        )
-        db.session.add(result)
-        db.session.commit()
-        return jsonify({"msg": "Result Published Successfully!"})
-
-    # GET RECENT RESULTS (For Admin Table)
-    if request.method == 'GET':
-        results = db.session.query(ExamResult, User).join(User, ExamResult.student_id == User.id).order_by(ExamResult.date_added.desc()).limit(20).all()
-        return jsonify([{
-            "id": r.ExamResult.id,
-            "student_name": r.User.name,
-            "exam_title": r.ExamResult.exam_title,
-            "theory": r.ExamResult.theory,
-            "practical": r.ExamResult.practical,
-            "total": r.ExamResult.total_obtained,
-            "max": r.ExamResult.max_marks
-        } for r in results])
-
-# --- 2. DELETE RESULT ---
-# ==========================================
-#  ✅ FIX: DELETE RESULT (Allow Teachers)
-# ==========================================
+# ✅ FIXED DELETE ROUTE (Consolidated)
 @app.route('/api/results/<int:id>', methods=['DELETE'])
 @login_required
 def delete_result(id):
-    # Allow Admin OR Teacher
-    if current_user.role not in ['admin', 'teacher']: 
-        return jsonify({"msg": "Denied"}), 403
+    if current_user.role not in ['admin', 'teacher']: return jsonify({"msg": "Denied"}), 403
+    r = db.session.get(ExamResult, id)
+    if not r: return jsonify({"msg": "Not Found"}), 404
     
-    r = ExamResult.query.get(id)
-    if r:
-        # Optional: Check if this teacher owns the result
-        if current_user.role == 'teacher' and r.teacher_id != current_user.id:
-            return jsonify({"msg": "You can only delete results you published."}), 403
-
-        db.session.delete(r)
-        db.session.commit()
+    if current_user.role == 'teacher' and r.teacher_id != current_user.id:
+        return jsonify({"msg": "Unauthorized"}), 403
+        
+    db.session.delete(r)
+    db.session.commit()
     return jsonify({"msg": "Deleted"})
 
-# ==========================================
-#  ✅ NEW: EDIT RESULT ROUTE
-# ==========================================
+# ✅ FIXED EDIT ROUTE (Consolidated)
 @app.route('/api/results/<int:id>', methods=['PUT'])
 @login_required
 def update_result(id):
-    # Allow Admin OR Teacher
-    if current_user.role not in ['admin', 'teacher']: 
-        return jsonify({"msg": "Denied"}), 403
-
-    r = ExamResult.query.get(id)
-    if not r:
-        return jsonify({"msg": "Result not found"}), 404
-
-    # Optional: Check ownership
+    if current_user.role not in ['admin', 'teacher']: return jsonify({"msg": "Denied"}), 403
+    r = db.session.get(ExamResult, id)
+    if not r: return jsonify({"msg": "Not Found"}), 404
+    
     if current_user.role == 'teacher' and r.teacher_id != current_user.id:
-        return jsonify({"msg": "You can only edit results you published."}), 403
-
-    data = request.get_json()
+        return jsonify({"msg": "Unauthorized"}), 403
+        
+    d = request.json
+    if 'exam_title' in d: r.exam_title = d['exam_title']
     
-    # Update Fields
-    if 'exam_title' in data: r.exam_title = data['exam_title']
-    if 'theory' in data: r.theory = int(data['theory'])
-    if 'practical' in data: r.practical = int(data['practical'])
-    if 'max_marks' in data: r.max_marks = int(data['max_marks'])
+    r.theory = int(d.get('theory', r.theory))
+    r.practical = int(d.get('practical', r.practical))
+    r.max_marks = int(d.get('max_marks', r.max_marks))
     
-    # Recalculate Totals
     r.total_obtained = r.theory + r.practical
     if r.max_marks > 0:
         r.percentage = (r.total_obtained / r.max_marks) * 100
     else:
         r.percentage = 0
+    if r.percentage > 100: r.percentage = 100
 
     db.session.commit()
     return jsonify({"msg": "Updated Successfully"})
 
-
-# ==========================================
-#  ✅ STUDENT: VIEW GRADES ROUTE
-# ==========================================
-# ==========================================
-#  ✅ CORRECTED STUDENT GRADES ROUTE
-# ==========================================
 @app.route('/student/grades')
 @login_required
 def get_student_grades():
-    if current_user.role != 'student': 
-        return jsonify({"msg": "Denied"}), 403
-    
-    # Fetch results sorted by newest first
+    if current_user.role != 'student': return jsonify({"msg": "Denied"}), 403
     results = ExamResult.query.filter_by(student_id=current_user.id).order_by(ExamResult.date_added.desc()).all()
-    
-    data = []
-    for r in results:
-        # 1. Calculate Percentage
-        pct = 0
-        if r.max_marks > 0:
-            pct = int((r.total_obtained / r.max_marks) * 100)
-        
-        # 2. Safety Cap: If teacher entered wrong max marks, don't show > 100%
-        if pct > 100: 
-            pct = 100
-            
-        # 3. Format Date
-        date_str = r.date_added.strftime("%d %b %Y")
-        
-        # 4. Prepare JSON with EXACT keys expected by student.html
-        data.append({
-            "exam_title": r.exam_title,
-            "theory": r.theory,
-            "practical": r.practical,
-            "total": r.total_obtained,
-            "max": r.max_marks,
-            "percentage": pct,
-            "date": date_str
-        })
-
-    return jsonify(data)
+    return jsonify([{
+        "exam_title": r.exam_title,
+        "theory": r.theory, "practical": r.practical,
+        "total": r.total_obtained, "max": r.max_marks,
+        "percentage": int(r.percentage),
+        "date": r.date_added.strftime("%d %b %Y")
+    } for r in results])
 
 if __name__ == '__main__':
     initialize_database()
