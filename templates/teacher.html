@@ -756,6 +756,44 @@
         </div>
     </div>
 </div>
+<div id="edit-result-modal" class="fixed inset-0 z-50 hidden" aria-hidden="true">
+    <div class="fixed inset-0 bg-black bg-opacity-50" onclick="document.getElementById('edit-result-modal').classList.add('hidden')"></div>
+    <div class="fixed inset-0 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 relative z-10">
+            <h3 class="text-xl font-bold mb-4 text-gray-800">Edit Student Marks</h3>
+            
+            <input type="hidden" id="edit-result-id">
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Exam Title</label>
+                    <input type="text" id="edit-exam-title" class="w-full border rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary outline-none">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Theory Marks</label>
+                        <input type="number" id="edit-theory" class="w-full border rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Practical Marks</label>
+                        <input type="number" id="edit-practical" class="w-full border rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Total Max Marks</label>
+                    <input type="number" id="edit-max-marks" class="w-full border rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary outline-none">
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 mt-6">
+                <button onclick="document.getElementById('edit-result-modal').classList.add('hidden')" class="px-5 py-2.5 border rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50">Cancel</button>
+                <button onclick="window.saveEditedResult()" class="px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-blue-700 shadow-md">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
@@ -902,39 +940,82 @@
 
 // --- EXAM RESULTS LOGIC ---
     // 1. Load Result Data (Only loads table, waits for batch select to load students)
+    // 1. Load Result Data (Updated with Edit Button)
     window.loadResultData = async function() {
         try {
-            // We NO LONGER load all students here. 
-            // The batch dropdown listener below handles student loading.
-
-            // Load Recent Results Table
             const rRes = await fetch(API_BASE_URL + '/results');
-            if(rRes.ok) {
+            const tbody = document.getElementById('results-table-body');
+            
+            if(rRes.ok && tbody) {
                 const results = await rRes.json();
-                const tbody = document.getElementById('results-table-body');
-                
                 if(results.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">No results published yet.</td></tr>';
                     return;
                 }
-
+                
                 tbody.innerHTML = results.map(r => `
-                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
-                        <td class="p-4 font-bold text-slate-800 dark:text-white">${r.student_name}</td>
+                    <tr class="hover:bg-slate-50 border-b border-gray-100 transition">
+                        <td class="p-4 font-bold text-slate-800">${r.student_name}</td>
                         <td class="p-4 text-primary font-medium">${r.exam_title}</td>
-                        <td class="p-4">${r.theory}</td>
-                        <td class="p-4">${r.practical}</td>
-                        <td class="p-4 font-bold text-green-600">${r.total} / ${r.max}</td>
-                        <td class="p-4 text-right">
-                            <button onclick="deleteResult(${r.id})" class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors" title="Delete">
+                        <td class="p-4 font-mono text-sm">
+                            <span class="text-gray-500">T:</span>${r.theory} <span class="text-gray-300">|</span> <span class="text-gray-500">P:</span>${r.practical}
+                        </td>
+                        <td class="p-4 font-bold text-green-600">${r.total} <span class="text-gray-400 font-normal text-xs">/ ${r.max}</span></td>
+                        <td class="p-4 text-right flex justify-end gap-2">
+                            <button onclick="window.openEditModal(${r.id}, '${r.exam_title}', ${r.theory}, ${r.practical}, ${r.max})" 
+                                    class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
+                                <span class="material-symbols-outlined text-lg">edit</span>
+                            </button>
+                            <button onclick="window.deleteResult(${r.id})" 
+                                    class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
                                 <span class="material-symbols-outlined text-lg">delete</span>
                             </button>
                         </td>
-                    </tr>
-                `).join('');
+                    </tr>`).join('');
+            }
+        } catch(e) { console.error(e); }
+    };
+
+    // 2. Open Edit Modal (New Function)
+    window.openEditModal = function(id, title, theory, practical, max) {
+        document.getElementById('edit-result-id').value = id;
+        document.getElementById('edit-exam-title').value = title;
+        document.getElementById('edit-theory').value = theory;
+        document.getElementById('edit-practical').value = practical;
+        document.getElementById('edit-max-marks').value = max;
+        
+        document.getElementById('edit-result-modal').classList.remove('hidden');
+    };
+
+    // 3. Save Edited Result (New Function)
+    window.saveEditedResult = async function() {
+        const id = document.getElementById('edit-result-id').value;
+        const payload = {
+            exam_title: document.getElementById('edit-exam-title').value,
+            theory: document.getElementById('edit-theory').value,
+            practical: document.getElementById('edit-practical').value,
+            max_marks: document.getElementById('edit-max-marks').value
+        };
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/results/${id}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                credentials: 'include',
+                body: JSON.stringify(payload)
+            });
+
+            const data = await res.json();
+            
+            if (res.ok) {
+                alert("Result Updated Successfully!");
+                document.getElementById('edit-result-modal').classList.add('hidden');
+                window.loadResultData(); // Refresh table
+            } else {
+                alert("Error: " + data.msg);
             }
         } catch(e) {
-            console.error("Error loading results:", e);
+            alert("Failed to update result.");
         }
     };
 

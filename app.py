@@ -2276,15 +2276,61 @@ def manage_results():
         } for r in results])
 
 # --- 2. DELETE RESULT ---
+# ==========================================
+#  ✅ FIX: DELETE RESULT (Allow Teachers)
+# ==========================================
 @app.route('/api/results/<int:id>', methods=['DELETE'])
 @login_required
 def delete_result(id):
-    if current_user.role != 'admin': return jsonify({"msg": "Denied"}), 403
+    # Allow Admin OR Teacher
+    if current_user.role not in ['admin', 'teacher']: 
+        return jsonify({"msg": "Denied"}), 403
+    
     r = ExamResult.query.get(id)
     if r:
+        # Optional: Check if this teacher owns the result
+        if current_user.role == 'teacher' and r.teacher_id != current_user.id:
+            return jsonify({"msg": "You can only delete results you published."}), 403
+
         db.session.delete(r)
         db.session.commit()
     return jsonify({"msg": "Deleted"})
+
+# ==========================================
+#  ✅ NEW: EDIT RESULT ROUTE
+# ==========================================
+@app.route('/api/results/<int:id>', methods=['PUT'])
+@login_required
+def update_result(id):
+    # Allow Admin OR Teacher
+    if current_user.role not in ['admin', 'teacher']: 
+        return jsonify({"msg": "Denied"}), 403
+
+    r = ExamResult.query.get(id)
+    if not r:
+        return jsonify({"msg": "Result not found"}), 404
+
+    # Optional: Check ownership
+    if current_user.role == 'teacher' and r.teacher_id != current_user.id:
+        return jsonify({"msg": "You can only edit results you published."}), 403
+
+    data = request.get_json()
+    
+    # Update Fields
+    if 'exam_title' in data: r.exam_title = data['exam_title']
+    if 'theory' in data: r.theory = int(data['theory'])
+    if 'practical' in data: r.practical = int(data['practical'])
+    if 'max_marks' in data: r.max_marks = int(data['max_marks'])
+    
+    # Recalculate Totals
+    r.total_obtained = r.theory + r.practical
+    if r.max_marks > 0:
+        r.percentage = (r.total_obtained / r.max_marks) * 100
+    else:
+        r.percentage = 0
+
+    db.session.commit()
+    return jsonify({"msg": "Updated Successfully"})
 
 
 # ==========================================
