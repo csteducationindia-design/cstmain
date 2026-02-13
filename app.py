@@ -2230,109 +2230,109 @@ def parent_get_child_details():
     except Exception as e:
         print(f"CRITICAL PARENT ERROR: {e}")
         return jsonify({"attendance": [], "fees_due": 0}), 200
-# --- 1. TEACHER: Add Exam Result ---
-@app.route('/api/results', methods=['POST', 'GET'])
+
+# ✅ 1. GET RESULTS (Matches Frontend URL: /api/teacher/results)
+@app.route('/api/teacher/results', methods=['GET'])
 @login_required
-def manage_results():
-    # Security: Only Admin/Teacher
-    if current_user.role not in ['admin', 'teacher']:
-        return jsonify({"msg": "Denied"}), 403
+def get_teacher_results():
+    if current_user.role not in ['admin', 'teacher']: return jsonify({"msg": "Denied"}), 403
+    
+    # Filter: Teachers see only their own, Admins see all
+    query = ExamResult.query
+    if current_user.role == 'teacher': 
+        query = query.filter_by(teacher_id=current_user.id)
+        
+    results = query.order_by(ExamResult.date_added.desc()).all()
+    
+    data = []
+    for r in results:
+        student = db.session.get(User, r.student_id)
+        data.append({
+            "id": r.id,
+            "student_name": student.name if student else "Unknown",
+            "exam_title": r.exam_title,
+            "theory": r.theory,
+            "practical": r.practical,
+            "total_obtained": r.total_obtained,
+            "max_marks": r.max_marks,
+            "percentage": r.percentage,
+            "date_added": r.date_added.isoformat()
+        })
+    return jsonify(data)
 
-    # SAVE NEW RESULT
-    if request.method == 'POST':
-        data = request.get_json()
-        student_id = data.get('student_id')
-        title = data.get('exam_title')
-        theory = int(data.get('theory', 0))
-        practical = int(data.get('practical', 0))
-        max_marks = int(data.get('max_marks', 100))
+# ✅ 2. ADD RESULT (Matches Frontend URL: /api/results [POST])
+@app.route('/api/results', methods=['POST'])
+@login_required
+def add_result():
+    if current_user.role not in ['admin', 'teacher']: return jsonify({"msg": "Denied"}), 403
+    d = request.get_json()
+    
+    # Validation
+    if not d.get('student_id') or not d.get('exam_title'):
+        return jsonify({"msg": "Missing Data"}), 400
 
-        if not student_id or not title:
-            return jsonify({"msg": "Student and Exam Title required"}), 400
+    theory = int(d.get('theory', 0))
+    practical = int(d.get('practical', 0))
+    total = theory + practical
+    mx = int(d.get('max_marks', 100))
+    
+    pct = (total / mx) * 100 if mx > 0 else 0
+    if pct > 100: pct = 100
 
-        result = ExamResult(
-            student_id=student_id,
-            exam_title=title,
-            theory=theory,
-            practical=practical,
-            total_obtained=theory + practical,
-            max_marks=max_marks
-        )
-        db.session.add(result)
-        db.session.commit()
-        return jsonify({"msg": "Result Published Successfully!"})
+    res = ExamResult(
+        student_id=d.get('student_id'),
+        teacher_id=current_user.id,
+        exam_title=d.get('exam_title'),
+        theory=theory, practical=practical,
+        total_obtained=total, max_marks=mx, percentage=pct
+    )
+    db.session.add(res)
+    db.session.commit()
+    return jsonify({"msg": "Result Published Successfully!"})
 
-    # GET RECENT RESULTS (For Admin Table)
-    if request.method == 'GET':
-        results = db.session.query(ExamResult, User).join(User, ExamResult.student_id == User.id).order_by(ExamResult.date_added.desc()).limit(20).all()
-        return jsonify([{
-            "id": r.ExamResult.id,
-            "student_name": r.User.name,
-            "exam_title": r.ExamResult.exam_title,
-            "theory": r.ExamResult.theory,
-            "practical": r.ExamResult.practical,
-            "total": r.ExamResult.total_obtained,
-            "max": r.ExamResult.max_marks
-        } for r in results])
-
-# --- 2. DELETE RESULT ---
-# ==========================================
-#  ✅ FIX: DELETE RESULT (Allow Teachers)
-# ==========================================
+# ✅ 3. DELETE RESULT (Allows Teachers)
 @app.route('/api/results/<int:id>', methods=['DELETE'])
 @login_required
 def delete_result(id):
-    # Allow Admin OR Teacher
-    if current_user.role not in ['admin', 'teacher']: 
-        return jsonify({"msg": "Denied"}), 403
+    if current_user.role not in ['admin', 'teacher']: return jsonify({"msg": "Denied"}), 403
+    r = db.session.get(ExamResult, id)
+    if not r: return jsonify({"msg": "Not Found"}), 404
     
-    r = ExamResult.query.get(id)
-    if r:
-        # Optional: Check if this teacher owns the result
-        if current_user.role == 'teacher' and r.teacher_id != current_user.id:
-            return jsonify({"msg": "You can only delete results you published."}), 403
-
-        db.session.delete(r)
-        db.session.commit()
+    # Allow teacher to delete ONLY their own results
+    if current_user.role == 'teacher' and r.teacher_id != current_user.id:
+        return jsonify({"msg": "Unauthorized"}), 403
+        
+    db.session.delete(r)
+    db.session.commit()
     return jsonify({"msg": "Deleted"})
 
-# ==========================================
-#  ✅ NEW: EDIT RESULT ROUTE
-# ==========================================
+# ✅ 4. EDIT RESULT (Allows Teachers)
 @app.route('/api/results/<int:id>', methods=['PUT'])
 @login_required
 def update_result(id):
-    # Allow Admin OR Teacher
-    if current_user.role not in ['admin', 'teacher']: 
-        return jsonify({"msg": "Denied"}), 403
-
-    r = ExamResult.query.get(id)
-    if not r:
-        return jsonify({"msg": "Result not found"}), 404
-
-    # Optional: Check ownership
+    if current_user.role not in ['admin', 'teacher']: return jsonify({"msg": "Denied"}), 403
+    r = db.session.get(ExamResult, id)
+    if not r: return jsonify({"msg": "Not Found"}), 404
+    
     if current_user.role == 'teacher' and r.teacher_id != current_user.id:
-        return jsonify({"msg": "You can only edit results you published."}), 403
-
-    data = request.get_json()
+        return jsonify({"msg": "Unauthorized"}), 403
     
-    # Update Fields
-    if 'exam_title' in data: r.exam_title = data['exam_title']
-    if 'theory' in data: r.theory = int(data['theory'])
-    if 'practical' in data: r.practical = int(data['practical'])
-    if 'max_marks' in data: r.max_marks = int(data['max_marks'])
+    d = request.get_json()
+    if 'exam_title' in d: r.exam_title = d['exam_title']
+    r.theory = int(d.get('theory', r.theory))
+    r.practical = int(d.get('practical', r.practical))
+    r.max_marks = int(d.get('max_marks', r.max_marks))
     
-    # Recalculate Totals
     r.total_obtained = r.theory + r.practical
     if r.max_marks > 0:
         r.percentage = (r.total_obtained / r.max_marks) * 100
     else:
         r.percentage = 0
+        
+    if r.percentage > 100: r.percentage = 100
 
     db.session.commit()
     return jsonify({"msg": "Updated Successfully"})
-
-
 # ==========================================
 #  ✅ STUDENT: VIEW GRADES ROUTE
 # ==========================================
