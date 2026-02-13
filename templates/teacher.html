@@ -1114,33 +1114,10 @@ document.getElementById('report-session-select')?.addEventListener('change', loa
 
 
     // Delete Result
-    // ✅ FIXED DELETE FUNCTION
     async function deleteResult(id) {
         if(!confirm("Are you sure you want to delete this result?")) return;
-        
-        try {
-            const res = await fetch(`${API_BASE_URL}/results/${id}`, { 
-                method: 'DELETE',
-                credentials: 'include' // <--- THIS WAS MISSING
-            });
-            
-            const data = await res.json();
-            
-            if(res.ok) {
-                // Remove the row from the table immediately without full reload
-                const row = document.querySelector(`button[onclick="window.deleteResult(${id})"]`).closest('tr');
-                if(row) row.remove();
-                
-                alert("Deleted successfully.");
-                // Optional: Reload data to be sure
-                // loadResultData(); 
-            } else {
-                alert("Error: " + (data.msg || "Delete failed"));
-            }
-        } catch(e) {
-            console.error(e);
-            alert("Server error. Check console.");
-        }
+        await fetch(`${API_BASE_URL}/results/${id}`, { method: 'DELETE' });
+        loadResultData();
     }
 
 // ==========================================
