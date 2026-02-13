@@ -2286,23 +2286,37 @@ def delete_result(id):
         db.session.commit()
     return jsonify({"msg": "Deleted"})
 
-# --- 3. STUDENT: View Grades ---
+
+# ==========================================
+#  ✅ STUDENT: VIEW GRADES ROUTE
+# ==========================================
 @app.route('/student/grades')
 @login_required
 def get_student_grades():
-    if current_user.role != 'student': return jsonify({"msg": "Denied"}), 403
+    # 1. Security Check
+    if current_user.role != 'student':
+        return jsonify({"msg": "Denied"}), 403
     
-    results = ExamResult.query.filter_by(student_id=current_user.id).order_by(ExamResult.date_added.desc()).all()
-    
-    # Format exactly as student.html expects
-    return jsonify([{
-        "course_name": r.exam_title.split('-')[0], # Extracts "Java" from "Java - Final"
-        "assessment_name": r.exam_title,
-        "marks_obtained": r.total_obtained,
-        "total_marks": r.max_marks,
-        "theory": r.theory,
-        "practical": r.practical
-    } for r in results])
+    # 2. Query Results for THIS student only
+    try:
+        results = ExamResult.query.filter_by(student_id=current_user.id).order_by(ExamResult.date_added.desc()).all()
+        
+        data = []
+        for r in results:
+            data.append({
+                "exam_title": r.exam_title,
+                "theory": r.theory,
+                "practical": r.practical,
+                "total": r.total_obtained,
+                "max": r.max_marks,
+                "percentage": int((r.total_obtained / r.max_marks) * 100) if r.max_marks > 0 else 0,
+                "date": r.date_added.strftime("%d %b %Y")
+            })
+            
+        return jsonify(data)
+    except Exception as e:
+        print(f"Error fetching grades: {e}")
+        return jsonify([])
 
 if __name__ == '__main__':
     initialize_database()

@@ -196,15 +196,18 @@
             </div>
         </div>
 
-        <div id="view-results" class="view-section hidden animate-fade">
-            <div class="flex items-center gap-3 text-gray-800 mb-6">
-                <span class="material-symbols-rounded text-blue-600">assignment_turned_in</span>
-                <h3 class="font-bold text-xl">Exam Results</h3>
-            </div>
-            <div id="grades-list" class="space-y-4">
-                <div class="text-center py-10 text-gray-400">Loading results...</div>
-            </div>
+        <div id="view-results" class="view-section hidden pt-20 px-4 pb-24">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold text-slate-800">My Results</h1>
+        <div class="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-bold">
+            Academic Performance
         </div>
+    </div>
+
+    <div id="results-list" class="space-y-4">
+        <div class="text-center p-8 text-slate-400">Loading your results...</div>
+    </div>
+</div>
 
         <div id="view-attendance" class="view-section hidden animate-fade">
             <div class="flex items-center gap-3 text-gray-800 mb-6">
@@ -317,6 +320,15 @@
     document.addEventListener('DOMContentLoaded', () => {
         checkSession();
         setupPWA();
+        
+        // Handle Logout
+        const logoutBtn = document.getElementById('logout-btn');
+        if(logoutBtn) {
+            logoutBtn.addEventListener('click', async () => {
+                await fetch(`${API_BASE_URL}/logout`, { method: 'POST', credentials: 'include' });
+                window.location.href = API_ORIGIN + '/';
+            });
+        }
     });
 
     // --- NAVIGATION LOGIC ---
@@ -354,9 +366,10 @@
 
         // Trigger data loads
         if (viewId === 'academics') fetchNotes();
-        if (viewId === 'results') fetchGrades();
+        if (viewId === 'results') loadStudentResults(); // ✅ UPDATED: Calls the correct function
         if (viewId === 'attendance') fetchAttendance();
         if (viewId === 'notifications') fetchAnnouncements();
+        if (viewId === 'faculty') { fetchTeachers(); fetchDoubtHistory(); }
     };
 
     // --- AUTHENTICATION ---
@@ -382,11 +395,10 @@
         try {
             updateProfileUI(user);
             
-            // UPDATED: Now loading Fees, Attendance, AND Assignments
+            // Load essential data
             await Promise.allSettled([
                 fetchDashboard(),
-                loadStudentAssignments() // <--- We added this new function call
-		
+                loadStudentAssignments() 
             ]);
         } catch (error) {
             console.error("Initialization error:", error);
@@ -395,7 +407,7 @@
             if(loadingScreen) loadingScreen.classList.add('hidden');
             if(appContainer) appContainer.classList.remove('hidden');
             
-            // Notification Permission Logic (Kept from your original code)
+            // Notification Permission Logic
             if (Notification.permission !== 'granted') {
                 const btn = document.getElementById('enable-notif-btn');
                 if(btn) btn.classList.remove('hidden');
@@ -404,33 +416,71 @@
             }
         }
     }
-async function checkHallTicketStatus() {
+
+    // --- DATA FUNCTIONS ---
+
+    async function fetchDashboard() {
         try {
             const res = await fetch(`${API_BASE_URL}/student/dashboard`, { credentials: 'include' });
             if (!res.ok) return;
             const data = await res.json();
 
-            // ✅ UPDATED: Get the new elements we created in HTML
+            // 1. Update Profile Info
+            const nameEl = document.getElementById('dash-name');
+            const emailEl = document.getElementById('dash-email');
+            const initialEl = document.getElementById('dash-profile-initial');
+            
+            if(nameEl) nameEl.textContent = data.name.split(' ')[0];
+            if(emailEl) emailEl.textContent = data.email;
+            if(initialEl) initialEl.textContent = data.initial;
+
+            // 2. Update Attendance
+            const attEl = document.getElementById('dash-attendance');
+            if(attEl) attEl.textContent = `${data.attendance_percent}%`;
+
+            // 3. Update Fees
+            const feeEl = document.getElementById('dash-fees');
+            const profileFee = document.getElementById('profile-view-balance');
+            const formattedFee = `₹${data.fees_due}`;
+            
+            if(feeEl) feeEl.textContent = formattedFee;
+            if(profileFee) {
+                profileFee.textContent = formattedFee;
+                profileFee.className = data.fees_due > 0 ? "text-4xl font-bold text-red-500" : "text-4xl font-bold text-green-600";
+            }
+
+            // 4. Update Fee Alert Box
+            const alertBox = document.getElementById('fee-alert');
+            const alertText = document.getElementById('fee-alert-text');
+            if(alertBox && alertText) {
+                if (data.fees_due > 0) {
+                    alertBox.classList.remove('hidden');
+                    alertText.innerHTML = `You have a total pending balance of <span class="font-bold">${formattedFee}</span>.`;
+                } else {
+                    alertBox.classList.add('hidden');
+                }
+            }
+
+            // 5. Hall Ticket Blocking Logic
             const htAction = document.getElementById('ht-action-area');
             const htMsg = document.getElementById('ht-locked-msg');
 
-            // Safety check to prevent errors if elements aren't found
-            if (!htAction || !htMsg) return;
-
-            if (data.is_blocked) {
-                // BLOCKED: Hide the Download Button, Show the Lock Message
-                htAction.classList.add('hidden');
-                htMsg.classList.remove('hidden');
-            } else {
-                // ACTIVE: Show the Download Button, Hide the Lock Message
-                htAction.classList.remove('hidden');
-                htMsg.classList.add('hidden');
+            if (htAction && htMsg) {
+                if (data.is_blocked) {
+                    htAction.classList.add('hidden');
+                    htMsg.classList.remove('hidden');
+                } else {
+                    htAction.classList.remove('hidden');
+                    htMsg.classList.add('hidden');
+                }
             }
+
         } catch (e) {
-            console.error("Hall Ticket Check Error:", e);
+            console.error("Dashboard Sync Error:", e);
         }
     }
-async function loadStudentAssignments() {
+
+    async function loadStudentAssignments() {
         const container = document.getElementById('student-assignments-list');
         if(!container) return;
 
@@ -462,204 +512,75 @@ async function loadStudentAssignments() {
             container.innerHTML = '<p class="text-red-400 text-sm text-center">Failed to load.</p>';
         }
     }
-// --- LOAD TEACHERS ---
-    async function fetchTeachers() {
-        const container = document.getElementById('teacher-list');
+
+    // ✅ CORRECT RESULTS FUNCTION (Using correct route /student/grades)
+    async function loadStudentResults() {
+        const container = document.getElementById('results-list');
+        container.innerHTML = '<div class="flex flex-col items-center justify-center py-12"><span class="material-symbols-rounded animate-spin text-3xl text-primary mb-2">refresh</span><p class="text-sm text-slate-400">Fetching latest results...</p></div>';
+
         try {
-            const res = await fetch(`${API_BASE_URL}/student/my_teachers`, { credentials: 'include' });
-            const teachers = await res.json();
+            // Using relative path to match your Backend route logic
+            const res = await fetch('/student/grades'); 
             
-            if(teachers.length === 0) {
-                container.innerHTML = '<div class="col-span-2 text-center py-10 text-gray-400">No teachers assigned yet.</div>';
+            if (!res.ok) throw new Error("Failed to load results");
+            
+            const data = await res.json();
+
+            if (data.length === 0) {
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-12 text-center">
+                        <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+                            <span class="material-symbols-rounded text-3xl text-slate-400">assignment_late</span>
+                        </div>
+                        <h3 class="text-slate-800 font-bold mb-1">No Results Yet</h3>
+                        <p class="text-sm text-slate-500">Exams published by your teacher will appear here.</p>
+                    </div>`;
                 return;
             }
 
-            container.innerHTML = teachers.map(t => {
-                const photo = t.photo ? `${API_ORIGIN}${t.photo}` : `https://placehold.co/100x100/e2e8f0/64748b?text=${t.name.charAt(0)}`;
+            container.innerHTML = data.map(r => {
+                const isPass = r.percentage >= 35;
+                const statusColor = isPass ? 'text-green-600 bg-green-50 border-green-100' : 'text-red-600 bg-red-50 border-red-100';
+                const statusIcon = isPass ? 'check_circle' : 'cancel';
+                const statusText = isPass ? 'PASS' : 'FAIL';
+
                 return `
-                <div onclick="openDoubtModal(${t.id}, '${t.name}')" class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center text-center hover:border-blue-300 transition-colors cursor-pointer group">
-                    <div class="w-16 h-16 rounded-full p-1 border-2 border-dashed border-gray-200 group-hover:border-blue-400 mb-3">
-                        <img src="${photo}" class="w-full h-full rounded-full object-cover">
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 relative overflow-hidden">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-lg leading-tight mb-1">${r.exam_title}</h3>
+                            <p class="text-xs text-slate-400 font-medium">${r.date}</p>
+                        </div>
+                        <div class="flex flex-col items-end">
+                            <span class="text-2xl font-bold text-slate-800">${r.total} <span class="text-sm text-slate-400 font-normal">/ ${r.max}</span></span>
+                        </div>
                     </div>
-                    <h4 class="font-bold text-gray-800 text-sm line-clamp-1">${t.name}</h4>
-                    <p class="text-[10px] text-gray-500 mt-1 line-clamp-1">${t.subjects.join(', ')}</p>
-                    <button class="mt-3 text-[10px] font-bold bg-blue-50 text-blue-600 px-3 py-1.5 rounded-full">Ask Question</button>
-                </div>`;
+
+                    <div class="flex gap-3 mb-4">
+                        <div class="flex-1 bg-slate-50 rounded-xl p-3 border border-slate-100">
+                            <div class="text-xs text-slate-400 font-bold uppercase mb-1">Theory</div>
+                            <div class="text-slate-800 font-bold">${r.theory}</div>
+                        </div>
+                        <div class="flex-1 bg-slate-50 rounded-xl p-3 border border-slate-100">
+                            <div class="text-xs text-slate-400 font-bold uppercase mb-1">Practical</div>
+                            <div class="text-slate-800 font-bold">${r.practical}</div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-3 border-t border-slate-50">
+                        <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg border ${statusColor}">
+                            <span class="material-symbols-rounded text-sm">${statusIcon}</span>
+                            <span class="text-[10px] font-bold tracking-wide">${statusText}</span>
+                        </div>
+                        <div class="text-sm font-bold text-slate-800">${r.percentage}%</div>
+                    </div>
+                </div>
+                `;
             }).join('');
-        } catch(e) { console.error(e); }
-    }
-
-    // --- DOUBT LOGIC ---
-    let selectedTeacherId = null;
-
-    function openDoubtModal(tid, name) {
-        selectedTeacherId = tid;
-        document.getElementById('doubt-teacher-name').textContent = name;
-        document.getElementById('doubt-input').value = '';
-        document.getElementById('doubt-modal').classList.remove('hidden');
-    }
-
-    async function sendDoubt() {
-        const text = document.getElementById('doubt-input').value;
-        if(!text) return alert("Please type a question");
-        
-        try {
-            const res = await fetch(`${API_BASE_URL}/student/ask_doubt`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                credentials: 'include',
-                body: JSON.stringify({ teacher_id: selectedTeacherId, question: text })
-            });
-            alert("Question sent! The teacher will be notified.");
-            document.getElementById('doubt-modal').classList.add('hidden');
-        } catch(e) { alert("Error sending message"); }
-    }
-
-   
-// Update switchView to handle 'faculty'
-    const originalSwitchView = window.switchView;
-    window.switchView = function(viewId) {
-        originalSwitchView(viewId); // Call original
-        
-        if(viewId === 'faculty') {
-            fetchTeachers();
-            fetchDoubtHistory(); // <--- ADD THIS LINE
-        }
-    };    
-
-    // --- UI UPDATERS ---
-    function updateProfileUI(user) {
-        if (!user) return;
-        const initial = user.name ? user.name.charAt(0).toUpperCase() : 'U';
-        const photoUrl = user.profile_photo_url ? `${API_ORIGIN}${user.profile_photo_url}` : null;
-
-        const safeSetText = (id, text) => {
-            const el = document.getElementById(id);
-            if(el) el.textContent = text;
-        };
-
-        safeSetText('dash-name', user.name ? user.name.split(' ')[0] : 'Student');
-        safeSetText('dash-email', user.email);
-        safeSetText('dash-profile-initial', initial);
-        safeSetText('profile-view-name', user.name);
-        safeSetText('profile-view-email', `${user.role} • ${user.email}`);
-        safeSetText('profile-view-initial', initial);
-
-        const imgIds = ['dash-profile-img', 'profile-view-img'];
-        const txtIds = ['dash-profile-initial', 'profile-view-initial'];
-
-        if (photoUrl) {
-            imgIds.forEach(id => {
-                const img = document.getElementById(id);
-                if(img) { img.src = photoUrl; img.classList.remove('hidden'); }
-            });
-            txtIds.forEach(id => {
-                const txt = document.getElementById(id);
-                if(txt) txt.classList.add('hidden');
-            });
-        }
-    }
-
-    // --- NOTIFICATION TOAST LOGIC ---
-    function showToast(payload) {
-        const title = payload.notification.title;
-        const body = payload.notification.body;
-        
-        const toast = document.createElement('div');
-        toast.className = 'toast-enter pointer-events-auto bg-white border border-blue-100 shadow-lg rounded-2xl p-4 flex items-start gap-3 w-full max-w-sm transform transition-all duration-300';
-        toast.innerHTML = `
-            <div class="bg-blue-100 text-blue-600 rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">
-                <span class="material-symbols-rounded text-sm">notifications</span>
-            </div>
-            <div class="flex-1">
-                <h4 class="text-sm font-bold text-gray-900">${title}</h4>
-                <p class="text-xs text-gray-500 mt-0.5">${body}</p>
-            </div>
-            <button onclick="this.parentElement.remove()" class="text-gray-400 hover:text-gray-600">
-                <span class="material-symbols-rounded text-lg">close</span>
-            </button>
-        `;
-        
-        toastContainer.appendChild(toast);
-        
-        // Auto remove after 5s
-        setTimeout(() => {
-            toast.style.opacity = '0';
-            toast.style.transform = 'translateY(-10px)';
-            setTimeout(() => toast.remove(), 300);
-        }, 5000);
-        
-        // Refresh views if applicable
-        if (title.toLowerCase().includes('attendance')) fetchAttendance();
-        if (title.toLowerCase().includes('note')) fetchNotes();
-    }
-
-
-// --- REPLACE YOUR EXISTING fetchFees FUNCTION WITH THIS ---
-  // ✅ NEW: Fetch EVERYTHING from the fixed Dashboard API
-    async function fetchDashboard() {
-        try {
-            const res = await fetch(`${API_BASE_URL}/student/dashboard`, { credentials: 'include' });
-            if (!res.ok) return;
-            const data = await res.json();
-
-            // 1. Update Profile Info
-            const nameEl = document.getElementById('dash-name');
-            const emailEl = document.getElementById('dash-email');
-            const initialEl = document.getElementById('dash-profile-initial');
-            
-            if(nameEl) nameEl.textContent = data.name.split(' ')[0]; // Show first name
-            if(emailEl) emailEl.textContent = data.email;
-            if(initialEl) initialEl.textContent = data.initial;
-
-            // 2. Update Attendance (From Server Calculation)
-            const attEl = document.getElementById('dash-attendance');
-            if(attEl) attEl.textContent = `${data.attendance_percent}%`;
-
-            // 3. Update Fees (From Server Calculation - No Negatives!)
-            const feeEl = document.getElementById('dash-fees');
-            const profileFee = document.getElementById('profile-view-balance');
-            
-            // Format fee with ₹ symbol
-            const formattedFee = `₹${data.fees_due}`;
-            
-            if(feeEl) feeEl.textContent = formattedFee;
-            if(profileFee) {
-                profileFee.textContent = formattedFee;
-                // Green if 0, Red if pending
-                profileFee.className = data.fees_due > 0 ? "text-4xl font-bold text-red-500" : "text-4xl font-bold text-green-600";
-            }
-
-            // 4. Update Fee Alert Box
-            const alertBox = document.getElementById('fee-alert');
-            const alertText = document.getElementById('fee-alert-text');
-            if(alertBox && alertText) {
-                if (data.fees_due > 0) {
-                    alertBox.classList.remove('hidden');
-                    alertText.innerHTML = `You have a total pending balance of <span class="font-bold">${formattedFee}</span>.`;
-                } else {
-                    alertBox.classList.add('hidden');
-                }
-            }
-
-            // 5. Hall Ticket Blocking Logic
-            const htAction = document.getElementById('ht-action-area');
-            const htMsg = document.getElementById('ht-locked-msg');
-
-            if (htAction && htMsg) {
-                if (data.is_blocked) {
-                    // BLOCKED: Hide Button, Show Lock
-                    htAction.classList.add('hidden');
-                    htMsg.classList.remove('hidden');
-                } else {
-                    // ACTIVE: Show Button, Hide Lock
-                    htAction.classList.remove('hidden');
-                    htMsg.classList.add('hidden');
-                }
-            }
 
         } catch (e) {
-            console.error("Dashboard Sync Error:", e);
+            console.error(e);
+            container.innerHTML = `<div class="p-4 bg-red-50 text-red-600 rounded-xl text-center text-sm">Unable to load results. Please try again.</div>`;
         }
     }
 
@@ -669,7 +590,6 @@ async function loadStudentAssignments() {
         container.innerHTML = '<div class="text-center py-4 text-gray-400">Loading...</div>';
         
         try {
-            // FIX: Changed URL to /api/my/attendance
             const res = await fetch(`${API_BASE_URL}/my/attendance`, { credentials: 'include' });
             const data = await res.json();
             
@@ -683,7 +603,6 @@ async function loadStudentAssignments() {
                 const dateObj = new Date(r.date);
                 const month = dateObj.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
                 const day = dateObj.getDate();
-                // FIX: Check status correctly
                 const isPresent = r.status === 'Present' || r.status === 'Checked-In';
                 
                 container.innerHTML += `
@@ -700,51 +619,6 @@ async function loadStudentAssignments() {
                     </div>
                     <div class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border ${isPresent ? 'bg-green-50 text-green-600 border-green-100' : 'bg-red-50 text-red-600 border-red-100'}">
                         ${r.status}
-                    </div>
-                </div>`;
-            });
-        } catch (e) { container.innerHTML = '<div class="text-center text-red-500">Error loading data.</div>'; }
-    }
-
-    async function fetchGrades() {
-        const container = document.getElementById('grades-list');
-        if(!container) return;
-        container.innerHTML = '<div class="text-center py-4 text-gray-400">Loading...</div>';
-
-        try {
-            const res = await fetch(`${API_BASE_URL}/student/grades`, { credentials: 'include' });
-            const data = await res.json();
-            
-            container.innerHTML = '';
-            if (!res.ok || !Array.isArray(data) || data.length === 0) {
-                container.innerHTML = '<div class="text-center py-10 text-gray-400">No results published yet.</div>';
-                return;
-            }
-
-            data.forEach(g => {
-                const total = g.total_marks || 100;
-                const percentage = Math.round((g.marks_obtained / total) * 100);
-                const isPass = percentage >= 35;
-                const accentColor = isPass ? 'bg-green-500' : 'bg-red-500';
-                const pillColor = isPass ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700';
-
-                container.innerHTML += `
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 relative overflow-hidden">
-                    <div class="absolute left-0 top-0 bottom-0 w-1.5 ${accentColor}"></div>
-                    <div class="flex justify-between items-start mb-4 pl-3">
-                        <div>
-                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">${g.course_name}</span>
-                            <h4 class="font-bold text-gray-800 text-lg mt-0.5">${g.assessment_name}</h4>
-                        </div>
-                        <div class="px-2.5 py-1 rounded-lg font-bold text-xs ${pillColor}">
-                            ${percentage}%
-                        </div>
-                    </div>
-                    <div class="pt-3 border-t border-gray-50 flex items-center justify-between pl-3">
-                        <span class="text-xs font-bold text-gray-400 uppercase tracking-wide">Score</span>
-                        <span class="font-bold text-gray-800 text-lg">
-                            ${g.marks_obtained} <span class="text-gray-400 text-sm font-normal">/ ${total}</span>
-                        </span>
                     </div>
                 </div>`;
             });
@@ -792,7 +666,6 @@ async function loadStudentAssignments() {
         if(!container) return;
         
         try {
-            // FIX: Changed URL to /api/my/announcements
             const res = await fetch(`${API_BASE_URL}/my/announcements`, { credentials: 'include' });
             if(!res.ok) return;
             const data = await res.json();
@@ -825,7 +698,34 @@ async function loadStudentAssignments() {
         } catch (e) { console.error(e); }
     }
 
-async function fetchDoubtHistory() {
+    // --- LOAD TEACHERS & DOUBTS ---
+    async function fetchTeachers() {
+        const container = document.getElementById('teacher-list');
+        try {
+            const res = await fetch(`${API_BASE_URL}/student/my_teachers`, { credentials: 'include' });
+            const teachers = await res.json();
+            
+            if(teachers.length === 0) {
+                container.innerHTML = '<div class="col-span-2 text-center py-10 text-gray-400">No teachers assigned yet.</div>';
+                return;
+            }
+
+            container.innerHTML = teachers.map(t => {
+                const photo = t.photo ? `${API_ORIGIN}${t.photo}` : `https://placehold.co/100x100/e2e8f0/64748b?text=${t.name.charAt(0)}`;
+                return `
+                <div onclick="openDoubtModal(${t.id}, '${t.name}')" class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center text-center hover:border-blue-300 transition-colors cursor-pointer group">
+                    <div class="w-16 h-16 rounded-full mb-3 overflow-hidden bg-gray-200">
+                        <img src="${photo}" class="w-full h-full rounded-full object-cover">
+                    </div>
+                    <h4 class="font-bold text-gray-800 text-sm line-clamp-1">${t.name}</h4>
+                    <p class="text-[10px] text-gray-500 mt-1 line-clamp-1">${t.subjects.join(', ')}</p>
+                    <button class="mt-3 text-[10px] font-bold bg-blue-50 text-blue-600 px-3 py-1.5 rounded-full">Ask Question</button>
+                </div>`;
+            }).join('');
+        } catch(e) {}
+    }
+
+    async function fetchDoubtHistory() {
         const container = document.getElementById('doubt-history-list');
         if(!container) return;
         
@@ -868,7 +768,86 @@ async function fetchDoubtHistory() {
             container.innerHTML = '<p class="text-red-400 text-sm text-center">Failed to load history.</p>'; 
         }
     }
-    // --- PWA & LOGOUT ---
+
+    // --- MODALS ---
+    let selectedTeacherId = null;
+
+    window.openDoubtModal = function(tid, name) {
+        selectedTeacherId = tid;
+        document.getElementById('doubt-teacher-name').textContent = name;
+        document.getElementById('doubt-input').value = '';
+        document.getElementById('doubt-modal').classList.remove('hidden');
+    }
+
+    window.sendDoubt = async function() {
+        const text = document.getElementById('doubt-input').value;
+        if(!text) return alert("Please type a question");
+        
+        try {
+            const res = await fetch(`${API_BASE_URL}/student/ask_doubt`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                credentials: 'include',
+                body: JSON.stringify({ teacher_id: selectedTeacherId, question: text })
+            });
+            alert("Question sent! The teacher will be notified.");
+            document.getElementById('doubt-modal').classList.add('hidden');
+            fetchDoubtHistory();
+        } catch(e) { alert("Error sending message"); }
+    }
+
+    // --- UI HELPERS ---
+    function updateProfileUI(user) {
+        if (!user) return;
+        const initial = user.name ? user.name.charAt(0).toUpperCase() : 'U';
+        const photoUrl = user.profile_photo_url ? `${API_ORIGIN}${user.profile_photo_url}` : null;
+
+        const safeSetText = (id, text) => {
+            const el = document.getElementById(id);
+            if(el) el.textContent = text;
+        };
+
+        safeSetText('dash-name', user.name ? user.name.split(' ')[0] : 'Student');
+        safeSetText('dash-email', user.email);
+        safeSetText('dash-profile-initial', initial);
+        safeSetText('profile-view-name', user.name);
+        safeSetText('profile-view-email', `${user.role} • ${user.email}`);
+        safeSetText('profile-view-initial', initial);
+
+        const imgIds = ['dash-profile-img', 'profile-view-img'];
+        const txtIds = ['dash-profile-initial', 'profile-view-initial'];
+
+        if (photoUrl) {
+            imgIds.forEach(id => {
+                const img = document.getElementById(id);
+                if(img) { img.src = photoUrl; img.classList.remove('hidden'); }
+            });
+            txtIds.forEach(id => {
+                const txt = document.getElementById(id);
+                if(txt) txt.classList.add('hidden');
+            });
+        }
+    }
+
+    window.uploadProfilePhoto = async function(input) {
+        if (!input.files || !input.files[0]) return;
+        const fd = new FormData();
+        fd.append('photo', input.files[0]);
+        
+        try {
+            const res = await fetch(`${API_BASE_URL}/teacher/update_photo`, { // Note: Assuming same endpoint for students
+                method: 'POST',
+                credentials: 'include',
+                body: fd
+            });
+            if(res.ok) {
+                alert("Profile Photo Updated!");
+                location.reload();
+            }
+        } catch(e) { alert("Upload failed"); }
+    };
+
+    // --- PWA SETUP ---
     function setupPWA() {
         try {
             let deferredPrompt;
@@ -893,48 +872,36 @@ async function fetchDoubtHistory() {
         } catch (e) { console.warn("PWA setup error", e); }
     }
 
-    const logoutBtn = document.getElementById('logout-btn');
-    if(logoutBtn) {
-        logoutBtn.addEventListener('click', async () => {
-            await fetch(`${API_BASE_URL}/logout`, { method: 'POST', credentials: 'include' });
-            window.location.href = API_ORIGIN + '/';
-        });
-    }
-
-    // --- FIREBASE CLIENT LOGIC ---
+    // --- FIREBASE SETUP ---
     window.requestNotificationPermission = function() {
         initFirebase();
     }
 
     function initFirebase() {
         try {
-            // REPLACE WITH YOUR ACTUAL FIREBASE CONFIG
             const firebaseConfig = {
-  apiKey: "AIzaSyBkzEHM9fXRoCYSgEW-hk_lN7sL_nSLDfU",
-  authDomain: "cst-institute-app.firebaseapp.com",
-  projectId: "cst-institute-app",
-  storageBucket: "cst-institute-app.firebasestorage.app",
-  messagingSenderId: "485166460200",
-  appId: "1:485166460200:web:4eae20e2010ab92baeb41d"
-};
+                apiKey: "AIzaSyBkzEHM9fXRoCYSgEW-hk_lN7sL_nSLDfU",
+                authDomain: "cst-institute-app.firebaseapp.com",
+                projectId: "cst-institute-app",
+                storageBucket: "cst-institute-app.firebasestorage.app",
+                messagingSenderId: "485166460200",
+                appId: "1:485166460200:web:4eae20e2010ab92baeb41d"
+            };
 
             if (typeof firebase !== 'undefined' && !firebase.apps.length) {
                 firebase.initializeApp(firebaseConfig);
                 const messaging = firebase.messaging();
 
-                // 1. Foreground Message Handler (Shows Toast)
                 messaging.onMessage((payload) => {
                     console.log('Message received. ', payload);
                     showToast(payload);
                 });
 
-                // 2. Token Registration
                 if ('serviceWorker' in navigator) {
                     navigator.serviceWorker.register('/firebase-messaging-sw.js').then((reg) => {
                         return Notification.requestPermission().then((permission) => {
                             if (permission === 'granted') {
                                 document.getElementById('enable-notif-btn').classList.add('hidden');
-                                // REPLACE VAPID KEY
                                 return messaging.getToken({ 
                                     vapidKey: 'BBOMxvKvbEs_t9ykKBa2zIewzCzD6FCbm9rxc8a9eWl2kjjH5vyTSH6TeQMksZ_OGl5jZyQpU2wBcf-KsZN1uko', 
                                     serviceWorkerRegistration: reg 
@@ -959,6 +926,38 @@ async function fetchDoubtHistory() {
             }
         } catch (e) { console.log('Firebase init skipped or error', e); }
     }
+
+    function showToast(payload) {
+        const title = payload.notification.title;
+        const body = payload.notification.body;
+        
+        const toast = document.createElement('div');
+        toast.className = 'toast-enter pointer-events-auto bg-white border border-blue-100 shadow-lg rounded-2xl p-4 flex items-start gap-3 w-full max-w-sm transform transition-all duration-300';
+        toast.innerHTML = `
+            <div class="bg-blue-100 text-blue-600 rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-rounded text-sm">notifications</span>
+            </div>
+            <div class="flex-1">
+                <h4 class="text-sm font-bold text-gray-900">${title}</h4>
+                <p class="text-xs text-gray-500 mt-0.5">${body}</p>
+            </div>
+            <button onclick="this.parentElement.remove()" class="text-gray-400 hover:text-gray-600">
+                <span class="material-symbols-rounded text-lg">close</span>
+            </button>
+        `;
+        
+        toastContainer.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(-10px)';
+            setTimeout(() => toast.remove(), 300);
+        }, 5000);
+        
+        if (title.toLowerCase().includes('attendance')) fetchAttendance();
+        if (title.toLowerCase().includes('note')) fetchNotes();
+    }
+
 </script>
 </body>
 </html>
