@@ -29,6 +29,12 @@
             .content-section { display: block !important; } 
             body { background: white; }
         }
+        
+        /* Custom scrollbar for the new student select list */
+        #pay-student::-webkit-scrollbar { width: 8px; }
+        #pay-student::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        #pay-student::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        #pay-student option:checked { background: #1173d4 linear-gradient(0deg, #1173d4 0%, #1173d4 100%); color: white; }
     </style>
 </head>
 
@@ -294,14 +300,61 @@
             </div>
 
             <div id="fee-tab-collect" class="fee-tab-content">
-                <div class="bg-blue-50 dark:bg-slate-800 p-8 rounded-xl shadow-sm border border-blue-100 max-w-4xl">
-                    <h3 class="font-bold mb-6 text-primary text-xl flex items-center gap-2"><span class="material-symbols-outlined">payments</span> Receive Payment</h3>
+                <div class="bg-white dark:bg-slate-900 p-8 rounded-xl shadow-sm border border-slate-100 max-w-4xl relative overflow-hidden">
+                    <div class="absolute left-0 top-0 w-1 h-full bg-green-500"></div>
+                    <h3 class="font-bold mb-6 text-slate-800 dark:text-white text-xl flex items-center gap-2">
+                        <span class="material-symbols-outlined text-green-600">payments</span> Receive Payment
+                    </h3>
+                    
+                    <div class="bg-slate-50 dark:bg-slate-800 p-5 rounded-xl mb-6 border border-slate-200 dark:border-slate-700">
+                        <h4 class="text-xs font-bold uppercase text-slate-500 mb-3 tracking-wider flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">search</span> Step 1: Find Student Quickly</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">Filter by Batch (Optional)</label>
+                                <select id="collect-batch-filter" class="w-full border p-2.5 rounded-lg bg-white dark:bg-slate-900 outline-none focus:ring-2 focus:ring-primary shadow-sm" onchange="updateFeeStudentList()">
+                                    <option value="">All Batches</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">Search Name or Adm No</label>
+                                <input type="text" id="collect-search-filter" class="w-full border p-2.5 rounded-lg bg-white dark:bg-slate-900 outline-none focus:ring-2 focus:ring-primary shadow-sm" placeholder="Start typing name..." onkeyup="updateFeeStudentList()">
+                            </div>
+                        </div>
+                    </div>
+
                     <form id="collect-fee-form" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div><label class="block text-sm font-bold text-gray-500 mb-1">Select Student</label><select id="pay-student" name="student_id" class="w-full border p-3 rounded-lg bg-white" required><option value="">Search Student...</option></select></div>
-                        <div><label class="block text-sm font-bold text-gray-500 mb-1">Select Fee Type</label><select id="pay-structure" name="fee_structure_id" class="w-full border p-3 rounded-lg bg-white" required><option value="">-- Select Fee --</option></select></div>
-                        <div><label class="block text-sm font-bold text-gray-500 mb-1">Amount (₹)</label><input name="amount" type="number" placeholder="e.g. 5000" class="w-full border p-3 rounded-lg" required></div>
-                        <div><label class="block text-sm font-bold text-gray-500 mb-1">Payment Mode</label><select name="payment_method" class="w-full border p-3 rounded-lg bg-white"><option>Cash</option><option>Online (UPI/Bank)</option><option>Cheque</option></select></div>
-                        <button type="submit" class="bg-green-600 text-white font-bold py-3 rounded-lg col-span-1 md:col-span-2 hover:bg-green-700 shadow-md transition-transform active:scale-95">Confirm Payment & Print Receipt</button>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Step 2: Select Student *</label>
+                            <select id="pay-student" name="student_id" size="5" class="w-full border p-2 rounded-lg bg-white dark:bg-slate-900 shadow-sm outline-none focus:ring-2 focus:ring-primary font-medium" required>
+                                </select>
+                            <p class="text-xs text-gray-500 mt-1" id="collect-student-count">Showing all students.</p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Select Fee Type *</label>
+                            <select id="pay-structure" name="fee_structure_id" class="w-full border p-3 rounded-lg bg-slate-50 dark:bg-slate-900 outline-none focus:ring-2 focus:ring-primary shadow-sm" required>
+                                <option value="">-- Select Fee --</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Amount Received (₹) *</label>
+                            <input name="amount" id="pay-amount" type="number" placeholder="e.g. 5000" class="w-full border p-3 rounded-lg bg-slate-50 dark:bg-slate-900 outline-none focus:ring-2 focus:ring-primary shadow-sm font-bold text-green-700" required>
+                        </div>
+                        
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Payment Mode</label>
+                            <select name="payment_method" class="w-full border p-3 rounded-lg bg-slate-50 dark:bg-slate-900 outline-none focus:ring-2 focus:ring-primary shadow-sm">
+                                <option>Cash</option>
+                                <option>Online (UPI/Bank)</option>
+                                <option>Cheque</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="bg-green-600 text-white font-bold py-3.5 rounded-xl col-span-1 md:col-span-2 hover:bg-green-700 shadow-lg shadow-green-600/30 transition-all active:scale-95 flex justify-center items-center gap-2">
+                            <span class="material-symbols-outlined">check_circle</span>
+                            Confirm Payment & Generate Receipt
+                        </button>
                     </form>
                 </div>
             </div>
@@ -502,7 +555,7 @@
             }
         }
     }
-async function toggleBlock(btn) {
+    async function toggleBlock(btn) {
         // Get data from the button attributes we added
         const studentId = btn.getAttribute('data-id');
         const isBlocked = btn.getAttribute('data-status') === 'true';
@@ -553,7 +606,7 @@ async function toggleBlock(btn) {
         if(id === 'parents') loadParents();
         if(id === 'courses') { loadTeachers(); loadCourses(); }
         if(id === 'sessions') loadSessions();
-        if(id === 'fees') { loadSessions(); loadCourses().then(loadFeeReport); loadFees(); loadFeeCollectionData(); }
+        if(id === 'fees') { loadSessions(); loadCourses().then(loadFeeReport); loadFeeCollectionData(); }
         if(id === 'halltickets') { loadUsers().then(loadHallTicketList); }
         if(id === 'announcements') loadAnnouncements();
         if(id === 'reports') { loadSessions(); loadAdmissions(); }
@@ -616,7 +669,7 @@ async function loadUsers() {
     
     const filtered = users.filter(u => u.role === 'student' && 
         (sessionFilter === '' || u.session_id == sessionFilter) &&
-        (u.name.toLowerCase().includes(search) || u.admission_number.toString().includes(search))
+        (u.name.toLowerCase().includes(search) || (u.admission_number && u.admission_number.toString().includes(search)))
     );
 
     document.getElementById('usersTableBody').innerHTML = filtered.map(u => `
@@ -706,13 +759,107 @@ async function loadUsers() {
             <tr class="border-b hover:bg-slate-50"><td class="p-2 font-medium">${f.name}</td><td class="p-2">₹${f.total_amount}</td><td class="p-2 text-right"><button onclick="editFee(${f.id}, '${f.name}', ${f.total_amount}, '${f.due_date}')" class="text-blue-600 mr-1"><span class="material-symbols-outlined text-sm">edit</span></button><button onclick="del('/api/fee_structures?id=${f.id}')" class="text-red-600"><span class="material-symbols-outlined text-sm">delete</span></button></td></tr>`).join('');
     }
 
+    // --- FEE REPORTS AND COLLECTION FIXES ---
+
     async function loadFeeReport() {
         const cid = document.getElementById('report-course-filter').value;
         const res = await fetch(`${API_BASE_URL}/fee_status?course_id=${cid}`);
         const data = await res.json();
         document.getElementById('fee-pending-report-body').innerHTML = data.filter(s => s.balance > 0).map(s => `
-            <tr class="border-b hover:bg-red-50"><td class="p-2 font-medium">${s.student_name}</td><td class="p-2 text-red-600 font-bold">₹${s.balance}</td><td class="p-2 text-right"><button onclick="sendSMS(${s.student_id})" class="bg-red-100 text-red-700 px-3 py-1 rounded text-xs font-bold hover:bg-red-200">Send SMS</button></td></tr>`).join('');
+            <tr class="border-b hover:bg-red-50">
+                <td class="p-3 font-medium">${s.student_name}</td>
+                <td class="p-3 text-red-600 font-bold">₹${s.balance}</td>
+                <td class="p-3 text-right">
+                    <button onclick="jumpToCollectFee(${s.student_id}, ${s.balance})" class="bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-green-700 shadow-sm mr-2 transition flex-inline items-center gap-1"><span class="material-symbols-outlined text-[14px] align-middle">payments</span> Collect Now</button>
+                    <button onclick="sendSMS(${s.student_id})" class="bg-red-100 text-red-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-200 shadow-sm transition">Remind via SMS</button>
+                </td>
+            </tr>`).join('');
     }
+
+    async function loadFeeCollectionData() {
+        // Populate the top Batch filter
+        const batchFilter = document.getElementById('collect-batch-filter');
+        if(batchFilter && sessions.length > 0) {
+            batchFilter.innerHTML = '<option value="">All Batches</option>' + sessions.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+        }
+
+        // Fetch Fee Structures
+        const res = await fetch(API_BASE_URL + '/fee_structures');
+        const fees = await res.json();
+        const fSelect = document.getElementById('pay-structure');
+        fSelect.innerHTML = '<option value="">-- Select Fee Type --</option>' + fees.map(f => `<option value="${f.id}">${f.name} - ₹${f.total_amount}</option>`).join('');
+
+        // Populate the student list initially
+        window.updateFeeStudentList();
+    }
+
+    // ✅ NEW: Smart filter function for the Student Selection Box
+    window.updateFeeStudentList = function() {
+        const batchId = document.getElementById('collect-batch-filter').value;
+        const searchTerm = document.getElementById('collect-search-filter').value.toLowerCase();
+        
+        // Filter users
+        const filteredStudents = users.filter(u => {
+            if (u.role !== 'student') return false;
+            const matchBatch = batchId === '' || u.session_id == batchId;
+            const admString = u.admission_number ? u.admission_number.toString().toLowerCase() : '';
+            const matchSearch = u.name.toLowerCase().includes(searchTerm) || admString.includes(searchTerm);
+            return matchBatch && matchSearch;
+        });
+
+        // Populate the native HTML <select size="5"> element
+        const sSelect = document.getElementById('pay-student');
+        
+        if(filteredStudents.length === 0) {
+            sSelect.innerHTML = '<option value="" disabled class="text-red-500 p-2 text-center italic">No students found matching your search.</option>';
+        } else {
+            sSelect.innerHTML = filteredStudents.map(u => 
+                `<option value="${u.id}" class="p-3 border-b border-gray-100 text-sm cursor-pointer hover:bg-blue-50 transition-colors">
+                    ${u.name} | Adm No: ${u.admission_number || 'N/A'} | Batch: ${u.session_name || 'N/A'}
+                </option>`
+            ).join('');
+        }
+        
+        document.getElementById('collect-student-count').textContent = `Showing ${filteredStudents.length} student(s).`;
+    };
+
+    // ✅ NEW: Allows jumping from Pending Dues directly to the Payment screen for that student
+    window.jumpToCollectFee = function(studentId, balance) {
+        showFeeTab('collect');
+        
+        // Clear filters to ensure the student shows up in the box
+        document.getElementById('collect-batch-filter').value = '';
+        document.getElementById('collect-search-filter').value = '';
+        window.updateFeeStudentList();
+
+        // Highlight/select the student in the list box
+        setTimeout(() => {
+            const studentSelect = document.getElementById('pay-student');
+            studentSelect.value = studentId;
+            
+            // Pre-fill the amount box with what they owe
+            document.getElementById('pay-amount').value = balance;
+            
+            // Scroll user up to the form
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 100);
+    };
+
+    // Form submission for collecting fees
+    document.getElementById('collect-fee-form').addEventListener('submit', async (e) => {
+        e.preventDefault(); const fd = new FormData(e.target);
+        try {
+            const res = await fetch(API_BASE_URL + '/fees/collect', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(Object.fromEntries(fd))});
+            const data = await res.json();
+            if(res.ok) { 
+                if(confirm("Payment Successful! Print Receipt?")) window.open(`/admin/receipt/${data.payment_id}`, '_blank'); 
+                e.target.reset(); 
+                loadFeeReport(); 
+            } else {
+                alert("Error: " + data.msg);
+            }
+        } catch(err) { alert("Server Error"); }
+    });
 
     async function loadAnnouncements() {
         const res = await fetch(API_BASE_URL + '/announcements');
@@ -727,25 +874,6 @@ async function loadUsers() {
         document.getElementById('admissions-report-body').innerHTML = list.map(u => `
             <tr class="border-b hover:bg-slate-50"><td class="p-3"><img src="${u.profile_photo_url || 'https://placehold.co/50'}" class="w-10 h-10 rounded-full border object-cover"></td><td class="p-3 font-medium">${u.name}</td><td class="p-3 text-sm text-gray-500">${u.email}</td><td class="p-3 text-sm text-gray-500">${u.created_at}</td></tr>`).join('');
     }
-
-    // --- FEE COLLECTION ---
-    async function loadFeeCollectionData() {
-        const sSelect = document.getElementById('pay-student');
-        sSelect.innerHTML = '<option value="">Select Student</option>' + users.filter(u => u.role === 'student').map(u => `<option value="${u.id}">${u.name} (ID: ${u.admission_number})</option>`).join('');
-        const res = await fetch(API_BASE_URL + '/fee_structures');
-        const fees = await res.json();
-        const fSelect = document.getElementById('pay-structure');
-        fSelect.innerHTML = '<option value="">Select Fee Type</option>' + fees.map(f => `<option value="${f.id}">${f.name} - ₹${f.total_amount}</option>`).join('');
-    }
-
-    document.getElementById('collect-fee-form').addEventListener('submit', async (e) => {
-        e.preventDefault(); const fd = new FormData(e.target);
-        try {
-            const res = await fetch(API_BASE_URL + '/fees/collect', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(Object.fromEntries(fd))});
-            const data = await res.json();
-            if(res.ok) { if(confirm("Payment Successful! Print Receipt?")) window.open(`/admin/receipt/${data.payment_id}`, '_blank'); e.target.reset(); loadFeeReport(); } else alert("Error: " + data.msg);
-        } catch(err) { alert("Server Error"); }
-    });
 
     async function loadCollectionReport() {
         const start = document.getElementById('report-start').value;
@@ -797,7 +925,7 @@ async function loadUsers() {
             <tr class="border-b hover:bg-slate-50"><td class="p-3">${s.admission_number}</td><td class="p-3 font-bold">${s.name}</td><td class="p-3 text-sm">${s.session_name}</td><td class="p-3 text-right"><button onclick="window.open('/admin/hallticket/${s.id}', '_blank')" class="bg-indigo-600 text-white px-3 py-1 rounded text-sm font-bold hover:bg-indigo-700"><span class="material-symbols-outlined text-sm align-middle">print</span> Generate</button></td></tr>`).join('');
     }
 
-    function openBulkHallTicketModal() {
+    window.openBulkHallTicketModal = function() {
         const select = document.getElementById('bulk-ht-session');
         select.innerHTML = '<option value="">-- Select Batch --</option>' + sessions.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
         document.getElementById('bulk-ht-modal').classList.remove('hidden');
@@ -814,7 +942,7 @@ async function loadUsers() {
     });
 
     // --- FORM SUBMISSION & UTILS ---
-    function showFeeTab(tabName) {
+    window.showFeeTab = function(tabName) {
         document.querySelectorAll('.fee-tab-content').forEach(el => el.classList.add('hidden'));
         document.querySelectorAll('.fee-tab-btn').forEach(btn => { btn.classList.remove('bg-primary', 'text-white'); btn.classList.add('bg-slate-100', 'text-slate-600'); });
         document.getElementById('fee-tab-' + tabName).classList.remove('hidden');
@@ -863,8 +991,8 @@ async function loadUsers() {
     window.sendSMS = async (id) => { if(confirm('Send SMS?')) { const res = await fetch(API_BASE_URL+'/send_sms_alert', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({student_id:id})}); const data = await res.json(); alert(data.message); } };
 
     // Reports
-    function downloadExcelReport() { const sid = document.getElementById('report-session-select').value; window.open(`${API_BASE_URL}/reports/download?session_id=${sid}`, '_blank'); }
-    function printPdfReport() { const sid = document.getElementById('report-session-select').value; window.open(`/admin/report/print?session_id=${sid}`, '_blank'); }
+    window.downloadExcelReport = function() { const sid = document.getElementById('report-session-select').value; window.open(`${API_BASE_URL}/reports/download?session_id=${sid}`, '_blank'); }
+    window.printPdfReport = function() { const sid = document.getElementById('report-session-select').value; window.open(`/admin/report/print?session_id=${sid}`, '_blank'); }
 
     // Logout
     document.getElementById('logout-btn').addEventListener('click', async () => { await fetch(API_BASE_URL + '/logout', {method:'POST'}); window.location.href = '/'; });
