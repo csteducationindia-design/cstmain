@@ -409,15 +409,18 @@
                 <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100 max-w-3xl">
                     <h3 class="font-bold mb-4 text-gray-700">Create / Edit Fee Structures</h3>
                     <form id="fee-structure-form" class="space-y-4 mb-6 border-b pb-6">
-                        <input type="hidden" id="fee-structure-id" name="id">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <input id="fee-name" name="name" placeholder="Fee Name" class="border p-2 rounded-lg" required>
-                            <input id="fee-amount" name="total_amount" type="number" placeholder="Amount (₹)" class="border p-2 rounded-lg" required>
-                            <input id="fee-date" name="due_date" type="date" class="border p-2 rounded-lg" required>
-                            <select id="fee-session-select" name="academic_session_id" class="border p-2 rounded-lg" required></select>
-                        </div>
-                        <button type="submit" class="bg-slate-800 text-white py-2 px-6 rounded-lg hover:bg-slate-700">Save Fee Structure</button>
-                    </form>
+    <input type="hidden" id="fee-structure-id" name="id">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <input id="fee-name" name="name" placeholder="Fee Name" class="border p-2 rounded-lg" required>
+        <input id="fee-amount" name="total_amount" type="number" placeholder="Amount (₹)" class="border p-2 rounded-lg" required>
+        <input id="fee-date" name="due_date" type="date" class="border p-2 rounded-lg" required>
+        <select id="fee-session-select" name="academic_session_id" class="border p-2 rounded-lg" required></select>
+        
+        <select id="fee-course-select" name="course_id" class="border p-2 rounded-lg"></select>
+
+    </div>
+    <button type="submit" class="bg-slate-800 text-white py-2 px-6 rounded-lg hover:bg-slate-700">Save Fee Structure</button>
+</form>
                     <div class="overflow-y-auto max-h-64"><table class="w-full text-sm text-left"><thead class="bg-slate-50"><tr><th class="p-2">Name</th><th class="p-2">Amount</th><th class="p-2 text-right">Action</th></tr></thead><tbody id="fee-structure-table-body" class="divide-y"></tbody></table></div>
                 </div>
             </div>
@@ -793,6 +796,18 @@ async function loadUsers() {
         window.updateFeeStudentList();
     }
 
+window.sendWhatsAppReceipt = function(studentName, phone, amount, course) {
+    const message = `*FEE RECEIPT - CST INSTITUTE*%0A` +
+                    `--------------------------%0A` +
+                    `*Student:* ${studentName}%0A` +
+                    `*Course:* ${course}%0A` +
+                    `*Amount:* Rs. ${amount}%0A` +
+                    `*Status:* Confirmed ✅%0A` +
+                    `--------------------------%0A` +
+                    `_Thank you for choosing a digital receipt!_`;
+    
+    window.open(`https://wa.me/91${phone}?text=${message}`, '_blank');
+};
     // ✅ NEW: Smart filter function for the Student Selection Box
     window.updateFeeStudentList = function() {
         const batchId = document.getElementById('collect-batch-filter').value;
@@ -875,7 +890,7 @@ async function loadUsers() {
             <tr class="border-b hover:bg-slate-50"><td class="p-3"><img src="${u.profile_photo_url || 'https://placehold.co/50'}" class="w-10 h-10 rounded-full border object-cover"></td><td class="p-3 font-medium">${u.name}</td><td class="p-3 text-sm text-gray-500">${u.email}</td><td class="p-3 text-sm text-gray-500">${u.created_at}</td></tr>`).join('');
     }
 
-    async function loadCollectionReport() {
+   async function loadCollectionReport() {
         const start = document.getElementById('report-start').value;
         const end = document.getElementById('report-end').value;
         if(!start || !end) return alert("Select dates");
@@ -887,8 +902,33 @@ async function loadUsers() {
             const data = await res.json();
             document.getElementById('report-total-amount').textContent = "₹" + data.total;
             if(data.transactions.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-400">No transactions found.</td></tr>'; return; }
-            tbody.innerHTML = data.transactions.map(t => `
-                <tr class="hover:bg-slate-50 border-b last:border-0 transition-colors"><td class="p-3"><div class="font-medium text-slate-800">${t.date}</div><div class="text-xs text-gray-500">${t.time}</div></td><td class="p-3"><div class="font-bold text-blue-600">${t.student_name}</div><div class="text-xs text-gray-500">Adm: ${t.adm_no || '-'}</div></td><td class="p-3 text-sm text-slate-600">${t.fee_name}</td><td class="p-3"><span class="px-2 py-1 bg-gray-100 rounded text-xs font-bold text-slate-500">${t.mode}</span></td><td class="p-3 text-right font-bold text-slate-700">₹${t.amount}</td><td class="p-3 text-right"><button onclick="deleteTransaction(${t.id})" class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Delete Entry"><span class="material-symbols-outlined text-lg">delete</span></button></td></tr>`).join('');
+            
+            tbody.innerHTML = data.transactions.map(t => {
+                // Look up the phone number from the global users list based on Admission No
+                const studentUser = users.find(u => u.admission_number == t.adm_no);
+                const phone = studentUser ? studentUser.phone_number : '';
+
+                return `
+                <tr class="hover:bg-slate-50 border-b last:border-0 transition-colors">
+                    <td class="p-3"><div class="font-medium text-slate-800">${t.date}</div><div class="text-xs text-gray-500">${t.time}</div></td>
+                    <td class="p-3"><div class="font-bold text-blue-600">${t.student_name}</div><div class="text-xs text-gray-500">Adm: ${t.adm_no || '-'}</div></td>
+                    <td class="p-3 text-sm text-slate-600">${t.fee_name}</td>
+                    <td class="p-3"><span class="px-2 py-1 bg-gray-100 rounded text-xs font-bold text-slate-500">${t.mode}</span></td>
+                    <td class="p-3 text-right font-bold text-slate-700">₹${t.amount}</td>
+                    <td class="p-3 text-right flex justify-end gap-2 items-center">
+                        
+                        <button onclick="sendWhatsAppReceipt('${t.student_name}', '${phone}', '${t.amount}', '${t.fee_name}')" 
+                                class="bg-green-600 text-white px-2 py-1 rounded shadow flex items-center gap-1 hover:bg-green-700" title="Send Receipt">
+                            <span class="material-symbols-outlined text-sm">send</span>
+                            WhatsApp
+                        </button>
+
+                        <button onclick="deleteTransaction(${t.id})" class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Delete Entry">
+                            <span class="material-symbols-outlined text-lg">delete</span>
+                        </button>
+                    </td>
+                </tr>`;
+            }).join('');
         } catch(e) { console.error(e); }
     }
 

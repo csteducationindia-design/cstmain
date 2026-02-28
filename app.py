@@ -1915,6 +1915,16 @@ def bulk_upload_users():
                     )
                     db.session.add(parent)
                     db.session.flush() # Generate ID immediately
+		course_data = Course.query.get(course_id)
+        if course_data:
+            # This creates the actual "Bill" in the database
+            new_bill = FeeStructure(
+                student_id=student.id,
+                particulars=f"Course Admission: {course_data.name}",
+                amount=course_data.fee,  # This pulls the 2200 from your course table
+                due_date=date.today() + timedelta(days=5)
+            )
+            db.session.add(new_bill)
                 parent_id = parent.id
 
             # --- STUDENT CREATION ---
