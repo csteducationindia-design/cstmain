@@ -14,3 +14,4 @@ google-auth>=2.0.0
 Flask-Caching
 psycopg2-binary
 razorpay
+psycopg2-binary
