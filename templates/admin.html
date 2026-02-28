@@ -797,16 +797,35 @@ async function loadUsers() {
     }
 
 window.sendWhatsAppReceipt = function(studentName, phone, amount, course) {
-    const message = `*FEE RECEIPT - CST INSTITUTE*%0A` +
-                    `--------------------------%0A` +
-                    `*Student:* ${studentName}%0A` +
-                    `*Course:* ${course}%0A` +
-                    `*Amount:* Rs. ${amount}%0A` +
-                    `*Status:* Confirmed ✅%0A` +
-                    `--------------------------%0A` +
-                    `_Thank you for choosing a digital receipt!_`;
+    // 1. Check if the phone number is missing or empty
+    if (!phone || phone === 'null' || phone === 'undefined' || phone.trim() === '') {
+        alert(`❌ Cannot send receipt. No valid phone number found for ${studentName}. Please update their profile first.`);
+        return;
+    }
+
+    // 2. Clean the phone number (removes spaces, dashes, etc.)
+    let cleanPhone = String(phone).replace(/\D/g, '');
     
-    window.open(`https://wa.me/91${phone}?text=${message}`, '_blank');
+    // 3. Ensure the country code (91) is correctly applied
+    if (cleanPhone.length === 10) {
+        cleanPhone = '91' + cleanPhone;
+    }
+
+    // 4. Create the message template
+    const rawMessage = `*FEE RECEIPT - CST INSTITUTE*\n` +
+                       `--------------------------\n` +
+                       `*Student:* ${studentName}\n` +
+                       `*Course:* ${course}\n` +
+                       `*Amount Received:* Rs. ${amount}\n` +
+                       `*Status:* Payment Confirmed ✅\n` +
+                       `--------------------------\n` +
+                       `_Thank you for choosing a digital receipt!_`;
+
+    // 5. Safely encode the message so it doesn't break the URL
+    const encodedMessage = encodeURIComponent(rawMessage);
+
+    // 6. Open WhatsApp
+    window.open(`https://wa.me/${cleanPhone}?text=${encodedMessage}`, '_blank');
 };
     // ✅ NEW: Smart filter function for the Student Selection Box
     window.updateFeeStudentList = function() {
