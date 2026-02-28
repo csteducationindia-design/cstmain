@@ -936,11 +936,11 @@ window.sendWhatsAppReceipt = function(studentName, phone, amount, course) {
                     <td class="p-3 text-right font-bold text-slate-700">₹${t.amount}</td>
                     <td class="p-3 text-right flex justify-end gap-2 items-center">
                         
-                        <button onclick="sendWhatsAppReceipt('${t.student_name}', '${phone}', '${t.amount}', '${t.fee_name}')" 
-                                class="bg-green-600 text-white px-2 py-1 rounded shadow flex items-center gap-1 hover:bg-green-700" title="Send Receipt">
-                            <span class="material-symbols-outlined text-sm">send</span>
-                            WhatsApp
-                        </button>
+                        <button onclick="sendWhatsAppReceipt('${t.student_name}', '${t.phone}', '${t.amount}', '${t.fee_name}')" 
+        class="bg-green-600 text-white px-2 py-1 rounded shadow flex items-center gap-1 hover:bg-green-700" title="Send Receipt">
+    <span class="material-symbols-outlined text-sm">send</span>
+    WhatsApp
+</button>
 
                         <button onclick="deleteTransaction(${t.id})" class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Delete Entry">
                             <span class="material-symbols-outlined text-lg">delete</span>

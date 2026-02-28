@@ -1705,6 +1705,7 @@ def api_collection_report():
             "time": pay.payment_date.strftime('%I:%M %p'),
             "student_name": student.name,
             "adm_no": student.admission_number,
+	    "phone": student.phone_number,
             "fee_name": fee_name,
             "mode": pay.payment_method,
             "amount": pay.amount_paid
