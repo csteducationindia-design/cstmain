@@ -2402,6 +2402,31 @@ def get_student_grades():
         })
 
     return jsonify(data)
+# ==========================================
+# ✅ FIX POSTGRESQL ID COUNTERS (RUN ONCE)
+# ==========================================
+@app.route('/fix_db_ids')
+def fix_db_ids():
+    try:
+        with db.engine.connect() as conn:
+            # List of all tables in your database
+            tables = [
+                'user', 'course', 'academic_session', 'announcement', 
+                'fee_structure', 'payment', 'attendance', 'shared_note', 
+                'exam', 'exam_result', 'assignment_task', 'doubt'
+            ]
+            
+            for t in tables:
+                try:
+                    # Postgres specific command to resync the ID counter to the MAX ID
+                    conn.execute(db.text(f"SELECT setval(pg_get_serial_sequence('\"{t}\"', 'id'), COALESCE(MAX(id), 1), MAX(id) IS NOT NULL) FROM \"{t}\";"))
+                except Exception as table_err:
+                    print(f"Skipping {t}: {table_err}")
+                    
+            conn.commit()
+        return "<h1>✅ All Database ID Sequences Fixed!</h1> <p>Go back to the portal. You can now add attendance, payments, and students perfectly.</p>"
+    except Exception as e:
+        return f"<h1>Error</h1><p>{str(e)}</p>"
 
 if __name__ == '__main__':
     initialize_database()
