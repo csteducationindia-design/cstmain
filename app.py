@@ -2465,6 +2465,87 @@ with app.app_context():
     except Exception as e:
         print(f"Sync Error: {e}")
 
+# ==========================================
+#  ✅ NEW: BULK UPLOAD EXAM RESULTS
+# ==========================================
+@app.route('/api/results/bulk_upload', methods=['POST'])
+@login_required
+def bulk_upload_results():
+    if current_user.role not in ['admin', 'teacher']:
+        return jsonify({"msg": "Denied"}), 403
+
+    if 'file' not in request.files:
+        return jsonify({"msg": "No file uploaded"}), 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"msg": "No file selected"}), 400
+
+    try:
+        # Support both CSV and Excel
+        if file.filename.endswith('.csv'):
+            df = pd.read_csv(file)
+        elif file.filename.endswith(('.xls', '.xlsx')):
+            try:
+                df = pd.read_excel(file)
+            except Exception:
+                return jsonify({"msg": "Missing Excel library on server. Please open your Excel file, click 'Save As', choose 'CSV', and upload the CSV version."}), 400
+        else:
+            return jsonify({"msg": "Invalid file format. Please upload a CSV or Excel file."}), 400
+
+        success_count = 0
+        error_count = 0
+
+        # Loop through the spreadsheet rows
+        for index, row in df.iterrows():
+            try:
+                adm_no = str(row.get('Admission_No', '')).strip()
+                # Clean up floats (e.g., 101.0 becomes 101)
+                if adm_no.endswith('.0'): adm_no = adm_no[:-2]
+
+                exam_title = str(row.get('Exam_Title', '')).strip()
+                theory = int(row.get('Theory_Marks', 0))
+                practical = int(row.get('Practical_Marks', 0))
+                max_marks = int(row.get('Max_Marks', 100))
+
+                if not adm_no or not exam_title or adm_no == 'nan':
+                    continue
+
+                # Find the student by Admission Number
+                student = User.query.filter_by(admission_number=adm_no, role='student').first()
+                if not student:
+                    error_count += 1
+                    continue
+
+                total = theory + practical
+                
+                # Save Result
+                res = ExamResult(
+                    student_id=student.id,
+                    exam_title=exam_title,
+                    theory=theory,
+                    practical=practical,
+                    total_obtained=total,
+                    max_marks=max_marks
+                )
+                db.session.add(res)
+                success_count += 1
+
+            except Exception as e:
+                error_count += 1
+                continue
+
+        db.session.commit()
+        
+        msg = f"✅ Successfully added marks for {success_count} students."
+        if error_count > 0:
+            msg += f" (Skipped {error_count} rows due to invalid data or missing student IDs)."
+
+        return jsonify({"msg": msg}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"msg": f"Server Error: {str(e)}"}), 500
 if __name__ == '__main__':
     initialize_database()
     app.run(debug=True, host='0.0.0.0', port=5000)
