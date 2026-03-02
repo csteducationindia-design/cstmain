@@ -1502,65 +1502,72 @@ def teacher_courses():
     return jsonify([c.to_dict() for c in courses])
 
 # ==========================================
-#  ✅ BULLETPROOF ATTENDANCE ROUTE
+#  ✅ BOMB-PROOF ATTENDANCE ROUTE
 # ==========================================
 @app.route('/api/teacher/attendance', methods=['POST'])
 @login_required
 def save_attendance():
-    # Security: Ensure only authorized roles can mark attendance
+    # 1. Check Permissions
     if current_user.role not in ['teacher', 'admin']:
-        return jsonify({"msg": "Denied"}), 403
+        return jsonify({"message": "Denied"}), 403
 
-    d = request.json
-    
-    # 1. Create a bulletproof Date Range (Start of day to End of day)
-    # This prevents ANY database-specific syntax crashing!
-    start_of_day = datetime.strptime(d['date'], '%Y-%m-%d')
-    end_of_day = start_of_day + timedelta(days=1)
-    
-    # 2. Set the exact time of submission
-    current_time = (datetime.utcnow() + timedelta(hours=5, minutes=30)).time()
-    final_dt = datetime.combine(start_of_day.date(), current_time)
+    try:
+        d = request.json
+        
+        # 2. Date Setup (Safe Math avoids PostgreSQL crashes)
+        start_of_day = datetime.strptime(d['date'], '%Y-%m-%d')
+        end_of_day = start_of_day + timedelta(days=1)
+        
+        current_time = (datetime.utcnow() + timedelta(hours=5, minutes=30)).time()
+        final_dt = datetime.combine(start_of_day.date(), current_time)
 
-    for r in d['attendance_data']:
-        sid = int(r['student_id'])
-        stat = r['status']
+        # 3. Process Each Student
+        for r in d['attendance_data']:
+            sid = int(r['student_id'])
+            stat = r['status']
 
-        # ✅ FIX: Use simple math ( >= and < ) instead of db.func or db.cast
-        exist = Attendance.query.filter(
-            Attendance.student_id == sid,
-            Attendance.check_in_time >= start_of_day,
-            Attendance.check_in_time < end_of_day
-        ).first()
+            # Database Query using Safe Math
+            exist = Attendance.query.filter(
+                Attendance.student_id == sid,
+                Attendance.check_in_time >= start_of_day,
+                Attendance.check_in_time < end_of_day
+            ).first()
 
-        if exist:
-            exist.status = stat
-        else:
-            db.session.add(Attendance(student_id=sid, check_in_time=final_dt, status=stat))
+            if exist:
+                exist.status = stat
+            else:
+                db.session.add(Attendance(student_id=sid, check_in_time=final_dt, status=stat))
 
-        student = db.session.get(User, sid)
-        if student:
-            title = "Attendance Update"
-            body = f"You have been marked {stat.upper()} today ({d['date']})."
-            send_push_notification(sid, title, body)
+            # 4. Notifications (Isolated so they NEVER crash the save process)
+            try:
+                student = db.session.get(User, sid)
+                if student:
+                    send_push_notification(sid, "Attendance Update", f"You have been marked {stat.upper()} today.")
 
-            if student.parent_id:
-                p_body = f"Your child {student.name} is marked {stat} today."
-                send_push_notification(student.parent_id, "Attendance Alert", p_body)
+                    if student.parent_id:
+                        send_push_notification(student.parent_id, "Attendance Alert", f"Your child {student.name} is marked {stat} today.")
 
-                if stat == 'Absent':
-                    parent = db.session.get(User, student.parent_id)
-                    if parent and parent.phone_number:
-                        # Ensure country code for WhatsApp to prevent API failure
-                        p_phone = str(parent.phone_number).strip().replace("+", "").replace("-", "").replace(" ", "")
-                        if len(p_phone) == 10:
-                            p_phone = f"91{p_phone}"
-                            
-                        msg = f"Alert: {student.name} is marked ABSENT on {d['date']}. Please contact CST Institute."
-                        send_whatsapp_message(p_phone, msg)
+                        if stat == 'Absent':
+                            parent = db.session.get(User, student.parent_id)
+                            if parent and parent.phone_number:
+                                # Sanitizes float strings from CSV (e.g., 9876543210.0)
+                                p_phone = str(parent.phone_number).replace(".0", "").replace("+", "").replace("-", "").replace(" ", "").strip()
+                                if len(p_phone) == 10:
+                                    p_phone = f"91{p_phone}"
+                                send_whatsapp_message(p_phone, f"Alert: {student.name} is marked ABSENT today. Please contact CST Institute.")
+            except Exception as notify_err:
+                print(f"Notification Skipped: {notify_err}")
 
-    db.session.commit()
-    return jsonify({"message": "Attendance Saved & Notifications Sent!"})
+        # 5. Save Everything
+        db.session.commit()
+        return jsonify({"message": "Attendance Saved Successfully!"}), 200
+
+    except Exception as e:
+        # 6. Catch Any Core Crashes & Show Exact Error on Screen
+        db.session.rollback()
+        error_msg = str(e)
+        print(f"CRITICAL ATTENDANCE ERROR: {error_msg}")
+        return jsonify({"message": f"System Error: {error_msg}"}), 500
 
 @app.route('/api/student/fees', methods=['GET'])
 @login_required
