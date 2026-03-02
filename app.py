@@ -1514,7 +1514,7 @@ def save_attendance():
     try:
         d = request.json
         
-        # 2. Date Setup (Safe Math avoids PostgreSQL crashes)
+        # 2. Date Setup (Safe Math avoids PostgreSQL crashes!)
         start_of_day = datetime.strptime(d['date'], '%Y-%m-%d')
         end_of_day = start_of_day + timedelta(days=1)
         
@@ -1526,7 +1526,7 @@ def save_attendance():
             sid = int(r['student_id'])
             stat = r['status']
 
-            # Database Query using Safe Math
+            # 🚀 THIS FIXES THE CRASH: Database Query using Safe Math 
             exist = Attendance.query.filter(
                 Attendance.student_id == sid,
                 Attendance.check_in_time >= start_of_day,
