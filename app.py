@@ -2427,6 +2427,19 @@ def fix_db_ids():
         return "<h1>✅ All Database ID Sequences Fixed!</h1> <p>Go back to the portal. You can now add attendance, payments, and students perfectly.</p>"
     except Exception as e:
         return f"<h1>Error</h1><p>{str(e)}</p>"
+# ==========================================
+# ✅ POSTGRESQL ID COUNTER FIX
+# ==========================================
+@app.route('/fix_attendance')
+def fix_attendance():
+    try:
+        with db.engine.connect() as conn:
+            # This directly tells Postgres to fast-forward its ID counter
+            conn.execute(db.text("SELECT setval('attendance_id_seq', (SELECT MAX(id) FROM attendance));"))
+            conn.commit()
+        return "<h1>✅ Database ID Synced Successfully!</h1> <p>You can close this tab and mark attendance now.</p>"
+    except Exception as e:
+        return f"<h1>Error</h1><p>{str(e)}</p>"
 
 if __name__ == '__main__':
     initialize_database()
