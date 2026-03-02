@@ -1501,28 +1501,36 @@ def teacher_courses():
     courses = Course.query.filter_by(teacher_id=current_user.id).all()
     return jsonify([c.to_dict() for c in courses])
 
+# ==========================================
+#  ✅ FIXED ATTENDANCE ROUTE
+# ==========================================
 @app.route('/api/teacher/attendance', methods=['POST'])
 @login_required
 def save_attendance():
+    # Security: Ensure only authorized roles can mark attendance
+    if current_user.role not in ['teacher', 'admin']:
+        return jsonify({"msg": "Denied"}), 403
+
     d = request.json
     selected_date = datetime.strptime(d['date'], '%Y-%m-%d').date()
     current_time = (datetime.utcnow() + timedelta(hours=5, minutes=30)).time()
     final_dt = datetime.combine(selected_date, current_time)
-    
+
     for r in d['attendance_data']:
         sid = int(r['student_id'])
         stat = r['status']
-        
+
+        # ✅ FIX 1: Use db.cast() for PostgreSQL compatibility to prevent 500 Crashes
         exist = Attendance.query.filter(
-            Attendance.student_id == sid, 
-            db.func.date(Attendance.check_in_time) == selected_date
+            Attendance.student_id == sid,
+            db.cast(Attendance.check_in_time, db.Date) == selected_date
         ).first()
-        
-        if exist: 
+
+        if exist:
             exist.status = stat
-        else: 
+        else:
             db.session.add(Attendance(student_id=sid, check_in_time=final_dt, status=stat))
-        
+
         student = db.session.get(User, sid)
         if student:
             title = "Attendance Update"
@@ -1532,13 +1540,18 @@ def save_attendance():
             if student.parent_id:
                 p_body = f"Your child {student.name} is marked {stat} today."
                 send_push_notification(student.parent_id, "Attendance Alert", p_body)
-                
+
                 if stat == 'Absent':
                     parent = db.session.get(User, student.parent_id)
                     if parent and parent.phone_number:
+                        # ✅ FIX 2: Ensure country code for WhatsApp to prevent API failure
+                        p_phone = str(parent.phone_number).strip().replace("+", "").replace("-", "").replace(" ", "")
+                        if len(p_phone) == 10:
+                            p_phone = f"91{p_phone}"
+                            
                         msg = f"Alert: {student.name} is marked ABSENT on {d['date']}. Please contact CST Institute."
-                        send_whatsapp_message(parent.phone_number, msg) 
-            
+                        send_whatsapp_message(p_phone, msg)
+
     db.session.commit()
     return jsonify({"message": "Attendance Saved & Notifications Sent!"})
 
