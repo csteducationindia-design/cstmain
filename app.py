@@ -1502,7 +1502,7 @@ def teacher_courses():
     return jsonify([c.to_dict() for c in courses])
 
 # ==========================================
-#  ✅ FIXED ATTENDANCE ROUTE
+#  ✅ BULLETPROOF ATTENDANCE ROUTE
 # ==========================================
 @app.route('/api/teacher/attendance', methods=['POST'])
 @login_required
@@ -1512,18 +1512,25 @@ def save_attendance():
         return jsonify({"msg": "Denied"}), 403
 
     d = request.json
-    selected_date = datetime.strptime(d['date'], '%Y-%m-%d').date()
+    
+    # 1. Create a bulletproof Date Range (Start of day to End of day)
+    # This prevents ANY database-specific syntax crashing!
+    start_of_day = datetime.strptime(d['date'], '%Y-%m-%d')
+    end_of_day = start_of_day + timedelta(days=1)
+    
+    # 2. Set the exact time of submission
     current_time = (datetime.utcnow() + timedelta(hours=5, minutes=30)).time()
-    final_dt = datetime.combine(selected_date, current_time)
+    final_dt = datetime.combine(start_of_day.date(), current_time)
 
     for r in d['attendance_data']:
         sid = int(r['student_id'])
         stat = r['status']
 
-        # ✅ FIX 1: Use db.cast() for PostgreSQL compatibility to prevent 500 Crashes
+        # ✅ FIX: Use simple math ( >= and < ) instead of db.func or db.cast
         exist = Attendance.query.filter(
             Attendance.student_id == sid,
-            db.cast(Attendance.check_in_time, db.Date) == selected_date
+            Attendance.check_in_time >= start_of_day,
+            Attendance.check_in_time < end_of_day
         ).first()
 
         if exist:
@@ -1544,7 +1551,7 @@ def save_attendance():
                 if stat == 'Absent':
                     parent = db.session.get(User, student.parent_id)
                     if parent and parent.phone_number:
-                        # ✅ FIX 2: Ensure country code for WhatsApp to prevent API failure
+                        # Ensure country code for WhatsApp to prevent API failure
                         p_phone = str(parent.phone_number).strip().replace("+", "").replace("-", "").replace(" ", "")
                         if len(p_phone) == 10:
                             p_phone = f"91{p_phone}"
