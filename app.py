@@ -2441,6 +2441,30 @@ def fix_attendance():
     except Exception as e:
         return f"<h1>Error</h1><p>{str(e)}</p>"
 
+# =========================================================
+# ✅ AUTO-FIX FOR POSTGRESQL (WORKS WITH GUNICORN/COOLIFY)
+# =========================================================
+with app.app_context():
+    try:
+        # Check if running on PostgreSQL in Coolify
+        if db.engine.dialect.name == 'postgresql':
+            with db.engine.connect() as conn:
+                tables = [
+                    'user', 'course', 'academic_session', 'announcement', 
+                    'fee_structure', 'payment', 'attendance', 'shared_note', 
+                    'exam', 'exam_result', 'assignment_task', 'doubt'
+                ]
+                for t in tables:
+                    try:
+                        # Automatically fast-forwards the internal ID counter to match your migrated data
+                        conn.execute(text(f"SELECT setval(pg_get_serial_sequence('\"{t}\"', 'id'), coalesce(max(id), 1), max(id) IS NOT null) FROM \"{t}\";"))
+                    except Exception:
+                        pass
+                conn.commit()
+            print("✅ PostgreSQL ID Sequences Auto-Synced Successfully!")
+    except Exception as e:
+        print(f"Sync Error: {e}")
+
 if __name__ == '__main__':
     initialize_database()
     app.run(debug=True, host='0.0.0.0', port=5000)
