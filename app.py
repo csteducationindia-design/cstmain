@@ -17,6 +17,8 @@ import urllib.parse
 import firebase_admin
 from firebase_admin import credentials, messaging
 import logging
+from gtts import gTTS
+import time
 import pandas as pd
 from io import BytesIO
 import threading
@@ -2546,6 +2548,63 @@ def bulk_upload_results():
     except Exception as e:
         db.session.rollback()
         return jsonify({"msg": f"Server Error: {str(e)}"}), 500
+# ==========================================
+#  ✅ NEW: AI VOICE NOTE GENERATOR (FREE)
+# ==========================================
+@app.route('/api/admin/send_voice_reminder', methods=['POST'])
+@login_required
+def send_voice_reminder():
+    if current_user.role != 'admin':
+        return jsonify({"msg": "Denied"}), 403
+
+    try:
+        data = request.json
+        student_id = data.get('student_id')
+        reminder_type = data.get('type') # 'fee' or 'absent'
+
+        # 1. Find the Student and Parent
+        student = db.session.get(User, student_id)
+        if not student or not student.parent_id:
+            return jsonify({"msg": "Parent not linked to this student."}), 400
+
+        parent = db.session.get(User, student.parent_id)
+        if not parent or not parent.phone_number:
+            return jsonify({"msg": "Parent phone number is missing."}), 400
+
+        # Clean Phone Number
+        phone = str(parent.phone_number).replace(".0", "").replace("+", "").replace("-", "").replace(" ", "").strip()
+        if len(phone) == 10:
+            phone = f"91{phone}"
+
+        # 2. Write the AI Script
+        if reminder_type == 'fee':
+            message_text = f"Hello. This is an automated voice message from CST Institute. We noticed that there is a pending fee for {student.name}. Kindly ensure the payment is made as soon as possible to avoid any interruptions. Thank you."
+        elif reminder_type == 'absent':
+            message_text = f"Hello. This is an automated voice message from CST Institute. Please note that {student.name} was marked absent from class. Please contact the institute if you have any questions. Thank you."
+        else:
+            return jsonify({"msg": "Invalid reminder type."}), 400
+
+        # 3. Generate the AI Voice (Female, Indian English)
+        tts = gTTS(text=message_text, lang='en', tld='co.in')
+        
+        # Save audio file temporarily in the static folder
+        filename = f"voice_alert_{student.id}_{int(time.time())}.mp3"
+        filepath = os.path.join(app.root_path, 'static', filename)
+        tts.save(filepath)
+
+        # 4. Send to WhatsApp
+        audio_link = f"https://cstai.in/static/{filename}"
+        wa_msg = f"🔔 *CST Institute Voice Alert*\n\nPlease listen to this important audio message regarding {student.name}:\n\n🔊 {audio_link}"
+        
+        # Using your existing WhatsApp function
+        send_whatsapp_message(phone, wa_msg)
+
+        return jsonify({"msg": "AI Voice Note generated and sent to WhatsApp!"}), 200
+
+    except Exception as e:
+        print(f"Voice AI Error: {e}")
+        return jsonify({"msg": "Failed to generate voice note."}), 500
+
 if __name__ == '__main__':
     initialize_database()
     app.run(debug=True, host='0.0.0.0', port=5000)
