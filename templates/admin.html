@@ -905,22 +905,36 @@ window.sendWhatsAppReceipt = function(studentName, phone, amount, course) {
     });
 
 window.sendVoiceReminder = async function(studentId, type, btnElement) {
-    if(!confirm(`Generate and send an AI Voice Note to this student's parent?`)) return;
+    if(!confirm(`Generate an AI Voice Note and open WhatsApp to send it?`)) return;
     
     const originalText = btnElement.innerHTML;
-    btnElement.innerHTML = `<span class="material-symbols-outlined text-[14px] animate-spin align-middle">refresh</span> Sending...`;
+    btnElement.innerHTML = `<span class="material-symbols-outlined text-[14px] animate-spin align-middle">refresh</span> Generating...`;
     btnElement.disabled = true;
 
     try {
-        const res = await fetch(`${API_BASE_URL}/admin/send_voice_reminder`, {
+        const res = await fetch(`${API_BASE_URL}/send_voice_reminder`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
+            credentials: 'include',
             body: JSON.stringify({ student_id: studentId, type: type })
         });
         const data = await res.json();
-        alert(data.msg);
+        
+        // 🚀 NEW: If the server sends back an audio link and phone number, open WhatsApp!
+        if(data.audio_url && data.phone) {
+            // Create a nice, polite message containing the link to the AI Voice
+            const messageText = `🔔 *CST Institute Alert*\n\nHello, please listen to this automated voice message regarding your child's ${type === 'fee' ? 'pending fees' : 'attendance'}:\n\n🔊 Listen here: ${data.audio_url}`;
+            
+            // Safely encode the text for a URL
+            const encodedMessage = encodeURIComponent(messageText);
+            
+            // Open WhatsApp Web / Desktop App
+            window.open(`https://wa.me/${data.phone}?text=${encodedMessage}`, '_blank');
+        } else {
+            alert(data.msg); // Show error if phone number is missing
+        }
     } catch(e) {
-        alert("Server Error. Could not send voice note.");
+        alert("Server Error. Could not generate voice note.");
     } finally {
         btnElement.innerHTML = originalText;
         btnElement.disabled = false;

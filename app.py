@@ -2588,18 +2588,19 @@ def send_voice_reminder():
         tts = gTTS(text=message_text, lang='en', tld='co.in')
         
         # Save audio file temporarily in the static folder
+
         filename = f"voice_alert_{student.id}_{int(time.time())}.mp3"
         filepath = os.path.join(app.root_path, 'static', filename)
         tts.save(filepath)
 
-        # 4. Send to WhatsApp
         audio_link = f"https://cstai.in/static/{filename}"
-        wa_msg = f"🔔 *CST Institute Voice Alert*\n\nPlease listen to this important audio message regarding {student.name}:\n\n🔊 {audio_link}"
-        
-        # Using your existing WhatsApp function
-        send_whatsapp_message(phone, wa_msg)
 
-        return jsonify({"msg": "AI Voice Note generated and sent to WhatsApp!"}), 200
+        # 5. Send the audio link AND phone number back to the screen
+        return jsonify({
+            "msg": "AI Voice Note generated!", 
+            "audio_url": audio_link,
+            "phone": phone  # 🚀 Added the phone number here
+        }), 200
 
     except Exception as e:
         print(f"Voice AI Error: {e}")
