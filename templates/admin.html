@@ -772,11 +772,19 @@ async function loadUsers() {
             <tr class="border-b hover:bg-red-50">
                 <td class="p-3 font-medium">${s.student_name}</td>
                 <td class="p-3 text-red-600 font-bold">₹${s.balance}</td>
-                <td class="p-3 text-right">
-                    <button onclick="jumpToCollectFee(${s.student_id}, ${s.balance})" class="bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-green-700 shadow-sm mr-2 transition flex-inline items-center gap-1"><span class="material-symbols-outlined text-[14px] align-middle">payments</span> Collect Now</button>
-                    <button onclick="sendSMS(${s.student_id})" class="bg-red-100 text-red-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-200 shadow-sm transition">Remind via SMS</button>
-		    <button onclick="sendVoiceReminder(${s.student_id}, 'fee', this)" class="bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-indigo-200 shadow-sm transition flex-inline items-center gap-1">
-                </td>
+                <td class="p-3 text-right whitespace-nowrap">
+    <button onclick="jumpToCollectFee(${s.student_id}, ${s.balance})" class="bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-green-700 shadow-sm mr-2 transition inline-flex items-center gap-1">
+        <span class="material-symbols-outlined text-[14px] align-middle">payments</span> Collect
+    </button>
+    
+    <button onclick="sendSMS(${s.student_id})" class="bg-orange-100 text-orange-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-orange-200 shadow-sm transition mr-2 inline-flex items-center gap-1">
+        <span class="material-symbols-outlined text-[14px] align-middle">sms</span> Send SMS
+    </button>
+    
+    <button onclick="sendVoiceReminder(${s.student_id}, 'fee', this)" class="bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-indigo-200 shadow-sm transition inline-flex items-center gap-1">
+        <span class="material-symbols-outlined text-[14px] align-middle">record_voice_over</span> AI Voice
+    </button>
+</td>
             </tr>`).join('');
     }
 
