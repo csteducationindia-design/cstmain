@@ -1385,10 +1385,14 @@ def get_teacher_reports():
         print(f"Server Error: {e}")
         return jsonify(report_data)
 
+# ==========================================
+#  ✅ TEACHER ANNOUNCEMENTS (WITH BULK AI VOICE)
+# ==========================================
 @app.route('/api/teacher/announcements', methods=['GET', 'POST'])
 @login_required
 def teacher_announcements():
-    if current_user.role != 'teacher': return jsonify({"msg": "Denied"}), 403
+    if current_user.role != 'teacher': 
+        return jsonify({"msg": "Denied"}), 403
     
     if request.method == 'POST':
         d = request.json
@@ -1401,21 +1405,67 @@ def teacher_announcements():
         )
         db.session.add(a)
         db.session.commit()
+
+        # --- 🚀 NEW: AI VOICE LOGIC START ---
+        generate_voice = d.get('generate_voice', False)
+        audio_link = ""
+
+        if generate_voice:
+            static_folder = os.path.join(app.root_path, 'static')
+            os.makedirs(static_folder, exist_ok=True)
+            
+            # Auto-cleanup old announcements (48 hours)
+            now = time.time()
+            for f_name in os.listdir(static_folder):
+                if f_name.startswith("ann_alert_") and f_name.endswith(".mp3"):
+                    file_path = os.path.join(static_folder, f_name)
+                    if os.path.getmtime(file_path) < now - (48 * 3600):
+                        try: os.remove(file_path)
+                        except: pass
+
+            # Create the Hindi Script
+            message_text = f"नमस्ते। यह सीएसटी इंस्टिट्यूट से एक सूचना है। विषय: {a.category}। {a.content} धन्यवाद।"
+            
+            tts = gTTS(text=message_text, lang='hi')
+            filename = f"ann_alert_{int(time.time())}.mp3"
+            filepath = os.path.join(static_folder, filename)
+            tts.save(filepath)
+            audio_link = f"https://cstai.in/static/{filename}"
+        # --- 🚀 NEW: AI VOICE LOGIC END ---
+
+        # Prepare the notification message
+        notify_title = f"Class Update: {d['title']}"
+        notify_body = d['content']
+        if audio_link:
+            notify_body += f"\n\n🔊 Voice Note Attached: Click here to listen: {audio_link}"
         
+        # Loop through the teacher's courses and notify
         courses = Course.query.filter_by(teacher_id=current_user.id).all()
         notified_ids = set()
         
+        target = d.get('target_group', 'students')
+
         for c in courses:
             for s in c.students:
-                if s.id not in notified_ids:
-                    send_push_notification(s.id, f"Class Update: {d['title']}", d['content'])
-                    notified_ids.add(s.id)
+                # Send to Student
+                if target in ['students', 'all']:
+                    if s.id not in notified_ids:
+                        send_push_notification(s.id, notify_title, notify_body)
+                        notified_ids.add(s.id)
+                
+                # Send to Parent
+                if target in ['parents', 'all'] and getattr(s, 'parent_id', None):
+                    if s.parent_id not in notified_ids:
+                        send_push_notification(s.parent_id, notify_title, notify_body)
+                        notified_ids.add(s.parent_id)
         
         return jsonify(a.to_dict()), 201
 
+    # GET Request (Your exact original code)
     anns = Announcement.query.filter(
         (Announcement.teacher_id == current_user.id) | (Announcement.target_group == 'teachers')
     ).order_by(Announcement.created_at.desc()).all()
+    
     return jsonify([a.to_dict() for a in anns])
 
 @app.route('/api/teacher/notes', methods=['GET', 'POST', 'DELETE'])
@@ -1504,31 +1554,53 @@ def teacher_courses():
     return jsonify([c.to_dict() for c in courses])
 
 # ==========================================
-#  ✅ BOMB-PROOF ATTENDANCE ROUTE
+#  ✅ BOMB-PROOF ATTENDANCE ROUTE (WITH BULK AI VOICE)
 # ==========================================
 @app.route('/api/teacher/attendance', methods=['POST'])
 @login_required
 def save_attendance():
-    # 1. Check Permissions
     if current_user.role not in ['teacher', 'admin']:
         return jsonify({"message": "Denied"}), 403
 
     try:
         d = request.json
+        generate_voice = d.get('generate_voice', False)
         
-        # 2. Date Setup (Safe Math avoids PostgreSQL crashes!)
+        # 1. Date Setup (Safe Math)
         start_of_day = datetime.strptime(d['date'], '%Y-%m-%d')
         end_of_day = start_of_day + timedelta(days=1)
-        
         current_time = (datetime.utcnow() + timedelta(hours=5, minutes=30)).time()
         final_dt = datetime.combine(start_of_day.date(), current_time)
+
+        # 🚀 2. GENERATE ONE GENERIC ABSENT VOICE NOTE (If Requested)
+        audio_link = ""
+        if generate_voice:
+            static_folder = os.path.join(app.root_path, 'static')
+            os.makedirs(static_folder, exist_ok=True)
+            
+            # Cleanup old bulk absent files
+            now = time.time()
+            for f_name in os.listdir(static_folder):
+                if f_name.startswith("bulk_absent_") and f_name.endswith(".mp3"):
+                    file_path = os.path.join(static_folder, f_name)
+                    if os.path.getmtime(file_path) < now - (48 * 3600):
+                        try: os.remove(file_path)
+                        except: pass
+
+            # Notice we say "आपका बच्चा" (your child) so it works for ANY student!
+            message_text = "नमस्ते। यह सीएसटी इंस्टिट्यूट से एक स्वचालित वॉइस मैसेज है। कृपया ध्यान दें कि आपका बच्चा आज क्लास में अनुपस्थित था। कृपया इस पर ध्यान दें और किसी भी जानकारी के लिए इंस्टिट्यूट से संपर्क करें। धन्यवाद।"
+            
+            tts = gTTS(text=message_text, lang='hi')
+            filename = f"bulk_absent_{int(time.time())}.mp3"
+            filepath = os.path.join(static_folder, filename)
+            tts.save(filepath)
+            audio_link = f"https://cstai.in/static/{filename}"
 
         # 3. Process Each Student
         for r in d['attendance_data']:
             sid = int(r['student_id'])
             stat = r['status']
 
-            # 🚀 THIS FIXES THE CRASH: Database Query using Safe Math 
             exist = Attendance.query.filter(
                 Attendance.student_id == sid,
                 Attendance.check_in_time >= start_of_day,
@@ -1540,32 +1612,34 @@ def save_attendance():
             else:
                 db.session.add(Attendance(student_id=sid, check_in_time=final_dt, status=stat))
 
-            # 4. Notifications (Isolated so they NEVER crash the save process)
+            # 4. Push Notifications via Firebase
             try:
                 student = db.session.get(User, sid)
                 if student:
-                    send_push_notification(sid, "Attendance Update", f"You have been marked {stat.upper()} today.")
+                    notify_body_parent = f"Your child {student.name} is marked {stat} today."
+                    notify_body_student = f"You have been marked {stat} today."
+                    
+                    # If they are absent AND the teacher checked the Voice Box, attach the MP3!
+                    if stat == 'Absent' and audio_link:
+                        alert_addon = f"\n\n🔊 Voice Alert: Click here to listen: {audio_link}"
+                        notify_body_parent += alert_addon
+                        notify_body_student += alert_addon
 
+                    # Send to Student
+                    send_push_notification(sid, "Attendance Update", notify_body_student)
+
+                    # Send to Parent
                     if student.parent_id:
-                        send_push_notification(student.parent_id, "Attendance Alert", f"Your child {student.name} is marked {stat} today.")
-
-                        if stat == 'Absent':
-                            parent = db.session.get(User, student.parent_id)
-                            if parent and parent.phone_number:
-                                # Sanitizes float strings from CSV (e.g., 9876543210.0)
-                                p_phone = str(parent.phone_number).replace(".0", "").replace("+", "").replace("-", "").replace(" ", "").strip()
-                                if len(p_phone) == 10:
-                                    p_phone = f"91{p_phone}"
-                                send_whatsapp_message(p_phone, f"Alert: {student.name} is marked ABSENT today. Please contact CST Institute.")
+                        send_push_notification(student.parent_id, "Attendance Alert", notify_body_parent)
+                        
             except Exception as notify_err:
                 print(f"Notification Skipped: {notify_err}")
 
         # 5. Save Everything
         db.session.commit()
-        return jsonify({"message": "Attendance Saved Successfully!"}), 200
+        return jsonify({"message": "Attendance Saved & Alerts Sent Successfully!"}), 200
 
     except Exception as e:
-        # 6. Catch Any Core Crashes & Show Exact Error on Screen
         db.session.rollback()
         error_msg = str(e)
         print(f"CRITICAL ATTENDANCE ERROR: {error_msg}")
@@ -2596,12 +2670,32 @@ def send_voice_reminder():
             message_text = f"नमस्ते। यह सीएसटी इंस्टिट्यूट से एक स्वचालित वॉइस मैसेज है। हम आपको सूचित करना चाहते हैं कि {student.name} की फीस बकाया है। कृपया किसी भी असुविधा से बचने के लिए जल्द से जल्द भुगतान सुनिश्चित करें। धन्यवाद।"
         elif reminder_type == 'absent':
             message_text = f"नमस्ते। यह सीएसटी इंस्टिट्यूट से एक स्वचालित वॉइस मैसेज है। कृपया ध्यान दें कि {student.name} आज क्लास में अनुपस्थित थे। किसी भी जानकारी के लिए कृपया इंस्टिट्यूट से संपर्क करें। धन्यवाद।"
+        # 🚀 ADD THIS NEW BLOCK:
+        elif reminder_type == 'assignment':
+            message_text = f"नमस्ते। यह सीएसटी इंस्टिट्यूट से एक स्वचालित वॉइस मैसेज है। कृपया ध्यान दें कि {student.name} ने अपना असाइनमेंट या होमवर्क अभी तक जमा नहीं किया है। कृपया सुनिश्चित करें कि वे इसे जल्द से जल्द पूरा करें। धन्यवाद।"
         else:
             return jsonify({"msg": "Invalid reminder type."}), 400
-
+       
         # Ensure the folder exists so the server doesn't crash
         static_folder = os.path.join(app.root_path, 'static')
         os.makedirs(static_folder, exist_ok=True)
+
+        # ==========================================
+        # 🧹 AUTO-CLEANUP: Prevent Storage Full Error
+        # ==========================================
+        try:
+            now = time.time()
+            for f_name in os.listdir(static_folder):
+                if f_name.startswith("voice_alert_") and f_name.endswith(".mp3"):
+                    file_path = os.path.join(static_folder, f_name)
+                    # If file is older than 48 hours (48 * 3600 seconds), delete it!
+                    if os.path.getmtime(file_path) < now - (48 * 3600):
+                        os.remove(file_path)
+        except Exception as cleanup_err:
+            print(f"Cleanup skipped: {cleanup_err}")
+        # ==========================================
+
+        
 
         # 🚀 NEW: Set lang='hi' to make the AI speak in a natural Hindi voice
         tts = gTTS(text=message_text, lang='hi')

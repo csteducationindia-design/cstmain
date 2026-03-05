@@ -437,7 +437,16 @@
                     </div>
                 </div>
 
-                <div class="flex justify-end pb-8">
+                <div class="flex flex-col sm:flex-row items-center justify-end gap-4 pb-8">
+                    
+                    <div class="flex items-center gap-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-xl">
+                        <input type="checkbox" id="attendance-voice-checkbox" class="w-5 h-5 text-red-600 rounded border-red-300 focus:ring-red-500 cursor-pointer">
+                        <label for="attendance-voice-checkbox" class="text-sm font-bold text-red-800 dark:text-red-300 cursor-pointer flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[18px]">record_voice_over</span> 
+                            Push AI Voice Alert to Absentees
+                        </label>
+                    </div>
+
                     <button id="submit-attendance-btn" disabled class="bg-primary text-white font-bold py-3.5 px-10 rounded-xl shadow-lg shadow-blue-200 dark:shadow-none hover:bg-primary-hover transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transform active:scale-95">
                         <span class="material-symbols-outlined">save</span>
                         Submit Attendance Log
@@ -600,6 +609,7 @@
                         <textarea id="ann-content" rows="4" required class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 p-3"></textarea>
                     </div>
                     <div>
+                        
                         <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Target Audience</label>
                         <select id="ann-target" class="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 p-3">
                             <option value="students">Students Only</option>
@@ -607,6 +617,15 @@
                             <option value="all">Everyone</option>
                         </select>
                     </div>
+                    
+                    <div class="flex items-center gap-3 p-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 rounded-xl my-4">
+                        <input type="checkbox" id="ann-voice" class="w-5 h-5 text-indigo-600 rounded cursor-pointer">
+                        <label for="ann-voice" class="text-sm font-bold text-indigo-800 dark:text-indigo-300 cursor-pointer flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[18px]">record_voice_over</span> 
+                            Generate Hindi AI Voice Note for this Announcement
+                        </label>
+                    </div>
+
                     <button type="submit" class="w-full bg-primary text-white py-3 rounded-xl font-bold hover:bg-primary-hover shadow-lg transition">Broadcast Notification</button>
                 </form>
             </div>
@@ -1680,6 +1699,7 @@ attBody.innerHTML = students.map(s => {
             
             const payload = {
                 date: attendanceDateInput.value,
+		generate_voice: document.getElementById('attendance-voice-checkbox').checked,
                 attendance_data: Object.entries(currentAttendanceStatus).map(([sid, stat]) => ({
                     student_id: parseInt(sid), status: stat
                 }))
@@ -1849,7 +1869,8 @@ annForm.addEventListener('submit', async (e) => {
         title: document.getElementById('ann-title').value,
         content: document.getElementById('ann-content').value,
         category: document.getElementById('ann-category').value,
-        target_group: document.getElementById('ann-target').value
+        target_group: document.getElementById('ann-target').value,
+	generate_voice: document.getElementById('ann-voice').checked 
     };
 
     try {
@@ -2159,8 +2180,13 @@ window.sendVoiceReminder = async function(studentId, type, btnElement) {
         }
         
         if(data.audio_url && data.phone) {
-            // Hindi WhatsApp message text
-            const messageText = `🔔 *CST Institute Alert*\n\nनमस्ते, कृपया छात्र की अनुपस्थिति (Absence) के संबंध में यह स्वचालित वॉयस मैसेज सुनें:\n\n🔊 Listen here: ${data.audio_url}`;
+            // Smart WhatsApp message text
+            let topicText = '';
+            if(type === 'fee') topicText = 'बकाया फीस (Pending Fees)';
+            else if(type === 'absent') topicText = 'अनुपस्थिति (Absence)';
+            else if(type === 'assignment') topicText = 'लंबित होमवर्क (Pending Assignment)';
+            
+            const messageText = `🔔 *CST Institute Alert*\n\nनमस्ते, कृपया छात्र के ${topicText} के संबंध में यह स्वचालित वॉयस मैसेज सुनें:\n\n🔊 Listen here: ${data.audio_url}`;
             const encodedMessage = encodeURIComponent(messageText);
             
             // Open WhatsApp Web
