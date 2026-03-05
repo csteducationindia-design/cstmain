@@ -2591,10 +2591,11 @@ def send_voice_reminder():
             phone = f"91{phone}"
 
         # --- Generate the Audio Script ---
+        # --- 🚀 NEW: HINDI Audio Script ---
         if reminder_type == 'fee':
-            message_text = f"Hello. This is an automated voice message from CST Institute. We noticed that there is a pending fee for {student.name}. Kindly ensure the payment is made as soon as possible to avoid any interruptions. Thank you."
+            message_text = f"नमस्ते। यह सीएसटी इंस्टिट्यूट से एक स्वचालित वॉइस मैसेज है। हम आपको सूचित करना चाहते हैं कि {student.name} की फीस बकाया है। कृपया किसी भी असुविधा से बचने के लिए जल्द से जल्द भुगतान सुनिश्चित करें। धन्यवाद।"
         elif reminder_type == 'absent':
-            message_text = f"Hello. This is an automated voice message from CST Institute. Please note that {student.name} was marked absent from class. Please contact the institute if you have any questions. Thank you."
+            message_text = f"नमस्ते। यह सीएसटी इंस्टिट्यूट से एक स्वचालित वॉइस मैसेज है। कृपया ध्यान दें कि {student.name} आज क्लास में अनुपस्थित थे। किसी भी जानकारी के लिए कृपया इंस्टिट्यूट से संपर्क करें। धन्यवाद।"
         else:
             return jsonify({"msg": "Invalid reminder type."}), 400
 
@@ -2602,8 +2603,8 @@ def send_voice_reminder():
         static_folder = os.path.join(app.root_path, 'static')
         os.makedirs(static_folder, exist_ok=True)
 
-        # Create MP3 file
-        tts = gTTS(text=message_text, lang='en', tld='co.in')
+        # 🚀 NEW: Set lang='hi' to make the AI speak in a natural Hindi voice
+        tts = gTTS(text=message_text, lang='hi')
         filename = f"voice_alert_{student.id}_{int(time.time())}.mp3"
         filepath = os.path.join(static_folder, filename)
         tts.save(filepath)
