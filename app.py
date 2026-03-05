@@ -2548,21 +2548,21 @@ def bulk_upload_results():
     except Exception as e:
         db.session.rollback()
         return jsonify({"msg": f"Server Error: {str(e)}"}), 500
+
 # ==========================================
-#  ✅ NEW: AI VOICE NOTE GENERATOR (FREE)
+#  ✅ AI VOICE NOTE GENERATOR (BULLETPROOF)
 # ==========================================
-@app.route('/api/admin/send_voice_reminder', methods=['POST'])
+@app.route('/api/send_voice_reminder', methods=['POST'])
 @login_required
 def send_voice_reminder():
-    if current_user.role != 'admin':
+    if current_user.role not in ['admin', 'teacher']:
         return jsonify({"msg": "Denied"}), 403
 
     try:
         data = request.json
         student_id = data.get('student_id')
-        reminder_type = data.get('type') # 'fee' or 'absent'
+        reminder_type = data.get('type')
 
-        # 1. Find the Student and Parent
         student = db.session.get(User, student_id)
         if not student or not student.parent_id:
             return jsonify({"msg": "Parent not linked to this student."}), 400
@@ -2571,12 +2571,10 @@ def send_voice_reminder():
         if not parent or not parent.phone_number:
             return jsonify({"msg": "Parent phone number is missing."}), 400
 
-        # Clean Phone Number
         phone = str(parent.phone_number).replace(".0", "").replace("+", "").replace("-", "").replace(" ", "").strip()
         if len(phone) == 10:
             phone = f"91{phone}"
 
-        # 2. Write the AI Script
         if reminder_type == 'fee':
             message_text = f"Hello. This is an automated voice message from CST Institute. We noticed that there is a pending fee for {student.name}. Kindly ensure the payment is made as soon as possible to avoid any interruptions. Thank you."
         elif reminder_type == 'absent':
@@ -2584,27 +2582,27 @@ def send_voice_reminder():
         else:
             return jsonify({"msg": "Invalid reminder type."}), 400
 
-        # 3. Generate the AI Voice (Female, Indian English)
-        tts = gTTS(text=message_text, lang='en', tld='co.in')
-        
-        # Save audio file temporarily in the static folder
+        # Ensure the folder exists so the server doesn't crash
+        static_folder = os.path.join(app.root_path, 'static')
+        os.makedirs(static_folder, exist_ok=True)
 
+        tts = gTTS(text=message_text, lang='en', tld='co.in')
         filename = f"voice_alert_{student.id}_{int(time.time())}.mp3"
-        filepath = os.path.join(app.root_path, 'static', filename)
+        filepath = os.path.join(static_folder, filename)
         tts.save(filepath)
 
         audio_link = f"https://cstai.in/static/{filename}"
 
-        # 5. Send the audio link AND phone number back to the screen
         return jsonify({
             "msg": "AI Voice Note generated!", 
             "audio_url": audio_link,
-            "phone": phone  # 🚀 Added the phone number here
+            "phone": phone
         }), 200
 
     except Exception as e:
         print(f"Voice AI Error: {e}")
-        return jsonify({"msg": "Failed to generate voice note."}), 500
+        # Now it will send the EXACT Python error back to your screen!
+        return jsonify({"msg": f"Backend Error: {str(e)}"}), 500
 
 if __name__ == '__main__':
     initialize_database()

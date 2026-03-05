@@ -918,23 +918,28 @@ window.sendVoiceReminder = async function(studentId, type, btnElement) {
             credentials: 'include',
             body: JSON.stringify({ student_id: studentId, type: type })
         });
-        const data = await res.json();
         
-        // 🚀 NEW: If the server sends back an audio link and phone number, open WhatsApp!
+        // Read raw text first to prevent hidden crashes
+        const text = await res.text();
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch(e) {
+            alert("Server crashed or timed out. Raw response: " + text.substring(0, 150));
+            btnElement.innerHTML = originalText;
+            btnElement.disabled = false;
+            return;
+        }
+        
         if(data.audio_url && data.phone) {
-            // Create a nice, polite message containing the link to the AI Voice
             const messageText = `🔔 *CST Institute Alert*\n\nHello, please listen to this automated voice message regarding your child's ${type === 'fee' ? 'pending fees' : 'attendance'}:\n\n🔊 Listen here: ${data.audio_url}`;
-            
-            // Safely encode the text for a URL
             const encodedMessage = encodeURIComponent(messageText);
-            
-            // Open WhatsApp Web / Desktop App
             window.open(`https://wa.me/${data.phone}?text=${encodedMessage}`, '_blank');
         } else {
-            alert(data.msg); // Show error if phone number is missing
+            alert(data.msg); // This handles the "Parent not linked" message
         }
     } catch(e) {
-        alert("Server Error. Could not generate voice note.");
+        alert("Network Error. Check your internet connection.");
     } finally {
         btnElement.innerHTML = originalText;
         btnElement.disabled = false;
