@@ -2549,8 +2549,9 @@ def bulk_upload_results():
         db.session.rollback()
         return jsonify({"msg": f"Server Error: {str(e)}"}), 500
 
+
 # ==========================================
-#  ✅ AI VOICE NOTE GENERATOR (BULLETPROOF)
+#  ✅ AI VOICE NOTE GENERATOR (WITH SMART FALLBACK)
 # ==========================================
 @app.route('/api/send_voice_reminder', methods=['POST'])
 @login_required
@@ -2564,17 +2565,32 @@ def send_voice_reminder():
         reminder_type = data.get('type')
 
         student = db.session.get(User, student_id)
-        if not student or not student.parent_id:
-            return jsonify({"msg": "Parent not linked to this student."}), 400
+        if not student:
+            return jsonify({"msg": "Student not found."}), 404
 
-        parent = db.session.get(User, student.parent_id)
-        if not parent or not parent.phone_number:
-            return jsonify({"msg": "Parent phone number is missing."}), 400
+        # --- 🚀 NEW: SMART PHONE NUMBER FALLBACK LOGIC ---
+        target_phone = None
+        
+        # Step 1: Try to get the Parent's phone number first
+        if student.parent_id:
+            parent = db.session.get(User, student.parent_id)
+            if parent and parent.phone_number:
+                target_phone = parent.phone_number
 
-        phone = str(parent.phone_number).replace(".0", "").replace("+", "").replace("-", "").replace(" ", "").strip()
+        # Step 2: If no parent phone, AUTOMATICALLY fallback to Student's phone
+        if not target_phone and student.phone_number:
+            target_phone = student.phone_number
+
+        # Step 3: If STILL no phone number found anywhere, show an error
+        if not target_phone:
+            return jsonify({"msg": "No mobile number found for this student or parent."}), 400
+
+        # Clean the phone number format
+        phone = str(target_phone).replace(".0", "").replace("+", "").replace("-", "").replace(" ", "").strip()
         if len(phone) == 10:
             phone = f"91{phone}"
 
+        # --- Generate the Audio Script ---
         if reminder_type == 'fee':
             message_text = f"Hello. This is an automated voice message from CST Institute. We noticed that there is a pending fee for {student.name}. Kindly ensure the payment is made as soon as possible to avoid any interruptions. Thank you."
         elif reminder_type == 'absent':
@@ -2586,6 +2602,7 @@ def send_voice_reminder():
         static_folder = os.path.join(app.root_path, 'static')
         os.makedirs(static_folder, exist_ok=True)
 
+        # Create MP3 file
         tts = gTTS(text=message_text, lang='en', tld='co.in')
         filename = f"voice_alert_{student.id}_{int(time.time())}.mp3"
         filepath = os.path.join(static_folder, filename)
@@ -2601,7 +2618,6 @@ def send_voice_reminder():
 
     except Exception as e:
         print(f"Voice AI Error: {e}")
-        # Now it will send the EXACT Python error back to your screen!
         return jsonify({"msg": f"Backend Error: {str(e)}"}), 500
 
 if __name__ == '__main__':
