@@ -1952,18 +1952,29 @@ def check_and_upgrade_db():
             if 'course_id' not in fee_cols:
                 conn.execute(text("ALTER TABLE fee_structure ADD COLUMN course_id INTEGER"))
 
-            # 🚀 4. NEW: SYLLABUS LOG MIGRATION (Fixes your exact error)
+            # 🚀 4. BULLETPROOF SYLLABUS LOG MIGRATION
             if 'syllabus_log' in insp.get_table_names():
                 syllabus_cols = [c['name'] for c in insp.get_columns('syllabus_log')]
+                
+                # Fixes the "session_id does not exist" error
                 if 'session_id' not in syllabus_cols:
                     conn.execute(text("ALTER TABLE syllabus_log ADD COLUMN session_id INTEGER"))
+                
+                # Fixes the "date does not exist" error (Your latest screenshot)
+                if 'date' not in syllabus_cols:
+                    conn.execute(text("ALTER TABLE syllabus_log ADD COLUMN date DATE DEFAULT CURRENT_DATE"))
+                    
+                # Preventative fixes for other potential missing columns
+                if 'topic' not in syllabus_cols:
+                    conn.execute(text("ALTER TABLE syllabus_log ADD COLUMN topic TEXT"))
+                if 'teacher_id' not in syllabus_cols:
+                    conn.execute(text("ALTER TABLE syllabus_log ADD COLUMN teacher_id INTEGER"))
 
             conn.commit()
 
-        print("Migration successful.")
+        print("✅ Migration successful. All database columns are up to date!")
     except Exception as e:
         print(f"Migration Error: {e}")
-
 
 def initialize_database():
     with app.app_context():
