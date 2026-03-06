@@ -1352,61 +1352,38 @@ def my_announcements():
 #  ✅ ADD THIS TO APP.PY (WITH DEBUGGING)
 # ==========================================
 
-# ==========================================
-#  ✅ TEACHER REPORTS (Paste this ONCE)
-# ==========================================
 @app.route('/api/teacher/reports', methods=['GET'])
 @login_required
 def get_teacher_reports():
-    # 1. Check Permissions
-    if current_user.role != 'teacher':
-        return jsonify({"msg": "Denied"}), 403
-
-    # 2. Get Filters
+    if current_user.role != 'teacher': return jsonify({"msg": "Denied"}), 403
     session_id = request.args.get('session_id')
-
     try:
-        # 3. Query Students
         query = User.query.filter_by(role='student')
-        
-        # Apply Session Filter
         if session_id and session_id not in ['undefined', 'null', '']:
             query = query.filter_by(session_id=int(session_id))
-        
         students = query.all()
         report_data = []
-
         for s in students:
-            # 4. Safe Attendance Calculation
             pct = 0
             try:
-                # Check if Attendance model is available
                 if 'Attendance' in globals():
                     total = Attendance.query.filter_by(student_id=s.id).count()
                     present = Attendance.query.filter_by(student_id=s.id, status='Present').count()
-                    if total > 0:
-                        pct = int((present / total) * 100)
-            except:
-                pct = 0
-
-            # 5. Safe Phone Number
+                    if total > 0: pct = int((present / total) * 100)
+            except: pass
             phone = getattr(s, 'phone_number', getattr(s, 'mobile', ''))
-
             report_data.append({
                 "id": s.id,
                 "name": s.name,
-		"session_id": s.session_id,
+                "session_id": s.session_id,
                 "phone_number": phone,
                 "profile_photo_url": s.profile_photo_url,
                 "attendance_percentage": pct,
                 "last_remark": "-"
             })
-
         return jsonify(report_data)
-
     except Exception as e:
-        print(f"Server Error: {e}")
-        return jsonify(report_data)
+        return jsonify([])
 
 # ==========================================
 #  ✅ TEACHER ANNOUNCEMENTS (WITH BULK AI VOICE)
@@ -1525,62 +1502,74 @@ def teacher_notes():
     notes = SharedNote.query.filter_by(teacher_id=current_user.id).order_by(SharedNote.created_at.desc()).all()
     return jsonify([n.to_dict() for n in notes])
 
+# ==========================================
+#  ✅ SELF-HEALING SYLLABUS TRACKER
+# ==========================================
 @app.route('/api/teacher/daily_topic', methods=['POST'])
 @login_required
 def daily_topic():
-    d = request.json
-    course_id = d.get('course_id')
-    session_id = d.get('session_id') 
-    topic = d.get('topic')
-    selected_date = d.get('date') 
-    
-    course = db.session.get(Course, course_id)
-    if not course: return jsonify({"msg": "Error: Course not found"}), 404
-    
-    # 1. Bulletproof Date Parsing (Prevents crash if browser sends dd-mm-yyyy)
     try:
-        parsed_date = datetime.strptime(selected_date, '%Y-%m-%d').date()
-    except ValueError:
+        # 🚀 AUTO-HEAL: Force create the database table if it's missing!
+        db.create_all()
+    except Exception: pass
+
+    try:
+        d = request.json
+        course_id = d.get('course_id')
+        session_id = d.get('session_id') 
+        topic = d.get('topic')
+        selected_date = d.get('date') 
+        
+        course = db.session.get(Course, course_id)
+        if not course: return jsonify({"msg": "Error: Course not found"}), 404
+        
+        # Bulletproof Date Parsing
         try:
-            parsed_date = datetime.strptime(selected_date, '%d-%m-%Y').date()
-        except ValueError:
+            parsed_date = datetime.strptime(selected_date, '%Y-%m-%d').date()
+        except Exception:
             parsed_date = datetime.utcnow().date()
 
-    # 2. Save directly to the dedicated Syllabus table
-    new_log = SyllabusLog(
-        course_id=course_id,
-        session_id=session_id if session_id else None,
-        teacher_id=current_user.id,
-        date=parsed_date,
-        topic=topic
-    )
-    db.session.add(new_log)
-    db.session.commit()
-    
-    # 3. Fast Push Notification Logic (Removed API timeout risk)
-    title = f"Syllabus Update: {course.name}"
-    students_to_notify = course.students
-    if session_id:
-        students_to_notify = [s for s in course.students if s.session_id == int(session_id)]
-    
-    count = 0
-    for s in students_to_notify:
-        try:
-            # Firebase is instant and won't crash your server
-            send_push_notification(s.id, title, f"Covered today: {topic}")
-            count += 1
-        except Exception:
-            pass
-            
-    return jsonify({"msg": f"Syllabus Saved & Push Alert sent to {count} students."}), 200
+        new_log = SyllabusLog(
+            course_id=course_id,
+            session_id=session_id if session_id else None,
+            teacher_id=current_user.id,
+            date=parsed_date,
+            topic=topic
+        )
+        db.session.add(new_log)
+        db.session.commit()
+        
+        # Fast Push Notification Logic
+        title = f"Syllabus Update: {course.name}"
+        students_to_notify = course.students
+        if session_id:
+            students_to_notify = [s for s in course.students if s.session_id == int(session_id)]
+        
+        count = 0
+        for s in students_to_notify:
+            try:
+                send_push_notification(s.id, title, f"Covered today: {topic}")
+                count += 1
+            except Exception: pass
+                
+        return jsonify({"msg": f"Syllabus Saved & Push Alert sent to {count} students."}), 200
 
-# 🚀 NEW: Fetch Syllabus for Teacher Portal
+    except Exception as e:
+        db.session.rollback()
+        # Explicitly return the error as JSON so we don't get the HTML popup!
+        return jsonify({"msg": f"DB Error: {str(e)}"}), 500
+
 @app.route('/api/teacher/syllabus_logs', methods=['GET'])
 @login_required
 def get_teacher_syllabus():
-    if current_user.role != 'teacher': return jsonify([]), 403
-    logs = SyllabusLog.query.filter_by(teacher_id=current_user.id).order_by(SyllabusLog.date.desc()).all()
-    return jsonify([l.to_dict() for l in logs])
+    try:
+        db.create_all() # Auto-Heal
+        if current_user.role != 'teacher': return jsonify([]), 403
+        logs = SyllabusLog.query.filter_by(teacher_id=current_user.id).order_by(SyllabusLog.date.desc()).all()
+        return jsonify([l.to_dict() for l in logs])
+    except Exception:
+        # Return empty array so the frontend table doesn't crash
+        return jsonify([])
 
 # 🚀 NEW: Fetch Syllabus for Student Portal
 @app.route('/api/student/syllabus_logs', methods=['GET'])
@@ -1831,41 +1820,30 @@ def print_comprehensive_report():
 @login_required
 def api_collection_report():
     if current_user.role != 'admin': return jsonify({"msg": "Denied"}), 403
-    
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
-
     query = db.session.query(Payment, User).join(User, Payment.student_id == User.id)
-
-    if start_date:
-        query = query.filter(db.func.date(Payment.payment_date) >= start_date)
-    if end_date:
-        query = query.filter(db.func.date(Payment.payment_date) <= end_date)
-
+    if start_date: query = query.filter(db.func.date(Payment.payment_date) >= start_date)
+    if end_date: query = query.filter(db.func.date(Payment.payment_date) <= end_date)
     results = query.order_by(Payment.payment_date.desc()).all()
-
     data = []
     total_collected = 0
-
     for pay, student in results:
         total_collected += pay.amount_paid
         fee_struct = db.session.get(FeeStructure, pay.fee_structure_id)
         fee_name = fee_struct.name if fee_struct else "Unknown Fee"
-        
         data.append({
             "id": pay.id,
             "date": pay.payment_date.strftime('%Y-%m-%d'),
             "time": pay.payment_date.strftime('%I:%M %p'),
             "student_name": student.name,
             "adm_no": student.admission_number,
-	    "phone": student.phone_number,
+            "phone": student.phone_number,
             "fee_name": fee_name,
             "mode": pay.payment_method,
             "amount": pay.amount_paid
         })
-
     return jsonify({"transactions": data, "total": total_collected})
-
 
 @app.route('/admin/print/collections')
 @login_required
