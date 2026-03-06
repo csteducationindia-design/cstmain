@@ -1537,18 +1537,27 @@ def daily_topic():
     course = db.session.get(Course, course_id)
     if not course: return jsonify({"msg": "Error: Course not found"}), 404
     
-    # 🚀 NEW: Save directly to the dedicated Syllabus table, NOT announcements!
+    # 1. Bulletproof Date Parsing (Prevents crash if browser sends dd-mm-yyyy)
+    try:
+        parsed_date = datetime.strptime(selected_date, '%Y-%m-%d').date()
+    except ValueError:
+        try:
+            parsed_date = datetime.strptime(selected_date, '%d-%m-%Y').date()
+        except ValueError:
+            parsed_date = datetime.utcnow().date()
+
+    # 2. Save directly to the dedicated Syllabus table
     new_log = SyllabusLog(
         course_id=course_id,
         session_id=session_id if session_id else None,
         teacher_id=current_user.id,
-        date=datetime.strptime(selected_date, '%Y-%m-%d').date(),
+        date=parsed_date,
         topic=topic
     )
     db.session.add(new_log)
     db.session.commit()
     
-    # Keep the push notification logic so students still get the mobile alert
+    # 3. Fast Push Notification Logic (Removed API timeout risk)
     title = f"Syllabus Update: {course.name}"
     students_to_notify = course.students
     if session_id:
@@ -1556,16 +1565,14 @@ def daily_topic():
     
     count = 0
     for s in students_to_notify:
-        send_push_notification(s.id, title, f"Covered on {selected_date}: {topic}")
-        count += 1
-        
-        if getattr(s, 'parent_id', None):
-            parent = db.session.get(User, s.parent_id)
-            if parent and parent.phone_number:
-                msg = f"CST Update: On {selected_date} in {course.name}, we covered '{topic}'."
-                send_whatsapp_message(parent.phone_number, msg)
-                
-    return jsonify({"msg": f"Syllabus Saved & Alert sent to {count} students."})
+        try:
+            # Firebase is instant and won't crash your server
+            send_push_notification(s.id, title, f"Covered today: {topic}")
+            count += 1
+        except Exception:
+            pass
+            
+    return jsonify({"msg": f"Syllabus Saved & Push Alert sent to {count} students."}), 200
 
 # 🚀 NEW: Fetch Syllabus for Teacher Portal
 @app.route('/api/teacher/syllabus_logs', methods=['GET'])
@@ -2561,26 +2568,29 @@ def fix_attendance():
         return f"<h1>Error</h1><p>{str(e)}</p>"
 
 # =========================================================
-# ✅ AUTO-FIX FOR POSTGRESQL (WORKS WITH GUNICORN/COOLIFY)
+# ✅ AUTO-FIX & DB CREATION (WORKS WITH GUNICORN/COOLIFY)
 # =========================================================
 with app.app_context():
     try:
+        # 🚀 FIX: This forces the new Syllabus table to be created on Coolify!
+        db.create_all()
+        check_and_upgrade_db()
+        
         # Check if running on PostgreSQL in Coolify
         if db.engine.dialect.name == 'postgresql':
             with db.engine.connect() as conn:
                 tables = [
                     'user', 'course', 'academic_session', 'announcement', 
                     'fee_structure', 'payment', 'attendance', 'shared_note', 
-                    'exam', 'exam_result', 'assignment_task', 'doubt'
+                    'exam', 'exam_result', 'assignment_task', 'doubt', 'syllabus_log'
                 ]
                 for t in tables:
                     try:
-                        # Automatically fast-forwards the internal ID counter to match your migrated data
                         conn.execute(text(f"SELECT setval(pg_get_serial_sequence('\"{t}\"', 'id'), coalesce(max(id), 1), max(id) IS NOT null) FROM \"{t}\";"))
                     except Exception:
                         pass
                 conn.commit()
-            print("✅ PostgreSQL ID Sequences Auto-Synced Successfully!")
+            print("✅ Database Tables & Sequences Synced Successfully!")
     except Exception as e:
         print(f"Sync Error: {e}")
 

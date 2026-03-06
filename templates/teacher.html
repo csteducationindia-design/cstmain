@@ -1786,17 +1786,33 @@ if(syllabusForm) {
                 body: JSON.stringify(payload)
             });
             
-            const result = await res.json();
-            alert(result.msg); // Show Backend Response
-            syllabusForm.reset();
-	    fetchSyllabusHistory();
+            // Catch raw HTML errors before they crash JSON parsing
+            const text = await res.text();
+            let result;
+            try {
+                result = JSON.parse(text);
+            } catch(err) {
+                alert("Server Error. The database table might be missing. Raw error: " + text.substring(0, 100));
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                return;
+            }
+
+            if (res.ok) {
+                alert(result.msg);
+                syllabusForm.reset();
+                fetchSyllabusHistory(); // Reload table instantly
+            } else {
+                alert("Error: " + result.msg);
+            }
         } catch(e) {
             console.error(e);
-            alert("Error saving syllabus.");
+            alert("Network Error saving syllabus.");
         } finally {
             btn.innerHTML = originalText;
             btn.disabled = false;
         }
+        
     });
 }   
 
