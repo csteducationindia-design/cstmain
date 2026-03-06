@@ -1460,17 +1460,14 @@ document.getElementById('report-session-select')?.addEventListener('change', loa
         }
 
 // --- SYLLABUS HISTORY LOADER ---
-    async function fetchSyllabusHistory() {
+   async function fetchSyllabusHistory() {
         const tbody = document.getElementById('syllabus-history-body');
         if(!tbody) return;
         
         try {
-            // Reuse the announcements API (since we store syllabus as a type of announcement)
-            const res = await fetch(`${API_BASE_URL}/teacher/announcements`, { credentials: 'include' });
-            const data = await res.json();
-            
-            // Filter only "Syllabus" category
-            const logs = data.filter(item => item.category === 'Syllabus');
+            // 🚀 NEW: Fetch from the dedicated syllabus route!
+            const res = await fetch(`${API_BASE_URL}/teacher/syllabus_logs`, { credentials: 'include' });
+            const logs = await res.json();
             
             if (logs.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="3" class="p-6 text-center text-slate-500">No syllabus logs recorded yet.</td></tr>';
@@ -1478,13 +1475,14 @@ document.getElementById('report-session-select')?.addEventListener('change', loa
             }
 
             tbody.innerHTML = logs.map(log => `
-                <tr class="hover:bg-white dark:hover:bg-slate-800 transition">
+                <tr class="hover:bg-white dark:hover:bg-slate-800 transition border-b border-slate-100 dark:border-slate-800">
                     <td class="px-6 py-4 font-bold text-slate-700 dark:text-slate-300">
-                        ${log.title.replace('Syllabus: ', '')}
+                        ${log.course_name} <br>
+                        <span class="text-[10px] text-primary bg-primary/10 px-2 py-0.5 rounded uppercase">${log.session_name}</span>
                     </td>
-                    <td class="px-6 py-4 text-slate-600 dark:text-slate-400 whitespace-pre-wrap">${log.content}</td>
-                    <td class="px-6 py-4 text-right text-xs text-slate-400">
-                        ${log.created_at}
+                    <td class="px-6 py-4 text-slate-600 dark:text-slate-400 whitespace-pre-wrap">${log.topic}</td>
+                    <td class="px-6 py-4 text-right text-xs text-slate-400 font-mono">
+                        ${log.date}
                     </td>
                 </tr>
             `).join('');

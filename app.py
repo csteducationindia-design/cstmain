@@ -206,6 +206,29 @@ class Course(db.Model):
             "teacher_id": self.teacher_id,
             "teacher_name": self.teacher.name if self.teacher else "Unassigned"
         }
+# ✅ NEW MODEL: Professional Syllabus Tracking
+class SyllabusLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
+    session_id = db.Column(db.Integer, db.ForeignKey('academic_session.id'), nullable=True)
+    teacher_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    date = db.Column(db.Date, nullable=False)
+    topic = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    course = db.relationship('Course', backref=db.backref('syllabus_logs', lazy=True))
+    teacher = db.relationship('User', foreign_keys=[teacher_id])
+    session = db.relationship('AcademicSession')
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "course_name": self.course.name if self.course else "N/A",
+            "session_name": self.session.name if self.session else "All Batches",
+            "teacher_name": self.teacher.name if self.teacher else "N/A",
+            "date": self.date.strftime('%Y-%m-%d'),
+            "topic": self.topic
+        }
 
 class AcademicSession(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -1514,22 +1537,19 @@ def daily_topic():
     course = db.session.get(Course, course_id)
     if not course: return jsonify({"msg": "Error: Course not found"}), 404
     
-    title = f"Syllabus: {course.name}"
-    if session_id:
-        session = db.session.get(AcademicSession, session_id)
-        if session: title += f" ({session.name})"
-
-    final_content = f"Date: {selected_date}\nTopic: {topic}"
-
-    db.session.add(Announcement(
-        title=title, 
-        content=final_content, 
-        category="Syllabus", 
-        target_group="students", 
-        teacher_id=current_user.id
-    ))
+    # 🚀 NEW: Save directly to the dedicated Syllabus table, NOT announcements!
+    new_log = SyllabusLog(
+        course_id=course_id,
+        session_id=session_id if session_id else None,
+        teacher_id=current_user.id,
+        date=datetime.strptime(selected_date, '%Y-%m-%d').date(),
+        topic=topic
+    )
+    db.session.add(new_log)
     db.session.commit()
     
+    # Keep the push notification logic so students still get the mobile alert
+    title = f"Syllabus Update: {course.name}"
     students_to_notify = course.students
     if session_id:
         students_to_notify = [s for s in course.students if s.session_id == int(session_id)]
@@ -1539,13 +1559,36 @@ def daily_topic():
         send_push_notification(s.id, title, f"Covered on {selected_date}: {topic}")
         count += 1
         
-        if s.parent_id:
+        if getattr(s, 'parent_id', None):
             parent = db.session.get(User, s.parent_id)
             if parent and parent.phone_number:
                 msg = f"CST Update: On {selected_date} in {course.name}, we covered '{topic}'."
                 send_whatsapp_message(parent.phone_number, msg)
                 
-    return jsonify({"msg": f"Saved & Sent to {count} students."})
+    return jsonify({"msg": f"Syllabus Saved & Alert sent to {count} students."})
+
+# 🚀 NEW: Fetch Syllabus for Teacher Portal
+@app.route('/api/teacher/syllabus_logs', methods=['GET'])
+@login_required
+def get_teacher_syllabus():
+    if current_user.role != 'teacher': return jsonify([]), 403
+    logs = SyllabusLog.query.filter_by(teacher_id=current_user.id).order_by(SyllabusLog.date.desc()).all()
+    return jsonify([l.to_dict() for l in logs])
+
+# 🚀 NEW: Fetch Syllabus for Student Portal
+@app.route('/api/student/syllabus_logs', methods=['GET'])
+@login_required
+def get_student_syllabus():
+    if current_user.role != 'student': return jsonify([]), 403
+    enrolled_courses = [c.id for c in current_user.courses_enrolled]
+    
+    logs = SyllabusLog.query.filter(
+        SyllabusLog.course_id.in_(enrolled_courses)
+    ).filter(
+        (SyllabusLog.session_id == current_user.session_id) | (SyllabusLog.session_id == None)
+    ).order_by(SyllabusLog.date.desc()).limit(20).all()
+    
+    return jsonify([l.to_dict() for l in logs])
 
 @app.route('/api/teacher/courses', methods=['GET'])
 @login_required

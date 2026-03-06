@@ -191,8 +191,18 @@
                 <h2 class="text-2xl font-bold mb-1">Study Material</h2>
                 <p class="text-blue-100 font-medium text-sm">Download notes shared by your teachers.</p>
             </div>
-            <div id="notes-list" class="space-y-4">
+            <div id="notes-list" class="space-y-4 mb-8">
                 <div class="text-center py-10 text-gray-400">Loading notes...</div>
+            </div>
+
+            <div class="mt-8 border-t border-gray-200 pt-6">
+                <h3 class="font-bold text-gray-800 text-lg mb-4 flex items-center gap-2">
+                    <span class="material-symbols-rounded text-green-500 bg-green-50 p-1.5 rounded-lg">checklist</span>
+                    Topics Covered in Class
+                </h3>
+                <div id="syllabus-tracker-list" class="space-y-4 pb-12">
+                    <div class="text-center py-6 text-gray-400">Loading syllabus log...</div>
+                </div>
             </div>
         </div>
 
@@ -365,7 +375,7 @@
         if(mainContent) mainContent.scrollTop = 0;
 
         // Trigger data loads
-        if (viewId === 'academics') fetchNotes();
+        if (viewId === 'academics') fetchNotes(),fetchSyllabus();
         if (viewId === 'results') loadStudentResults(); // ✅ UPDATED: Calls the correct function
         if (viewId === 'attendance') fetchAttendance();
         if (viewId === 'notifications') fetchAnnouncements();
@@ -795,7 +805,36 @@
             fetchDoubtHistory();
         } catch(e) { alert("Error sending message"); }
     }
-
+async function fetchSyllabus() {
+        const container = document.getElementById('syllabus-tracker-list');
+        if(!container) return;
+        
+        try {
+            const res = await fetch(`${API_BASE_URL}/student/syllabus_logs`, { credentials: 'include' });
+            const data = await res.json();
+            
+            if(data.length === 0) {
+                container.innerHTML = '<div class="text-center py-6 text-gray-400 bg-white rounded-xl border border-gray-100 text-sm">No topics recorded yet.</div>';
+                return;
+            }
+            
+            container.innerHTML = data.map(log => `
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-green-500 relative">
+                    <div class="flex justify-between items-start mb-2">
+                        <h4 class="font-bold text-gray-800 text-sm">${log.course_name}</h4>
+                        <span class="text-[10px] text-gray-500 bg-gray-100 px-2 py-1 rounded-md font-mono">${log.date}</span>
+                    </div>
+                    <p class="text-sm text-gray-600 leading-relaxed">${log.topic}</p>
+                    <div class="mt-3 pt-3 border-t border-gray-50 flex items-center gap-1 text-[10px] text-gray-400 font-bold uppercase tracking-wide">
+                        <span class="material-symbols-rounded text-[14px]">school</span> 
+                        Taught by: ${log.teacher_name}
+                    </div>
+                </div>
+            `).join('');
+        } catch(e) {
+            container.innerHTML = '<div class="text-center text-red-500 text-sm py-4">Error loading syllabus.</div>';
+        }
+    }
     // --- UI HELPERS ---
     function updateProfileUI(user) {
         if (!user) return;
