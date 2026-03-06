@@ -2767,6 +2767,16 @@ def send_voice_reminder():
     except Exception as e:
         print(f"Voice AI Error: {e}")
         return jsonify({"msg": f"Backend Error: {str(e)}"}), 500
+# ==========================================
+# ✅ MAGIC ROUTE TO FORCE SYLLABUS TABLE CREATION
+# ==========================================
+@app.route('/admin/fix_syllabus_db')
+def fix_syllabus_db():
+    try:
+        db.create_all()
+        return "<h1>✅ Syllabus Table Created Successfully!</h1><p>You can close this and test the portal.</p>"
+    except Exception as e:
+        return f"<h1>❌ Database Error:</h1><p>{str(e)}</p>"
 
 if __name__ == '__main__':
     initialize_database()

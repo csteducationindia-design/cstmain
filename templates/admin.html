@@ -905,10 +905,10 @@ window.sendWhatsAppReceipt = function(studentName, phone, amount, course) {
     });
 
 window.sendVoiceReminder = async function(studentId, type, btnElement) {
-    if(!confirm(`Generate an AI Voice Note and open WhatsApp to send it?`)) return;
+    if(!confirm(`Generate a Hindi AI Voice Note and open WhatsApp to send it?`)) return;
     
     const originalText = btnElement.innerHTML;
-    btnElement.innerHTML = `<span class="material-symbols-outlined text-[14px] animate-spin align-middle">refresh</span> Generating...`;
+    btnElement.innerHTML = `<span class="material-symbols-outlined text-[14px] animate-spin align-middle">refresh</span>...`;
     btnElement.disabled = true;
 
     try {
@@ -919,27 +919,31 @@ window.sendVoiceReminder = async function(studentId, type, btnElement) {
             body: JSON.stringify({ student_id: studentId, type: type })
         });
         
-        // Read raw text first to prevent hidden crashes
         const text = await res.text();
         let data;
         try {
             data = JSON.parse(text);
         } catch(e) {
-            alert("Server crashed or timed out. Raw response: " + text.substring(0, 150));
+            alert("Server Error. Raw response: " + text.substring(0, 150));
             btnElement.innerHTML = originalText;
             btnElement.disabled = false;
             return;
         }
         
         if(data.audio_url && data.phone) {
-            const messageText = `🔔 *CST Institute Alert*\n\nHello, please listen to this automated voice message regarding your child's ${type === 'fee' ? 'pending fees' : 'attendance'}:\n\n🔊 Listen here: ${data.audio_url}`;
+            let topicText = '';
+            if(type === 'fee') topicText = 'बकाया फीस (Pending Fees)';
+            else if(type === 'absent') topicText = 'अनुपस्थिति (Absence)';
+            
+            const messageText = `🔔 *CST Institute Alert*\n\nनमस्ते, कृपया छात्र के ${topicText} के संबंध में यह स्वचालित वॉयस मैसेज सुनें:\n\n🔊 Listen here: ${data.audio_url}`;
             const encodedMessage = encodeURIComponent(messageText);
+            
             window.open(`https://wa.me/${data.phone}?text=${encodedMessage}`, '_blank');
         } else {
-            alert(data.msg); // This handles the "Parent not linked" message
+            alert(data.msg); 
         }
     } catch(e) {
-        alert("Network Error. Check your internet connection.");
+        alert("Network Error. Check your connection.");
     } finally {
         btnElement.innerHTML = originalText;
         btnElement.disabled = false;
