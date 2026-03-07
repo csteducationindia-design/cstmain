@@ -2444,7 +2444,7 @@ def delete_result(id):
     return jsonify({"msg": "Deleted"})
 
 # ==========================================
-#  ✅ NEW: EDIT RESULT ROUTE
+#  ✅ FIX: EDIT RESULT ROUTE
 # ==========================================
 @app.route('/api/results/<int:id>', methods=['PUT'])
 @login_required
@@ -2474,7 +2474,6 @@ def update_result(id):
 
     db.session.commit()
     return jsonify({"msg": "Updated Successfully"})
-
 
 # ==========================================
 #  ✅ STUDENT: VIEW GRADES ROUTE
