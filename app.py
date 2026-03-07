@@ -2427,7 +2427,6 @@ def manage_results():
             "max": r.ExamResult.max_marks
         } for r in results])
 
-# --- 2. DELETE RESULT ---
 # ==========================================
 #  ✅ FIX: DELETE RESULT (Allow Teachers)
 # ==========================================
@@ -2440,10 +2439,6 @@ def delete_result(id):
     
     r = ExamResult.query.get(id)
     if r:
-        # Optional: Check if this teacher owns the result
-        if current_user.role == 'teacher' and r.teacher_id != current_user.id:
-            return jsonify({"msg": "You can only delete results you published."}), 403
-
         db.session.delete(r)
         db.session.commit()
     return jsonify({"msg": "Deleted"})
@@ -2461,10 +2456,6 @@ def update_result(id):
     r = ExamResult.query.get(id)
     if not r:
         return jsonify({"msg": "Result not found"}), 404
-
-    # Optional: Check ownership
-    if current_user.role == 'teacher' and r.teacher_id != current_user.id:
-        return jsonify({"msg": "You can only edit results you published."}), 403
 
     data = request.get_json()
     
