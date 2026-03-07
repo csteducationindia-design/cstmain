@@ -725,6 +725,10 @@
                         ${audioPlayerHtml} </div>
                 </div>`;
             });
+} catch (e) {
+            container.innerHTML = '<div class="text-center text-red-500">Error loading announcements.</div>';
+        }
+    } // <--- THIS WAS THE MISSING BRACKET!
 
     // --- LOAD TEACHERS & DOUBTS ---
     async function fetchTeachers() {
