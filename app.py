@@ -1386,7 +1386,7 @@ def get_teacher_reports():
         return jsonify([])
 
 # ==========================================
-#  ✅ TEACHER ANNOUNCEMENTS (WITH BULK AI VOICE)
+#  ✅ TEACHER ANNOUNCEMENTS (WITH AUDIO TAG)
 # ==========================================
 @app.route('/api/teacher/announcements', methods=['GET', 'POST'])
 @login_required
@@ -1396,17 +1396,12 @@ def teacher_announcements():
     
     if request.method == 'POST':
         d = request.json
-        a = Announcement(
-            title=d['title'], 
-            content=d['content'], 
-            category=d.get('category', 'Class Update'), 
-            target_group=d.get('target_group', 'students'), 
-            teacher_id=current_user.id
-        )
-        db.session.add(a)
-        db.session.commit()
+        title = d['title']
+        raw_content = d['content']
+        category = d.get('category', 'Class Update')
+        target_group = d.get('target_group', 'students')
 
-        # --- 🚀 NEW: AI VOICE LOGIC START ---
+        # --- 🚀 GENERATE AI VOICE ---
         generate_voice = d.get('generate_voice', False)
         audio_link = ""
 
@@ -1414,7 +1409,6 @@ def teacher_announcements():
             static_folder = os.path.join(app.root_path, 'static')
             os.makedirs(static_folder, exist_ok=True)
             
-            # Auto-cleanup old announcements (48 hours)
             now = time.time()
             for f_name in os.listdir(static_folder):
                 if f_name.startswith("ann_alert_") and f_name.endswith(".mp3"):
@@ -1423,45 +1417,50 @@ def teacher_announcements():
                         try: os.remove(file_path)
                         except: pass
 
-            # Create the Hindi Script
-            message_text = f"नमस्ते। यह सीएसटी इंस्टिट्यूट से एक सूचना है। विषय: {a.category}। {a.content} धन्यवाद।"
+            message_text = f"नमस्ते। यह सीएसटी इंस्टिट्यूट से एक सूचना है। विषय: {category}। {raw_content} धन्यवाद।"
             
             tts = gTTS(text=message_text, lang='hi')
             filename = f"ann_alert_{int(time.time())}.mp3"
             filepath = os.path.join(static_folder, filename)
             tts.save(filepath)
             audio_link = f"https://cstai.in/static/{filename}"
-        # --- 🚀 NEW: AI VOICE LOGIC END ---
 
-        # Prepare the notification message
-        notify_title = f"Class Update: {d['title']}"
-        notify_body = d['content']
+        # 🚀 NEW: Attach the secret ||AUDIO|| tag to the text for the database
+        final_content = raw_content
         if audio_link:
-            notify_body += f"\n\n🔊 Voice Note Attached: Click here to listen: {audio_link}"
+            final_content += f"||AUDIO||{audio_link}"
+
+        a = Announcement(
+            title=title, 
+            content=final_content, 
+            category=category, 
+            target_group=target_group, 
+            teacher_id=current_user.id
+        )
+        db.session.add(a)
+        db.session.commit()
+
+        # Update Push Notification Text
+        notify_title = f"Class Update: {title}"
+        notify_body = raw_content
+        if audio_link:
+            notify_body += "\n\n🔊 Voice Note Attached. Open the app to listen."
         
-        # Loop through the teacher's courses and notify
         courses = Course.query.filter_by(teacher_id=current_user.id).all()
         notified_ids = set()
         
-        target = d.get('target_group', 'students')
-
         for c in courses:
             for s in c.students:
-                # Send to Student
-                if target in ['students', 'all']:
-                    if s.id not in notified_ids:
-                        send_push_notification(s.id, notify_title, notify_body)
-                        notified_ids.add(s.id)
+                if target_group in ['students', 'all'] and s.id not in notified_ids:
+                    send_push_notification(s.id, notify_title, notify_body)
+                    notified_ids.add(s.id)
                 
-                # Send to Parent
-                if target in ['parents', 'all'] and getattr(s, 'parent_id', None):
-                    if s.parent_id not in notified_ids:
-                        send_push_notification(s.parent_id, notify_title, notify_body)
-                        notified_ids.add(s.parent_id)
+                if target_group in ['parents', 'all'] and getattr(s, 'parent_id', None) and s.parent_id not in notified_ids:
+                    send_push_notification(s.parent_id, notify_title, notify_body)
+                    notified_ids.add(s.parent_id)
         
         return jsonify(a.to_dict()), 201
 
-    # GET Request (Your exact original code)
     anns = Announcement.query.filter(
         (Announcement.teacher_id == current_user.id) | (Announcement.target_group == 'teachers')
     ).order_by(Announcement.created_at.desc()).all()

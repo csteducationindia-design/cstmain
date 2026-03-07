@@ -691,22 +691,40 @@
 
             data.forEach(notif => {
                 const dateStr = notif.created_at ? notif.created_at.split(' ')[0] : 'Today';
+
+                // 🚀 NEW: Detect Audio Tag and Build the Player
+                let displayContent = notif.content;
+                let audioPlayerHtml = '';
+
+                if (displayContent.includes('||AUDIO||')) {
+                    const parts = displayContent.split('||AUDIO||');
+                    displayContent = parts[0].trim(); // Get the actual text
+                    const audioUrl = parts[1].trim(); // Get the MP3 link
+
+                    // Generate a beautiful audio player
+                    audioPlayerHtml = `
+                    <div class="mt-4 bg-blue-50/50 p-2 rounded-xl border border-blue-100 flex flex-col gap-2">
+                        <div class="flex items-center gap-2 text-blue-700 text-xs font-bold pl-1">
+                            <span class="material-symbols-rounded text-[16px]">record_voice_over</span> AI Voice Note
+                        </div>
+                        <audio controls src="${audioUrl}" class="w-full h-10 outline-none"></audio>
+                    </div>`;
+                }
+
                 container.innerHTML += `
                 <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex gap-4">
                     <div class="w-10 h-10 rounded-full flex-shrink-0 bg-blue-50 text-blue-600 flex items-center justify-center">
                         <span class="material-symbols-rounded text-sm">campaign</span>
                     </div>
-                    <div class="flex-1">
+                    <div class="flex-1 min-w-0">
                         <div class="flex justify-between items-start mb-1">
-                            <h4 class="font-bold text-gray-800 text-sm">${notif.title}</h4>
-                            <span class="text-[10px] text-gray-400 whitespace-nowrap ml-2 mt-0.5">${dateStr}</span>
+                            <h4 class="font-bold text-gray-800 text-sm truncate pr-2">${notif.title}</h4>
+                            <span class="text-[10px] text-gray-400 whitespace-nowrap mt-0.5">${dateStr}</span>
                         </div>
-                        <p class="text-sm text-gray-500 leading-relaxed">${notif.content}</p>
-                    </div>
+                        <p class="text-sm text-gray-500 leading-relaxed whitespace-pre-wrap">${displayContent}</p>
+                        ${audioPlayerHtml} </div>
                 </div>`;
             });
-        } catch (e) { console.error(e); }
-    }
 
     // --- LOAD TEACHERS & DOUBTS ---
     async function fetchTeachers() {

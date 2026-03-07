@@ -1165,7 +1165,7 @@ document.getElementById('report-session-select')?.addEventListener('change', loa
             });
             
             if(res.ok) {
-                window.loadResultData(); // Refresh the table
+                window.loadResultData(); // Refresh the table instantly
             } else {
                 alert("Failed to delete the result.");
             }
@@ -1926,14 +1926,27 @@ async function fetchTeacherAnnouncements() {
     try {
         const res = await fetch(`${API_BASE_URL}/teacher/announcements`, { credentials: 'include' });
         const data = await res.json();
-        tbody.innerHTML = data.map(ann => `
+        tbody.innerHTML = data.map(ann => {
+            // 🚀 Strip URL and show clean badge
+            let displayContent = ann.content;
+            let voiceBadge = '';
+            if(displayContent.includes('||AUDIO||')) {
+                displayContent = displayContent.split('||AUDIO||')[0].trim();
+                voiceBadge = `
+                <span class="inline-flex items-center gap-1 mt-2 px-2 py-0.5 bg-green-50 text-green-600 text-[10px] font-bold rounded border border-green-100">
+                    <span class="material-symbols-outlined text-[14px]">mic</span> AI Voice Note Attached
+                </span>`;
+            }
+
+            return `
             <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition">
                 <td class="p-4">
                     <div class="flex items-center gap-3">
                         <span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded">${ann.category}</span>
                         <span class="font-bold">${ann.title}</span>
                     </div>
-                    <p class="text-sm text-slate-500 mt-1">${ann.content}</p>
+                    <p class="text-sm text-slate-500 mt-1 whitespace-pre-wrap">${displayContent}</p>
+                    ${voiceBadge}
                 </td>
                 <td class="p-4 text-xs text-slate-400">${ann.created_at}</td>
                 <td class="p-4 text-right">
@@ -1942,7 +1955,7 @@ async function fetchTeacherAnnouncements() {
                     </button>
                 </td>
             </tr>
-        `).join('');
+        `}).join('');
     } catch (e) {
         tbody.innerHTML = '<tr><td class="p-6 text-center">Failed to load history.</td></tr>';
     }
