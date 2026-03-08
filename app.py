@@ -561,6 +561,59 @@ def toggle_hall_ticket_block():
     status_text = "BLOCKED" if student.hall_ticket_blocked else "ACTIVE"
     return jsonify({'msg': f'Success: Hall Ticket is now {status_text}'})
 
+@app.route('/api/admin/backup', methods=['GET'])
+@login_required
+def admin_backup():
+    # Security check: Only Admin can download the whole database
+    if current_user.role != 'admin': 
+        return jsonify({"msg": "Denied"}), 403
+    
+    try:
+        # Gather all data into dictionaries
+        users = [u.to_dict() for u in User.query.all()]
+        courses = [c.to_dict() for c in Course.query.all()]
+        sessions = [s.to_dict() for s in AcademicSession.query.all()]
+        
+        # Payment History
+        payments = []
+        for p in Payment.query.all():
+            p_dict = p.to_dict()
+            student = db.session.get(User, p.student_id)
+            p_dict['student_name'] = student.name if student else "Unknown"
+            payments.append(p_dict)
+            
+        # Syllabus History
+        syllabus = [s.to_dict() for s in SyllabusLog.query.all()]
+        
+        # Combine into one Master Dictionary
+        backup_data = {
+            "backup_date": str(datetime.utcnow()),
+            "users": users,
+            "courses": courses,
+            "sessions": sessions,
+            "payments": payments,
+            "syllabus": syllabus
+        }
+        
+        # Convert to a formatted JSON string
+        json_data = json.dumps(backup_data, indent=4)
+        
+        # Create a downloadable file in memory
+        output = BytesIO()
+        output.write(json_data.encode('utf-8'))
+        output.seek(0)
+        
+        filename = f"CST_System_Backup_{date.today()}.json"
+        
+        return send_file(
+            output, 
+            mimetype="application/json", 
+            as_attachment=True, 
+            download_name=filename
+        )
+        
+    except Exception as e:
+        return jsonify({"msg": f"Backup Failed: {str(e)}"}), 500
 # --- ADD THIS NEW ROUTE TO app.py ---
 @app.route('/api/payments/<int:id>', methods=['DELETE'])
 @login_required
