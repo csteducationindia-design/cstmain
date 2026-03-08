@@ -769,6 +769,7 @@ def teacher_sessions():
     sessions = AcademicSession.query.order_by(AcademicSession.id.desc()).all()
     return jsonify([s.to_dict() for s in sessions])
 
+
 @app.route('/api/teacher/students', methods=['GET'])
 @login_required
 def teacher_students():
@@ -781,22 +782,30 @@ def teacher_students():
     
     query = User.query.filter_by(role='student')
 
+    # 🚀 THE FIX: If the user is a teacher, ONLY show students in their courses
+    if current_user.role == 'teacher':
+        teacher_course_ids = [c.id for c in current_user.courses_teaching]
+        # If the teacher hasn't been assigned any courses yet, they have 0 students
+        if not teacher_course_ids:
+            return jsonify([]) 
+        # Filter the query to only include students in these specific courses
+        query = query.join(User.courses_enrolled).filter(Course.id.in_(teacher_course_ids))
+
     # Filter by Batch (Session) if selected
     if session_id and session_id != 'null' and session_id != '':
-        query = query.filter_by(session_id=int(session_id))
+        query = query.filter(User.session_id == int(session_id))
 
     # Filter by Course if selected
     if course_id and course_id != 'null' and course_id != '':
-        # Join with the association table to find students in this course
-        query = query.join(User.courses_enrolled).filter(Course.id == int(course_id))
+        query = query.filter(Course.id == int(course_id))
 
-    students = query.all()
+    # .distinct() prevents a student showing up twice if they take 2 classes with the same teacher
+    students = query.distinct().all()
     
     # Return formatted list
     student_list = []
     for s in students:
         s_dict = s.to_dict()
-        # Add extra details useful for the teacher view
         s_dict['course_ids'] = [c.id for c in s.courses_enrolled]
         student_list.append(s_dict)
 
@@ -1405,6 +1414,7 @@ def my_announcements():
 #  ✅ ADD THIS TO APP.PY (WITH DEBUGGING)
 # ==========================================
 
+
 @app.route('/api/teacher/reports', methods=['GET'])
 @login_required
 def get_teacher_reports():
@@ -1412,9 +1422,18 @@ def get_teacher_reports():
     session_id = request.args.get('session_id')
     try:
         query = User.query.filter_by(role='student')
+        
+        # 🚀 THE FIX: Restrict reports to this specific teacher's students
+        teacher_course_ids = [c.id for c in current_user.courses_teaching]
+        if not teacher_course_ids:
+            return jsonify([]) 
+        query = query.join(User.courses_enrolled).filter(Course.id.in_(teacher_course_ids))
+
         if session_id and session_id not in ['undefined', 'null', '']:
-            query = query.filter_by(session_id=int(session_id))
-        students = query.all()
+            query = query.filter(User.session_id == int(session_id))
+            
+        students = query.distinct().all()
+        
         report_data = []
         for s in students:
             pct = 0
@@ -1437,7 +1456,6 @@ def get_teacher_reports():
         return jsonify(report_data)
     except Exception as e:
         return jsonify([])
-
 # ==========================================
 #  ✅ TEACHER ANNOUNCEMENTS (WITH AUDIO TAG)
 # ==========================================
