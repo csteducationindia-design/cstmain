@@ -53,7 +53,7 @@
         }
 
         .institute-logo {
-            height: 24px; /* Adjust based on your logo shape */
+            height: 24px; 
             max-width: 150px;
             object-fit: contain;
             margin-bottom: 3px;
@@ -162,7 +162,7 @@
         }
 
         .director-sign {
-            height: 22px; /* Height of the signature image */
+            height: 22px; 
             max-width: 70px;
             object-fit: contain;
             margin-bottom: 2px;
@@ -289,24 +289,16 @@
         function downloadImage(format) {
             const cardElement = document.getElementById('student-id-card');
             
-            // html2canvas takes a snapshot of the HTML element and turns it into an image
             html2canvas(cardElement, {
-                scale: 4, // 4x resolution for super crisp printing
-                useCORS: true, // Crucial: allows external images like QR code and student photos to be captured
-                backgroundColor: '#ffffff' // Ensure background isn't transparent in JPG
+                scale: 4, 
+                useCORS: true, 
+                backgroundColor: '#ffffff' 
             }).then(canvas => {
-                // Convert canvas to image URL
                 const imageUrl = canvas.toDataURL(`image/${format}`, 1.0);
-                
-                // Create a temporary link to force the browser to download
                 const downloadLink = document.createElement('a');
                 downloadLink.href = imageUrl;
-                
-                // Clean up student name for the file name
                 const safeName = "{{ student.name }}".replace(/[^a-z0-9]/gi, '_').toLowerCase();
                 downloadLink.download = `CST_ID_Card_${safeName}.${format}`;
-                
-                // Trigger download
                 document.body.appendChild(downloadLink);
                 downloadLink.click();
                 document.body.removeChild(downloadLink);
