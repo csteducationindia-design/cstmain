@@ -232,7 +232,7 @@
 
     <div class="id-card-container" id="student-id-card">
         <div class="header">
-            <img src="/static/cst_logo.png" alt="CST Logo" onerror="this.src='https://placehold.co/120x30/1173d4/white?text=CST+LOGO'" class="institute-logo" crossorigin="anonymous">
+            <img src="{{ url_for('static', filename='cst_logo.png') }}" alt="CST Logo" onerror="this.src='https://placehold.co/120x30/1173d4/white?text=CST+LOGO'" class="institute-logo" crossorigin="anonymous">
             <h1 class="header-title">CST INSTITUTE</h1>
             <div class="header-sub">STUDENT IDENTITY CARD</div>
         </div>
@@ -261,7 +261,7 @@
             <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=STUDENT_ID_{{ student.id }}" alt="QR" class="qr-code" crossorigin="anonymous">
             
             <div class="signature">
-                <img src="/static/director_sign.png" alt="Director Signature" onerror="this.src='https://placehold.co/70x25/f9fafb/a8a29e?text=Signature'" class="director-sign" crossorigin="anonymous">
+                <img src="{{ url_for('static', filename='director_sign.png') }}" alt="Director Signature" onerror="this.src='https://placehold.co/70x25/f9fafb/a8a29e?text=Signature'" class="director-sign" crossorigin="anonymous">
                 <div class="signature-line"></div>
                 <div class="sign-label">Director Sign</div>
             </div>
