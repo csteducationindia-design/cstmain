@@ -287,7 +287,7 @@
             <div class="id-card">
                 
                 <div class="header">
-                    <img src="{{ url_for('static', filename='cst_logo.png') }}" class="inst-logo" onerror="this.style.opacity='0'">
+                    <img src="{{ url_for('static', filename='cst_logo.png') }}" class="inst-logo secure-local-img" onerror="this.style.opacity='0'">
                     <div class="inst-name">CST INSTITUTE</div>
                     <div class="inst-slogan">Excellence in Education</div>
                 </div>
@@ -316,7 +316,7 @@
                          onerror="this.src='https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ student.admission_number }}'">
 
                     <div class="sign-section">
-                        <img src="{{ url_for('static', filename='director_sign.png') }}" class="sign-img" crossorigin="anonymous" onerror="this.style.opacity='0'">
+                        <img src="{{ url_for('static', filename='director_sign.png') }}" class="sign-img secure-local-img" onerror="this.style.opacity='0'">
                         <div class="sign-label">Authorized Signatory</div>
                     </div>
                 </div>
@@ -333,7 +333,29 @@
     </div>
 
     <script>
-        // Powerful ZIP Generator Script
+        // ✅ NEW: Foolproof Base64 Image Converter
+        // This function forces the browser to embed the logo and signature directly into the page data, 
+        // completely bypassing Chrome's security blocks so they NEVER drop!
+        async function forceEmbedLocalImages() {
+            const images = document.querySelectorAll('.secure-local-img');
+            for (let img of images) {
+                if (!img.src.startsWith('data:')) {
+                    try {
+                        const response = await fetch(img.src);
+                        const blob = await response.blob();
+                        const base64Url = await new Promise((resolve) => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => resolve(reader.result);
+                            reader.readAsDataURL(blob);
+                        });
+                        img.src = base64Url;
+                    } catch (e) {
+                        console.log("Image bypass failed for: ", img.src);
+                    }
+                }
+            }
+        }
+
         async function downloadAsZip(format) {
             const pages = document.querySelectorAll('.a4-page');
             const extension = format === 'jpeg' ? 'jpg' : 'png';
@@ -343,7 +365,9 @@
             btn.innerHTML = "📦 Initializing... Please Wait";
             btn.disabled = true;
 
-            // ✅ FIX: Set folder name back to CST_ID_Cards
+            // Step 1: Force embed the logo and signature before taking the screenshot
+            await forceEmbedLocalImages();
+
             const zip = new JSZip();
             const imgFolder = zip.folder("CST_ID_Cards");
 
@@ -351,22 +375,18 @@
                 const page = pages[i];
                 try {
                     btn.innerHTML = `🖼️ Processing Page ${i + 1} of ${pages.length}...`;
-                    
-                    // Small pause so the browser doesn't freeze
                     await new Promise(resolve => setTimeout(resolve, 50)); 
                     
                     const canvas = await html2canvas(page, {
-                        scale: 2, // High resolution, but stable
+                        scale: 2, 
                         useCORS: true,
                         backgroundColor: '#ffffff',
                         logging: false
                     });
                     
-                    // Convert canvas to image data, then extract the Base64 code
                     const imgData = canvas.toDataURL(`image/${format}`, 0.95); 
                     const base64Data = imgData.split(',')[1];
                     
-                    // ✅ FIX: Save files as CST_Bulk_Cards_Page...
                     imgFolder.file(`CST_Bulk_Cards_Page_${i + 1}.${extension}`, base64Data, {base64: true});
                     
                 } catch (err) {
@@ -374,11 +394,9 @@
                 }
             }
             
-            // Final step: Download the ZIP file
             btn.innerHTML = "⬇️ Downloading ZIP File...";
             
             zip.generateAsync({type:"blob"}).then(function(content) {
-                // ✅ FIX: Download ZIP as CST_Bulk_Cards_...
                 saveAs(content, `CST_Bulk_Cards_${extension.toUpperCase()}.zip`);
                 btn.innerHTML = originalText;
                 btn.disabled = false;
