@@ -28,6 +28,10 @@
             gap: 15px;
             flex-wrap: wrap;
             justify-content: center;
+            background: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
 
         .btn-download {
@@ -40,8 +44,14 @@
             cursor: pointer;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         
+        .btn-print { background-color: #000000; font-size: 16px; } /* The new Instant Print Button */
+        .btn-print:hover { background-color: #333333; transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.2); }
+
         .btn-pdf { background-color: #1e293b; }
         .btn-pdf:hover { background-color: #0f172a; transform: translateY(-2px); }
         
@@ -80,7 +90,7 @@
             border: 1px solid #94a3b8; 
             border-radius: 3mm;
             overflow: hidden;
-            display: flex; /* Flex layout prevents overlapping */
+            display: flex; 
             flex-direction: column;
             align-items: center;
             text-align: center;
@@ -89,7 +99,7 @@
             position: relative;
         }
 
-        /* 1. HEADER (Compact: 18mm) */
+        /* 1. HEADER */
         .header {
             width: 100%;
             height: 18mm; 
@@ -131,17 +141,17 @@
             color: white !important;
         }
 
-        /* 2. PHOTO (Compact: 16.5mm) */
+        /* 2. PHOTO */
         .photo-container {
             width: 16.5mm;
             height: 16.5mm;
             border-radius: 50%;
             background: white;
             padding: 0.8mm;
-            margin-top: -6mm; /* Pull up */
+            margin-top: -6mm; 
             z-index: 10;
             box-shadow: 0 1px 2px rgba(0,0,0,0.2);
-            flex-shrink: 0; /* Prevent shrinking */
+            flex-shrink: 0; 
         }
 
         .photo-img {
@@ -153,7 +163,7 @@
             background-color: #f1f5f9;
         }
 
-        /* 3. DETAILS (Flex Grow to fill space) */
+        /* 3. DETAILS */
         .details {
             width: 100%;
             padding: 0 2mm;
@@ -205,7 +215,7 @@
         .label { color: #64748b; font-weight: 700; width: 10mm; }
         .val { color: #334155; font-weight: 600; padding-left: 2mm; }
 
-        /* 4. QR & SIGN ROW (Dedicated Row - NO OVERLAP) */
+        /* 4. QR & SIGN ROW */
         .qr-sign-row {
             width: 100%;
             display: flex;
@@ -213,13 +223,12 @@
             align-items: flex-end;
             padding: 1mm 4mm;
             box-sizing: border-box;
-            margin-top: auto; /* Push to bottom of available space */
-            margin-bottom: 7mm; /* Leave space for Address Footer */
+            margin-top: auto; 
+            margin-bottom: 7mm; 
         }
 
-        /* LARGE QR CODE */
         .qr-img {
-            width: 19mm; /* MAX VISIBILITY */
+            width: 19mm; 
             height: 19mm;
             border: 1px solid #000;
             padding: 0.5mm;
@@ -236,7 +245,7 @@
         .sign-img { height: 6mm; width: auto; max-width: 18mm; object-fit: contain; }
         .sign-label { font-size: 4px; color: #64748b; border-top: 1px solid #cbd5e1; width: 18mm; text-align: center; }
 
-        /* 5. ADDRESS FOOTER (Fixed Absolute Bottom) */
+        /* 5. ADDRESS FOOTER */
         .address-footer {
             width: 100%;
             height: 6.5mm;
@@ -265,16 +274,18 @@
         @media print {
             .control-panel { display: none !important; }
             body { background: white; padding: 0; margin: 0; }
-            .a4-page { box-shadow: none; margin: 0 auto; page-break-after: always; }
+            .a4-page { box-shadow: none; margin: 0; padding: 5mm; width: 210mm; height: 297mm; page-break-after: always; }
         }
     </style>
 </head>
 <body>
 
     <div class="control-panel" data-html2canvas-ignore="true">
-        <button onclick="generateHDPDF()" id="pdf-btn" class="btn-download btn-pdf">Download HD PDF</button>
-        <button onclick="downloadBulkImages('jpeg')" id="btn-jpeg" class="btn-download btn-jpg">Download JPG Pages</button>
-        <button onclick="downloadBulkImages('png')" id="btn-png" class="btn-download btn-png">Download PNG Pages</button>
+        <button onclick="window.print()" class="btn-download btn-print">🖨️ Direct Print (Fastest)</button>
+        
+        <button onclick="generateHDPDF()" id="pdf-btn" class="btn-download btn-pdf">📄 Download PDF</button>
+        <button onclick="downloadBulkImages('jpeg')" id="btn-jpeg" class="btn-download btn-jpg">🖼️ Download JPG</button>
+        <button onclick="downloadBulkImages('png')" id="btn-png" class="btn-download btn-png">🖼️ Download PNG</button>
     </div>
 
     <div id="cards-container">
@@ -340,9 +351,9 @@
 
             const opt = {
                 margin:       0,
-                filename:     'CST_ID_Cards_HD.pdf',
-                image:        { type: 'jpeg', quality: 0.98 }, 
-                html2canvas:  { scale: 2, useCORS: true, scrollY: 0, logging: true },
+                filename:     'CST_ID_Cards_Bulk.pdf',
+                image:        { type: 'jpeg', quality: 0.95 }, 
+                html2canvas:  { scale: 2, useCORS: true, scrollY: 0, logging: false },
                 jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
@@ -351,49 +362,50 @@
                     btn.innerHTML = originalText;
                     btn.disabled = false;
                 }).catch(err => {
-                    alert("Error. Try printing with Ctrl+P.");
+                    alert("Error processing PDF.");
                     btn.innerHTML = "Download Failed";
                     btn.disabled = false;
                 });
-            }, 500);
+            }, 100);
         }
 
-        // --- ✅ ADDED: Script to loop through A4 pages and download them as high-quality images ---
+        // --- FASTER: Download Bulk Images Script ---
         async function downloadBulkImages(format) {
             const pages = document.querySelectorAll('.a4-page');
-            const btn = document.getElementById(`btn-${format === 'jpeg' ? 'jpeg' : 'png'}`);
+            const extension = format === 'jpeg' ? 'jpg' : 'png';
+            const btn = document.getElementById(`btn-${extension}`);
             const originalText = btn.innerHTML;
             
-            btn.innerHTML = "Processing Images...";
+            btn.innerHTML = "Processing...";
             btn.disabled = true;
 
             for (let i = 0; i < pages.length; i++) {
                 const page = pages[i];
                 try {
-                    // Update button text to show progress
-                    btn.innerHTML = `Saving Page ${i + 1} of ${pages.length}...`;
+                    btn.innerHTML = `Saving Page ${i + 1}/${pages.length}...`;
+                    // ✅ SPEED FIX: Reduced wait time so it doesn't pause for a full second between pages
+                    await new Promise(resolve => setTimeout(resolve, 50)); 
                     
                     const canvas = await html2canvas(page, {
-                        scale: 3, // 3x Resolution for Crisp Printing
+                        scale: 2, // ✅ SPEED FIX: Changed scale from 3 to 2. It is still print-quality but processes 50% faster!
                         useCORS: true,
-                        backgroundColor: '#ffffff'
+                        backgroundColor: '#ffffff',
+                        logging: false
                     });
                     
-                    const imageUrl = canvas.toDataURL(`image/${format}`, 1.0);
+                    // ✅ SPEED FIX: Set JPG quality to 0.92 for faster encoding
+                    const imageUrl = canvas.toDataURL(`image/${format}`, 0.92); 
                     const downloadLink = document.createElement('a');
                     downloadLink.href = imageUrl;
-                    
-                    const extension = format === 'jpeg' ? 'jpg' : 'png';
                     downloadLink.download = `CST_Bulk_Cards_Page_${i + 1}.${extension}`;
                     
                     document.body.appendChild(downloadLink);
                     downloadLink.click();
                     document.body.removeChild(downloadLink);
                     
-                    // Small pause to allow the browser to process the download cleanly
-                    await new Promise(resolve => setTimeout(resolve, 800));
                 } catch (err) {
                     console.error(`Error generating image for page ${i + 1}`, err);
+                    alert(`Error downloading Page ${i + 1}. Try the PDF or Print button instead.`);
                 }
             }
             
