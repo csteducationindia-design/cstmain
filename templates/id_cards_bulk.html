@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <title>CST Institute ID Cards</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <style>
         /* --- GLOBAL SETTINGS --- */
@@ -23,22 +25,33 @@
         .control-panel {
             margin-bottom: 20px;
             display: flex;
-            gap: 10px;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
         }
 
         .btn-download {
-            background-color: #2563eb;
             color: white;
             border: none;
             padding: 12px 24px;
             border-radius: 8px;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 700;
             cursor: pointer;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.2s;
         }
-        .btn-download:hover { background-color: #1d4ed8; }
-        .btn-download:disabled { background-color: #94a3b8; cursor: wait; }
+        
+        .btn-pdf { background-color: #1e293b; }
+        .btn-pdf:hover { background-color: #0f172a; transform: translateY(-2px); }
+        
+        .btn-jpg { background-color: #1173d4; }
+        .btn-jpg:hover { background-color: #0e5ea8; transform: translateY(-2px); }
+        
+        .btn-png { background-color: #059669; }
+        .btn-png:hover { background-color: #047857; transform: translateY(-2px); }
+
+        .btn-download:disabled { background-color: #94a3b8; cursor: wait; transform: none; }
 
         /* A4 PAGE */
         .a4-page {
@@ -259,7 +272,9 @@
 <body>
 
     <div class="control-panel" data-html2canvas-ignore="true">
-        <button onclick="generateHDPDF()" id="pdf-btn" class="btn-download">Download HD PDF</button>
+        <button onclick="generateHDPDF()" id="pdf-btn" class="btn-download btn-pdf">Download HD PDF</button>
+        <button onclick="downloadBulkImages('jpeg')" id="btn-jpeg" class="btn-download btn-jpg">Download JPG Pages</button>
+        <button onclick="downloadBulkImages('png')" id="btn-png" class="btn-download btn-png">Download PNG Pages</button>
     </div>
 
     <div id="cards-container">
@@ -276,7 +291,7 @@
 
                 <div class="photo-container">
                     <img src="{{ student.profile_photo_url if student.profile_photo_url else 'https://placehold.co/100' }}" 
-                         class="photo-img" 
+                         class="photo-img" crossorigin="anonymous"
                          onerror="this.src='https://placehold.co/100?text=No+Img'">
                 </div>
 
@@ -318,6 +333,7 @@
         function generateHDPDF() {
             const element = document.getElementById('cards-container');
             const btn = document.getElementById('pdf-btn');
+            const originalText = btn.innerHTML;
             
             btn.innerHTML = "Processing... (Please Wait)";
             btn.disabled = true;
@@ -332,7 +348,7 @@
 
             setTimeout(() => {
                 html2pdf().set(opt).from(element).save().then(() => {
-                    btn.innerHTML = "Download HD PDF";
+                    btn.innerHTML = originalText;
                     btn.disabled = false;
                 }).catch(err => {
                     alert("Error. Try printing with Ctrl+P.");
@@ -340,6 +356,49 @@
                     btn.disabled = false;
                 });
             }, 500);
+        }
+
+        // --- ✅ ADDED: Script to loop through A4 pages and download them as high-quality images ---
+        async function downloadBulkImages(format) {
+            const pages = document.querySelectorAll('.a4-page');
+            const btn = document.getElementById(`btn-${format === 'jpeg' ? 'jpeg' : 'png'}`);
+            const originalText = btn.innerHTML;
+            
+            btn.innerHTML = "Processing Images...";
+            btn.disabled = true;
+
+            for (let i = 0; i < pages.length; i++) {
+                const page = pages[i];
+                try {
+                    // Update button text to show progress
+                    btn.innerHTML = `Saving Page ${i + 1} of ${pages.length}...`;
+                    
+                    const canvas = await html2canvas(page, {
+                        scale: 3, // 3x Resolution for Crisp Printing
+                        useCORS: true,
+                        backgroundColor: '#ffffff'
+                    });
+                    
+                    const imageUrl = canvas.toDataURL(`image/${format}`, 1.0);
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = imageUrl;
+                    
+                    const extension = format === 'jpeg' ? 'jpg' : 'png';
+                    downloadLink.download = `CST_Bulk_Cards_Page_${i + 1}.${extension}`;
+                    
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                    document.body.removeChild(downloadLink);
+                    
+                    // Small pause to allow the browser to process the download cleanly
+                    await new Promise(resolve => setTimeout(resolve, 800));
+                } catch (err) {
+                    console.error(`Error generating image for page ${i + 1}`, err);
+                }
+            }
+            
+            btn.innerHTML = originalText;
+            btn.disabled = false;
         }
     </script>
 
