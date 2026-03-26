@@ -287,7 +287,7 @@
             <div class="id-card">
                 
                 <div class="header">
-                    <img src="{{ url_for('static', filename='cst_logo.png') }}" class="inst-logo secure-local-img" onerror="this.style.opacity='0'">
+                    <img src="{{ url_for('static', filename='logo.png') }}" class="inst-logo secure-local-img" onerror="this.style.opacity='0'">
                     <div class="inst-name">CST INSTITUTE</div>
                     <div class="inst-slogan">Excellence in Education</div>
                 </div>
@@ -316,7 +316,7 @@
                          onerror="this.src='https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ student.admission_number }}'">
 
                     <div class="sign-section">
-                        <img src="{{ url_for('static', filename='director_sign.png') }}" class="sign-img secure-local-img" onerror="this.style.opacity='0'">
+                        <img src="{{ url_for('static', filename='signature_director.png') }}" class="sign-img secure-local-img" onerror="this.style.opacity='0'">
                         <div class="sign-label">Authorized Signatory</div>
                     </div>
                 </div>
@@ -333,9 +333,7 @@
     </div>
 
     <script>
-        // ✅ NEW: Foolproof Base64 Image Converter
-        // This function forces the browser to embed the logo and signature directly into the page data, 
-        // completely bypassing Chrome's security blocks so they NEVER drop!
+        // Force browser to embed local images before download to prevent missing logos
         async function forceEmbedLocalImages() {
             const images = document.querySelectorAll('.secure-local-img');
             for (let img of images) {
@@ -365,7 +363,6 @@
             btn.innerHTML = "📦 Initializing... Please Wait";
             btn.disabled = true;
 
-            // Step 1: Force embed the logo and signature before taking the screenshot
             await forceEmbedLocalImages();
 
             const zip = new JSZip();
