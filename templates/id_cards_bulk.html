@@ -5,8 +5,9 @@
     <title>CST Institute ID Cards</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     
     <style>
         /* --- GLOBAL SETTINGS --- */
@@ -49,19 +50,13 @@
             gap: 8px;
         }
         
-        .btn-print { background-color: #000000; font-size: 16px; } /* The new Instant Print Button */
-        .btn-print:hover { background-color: #333333; transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.2); }
-
-        .btn-pdf { background-color: #1e293b; }
-        .btn-pdf:hover { background-color: #0f172a; transform: translateY(-2px); }
-        
         .btn-jpg { background-color: #1173d4; }
-        .btn-jpg:hover { background-color: #0e5ea8; transform: translateY(-2px); }
+        .btn-jpg:hover { background-color: #0e5ea8; transform: translateY(-2px); box-shadow: 0 6px 12px rgba(17,115,212,0.3); }
         
         .btn-png { background-color: #059669; }
-        .btn-png:hover { background-color: #047857; transform: translateY(-2px); }
+        .btn-png:hover { background-color: #047857; transform: translateY(-2px); box-shadow: 0 6px 12px rgba(5,150,105,0.3); }
 
-        .btn-download:disabled { background-color: #94a3b8; cursor: wait; transform: none; }
+        .btn-download:disabled { background-color: #94a3b8; cursor: wait; transform: none; box-shadow: none; }
 
         /* A4 PAGE */
         .a4-page {
@@ -82,7 +77,7 @@
             page-break-after: always; 
         }
 
-        /* CARD CONTAINER (Flex Column Layout) */
+        /* CARD CONTAINER */
         .id-card {
             width: 53mm;
             height: 85mm;
@@ -281,11 +276,8 @@
 <body>
 
     <div class="control-panel" data-html2canvas-ignore="true">
-        <button onclick="window.print()" class="btn-download btn-print">🖨️ Direct Print (Fastest)</button>
-        
-        <button onclick="generateHDPDF()" id="pdf-btn" class="btn-download btn-pdf">📄 Download PDF</button>
-        <button onclick="downloadBulkImages('jpeg')" id="btn-jpeg" class="btn-download btn-jpg">🖼️ Download JPG</button>
-        <button onclick="downloadBulkImages('png')" id="btn-png" class="btn-download btn-png">🖼️ Download PNG</button>
+        <button onclick="downloadAsZip('jpeg')" id="btn-zip-jpeg" class="btn-download btn-jpg">📦 Download ZIP (JPG Pages)</button>
+        <button onclick="downloadAsZip('png')" id="btn-zip-png" class="btn-download btn-png">📦 Download ZIP (PNG Pages)</button>
     </div>
 
     <div id="cards-container">
@@ -295,7 +287,7 @@
             <div class="id-card">
                 
                 <div class="header">
-                    <img src="{{ url_for('static', filename='logo.png') }}" class="inst-logo" onerror="this.style.opacity='0'">
+                    <img src="{{ url_for('static', filename='cst_logo.png') }}" class="inst-logo" onerror="this.style.opacity='0'">
                     <div class="inst-name">CST INSTITUTE</div>
                     <div class="inst-slogan">Excellence in Education</div>
                 </div>
@@ -319,12 +311,12 @@
                 </div>
 
                 <div class="qr-sign-row">
-                    <img src="{{ url_for('static', filename='qr_codes/qr_' ~ student.admission_number ~ '.png') }}" 
-                         class="qr-img" 
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=STUDENT_ID_{{ student.id }}" 
+                         alt="Student QR" class="qr-img" crossorigin="anonymous"
                          onerror="this.src='https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ student.admission_number }}'">
 
                     <div class="sign-section">
-                        <img src="{{ url_for('static', filename='signature_director.png') }}" class="sign-img" onerror="this.style.opacity='0'">
+                        <img src="{{ url_for('static', filename='director_sign.png') }}" class="sign-img" crossorigin="anonymous" onerror="this.style.opacity='0'">
                         <div class="sign-label">Authorized Signatory</div>
                     </div>
                 </div>
@@ -341,76 +333,60 @@
     </div>
 
     <script>
-        function generateHDPDF() {
-            const element = document.getElementById('cards-container');
-            const btn = document.getElementById('pdf-btn');
-            const originalText = btn.innerHTML;
-            
-            btn.innerHTML = "Processing... (Please Wait)";
-            btn.disabled = true;
-
-            const opt = {
-                margin:       0,
-                filename:     'CST_ID_Cards_Bulk.pdf',
-                image:        { type: 'jpeg', quality: 0.95 }, 
-                html2canvas:  { scale: 2, useCORS: true, scrollY: 0, logging: false },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
-
-            setTimeout(() => {
-                html2pdf().set(opt).from(element).save().then(() => {
-                    btn.innerHTML = originalText;
-                    btn.disabled = false;
-                }).catch(err => {
-                    alert("Error processing PDF.");
-                    btn.innerHTML = "Download Failed";
-                    btn.disabled = false;
-                });
-            }, 100);
-        }
-
-        // --- FASTER: Download Bulk Images Script ---
-        async function downloadBulkImages(format) {
+        // Powerful ZIP Generator Script
+        async function downloadAsZip(format) {
             const pages = document.querySelectorAll('.a4-page');
             const extension = format === 'jpeg' ? 'jpg' : 'png';
-            const btn = document.getElementById(`btn-${extension}`);
+            const btn = document.getElementById(`btn-zip-${format}`);
             const originalText = btn.innerHTML;
             
-            btn.innerHTML = "Processing...";
+            btn.innerHTML = "📦 Initializing... Please Wait";
             btn.disabled = true;
+
+            // ✅ FIX: Set folder name back to CST_ID_Cards
+            const zip = new JSZip();
+            const imgFolder = zip.folder("CST_ID_Cards");
 
             for (let i = 0; i < pages.length; i++) {
                 const page = pages[i];
                 try {
-                    btn.innerHTML = `Saving Page ${i + 1}/${pages.length}...`;
-                    // ✅ SPEED FIX: Reduced wait time so it doesn't pause for a full second between pages
+                    btn.innerHTML = `🖼️ Processing Page ${i + 1} of ${pages.length}...`;
+                    
+                    // Small pause so the browser doesn't freeze
                     await new Promise(resolve => setTimeout(resolve, 50)); 
                     
                     const canvas = await html2canvas(page, {
-                        scale: 2, // ✅ SPEED FIX: Changed scale from 3 to 2. It is still print-quality but processes 50% faster!
+                        scale: 2, // High resolution, but stable
                         useCORS: true,
                         backgroundColor: '#ffffff',
                         logging: false
                     });
                     
-                    // ✅ SPEED FIX: Set JPG quality to 0.92 for faster encoding
-                    const imageUrl = canvas.toDataURL(`image/${format}`, 0.92); 
-                    const downloadLink = document.createElement('a');
-                    downloadLink.href = imageUrl;
-                    downloadLink.download = `CST_Bulk_Cards_Page_${i + 1}.${extension}`;
+                    // Convert canvas to image data, then extract the Base64 code
+                    const imgData = canvas.toDataURL(`image/${format}`, 0.95); 
+                    const base64Data = imgData.split(',')[1];
                     
-                    document.body.appendChild(downloadLink);
-                    downloadLink.click();
-                    document.body.removeChild(downloadLink);
+                    // ✅ FIX: Save files as CST_Bulk_Cards_Page...
+                    imgFolder.file(`CST_Bulk_Cards_Page_${i + 1}.${extension}`, base64Data, {base64: true});
                     
                 } catch (err) {
                     console.error(`Error generating image for page ${i + 1}`, err);
-                    alert(`Error downloading Page ${i + 1}. Try the PDF or Print button instead.`);
                 }
             }
             
-            btn.innerHTML = originalText;
-            btn.disabled = false;
+            // Final step: Download the ZIP file
+            btn.innerHTML = "⬇️ Downloading ZIP File...";
+            
+            zip.generateAsync({type:"blob"}).then(function(content) {
+                // ✅ FIX: Download ZIP as CST_Bulk_Cards_...
+                saveAs(content, `CST_Bulk_Cards_${extension.toUpperCase()}.zip`);
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }).catch(function(err) {
+                alert("Error creating ZIP file.");
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            });
         }
     </script>
 
