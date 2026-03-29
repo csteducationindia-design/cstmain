@@ -311,8 +311,10 @@
                 </div>
 
                 <div class="qr-sign-row">
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=STUDENT_ID_{{ student.id }}" 
-                         alt="Student QR" class="qr-img" crossorigin="anonymous"
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://scan.cstai.in/scan/{{ student.admission_number }}" 
+                         alt="Student QR" 
+                         class="qr-img" 
+                         crossorigin="anonymous"
                          onerror="this.src='https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ student.admission_number }}'">
 
                     <div class="sign-section">
