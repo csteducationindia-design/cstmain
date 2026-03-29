@@ -219,18 +219,20 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
-            padding: 1mm 4mm;
+            padding: 0 4mm;
             box-sizing: border-box;
             flex-shrink: 0; 
             margin-top: auto; 
-            /* 🚀 INCREASED from 6.5mm to 10mm to make room for the larger footer */
-            margin-bottom: 10mm; 
+            margin-bottom: 11mm; /* 🚀 Leaves a perfect 1mm safety gap above the footer */
         }
 
-        /* ENLARGED QR CODE */
+        /* ENLARGED & LOCKED QR CODE */
         .qr-img {
-            width: 28mm; 
-            height: 28mm; 
+            width: 27mm; 
+            height: 27mm; 
+            min-width: 27mm; /* 🚀 FORCES the browser to never squish the width */
+            min-height: 27mm; /* 🚀 FORCES the browser to never squish the height */
+            flex-shrink: 0; /* 🚀 Double protection against squishing */
             border: 1px solid #000;
             padding: 0.5mm;
             object-fit: contain;
@@ -242,7 +244,8 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding-bottom: 2mm; 
+            padding-bottom: 1mm; 
+            flex-shrink: 0;
         }
         
         .sign-img { 
@@ -263,7 +266,6 @@
         /* 5. ADDRESS FOOTER */
         .address-footer {
             width: 100%;
-            /* 🚀 TALLER FOOTER: Increased from 6.5mm to 10mm */
             height: 10mm;
             background: #fbbf24 !important; 
             background-color: #fbbf24 !important;
@@ -276,17 +278,16 @@
             position: absolute;
             bottom: 0;
             left: 0;
-            padding: 0 1.5mm; /* Adds breathing room on the sides */
+            padding: 0 2mm; 
             box-sizing: border-box;
             -webkit-print-color-adjust: exact !important;
             z-index: 20;
         }
         
         .address-text {
-            /* 🚀 MUCH LARGER & BOLDER TEXT */
-            font-size: 6.5px; 
-            font-weight: 800;
-            line-height: 1.2;
+            font-size: 7.5px; /* 🚀 INCREASED FONT SIZE (was 6.5px) */
+            font-weight: 900; /* 🚀 Maximum boldness for easy reading */
+            line-height: 1.15;
             color: #000 !important;
             text-align: center;
             width: 100%;
