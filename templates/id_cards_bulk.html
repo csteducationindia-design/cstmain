@@ -221,9 +221,10 @@
             align-items: flex-end;
             padding: 1mm 4mm;
             box-sizing: border-box;
-            flex-shrink: 0; /* 🚀 PREVENTS THE ENLARGED QR FROM SQUISHING */
+            flex-shrink: 0; 
             margin-top: auto; 
-            margin-bottom: 6.5mm; /* Matches exact height of the yellow address footer */
+            /* 🚀 INCREASED from 6.5mm to 10mm to make room for the larger footer */
+            margin-bottom: 10mm; 
         }
 
         /* ENLARGED QR CODE */
@@ -262,7 +263,8 @@
         /* 5. ADDRESS FOOTER */
         .address-footer {
             width: 100%;
-            height: 6.5mm;
+            /* 🚀 TALLER FOOTER: Increased from 6.5mm to 10mm */
+            height: 10mm;
             background: #fbbf24 !important; 
             background-color: #fbbf24 !important;
             color: #000 !important;
@@ -274,15 +276,20 @@
             position: absolute;
             bottom: 0;
             left: 0;
+            padding: 0 1.5mm; /* Adds breathing room on the sides */
+            box-sizing: border-box;
             -webkit-print-color-adjust: exact !important;
             z-index: 20;
         }
         
         .address-text {
-            font-size: 5px;
-            font-weight: 700;
-            line-height: 1.1;
+            /* 🚀 MUCH LARGER & BOLDER TEXT */
+            font-size: 6.5px; 
+            font-weight: 800;
+            line-height: 1.2;
             color: #000 !important;
+            text-align: center;
+            width: 100%;
         }
 
         @media print {
