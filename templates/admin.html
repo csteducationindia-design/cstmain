@@ -1073,8 +1073,17 @@ window.sendVoiceReminder = async function(studentId, type, btnElement) {
     function setupForm(id, url) {
         document.getElementById(id).addEventListener('submit', async (e) => {
             e.preventDefault(); const fd = new FormData(e.target);
+            
+            // 1. Save data to the server
             await fetch(API_BASE_URL + url, { method: 'POST', body: fd });
-            alert('Saved Successfully'); e.target.reset(); showSection(window.location.hash);
+            alert('Saved Successfully'); 
+            e.target.reset(); 
+            
+            // 2. ✅ NEW: Fetch the fresh data from the server automatically!
+            await loadGlobalData(); 
+            
+            // 3. Refresh the screen
+            showSection(window.location.hash);
         });
     }
     
@@ -1107,7 +1116,18 @@ window.sendVoiceReminder = async function(studentId, type, btnElement) {
     window.editCourse = function(id) { const c = courses.find(x => x.id === id); if(c) { document.getElementById('course-id').value = c.id; document.getElementById('course-name').value = c.name; document.getElementById('course-subjects').value = c.subjects.join(','); document.getElementById('course-teacher').value = c.teacher_id || ''; window.scrollTo(0,0); } };
     window.editSession = function(id) { const s = sessions.find(x => x.id === id); if(s) { document.getElementById('session-id').value = s.id; document.getElementById('session-name').value = s.name; document.getElementById('session-start').value = s.start_date; document.getElementById('session-end').value = s.end_date; document.getElementById('session-status').value = s.status; window.scrollTo(0,0); } };
     window.editFee = function(id, name, amt, date) { document.getElementById('fee-structure-id').value = id; document.getElementById('fee-name').value = name; document.getElementById('fee-amount').value = amt; document.getElementById('fee-date').value = date; };
-    window.del = async (url) => { if(confirm('Are you sure?')) { await fetch(url, {method:'DELETE'}); showSection(window.location.hash); } };
+    window.del = async (url) => { 
+        if(confirm('Are you sure?')) { 
+            // 1. Delete the data
+            await fetch(url, {method:'DELETE'}); 
+            
+            // 2. ✅ NEW: Fetch fresh data automatically!
+            await loadGlobalData(); 
+            
+            // 3. Refresh the screen
+            showSection(window.location.hash); 
+        } 
+    };
     window.sendSMS = async (id) => { if(confirm('Send SMS?')) { const res = await fetch(API_BASE_URL+'/send_sms_alert', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({student_id:id})}); const data = await res.json(); alert(data.message); } };
 
     // Reports
