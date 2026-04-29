@@ -1543,7 +1543,7 @@ def teacher_announcements():
 def teacher_notes():
     if current_user.role != 'teacher': return jsonify({"msg": "Denied"}), 403
 
-    # ✅ ADD THIS NEW DELETE BLOCK:
+    # 1. DELETE LOGIC (Your new feature)
     if request.method == 'DELETE':
         note_id = request.args.get('id')
         if not note_id: return jsonify({"msg": "Missing Note ID"}), 400
@@ -1552,24 +1552,51 @@ def teacher_notes():
         # Ensure the teacher trying to delete it is the one who uploaded it
         if note and note.teacher_id == current_user.id:
             try:
-                # 1. Remove the physical PDF/Image from your server hard drive
+                # Remove the physical PDF/Image from your server hard drive
                 file_path = os.path.join(app.config['UPLOAD_FOLDER'], note.filename)
                 if os.path.exists(file_path):
                     os.remove(file_path)
             except Exception as e:
                 print("Could not delete physical file:", e)
                 
-            # 2. Remove the record from the database
+            # Remove the record from the database
             db.session.delete(note)
             db.session.commit()
             return jsonify({"msg": "Note deleted successfully!"}), 200
             
         return jsonify({"msg": "Note not found or access denied"}), 404
 
-    # --- (Keep your existing POST and GET code right below this) ---
+    # 2. POST LOGIC (Restored: How teachers upload new notes)
     if request.method == 'POST':
         if 'file' not in request.files: return jsonify({"msg": "No file"}), 400
-        # ... your existing code ...
+        f = request.files['file']
+        if f.filename == '': return jsonify({"msg": "No file selected"}), 400
+        
+        fn = secure_filename(f.filename)
+        uid = f"{uuid.uuid4()}{os.path.splitext(fn)[1]}"
+        f.save(os.path.join(app.config['UPLOAD_FOLDER'], uid))
+        
+        note = SharedNote(
+            title=request.form['title'],
+            description=request.form.get('description', ''),
+            filename=uid,
+            original_filename=fn,
+            course_id=int(request.form['course_id']),
+            teacher_id=current_user.id
+        )
+        db.session.add(note)
+        db.session.commit()
+        
+        course = db.session.get(Course, int(request.form['course_id']))
+        if course:
+            for s in course.students:
+                send_push_notification(s.id, "New Study Material", f"{current_user.name} posted: {request.form['title']}")
+            
+        return jsonify({"msg": "Uploaded Successfully"}), 201
+
+    # 3. GET LOGIC (Restored: How the screen loads the list of notes)
+    notes = SharedNote.query.filter_by(teacher_id=current_user.id).order_by(SharedNote.created_at.desc()).all()
+    return jsonify([n.to_dict() for n in notes])
 
 # ==========================================
 #  ✅ SELF-HEALING SYLLABUS TRACKER
