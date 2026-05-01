@@ -436,7 +436,7 @@
             </div>
         </div>
 
-        <div id="content-halltickets" class="content-section hidden">
+<div id="content-halltickets" class="content-section hidden">
             <h2 class="text-3xl font-bold mb-6">Exam Hall Tickets</h2>
             <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100">
                 <div class="flex flex-col md:flex-row gap-4 mb-6 justify-between items-end">
@@ -447,14 +447,31 @@
             </div>
         </div>
 
+        <!-- 🚀 RESTORED ANNOUNCEMENTS WRAPPER 🚀 -->
         <div id="content-announcements" class="content-section hidden">
             <h2 class="text-3xl font-bold mb-6">Announcements</h2>
             <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm mb-6 border border-slate-100">
                 <form id="announcement-form" class="space-y-4">
                     <input id="announcement-title" placeholder="Announcement Title" class="w-full border p-2 rounded-lg bg-slate-50" required>
                     <textarea id="announcement-content" placeholder="Write your message here..." class="w-full border p-2 rounded-lg bg-slate-50 h-24" required></textarea>
-                    <select id="announcement-target-group" class="w-full border p-2 rounded-lg bg-slate-50"><option value="all">Send to Everyone</option><option value="students">Students Only</option><option value="teachers">Teachers Only</option></select>
-                    <button type="submit" class="bg-primary text-white py-2 rounded-lg w-full hover:bg-blue-700 transition-colors">Publish Announcement</button>
+                    <select id="announcement-target-group" class="w-full border p-2 rounded-lg bg-slate-50">
+                        <option value="all">Send to Everyone</option>
+                        <option value="students">Students Only</option>
+                        <option value="parents">Parents Only</option>
+                        <option value="teachers">Teachers Only</option>
+                    </select>
+                    
+                    <!-- 🚀 ADD THIS NEW CHECKBOX -->
+                    <label class="flex items-center space-x-2 p-3 bg-green-50 border border-green-200 rounded-lg cursor-pointer hover:bg-green-100 transition-colors">
+                        <input type="checkbox" id="announcement-whatsapp" class="w-5 h-5 text-green-600 rounded border-gray-300 focus:ring-green-500">
+                        <span class="font-bold text-green-800 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-[20px]">campaign</span>
+                            Broadcast this directly to their WhatsApp
+                        </span>
+                    </label>
+                    <!-- ========================== -->
+
+                    <button type="submit" class="bg-primary text-white font-bold py-3 rounded-lg w-full hover:bg-blue-700 transition-colors shadow-md">Publish Announcement</button>
                 </form>
             </div>
             <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm overflow-hidden"><table class="w-full text-left"><thead class="bg-slate-100 dark:bg-slate-800 border-b"><tr><th class="p-3">Title</th><th class="p-3">Group</th><th class="p-3 text-right">Action</th></tr></thead><tbody id="management-announcements-body" class="divide-y divide-slate-100"></tbody></table></div>
@@ -1097,7 +1114,35 @@ window.sendVoiceReminder = async function(studentId, type, btnElement) {
     document.getElementById('course-form').addEventListener('submit', async (e) => { e.preventDefault(); const fd = new FormData(e.target); await fetch(API_BASE_URL + '/courses', { method: 'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(Object.fromEntries(fd)) }); alert('Saved'); e.target.reset(); loadCourses(); });
     document.getElementById('session-form').addEventListener('submit', async (e) => { e.preventDefault(); const fd = new FormData(e.target); await fetch(API_BASE_URL + '/sessions', { method: 'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(Object.fromEntries(fd)) }); alert('Saved'); e.target.reset(); loadSessions(); });
     document.getElementById('fee-structure-form').addEventListener('submit', async (e) => { e.preventDefault(); const fd = new FormData(e.target); await fetch(API_BASE_URL + '/fee_structures', { method: 'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(Object.fromEntries(fd)) }); alert('Saved'); e.target.reset(); loadFees(); });
-    document.getElementById('announcement-form').addEventListener('submit', async (e) => { e.preventDefault(); const t = document.getElementById('announcement-title').value; const c = document.getElementById('announcement-content').value; const g = document.getElementById('announcement-target-group').value; await fetch(API_BASE_URL + '/announcements', { method: 'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title:t, content:c, target_group:g}) }); alert('Published'); e.target.reset(); loadAnnouncements(); });
+    document.getElementById('announcement-form').addEventListener('submit', async (e) => { 
+    e.preventDefault(); 
+    const t = document.getElementById('announcement-title').value; 
+    const c = document.getElementById('announcement-content').value; 
+    const g = document.getElementById('announcement-target-group').value; 
+    const w = document.getElementById('announcement-whatsapp').checked; // <--- Get checkbox state
+    
+    const btn = e.target.querySelector('button[type="submit"]');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = 'Broadcasting...';
+    btn.disabled = true;
+
+    try {
+        const res = await fetch(API_BASE_URL + '/announcements', { 
+            method: 'POST', 
+            headers:{'Content-Type':'application/json'}, 
+            body:JSON.stringify({title:t, content:c, target_group:g, send_whatsapp: w}) // <--- Send it to server
+        }); 
+        const data = await res.json();
+        alert(data.msg); 
+        e.target.reset(); 
+        loadAnnouncements(); 
+    } catch(err) {
+        alert("Broadcast failed.");
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+});
     document.getElementById('bulk-form').addEventListener('submit', async (e) => { e.preventDefault(); const fd = new FormData(e.target); try { const res = await fetch(API_BASE_URL + '/bulk_upload', { method: 'POST', body: fd }); const data = await res.json(); alert(data.msg); } catch(e) { alert("Upload Failed"); } });
 
     // EDIT/DELETE HELPERS

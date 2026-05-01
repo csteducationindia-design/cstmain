@@ -347,12 +347,7 @@ class Doubt(db.Model):
     student = db.relationship('User', foreign_keys=[student_id], backref='doubts_asked')
     teacher = db.relationship('User', foreign_keys=[teacher_id], backref='doubts_received')
 
-# =========================================================
-# HELPER FUNCTIONS
-# =========================================================
-# =========================================================
-# WHATSAPP CONFIGURATION
-# =========================================================
+
 # =========================================================
 # NEW EVOLUTION API WHATSAPP CONFIGURATION
 # =========================================================
@@ -379,6 +374,29 @@ def send_whatsapp_message(to, body):
     except Exception as e:
         print(f"Evolution API WhatsApp Error: {str(e)}")
         return None
+
+# =========================================================
+# SAFE BULK WHATSAPP BROADCASTER
+# =========================================================
+def process_bulk_whatsapp(recipients, title, content, target_group):
+    # Format a beautiful WhatsApp announcement
+    message = f"📢 *CST INSTITUTE ANNOUNCEMENT*\n\n"
+    message += f"*{title}*\n\n"
+    message += f"{content}\n\n"
+    message += f"_📍 Sent to: {target_group.capitalize()}_"
+    
+    success_count = 0
+    for user in recipients:
+        if user.phone_number:
+            # Send the message
+            send_whatsapp_message(user.phone_number, message)
+            success_count += 1
+            
+            # 🛑 CRITICAL ANTI-BAN MEASURE 🛑
+            # Wait 1.5 seconds between each message so WhatsApp doesn't block your number for spamming!
+            time.sleep(1.5) 
+            
+    print(f"✅ BULK BROADCAST COMPLETE: Sent successfully to {success_count} users.")
 
 def calculate_fee_status(student_id):
     try:
@@ -1334,55 +1352,48 @@ def admin_announcements():
     if current_user.role not in ['admin', 'teacher']: 
         return jsonify({"msg": "Denied"}), 403
     
-    # --- 1. POST NEW ANNOUNCEMENT (WITH ALERTS) ---
+    # --- 1. POST NEW ANNOUNCEMENT (WITH WHATSAPP BROADCAST) ---
     if request.method == 'POST':
         d = request.json
         title = d.get('title')
         content = d.get('content')
         target_group = d.get('target_group', 'all')
         category = d.get('category', 'General')
+        
+        # Check if the user checked the "Send WhatsApp" box!
+        send_via_whatsapp = d.get('send_whatsapp', False)
 
         # Save to DB
-        a = Announcement(
-            title=title, 
-            content=content, 
-            category=category, 
-            target_group=target_group,
-            teacher_id=current_user.id
-        )
+        a = Announcement(title=title, content=content, category=category, target_group=target_group, teacher_id=current_user.id)
         db.session.add(a)
         db.session.commit()
 
-        # --- SEND NOTIFICATIONS ---
         # 1. Determine Recipients
         query = User.query
-        if target_group == 'students':
-            query = query.filter_by(role='student')
-        elif target_group == 'teachers':
-            query = query.filter_by(role='teacher')
-        elif target_group == 'parents':
-            query = query.filter_by(role='parent')
-        else:
-            # 'all' means everyone except maybe admins
-            query = query.filter(User.role.in_(['student', 'teacher', 'parent']))
+        if target_group == 'students': query = query.filter_by(role='student')
+        elif target_group == 'teachers': query = query.filter_by(role='teacher')
+        elif target_group == 'parents': query = query.filter_by(role='parent')
+        else: query = query.filter(User.role.in_(['student', 'teacher', 'parent']))
             
         recipients = query.all()
+        whatsapp_recipients = []
         
         # 2. Send Alerts
-        count = 0
         for user in recipients:
             # Send App Push Notification
             if user.fcm_token:
                 send_push_notification(user.id, f"New Announcement: {title}", content[:100])
             
-            # Optional: Send WhatsApp if critical (e.g., Holiday)
-            # if category == 'Holiday' and user.phone_number:
-            #     send_whatsapp_message(user.phone_number, f"*New Announcement*\n\n*{title}*\n{content}")
-            
-            count += 1
+            # Collect numbers for WhatsApp
+            if send_via_whatsapp and user.phone_number:
+                whatsapp_recipients.append(user)
+
+        # 3. Fire the Background WhatsApp Broadcaster!
+        if send_via_whatsapp and whatsapp_recipients:
+            threading.Thread(target=process_bulk_whatsapp, args=(whatsapp_recipients, title, content, target_group)).start()
         
         return jsonify({
-            "msg": f"Published & Sent to {count} users", 
+            "msg": f"Published! App Alerts sent to {len(recipients)}. WhatsApp broadcasting to {len(whatsapp_recipients)} users in the background.", 
             "data": a.to_dict()
         }), 201
 
