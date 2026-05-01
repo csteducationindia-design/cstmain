@@ -353,18 +353,31 @@ class Doubt(db.Model):
 # =========================================================
 # WHATSAPP CONFIGURATION
 # =========================================================
-INSTANCE_ID = "instance159860"
-TOKEN = "m24ozhanmom1ev3c"
-
+# =========================================================
+# NEW EVOLUTION API WHATSAPP CONFIGURATION
+# =========================================================
 def send_whatsapp_message(to, body):
-    url = f"https://api.ultramsg.com/{INSTANCE_ID}/messages/chat"
-    payload = {'token': TOKEN, 'to': to, 'body': body}
-    headers = {'content-type': 'application/x-www-form-urlencoded'}
+    url = "http://72.61.233.158:8081/message/sendText/cst_prod"
+    headers = {
+        "apikey": "cst_super_secret_key_2026",
+        "Content-Type": "application/json"
+    }
+    
+    # Ensure the phone number format is perfectly clean for Baileys
+    clean_phone = str(to).replace("+", "").replace("-", "").replace(" ", "").strip()
+    if len(clean_phone) == 10:
+        clean_phone = f"91{clean_phone}"
+
+    data = {
+        "number": clean_phone,
+        "text": body
+    }
+    
     try:
-        response = requests.post(url, data=payload, headers=headers)
+        response = requests.post(url, json=data, headers=headers, timeout=10)
         return response.json()
     except Exception as e:
-        print(f"WhatsApp Error: {str(e)}")
+        print(f"Evolution API WhatsApp Error: {str(e)}")
         return None
 
 def calculate_fee_status(student_id):
@@ -530,6 +543,108 @@ def api_student_dashboard():
         "initial": current_user.name[0].upper() if current_user.name else 'U',
         "is_blocked": is_blocked_status 
     })
+
+@app.route('/webhook', methods=['POST'])
+def evolution_webhook():
+    data = request.json
+    
+    # 1. Ignore background status updates, only process actual incoming messages
+    if data.get('event') != 'messages.upsert':
+        return jsonify({"status": "ignored"}), 200
+        
+    # 2. Extract message details from Evolution API's JSON structure
+    msg_data = data.get('data', {})
+    key = msg_data.get('key', {})
+    
+    # Don't reply to ourselves or group chats
+    if key.get('fromMe') or '@g.us' in key.get('remoteJid', ''):
+        return jsonify({"status": "ignored"}), 200
+        
+    sender_jid = key.get('remoteJid', '')
+    sender_phone = sender_jid.split('@')[0] # Get just the number (e.g., 919822826307)
+    
+    # Get the actual text the user typed
+    message_content = msg_data.get('message', {})
+    incoming_text = ""
+    
+    if 'conversation' in message_content:
+        incoming_text = message_content['conversation'].strip().lower()
+    elif 'extendedTextMessage' in message_content:
+        incoming_text = message_content['extendedTextMessage'].get('text', '').strip().lower()
+        
+    if not incoming_text:
+        return jsonify({"status": "no text"}), 200
+
+    # 3. Find who is texting us by matching the phone number in your database
+    # Check variations like "9822826307", "919822826307", or "+919822826307"
+    raw_number = sender_phone.replace('91', '', 1) if sender_phone.startswith('91') else sender_phone
+    user = User.query.filter(
+        (User.phone_number == raw_number) | 
+        (User.phone_number == f"91{raw_number}") |
+        (User.phone_number == sender_phone)
+    ).first()
+
+    # If the number isn't registered in your institute system
+    if not user:
+        reply = "Welcome to CST Institute! 🎓\n\nSorry, this phone number is not registered in our system. Please contact the administration to update your profile."
+        send_whatsapp_message(sender_phone, reply)
+        return jsonify({"status": "unregistered user"}), 200
+
+    # 4. BOT MENU LOGIC
+    reply = ""
+    
+    # The Main Menu Trigger
+    if incoming_text in ['hi', 'hello', 'menu', 'help', '0']:
+        reply = f"Hello {user.name}! Welcome to the CST Bot 🤖\n\n"
+        reply += "Reply with a number to choose an option:\n"
+        reply += "1️⃣ Check Pending Fees\n"
+        reply += "2️⃣ Check Attendance\n"
+        reply += "3️⃣ Check Exam Dates\n"
+        reply += "4️⃣ Contact Admin"
+
+    # Option 1: Fees
+    elif incoming_text == '1':
+        fee_data = calculate_fee_status(user.id)
+        if fee_data['balance'] > 0:
+            reply = f"💰 *Fee Status for {user.name}*\n\nTotal Due: Rs {fee_data['balance']}\nDue Date: {fee_data['due_date']}\n\nPlease pay at the institute counter or via the app."
+        else:
+            reply = f"✅ *Fee Status for {user.name}*\n\nNo pending dues! All fees are cleared."
+
+    # Option 2: Attendance
+    elif incoming_text == '2':
+        total = Attendance.query.filter_by(student_id=user.id).count()
+        present = Attendance.query.filter_by(student_id=user.id, status='Present').count()
+        if total > 0:
+            pct = int((present / total) * 100)
+            reply = f"📅 *Attendance for {user.name}*\n\nYou have attended {present} out of {total} classes.\nYour overall attendance is *{pct}%*."
+        else:
+            reply = f"📅 No attendance records found for {user.name} yet."
+
+    # Option 3: Exams
+    elif incoming_text == '3':
+        if user.session_id:
+            exam = Exam.query.filter_by(session_id=user.session_id).order_by(Exam.id.desc()).first()
+            if exam:
+                reply = f"📝 *Upcoming Exam*\n\nDate: {exam.exam_date.strftime('%d-%b-%Y')}\nTime: {exam.exam_time}\nInstructions: {exam.instructions}"
+            else:
+                reply = "There are no exams scheduled for your batch currently."
+        else:
+            reply = "You are not assigned to a batch yet, so no exams are showing."
+
+    # Option 4: Admin
+    elif incoming_text == '4':
+        reply = "📞 *Contact Administration*\n\nCall us at: 7083021167\nOffice Hours: 9:00 AM - 6:00 PM\nAddress: CST Institute Main Campus"
+
+    # Hidden Easter Egg / Unrecognized command
+    else:
+        reply = "Sorry, I didn't understand that. Please reply with *Menu* or *Hi* to see your options."
+
+    # 5. Send the compiled reply back to the user!
+    if reply:
+        send_whatsapp_message(sender_phone, reply)
+
+    # CRITICAL: Always return 200 OK
+    return jsonify({"status": "success"}), 200
 # ---------------------------------------------------------
 # ✅ ADD THIS TO APP.PY TO HANDLE THE BLOCK BUTTON
 # ---------------------------------------------------------
