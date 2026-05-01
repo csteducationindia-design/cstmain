@@ -729,6 +729,61 @@ def admin_backup():
         
     except Exception as e:
         return jsonify({"msg": f"Backup Failed: {str(e)}"}), 500
+# ==========================================
+# 📱 WHATSAPP 1-CLICK RECONNECT
+# ==========================================
+@app.route('/admin/whatsapp_connect')
+@login_required
+def whatsapp_connect():
+    # Security: Only admins can access this page
+    if current_user.role != 'admin':
+        return redirect(url_for('serve_role_page', role=current_user.role))
+        
+    url = "http://72.61.233.158:8081/instance/connect/cst_prod"
+    headers = {"apikey": "cst_super_secret_key_2026"}
+    
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+        data = response.json()
+        
+        # Check if already connected
+        if data.get('instance', {}).get('state') == 'open':
+            return render_template_string("""
+                <div style="text-align: center; font-family: sans-serif; padding: 50px;">
+                    <h1 style="color: #28a745;">✅ WhatsApp is Already Connected!</h1>
+                    <p>Your bot is currently online and running perfectly.</p>
+                    <a href="/admin" style="padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 5px;">Back to Admin Dashboard</a>
+                </div>
+            """)
+            
+        # Extract the Base64 QR Code Image
+        base64_qr = data.get('base64')
+        
+        if base64_qr:
+            return render_template_string("""
+                <div style="text-align: center; font-family: sans-serif; padding: 50px; background: #f4f7f6; height: 100vh;">
+                    <div style="background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: inline-block;">
+                        <h2 style="color: #333;">📱 Reconnect CST WhatsApp Bot</h2>
+                        <p style="color: #777;">Open WhatsApp on the bot phone -> Linked Devices -> Scan QR</p>
+                        <img src="{{ qr_image }}" style="width: 300px; height: 300px; border: 4px solid #eee; border-radius: 10px; margin: 20px 0;">
+                        <br>
+                        <p style="color: red; font-size: 14px;"><i>Note: This QR code refreshes every 40 seconds.</i></p>
+                        <button onclick="window.location.reload();" style="padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">🔄 Refresh QR</button>
+                        <a href="/admin" style="padding: 10px 20px; background: #6c757d; color: white; text-decoration: none; border-radius: 5px;">Go Back</a>
+                    </div>
+                </div>
+            """, qr_image=base64_qr)
+        else:
+            return render_template_string("""
+                <div style="text-align: center; font-family: sans-serif; padding: 50px;">
+                    <h1 style="color: #dc3545;">⚠️ Could not generate QR Code</h1>
+                    <p>The WhatsApp engine might be restarting. Please wait 30 seconds and refresh.</p>
+                    <a href="/admin" style="padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 5px;">Back to Admin Dashboard</a>
+                </div>
+            """)
+            
+    except Exception as e:
+        return f"<div style='padding: 50px; font-family: sans-serif;'><h1>Server Error</h1><p>{str(e)}</p><br><a href='/admin'>Go Back</a></div>"
 # --- ADD THIS NEW ROUTE TO app.py ---
 @app.route('/api/payments/<int:id>', methods=['DELETE'])
 @login_required
