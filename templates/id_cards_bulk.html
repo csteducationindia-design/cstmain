@@ -211,8 +211,17 @@
             white-space: nowrap;
         }
 
-        .label { color: #64748b; font-weight: 700; width: 10mm; }
-        .val { color: #334155; font-weight: 600; padding-left: 2mm; }
+        /* 🚀 MAKE LABELS AND VALUES DARKER AND BOLDER */
+        .label { 
+            color: #1e293b; /* Much darker gray for labels so they don't fade */
+            font-weight: 800; /* Bolder */
+            width: 10mm; 
+        }
+        .val { 
+            color: #000000 !important; /* Pure black for the actual student data */
+            font-weight: 900 !important; /* Maximum boldness */
+            padding-left: 2mm; 
+        }
 
         /* 4. QR & SIGN ROW */
         .qr-sign-row {
