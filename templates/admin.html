@@ -180,7 +180,7 @@
             <div class="flex gap-4 mb-4 items-center flex-wrap">
                 <select id="filterSession" class="border p-2 rounded-lg bg-white shadow-sm" onchange="loadUsers()"><option value="">All Batches</option></select>
                 <input id="userSearch" placeholder="Search by name..." class="border p-2 rounded-lg bg-white shadow-sm flex-1" onkeyup="loadUsers()">
-                <button onclick="window.open('/admin/id_cards/bulk')" class="bg-slate-800 text-white px-4 py-2 rounded-lg hover:bg-slate-700 flex items-center gap-2"><span class="material-symbols-outlined text-sm">print</span> Print All ID Cards</button>
+                <button onclick="printFilteredIdCards()" class="bg-slate-800 text-white px-4 py-2 rounded-lg hover:bg-slate-700 flex items-center gap-2"><span class="material-symbols-outlined text-sm">print</span> Print Filtered ID Cards</button>
             </div>
             
             <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm overflow-hidden">
@@ -773,6 +773,23 @@ async function loadUsers() {
         </tr>
     `).join('');
 }
+
+// ✅ NEW: Smart ID Card Printer
+    window.printFilteredIdCards = function() {
+        // Grab the batch ID from the dropdown
+        const sessionId = document.getElementById('filterSession').value;
+        
+        // Build the URL
+        let url = '/admin/id_cards/bulk';
+        
+        // If a batch is selected, attach it to the URL
+        if (sessionId) {
+            url += '?session_id=' + sessionId;
+        }
+        
+        // Open the bulk print page!
+        window.open(url, '_blank');
+    };
 
     async function loadCourses() {
         const res = await fetch(API_BASE_URL + '/courses');

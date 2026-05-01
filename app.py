@@ -1516,7 +1516,19 @@ def generate_single_id_card(id):
 @login_required
 def generate_bulk_id_cards():
     if current_user.role != 'admin': return "Denied", 403
-    students = User.query.filter_by(role='student').all()
+    
+    # 1. Look for a session_id in the URL
+    session_id = request.args.get('session_id')
+    
+    # 2. Start with a query for all students
+    query = User.query.filter_by(role='student')
+    
+    # 3. If a specific batch was selected, filter the list!
+    if session_id and session_id != 'null' and session_id != '':
+        query = query.filter_by(session_id=int(session_id))
+        
+    students = query.all()
+    
     return render_template('id_cards_bulk.html', students=students)
 
 @app.route('/uploads/<filename>')
