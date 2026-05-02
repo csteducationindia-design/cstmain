@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, redirect, url_for, send_from_directory, send_file
+from flask import Flask, request, jsonify, render_template, redirect, url_for, send_from_directory, send_file, render_template_string
 from sqlalchemy import or_, inspect, text
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
